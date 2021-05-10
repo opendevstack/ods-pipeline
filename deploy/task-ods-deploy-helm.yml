@@ -1,0 +1,76 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-deploy-helm-v0-1
+spec:
+  description: >-
+    These tasks will install / upgrade a helm chart into your Kubernetes /
+    OpenShift Cluster using Helm
+  params:
+    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-helm:latest'
+      description: Image to use
+      name: image
+      type: string
+    - default: ./chart
+      description: Specify chart dir that will be deployed
+      name: chart-dir
+      type: string
+    - default: ''
+      description: The helm release name
+      name: release-name
+      type: string
+    - default: ''
+      description: The namespace of the pipeline
+      name: namespace
+      type: string
+    - default: dev
+      description: The environment to deploy to
+      name: environment
+      type: string
+    - default: default
+      description: The target to deploy into
+      name: target
+      type: string
+    - default: ''
+      description: Project
+      name: project
+      type: string
+    - default: ''
+      description: Repository
+      name: repository
+      type: string
+    - default: ''
+      description: >-
+        Specify the values you want to overwrite, comma separated:
+        autoscaling.enabled=true,replicas=1
+      name: overwrite-values
+      type: string
+  steps:
+    - env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: nexus-user
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: nexus-user
+      image: $(params.image)
+      name: upgrade-from-repo
+      resources: {}
+      script: |
+        deploy-with-helm \
+          -chart-dir=$(params.chart-dir) \
+          -release-name=$(params.release-name) \
+          -environment=$(params.environment) \
+          -target=$(params.target)
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

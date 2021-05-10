@@ -1,0 +1,157 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-build-image-v0-1
+spec:
+  description: Package application into container image.
+  params:
+    - default: ''
+      description: Reference of the image stream buildah will produce.
+      name: image-stream
+      type: string
+    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:latest'
+      description: The location of the buildah builder image.
+      name: builder-image
+      type: string
+    - default: overlay
+      description: Set buildah storage driver
+      name: storage-driver
+      type: string
+    - default: ./Dockerfile
+      description: Path to the Dockerfile to build.
+      name: dockerfile
+      type: string
+    - default: docker
+      description: Path to the directory to use as Docker context.
+      name: context-dir
+      type: string
+    - default: 'true'
+      description: >-
+        Verify the TLS on the registry endpoint (for push/pull to a non-TLS
+        registry)
+      name: tls-verify
+      type: string
+    - default: oci
+      description: 'The format of the built container, oci or docker'
+      name: format
+      type: string
+    - default: ''
+      description: Extra parameters passed for the build command when building images.
+      name: buildah-build-extra-args
+      type: string
+    - default: ''
+      description: Extra parameters passed for the push command when pushing images.
+      name: buildah-push-extra-args
+      type: string
+    - default: 'image-registry.openshift-image-registry.svc:5000'
+      description: Image registry
+      name: registry
+      type: string
+  results:
+    - description: Digest of the image just built.
+      name: image-digest
+  steps:
+    - image: $(params.builder-image)
+      name: build-image
+      resources: {}
+      script: |
+
+        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+
+        odsGitCommit=$(cat .ods/git-commit)
+
+        imageStreamParam="$(params.image-stream)"
+        imageStream=${imageStreamParam:-$(cat .ods/component)}
+
+        set +e
+
+        imageDigest=$(oc -n $odsNamespace get istag \
+        $imageStream:$odsGitCommit \
+        -ojsonpath='{.image.metadata.name}' 2> /dev/null)
+
+        if [ "$?" = "0" ]; then
+          set -e
+          echo "Image exists already"
+          mkdir -p /tekton/results
+          echo $imageDigest > /tekton/results/image-digest
+        else
+          set -e
+          image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
+
+          buildah --storage-driver=$(params.storage-driver) bud \
+            $(params.buildah-build-extra-args) --format=$(params.format) \
+            --tls-verify=$(params.tls-verify) --no-cache \
+            -f $(params.dockerfile) -t $image $(params.context-dir)
+        fi
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+    - env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: nexus-user
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: nexus-user
+      image: $(params.builder-image)
+      name: push-image
+      resources: {}
+      script: |
+        if cat /tekton/results/image-digest &> /dev/null; then
+          echo "Image exists already"
+        else
+          odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+
+          odsProject=$(cat .ods/project)
+
+          odsRepository=$(cat .ods/repository)
+
+          odsGitCommit=$(cat .ods/git-commit)
+
+          imageStreamParam="$(params.image-stream)"
+          imageStream=${imageStreamParam:-$(cat .ods/component)}
+
+          image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
+
+          buildah --storage-driver=$(params.storage-driver) push \
+            $(params.buildah-push-extra-args) --tls-verify=$(params.tls-verify) \
+            --digestfile $(workspaces.source.path)/image-digest $image \
+            docker://$image
+          
+          mkdir -p /tekton/results
+          cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
+
+          mkdir -p $(workspaces.source.path)/.ods
+          cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/$imageStream.json
+          
+          nexus-upload \
+            -nexus-url=$NEXUS_URL \
+            -nexus-user=$NEXUS_USERNAME \
+            -nexus-password=$NEXUS_PASSWORD \
+            -repository=$odsProject \
+            -group=/$odsRepository/$odsGitCommit/image-digests \
+            -file=$(workspaces.source.path)/.ods/$imageStream.json
+        fi
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+  workspaces:
+    - name: source

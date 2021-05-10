@@ -1,0 +1,52 @@
+phases:
+
+  build:
+    tasks:
+    - name: go-helm-build
+      params:
+      - name: DOCKER_CONTEXT
+        value: docker
+      - name: TLSVERIFY
+        value: 'false'
+      - name: IMAGE_STREAM
+        value: go-helm
+      taskRef:
+        kind: Task
+        name: ods-build-go
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+
+  deploy:
+    tasks:
+    - name: go-helm-deploy
+      params:
+      - name: RELEASE_NAME
+        value: go-helm
+      - name: RELEASE_NAMESPACE
+        value: $(params.project)-dev
+      - name: PROJECT
+        value: $(params.project)
+      - name: REPOSITORY
+        value: michael-go-helm
+      - name: NAMESPACE
+        value: $(params.namespace)
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+
+  finalize:
+    tasks:
+    - name: go-helm-finalize
+      params:
+      - name: IMAGE_STREAM
+        value: go-helm
+      taskRef:
+        kind: Task
+        name: ods-finalize-docgen
+      workspaces:
+      - name: source
+        workspace: shared-workspace

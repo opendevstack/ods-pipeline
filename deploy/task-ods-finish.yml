@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-finish-v0-1
+spec:
+  description: Finishes the pipeline
+  steps:
+    - image: >-
+        registry.redhat.io/openshift-pipelines-tech-preview/pipelines-git-init-rhel8@sha256:7e18e13a94c9c82e369274984500401e27684d3565393cf6ed2bad55f2d751bc
+      name: finish
+      resources: {}
+      script: >
+        echo done
+  workspaces:
+    - description: The git repo will be cloned onto the volume backing this workspace
+      name: output

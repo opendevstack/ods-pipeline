@@ -1,0 +1,118 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: bar-main
+  resourceVersion: "0"
+spec:
+  description: ODS
+  params:
+  - default: foo-bar
+    name: repository
+    type: string
+  - default: foo
+    name: project
+    type: string
+  - default: bar
+    name: component
+    type: string
+  - default: foo-cd
+    name: namespace
+    type: string
+  - default: https://bitbucket.example.com/scm/foo/bar.git
+    name: git-repo-url
+    type: string
+  - default: main
+    name: git-ref
+    type: string
+  - default: refs/heads/main
+    name: git-full-ref
+    type: string
+  - default: ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca
+    name: git-sha
+    type: string
+  - default: repo:refs_changed
+    name: trigger-event
+    type: string
+  - default: ""
+    name: comment
+    type: string
+  - default: "0"
+    name: prKey
+    type: string
+  - default: ""
+    name: prBase
+    type: string
+  tasks:
+  - name: fetch-repository
+    params:
+    - name: url
+      value: $(params.git-repo-url)
+    - name: deleteExisting
+      value: "true"
+    - name: git-ref
+      value: $(params.git-ref)
+    - name: git-full-ref
+      value: $(params.git-full-ref)
+    - name: project
+      value: $(params.project)
+    - name: component
+      value: $(params.component)
+    - name: repository
+      value: $(params.repository)
+    taskRef:
+      kind: Task
+      name: ods-git-clone
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+  - name: go-helm-build
+    params:
+    - name: DOCKER_CONTEXT
+      value: docker
+    - name: TLSVERIFY
+      value: "false"
+    - name: IMAGE_STREAM
+      value: go-helm
+    runAfter:
+    - fetch-repository
+    taskRef:
+      kind: Task
+      name: ods-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: go-helm-deploy
+    params:
+    - name: RELEASE_NAME
+      value: go-helm
+    - name: RELEASE_NAMESPACE
+      value: $(params.project)-dev
+    - name: PROJECT
+      value: $(params.project)
+    - name: REPOSITORY
+      value: michael-go-helm
+    - name: NAMESPACE
+      value: $(params.namespace)
+    runAfter:
+    - go-helm-build
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: go-helm-finalize
+    params:
+    - name: IMAGE_STREAM
+      value: go-helm
+    runAfter:
+    - go-helm-deploy
+    taskRef:
+      kind: Task
+      name: ods-finalize-docgen
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  workspaces:
+  - name: shared-workspace

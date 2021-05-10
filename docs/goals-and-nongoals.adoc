@@ -1,0 +1,33 @@
+= Goals and Non-Goals
+
+== Scope
+
+A pipeline that fulfills the needs for BI X but has EDP in mind (meaning it is clear how to extend the prototype to fulfill EDP needs in the future).
+
+== Goals
+
+* Compatible with project concept (*-cd, *-dev, *-test)
+* Compatible with quickstarter concept (e.g. one repo per component)
+* Support for TypeScript (Node), Java 11, Go, Python
+* Deployment to OpenShift via Helm
+* Deployment to external cluster (copy image, apply resources)
+* Allow to bundle multiple repos together like the RM does
+* Allow to work monorepo-style (not at all costs though)
+* SonarQube scanning (with code insight report to Bitbucket)
+* Aqua scanning (with code insight report to Bitbucket)
+* Setting build status in Bitbucket
+* Do not commit into the repo for which the pipeline runs
+* Testing of tasks in isolation (e.g. in GitHub Actions)
+* Easy to develop (e.g. images can be build locally, etc.)
+* Have the "RM" only collect artefacts that have been built already (gain speed, simplicity)
+
+== Non-Goals
+
+* Integration with Jira
+* Integration with existing DocGen service
+* Support for exporting resources from DEV
+* Support of Tailor
+* Provisioning of projects and quickstarters (could be done via Tekton in the future though)
+* Deployment to AWS etc.
+* Notification of Teams channel on build status
+* Merge back into main branch (do that via Bitbucket buil-in features instead)

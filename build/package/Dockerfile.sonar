@@ -1,0 +1,54 @@
+FROM registry.access.redhat.com/ubi8/openjdk-11
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV SONAR_SCANNER_VERSION=3.1.0.1141 \
+    CNES_REPORT_VERSION=3.2.2 \
+    GO_VERSION=1.16
+
+USER root
+
+# Add CentOS 8 repositories.
+COPY build/package/yum.repos.d/centos8.repo /etc/yum.repos.d/centos8.repo
+
+RUN microdnf install -y gcc gcc-c++ git
+
+RUN cd /tmp && \
+    curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
+    rm -f *.tar.gz && \
+    cd - && \
+    mkdir /go
+
+ENV PATH $PATH:/usr/local/go/bin
+ENV GOBIN /usr/local/bin
+
+RUN chmod g+w /go
+
+# Install Sonar Scanner.
+RUN cd /tmp \
+    && curl -LO https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/${SONAR_SCANNER_VERSION}/sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
+    && unzip sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
+    && mv sonar-scanner-${SONAR_SCANNER_VERSION} /usr/local/sonar-scanner-cli \
+    && rm -rf sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
+    && /usr/local/sonar-scanner-cli/bin/sonar-scanner --version
+ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
+
+# Install CNES report.
+RUN cd /tmp \
+    && curl -L https://github.com/cnescatlab/sonar-cnes-report/releases/download/${CNES_REPORT_VERSION}/sonar-cnes-report-${CNES_REPORT_VERSION}.jar -o cnesreport.jar \
+    && mkdir /usr/local/cnes \
+    && mv cnesreport.jar /usr/local/cnes/cnesreport.jar \
+    && chmod 777 /usr/local/cnes/cnesreport.jar
+
+# Add Go binaries
+RUN mkdir -p /etc/go
+COPY go.* /etc/go/
+COPY cmd /etc/go/cmd
+COPY internal /etc/go/internal
+COPY pkg /etc/go/pkg
+RUN cd /etc/go/cmd/nexus-upload && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-upload
+RUN cd /etc/go/cmd/nexus-download && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-download
+RUN cd /etc/go/cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
+
+WORKDIR /go

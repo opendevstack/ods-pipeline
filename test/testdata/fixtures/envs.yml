@@ -1,0 +1,5 @@
+environments:
+  dev:
+    targets:
+      - name: default
+        namespace: foo-dev
