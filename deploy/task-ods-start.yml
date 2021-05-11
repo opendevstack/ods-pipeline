@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-start-v0-1
+  name: ods-start-v0-1-0
 spec:
   description: >-
     These Tasks are Git tasks to work with repositories used by other tasks in
