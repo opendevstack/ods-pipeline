@@ -23,8 +23,8 @@ jobs:
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
       - name: Create OpenShift resources
         run: |
-          kubectl apply -f ./scripts/task.yml
-          kubectl apply -f ./scripts/taskrun.yml
+          kubectl apply -f ./scripts/task.yaml
+          kubectl apply -f ./scripts/taskrun.yaml
       - name: List Tekton resources
         run: |
           kubectl get taskrun
