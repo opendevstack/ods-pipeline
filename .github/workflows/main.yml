@@ -24,4 +24,19 @@ jobs:
           oc new-project tekton-pipelines --display-name='Tekton Pipelines'
           oc adm policy add-scc-to-user anyuid -z tekton-pipelines-controller
           oc apply --filename https://storage.googleapis.com/tekton-releases/latest/release.yaml
-          oc get pods --namespace tekton-pipelines --watch
+          oc rollout status deployment tekton-pipelines-controller -n tekton-pipelines
+          oc rollout status deployment tekton-pipelines-webhook -n tekton-pipelines
+      - name: Install Tekton CLI
+        run: |
+          curl -LO https://github.com/tektoncd/cli/releases/download/v0.18.0/tkn_0.18.0_Linux_x86_64.tar.gz
+          sudo tar xvzf tkn_0.18.0_Linux_x86_64.tar.gz -C /usr/local/bin/ tkn
+          tkn version
+      - name: Create OpenShift resources
+        run: |
+          oc new-project ods --display-name='OpenDevStack'
+          oc apply -f ./deploy -n ods
+      - name: List Tekton resources
+        run: |
+          tkn clustertriggerbinding list
+          tkn clustertask list
+          tkn task list
