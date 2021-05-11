@@ -6,33 +6,29 @@ jobs:
   openshift:
     name: OpenShift Cluster interaction
     runs-on: ubuntu-latest
+    env:
+      TKN_VERSION: "v0.23.0"
     steps:
       - name: Checkout
         uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - name: Setup OpenShift
-        uses: manusa/actions-setup-openshift@v1.1.2
+      - name: Setup KinD
+        uses: engineerd/setup-kind@v0.5.0
         with:
-          oc version: "v3.11.0"
-          enable: "centos-imagestreams,persistent-volumes,registry,router"
-          github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Interact with the cluster
-        run: oc cluster status
-      - name: Install Tekton on OpenShift
-        run: |
-          oc new-project tekton-pipelines --display-name='Tekton Pipelines'
-          oc adm policy add-scc-to-user anyuid -z tekton-pipelines-controller
-          oc apply --filename https://storage.googleapis.com/tekton-releases/latest/release.yaml
-          oc rollout status deployment tekton-pipelines-controller -n tekton-pipelines
-          oc rollout status deployment tekton-pipelines-webhook -n tekton-pipelines
-          oc get crd
+          version: "v0.9.0"
+          name: kind-ods-github-actions
+          image: kindest/node:v1.19.1
+      - name: Install Tekton Core Components
+        run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
       - name: Create OpenShift resources
         run: |
-          oc new-project ods --display-name='OpenDevStack'
-          oc apply -f ./deploy -n ods
+          kubectl apply -f ./scripts/task.yml
+          kubectl apply -f ./scripts/taskrun.yml
       - name: List Tekton resources
         run: |
-          oc get clustertriggerbinding -n ods
-          oc get clustertask -n ods
-          oc get task -n ods
+          kubectl get taskrun
+      - name: Delete cluster
+        if: always()
+        run: |
+          kind delete cluster kind-ods-github-actions
