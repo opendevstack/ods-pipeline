@@ -19,9 +19,11 @@ jobs:
           version: "v0.9.0"
           name: kind-ods-github-actions
           image: kindest/node:v1.19.1
+      - uses: azure/setup-kubectl@v1
+        id: install
       - name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
-      - name: Create OpenShift resources
+      - name: Create Tekton resources
         run: |
           kubectl apply -f ./scripts/task.yaml
           kubectl apply -f ./scripts/taskrun.yaml
@@ -31,4 +33,4 @@ jobs:
       - name: Delete cluster
         if: always()
         run: |
-          kind delete cluster kind-ods-github-actions
+          kind delete cluster --name kind-ods-github-actions
