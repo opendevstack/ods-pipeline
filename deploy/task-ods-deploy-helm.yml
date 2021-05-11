@@ -66,6 +66,7 @@ spec:
       name: upgrade-from-repo
       resources: {}
       script: |
+        # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
           -release-name=$(params.release-name) \
