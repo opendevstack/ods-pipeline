@@ -26,6 +26,7 @@ jobs:
           oc apply --filename https://storage.googleapis.com/tekton-releases/latest/release.yaml
           oc rollout status deployment tekton-pipelines-controller -n tekton-pipelines
           oc rollout status deployment tekton-pipelines-webhook -n tekton-pipelines
+          oc get crd
       - name: Create OpenShift resources
         run: |
           oc new-project ods --display-name='OpenDevStack'
