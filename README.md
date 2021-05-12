@@ -25,3 +25,4 @@ The most important pieces are:
 ## Details / Documentation
 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
+* Architecture Decision Records can be found in [/docs/adr](/docs/adr)
