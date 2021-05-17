@@ -25,6 +25,7 @@ The most important pieces are:
 ## Details / Documentation
 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
+* [Architecture Decision Records](/docs/adr)
 
 ## Building the images locally
 
@@ -54,3 +55,4 @@ docker push localhost:5000/ods/ods-sonar:latest
 cd scripts
 ./run-tekton-task.sh
 ```
+
