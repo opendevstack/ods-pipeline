@@ -25,3 +25,32 @@ The most important pieces are:
 ## Details / Documentation
 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
+
+## Building the images locally
+
+The following shell [script](./scripts/kind-with-registry.sh) will create a local docker registry alongside a Kubernetes cluster by Kind.
+
+```cli
+cd scripts
+./kind-with-registry.sh
+```
+
+Next, build both the `ods-build-go` and `ods-sonar` docker images and push them to the local image registry.
+
+At the root of the repo, run:
+
+```cli
+docker build -f build/package/Dockerfile.go-toolset -t localhost:5000/ods/ods-build-go:latest .
+
+docker build -f build/package/Dockerfile.sonar -t localhost:5000/ods/ods-sonar:latest .
+
+docker push localhost:5000/ods/ods-build-go:latest
+docker push localhost:5000/ods/ods-sonar:latest
+```
+
+## Run the tests
+
+```cli
+cd scripts
+./run-tekton-task.sh
+```
