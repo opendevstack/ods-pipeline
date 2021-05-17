@@ -4,10 +4,10 @@ on: [push, pull_request]
 
 jobs:
   openshift:
-    name: OpenShift Cluster interaction
+    name: K8s Cluster interaction
     runs-on: ubuntu-latest
     env:
-      TKN_VERSION: "v0.23.0"
+      TKN_VERSION: "v0.22.0"
     steps:
       - name: Checkout
         uses: actions/checkout@master

@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: ods-build-go-v0-1-0-tr
+spec:
+  serviceAccountName: default
+  params:
+    - name: go-image
+      value: "localhost:5000/ods/ods-build-go:latest"
+    # - name: sonar-image
+    #   value: "localhost:5000/ods/ods-sonar:latest"
+    - name: quality-gate
+      value: "false"
+  taskRef:
+    name: ods-build-go-v0-1
+    kind: ClusterTask
+  workspaces:
+    - name: source # this workspace name must be declared in the Task
+      persistentVolumeClaim:
+        claimName: task-pv-claim # this PVC must already exist
+      # emptyDir:
+      #   {} # emptyDir volumes can be used for TaskRuns,
+      #   # but consider using a PersistentVolumeClaim for PipelineRuns

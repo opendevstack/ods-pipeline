@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: pod
+  name: pod
+spec:
+  containers:
+    - image: alpine
+      name: pod
+      command: ["/bin/sh", "-c", "--"]
+      args: ["while true; do sleep 30; done;"]
+      resources: {}
+      volumeMounts:
+        - name: test-volume
+          mountPath: "/tmp/mydir"
+  volumes:
+    - name: test-volume
+      persistentVolumeClaim:
+        claimName: task-pv-claim
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always

@@ -9,6 +9,9 @@ create-kind-with-registry:
 	cd scripts && ./kind-with-registry.sh
 .PHONY: create-kind-with-registry
 
+# TODO: Find out how to build only specific targets.
+# Make them parameterized?
+# Move it onto a file
 build-push-images: $(ROOTDIR)/build/package/Dockerfile.*
 		for file in $^ ; do \
 			imageName=$$(basename $$file); \
