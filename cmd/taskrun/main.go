@@ -37,13 +37,7 @@ func main() {
 
 	clientset := k.NewClient()
 
-	namespace := tekton.CreateRandomNamespace(clientset)
-
-	_, err := tekton.CreatePersistentVolume(clientset, *storageCapacity, *sourceDir, *storageClassName)
-	check(err)
-
-	_, err = tekton.CreatePersistentVolumeClaim(clientset, *persistentVolumeClaimName, *storageCapacity, *storageClassName, namespace)
-	check(err)
+	namespace := tekton.PrepareConditionsForTaskRun(clientset, storageCapacity, sourceDir, storageClassName, persistentVolumeClaimName)
 
 	taskFilePath := fmt.Sprintf("%s/%s", *tektonFilesDir, *taskFileName)
 	applyYAMLFile(namespace, taskFilePath)
