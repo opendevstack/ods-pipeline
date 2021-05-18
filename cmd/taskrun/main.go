@@ -1,8 +1,10 @@
 package main
 
 import (
-	k "github.com/opendevstack/pipeline/pkg/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/tekton"
+	"flag"
+	"fmt"
+	"os/exec"
+	// k "github.com/opendevstack/pipeline/pkg/kubernetes"
 )
 
 func check(e error) {
@@ -12,33 +14,51 @@ func check(e error) {
 }
 
 func main() {
-	// nexusURL := flag.String("nexus-url", "", "URL of Nexus instance")
-	// nexusUser := flag.String("nexus-user", "", "User of Nexus instance")
-	// nexusPassword := flag.String("nexus-password", "", "Password of Nexus user")
-	// repository := flag.String("repository", "", "Nexus repository")
-	// group := flag.String("group", "", "Repository group")
-	// file := flag.String("file", "", "Filename to upload (absolute")
+	taskRunName := flag.String("taskrun-name", "", "Name of the Tekton TaskRun to run")
+	sourceDir := flag.String("source-dir", "", "Source directory whose files will be available to the container.")
+	outputDir := flag.String("output-dir", "", "Output directory whose container artifacts will be available to inspect in the host.")
+	tasksDir := flag.String("tasks-dir", "scripts", "Tasks directory that holds the Tekton task definitions.")
 
-	// flag.Parse()
+	flag.Parse()
 
-	clientset := k.NewClient()
+	fmt.Println("taskRunName:", *taskRunName)
+	fmt.Println("sourceDir:", *sourceDir)
+	fmt.Println("outputDir:", *outputDir)
+	fmt.Println("tasksDir:", *tasksDir)
 
-	namespace := "default"
-	volumeName := "test-volume"
-	hostPath := "/files"
-	storageClassName := "standard"
-	pvcName := "task-pv-claim"
+	// clientset := k.NewClient()
 
-	_, err := tekton.CreatePV(clientset, volumeName, "1Gi", hostPath, storageClassName)
+	// namespace := "default"
+	// volumeName := "test-volume"
+	// hostPath := "/files" // check scripts/kind-with-registry.sh
+	// storageClassName := "standard"
+	// pvcName := "task-pv-claim"
+	// capacity := "1Gi"
+
+	// _, err := tekton.CreatePV(clientset, volumeName, capacity, hostPath, storageClassName)
+	// check(err)
+
+	// _, err = tekton.CreatePVC(clientset, pvcName, capacity, storageClassName, namespace)
+	// check(err)
+
+	// _, err = tekton.StartPodWithPVC(clientset, "task-pv-claim", namespace)
+	// check(err)
+
+	// Apply Task
+	taskpath := fmt.Sprintf("../../%s/%s", *tasksDir, "task.yaml")
+	fmt.Println(taskpath)
+	output, err := exec.Command("kubectl", "apply", "-f", taskpath).Output()
 	check(err)
+	fmt.Println(string(output))
 
-	_, err = tekton.CreatePVC(clientset, pvcName, "1Gi", storageClassName, namespace)
+	// Apply TaskRun
+	taskrunpath := fmt.Sprintf("../../%s/%s", *tasksDir, "taskrun.yaml")
+	fmt.Println(taskrunpath)
+	output, err = exec.Command("kubectl", "apply", "-f", taskrunpath).Output()
 	check(err)
+	fmt.Println(string(output))
 
-	_, err = tekton.StartPodWithPVC(clientset, "task-pv-claim", namespace)
-	check(err)
+	// err = tekton.ExecTaskRun(clientset, *taskRunName)
+	// check(err)
 
-	// fmt.Printf("Pod Spec: %s\n", &pod.Spec.String())
-
-	// tekton.UploadFilesToPod(clientset, pod.ObjectMeta.Name)
 }

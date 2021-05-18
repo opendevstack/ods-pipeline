@@ -3,5 +3,13 @@ kind: TaskRun
 metadata:
   name: hello-world-example
 spec:
+  params:
+    - name: message
+      value: "World"
   taskRef:
     name: hello-world
+  workspaces:
+    - name: source # this workspace name must be declared in the Task
+      persistentVolumeClaim:
+        claimName: task-pv-claim # this PVC must already exist
+

@@ -85,16 +85,12 @@ func StartPodWithPVC(clientset *kubernetes.Clientset, pvcName string, namespace 
 	return pod, err
 }
 
-func UploadFilesToPod(clientset *kubernetes.Clientset, podName string) {
-
-}
-
 func MountPVCInTaskRun() {
 
 }
 
-func ExecTaskRun(taskRunName string) {
-
+func ExecTaskRun(clientset *kubernetes.Clientset, taskRunName string) error {
+	return nil
 }
 
 func DownloadWorkspaceArtifacts(podName string) {
