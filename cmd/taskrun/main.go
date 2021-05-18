@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 
-	k "github.com/opendevstack/pipeline/pkg/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/tekton"
+	k "github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/tekton"
 )
 
 func check(e error) {
