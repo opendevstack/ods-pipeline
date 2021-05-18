@@ -24,3 +24,5 @@ Use [this](https://github.com/opendevstack/tailor/blob/master/pkg/openshift/filt
 Simplest-case scenario:
 
 Run a task that prints a hello world message and define a test in Go using Use [this](https://github.com/opendevstack/tailor/blob/master/pkg/openshift/filter_test.go#L105) approach as a reference.
+
+* Decide whether testing should be made public or internal.
