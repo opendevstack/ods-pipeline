@@ -2,19 +2,44 @@ package tekton
 
 import (
 	"context"
+	"fmt"
 
+	uuid "github.com/satori/go.uuid"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreatePV(clientset *kubernetes.Clientset, pvName string, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
+func CreateRandomNamespace(clientset *kubernetes.Clientset) string {
+
+	id := uuid.NewV4()
+
+	ns, err := clientset.CoreV1().Namespaces().Create(context.TODO(),
+		&v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: id.String(),
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Created Namespace: %s\n", ns.Name)
+
+	return ns.Name
+}
+
+func CreatePersistentVolume(clientset *kubernetes.Clientset, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
+
+	pvName := uuid.NewV4().String()
 
 	pv, err := clientset.CoreV1().PersistentVolumes().Create(context.TODO(),
 		&v1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pvName,
+				Name:   pvName,
+				Labels: map[string]string{"app.kubernetes.io/managed-by": "ods-pipeline"},
 			},
 			Spec: v1.PersistentVolumeSpec{
 				Capacity: v1.ResourceList{
@@ -27,15 +52,18 @@ func CreatePV(clientset *kubernetes.Clientset, pvName string, capacity string, h
 			},
 		}, metav1.CreateOptions{})
 
+	fmt.Printf("Created Persistent Volume: %s\n", pv.Name)
+
 	return pv, err
 }
 
-func CreatePVC(clientset *kubernetes.Clientset, pvcName string, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
+func CreatePersistentVolumeClaim(clientset *kubernetes.Clientset, pvcName string, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
 
 	pvc, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(),
 		&v1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pvcName,
+				Name:   pvcName,
+				Labels: map[string]string{"app.kubernetes.io/managed-by": "ods-pipeline"},
 			},
 			Spec: v1.PersistentVolumeClaimSpec{
 				AccessModes:      []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
@@ -49,50 +77,4 @@ func CreatePVC(clientset *kubernetes.Clientset, pvcName string, capacity string,
 		}, metav1.CreateOptions{})
 
 	return pvc, err
-}
-
-func StartPodWithPVC(clientset *kubernetes.Clientset, pvcName string, namespace string) (*v1.Pod, error) {
-
-	pod, err := clientset.CoreV1().Pods(namespace).Create(context.TODO(), &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "alpine",
-			Labels: map[string]string{
-				"foo": "bar",
-			},
-		},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: "foo",
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvcName,
-						}},
-				},
-			},
-			Containers: []v1.Container{
-				{
-					VolumeMounts:    []v1.VolumeMount{{Name: "foo", MountPath: "/filesincontainer"}},
-					Image:           "alpine:latest",
-					ImagePullPolicy: v1.PullIfNotPresent,
-					Command:         []string{"/bin/sh", "-c", "--"},
-					Args:            []string{"while true; do sleep 30; done;"},
-					Name:            "alpine"},
-			},
-		}},
-		metav1.CreateOptions{})
-
-	return pod, err
-}
-
-func MountPVCInTaskRun() {
-
-}
-
-func ExecTaskRun(clientset *kubernetes.Clientset, taskRunName string) error {
-	return nil
-}
-
-func DownloadWorkspaceArtifacts(podName string) {
-
 }
