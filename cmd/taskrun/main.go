@@ -39,15 +39,13 @@ func main() {
 
 	namespace := tekton.PrepareConditionsForTaskRun(clientset, storageCapacity, sourceDir, storageClassName, persistentVolumeClaimName)
 
-	taskFilePath := fmt.Sprintf("%s/%s", *tektonFilesDir, *taskFileName)
-	applyYAMLFile(namespace, taskFilePath)
-
-	taskRunFilePath := fmt.Sprintf("%s/%s", *tektonFilesDir, *taskRunFileName)
-	applyYAMLFile(namespace, taskRunFilePath)
+	applyYAMLFile(namespace, *tektonFilesDir, *taskFileName)
+	applyYAMLFile(namespace, *tektonFilesDir, *taskRunFileName)
 }
 
-func applyYAMLFile(namespace string, filePath string) {
+func applyYAMLFile(namespace string, fileDir string, fileName string) {
 
+	filePath := fmt.Sprintf("%s/%s", fileDir, fileName)
 	output, err := exec.Command("kubectl", "-n", namespace, "apply", "-f", filePath).Output()
 	check(err)
 	fmt.Println(string(output))
