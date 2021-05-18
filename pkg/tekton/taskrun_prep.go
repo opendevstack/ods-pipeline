@@ -4,13 +4,33 @@ import (
 	"context"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreatePVC(clientset *kubernetes.Clientset, pvcName string, namespace string) (*v1.PersistentVolumeClaim, error) {
+func CreatePV(clientset *kubernetes.Clientset, pvName string, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
 
-	var standardClass = "standard"
+	pv, err := clientset.CoreV1().PersistentVolumes().Create(context.TODO(),
+		&v1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pvName,
+			},
+			Spec: v1.PersistentVolumeSpec{
+				Capacity: v1.ResourceList{
+					v1.ResourceName(v1.ResourceStorage): resource.MustParse(capacity),
+				},
+				AccessModes:                   []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+				PersistentVolumeSource:        v1.PersistentVolumeSource{HostPath: &v1.HostPathVolumeSource{Path: hostPath}},
+				PersistentVolumeReclaimPolicy: v1.PersistentVolumeReclaimRetain,
+				StorageClassName:              storageClassName,
+			},
+		}, metav1.CreateOptions{})
+
+	return pv, err
+}
+
+func CreatePVC(clientset *kubernetes.Clientset, pvcName string, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
 
 	pvc, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(),
 		&v1.PersistentVolumeClaim{
@@ -19,7 +39,12 @@ func CreatePVC(clientset *kubernetes.Clientset, pvcName string, namespace string
 			},
 			Spec: v1.PersistentVolumeClaimSpec{
 				AccessModes:      []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
-				StorageClassName: &standardClass,
+				StorageClassName: &storageClassName,
+				Resources: v1.ResourceRequirements{
+					Requests: v1.ResourceList{
+						v1.ResourceName(v1.ResourceStorage): resource.MustParse(capacity),
+					},
+				},
 			},
 		}, metav1.CreateOptions{})
 
@@ -36,27 +61,26 @@ func StartPodWithPVC(clientset *kubernetes.Clientset, pvcName string, namespace 
 			},
 		},
 		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{{
-				Name: "test-volume",
-				VolumeSource: v1.VolumeSource{
-					PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-						ClaimName: pvcName,
-						ReadOnly:  false,
-					},
+			Volumes: []v1.Volume{
+				{
+					Name: "foo",
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvcName,
+						}},
 				},
-			}},
+			},
 			Containers: []v1.Container{
 				{
-					Image:   "alpine:latest",
-					Command: []string{"/bin/sh", "-c", "--"},
-					Args:    []string{"while true; do sleep 30; done;"},
-					Name:    "alpine"}},
-		},
-	}, metav1.CreateOptions{
-		TypeMeta:     metav1.TypeMeta{},
-		DryRun:       []string{},
-		FieldManager: "",
-	})
+					VolumeMounts:    []v1.VolumeMount{{Name: "foo", MountPath: "/filesincontainer"}},
+					Image:           "alpine:latest",
+					ImagePullPolicy: v1.PullIfNotPresent,
+					Command:         []string{"/bin/sh", "-c", "--"},
+					Args:            []string{"while true; do sleep 30; done;"},
+					Name:            "alpine"},
+			},
+		}},
+		metav1.CreateOptions{})
 
 	return pod, err
 }

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"flag"
-
 	k "github.com/opendevstack/pipeline/pkg/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/tekton"
 )
@@ -21,16 +19,26 @@ func main() {
 	// group := flag.String("group", "", "Repository group")
 	// file := flag.String("file", "", "Filename to upload (absolute")
 
-	flag.Parse()
+	// flag.Parse()
 
 	clientset := k.NewClient()
 
 	namespace := "default"
-	_, err := tekton.CreatePVC(clientset, "task-pv-claim", namespace)
+	volumeName := "test-volume"
+	hostPath := "/files"
+	storageClassName := "standard"
+	pvcName := "task-pv-claim"
+
+	_, err := tekton.CreatePV(clientset, volumeName, "1Gi", hostPath, storageClassName)
 	check(err)
 
-	pod, err := tekton.StartPodWithPVC(clientset, "task-pv-claim", namespace)
+	_, err = tekton.CreatePVC(clientset, pvcName, "1Gi", storageClassName, namespace)
 	check(err)
 
-	tekton.UploadFilesToPod(clientset, pod.ObjectMeta.Name)
+	_, err = tekton.StartPodWithPVC(clientset, "task-pv-claim", namespace)
+	check(err)
+
+	// fmt.Printf("Pod Spec: %s\n", &pod.Spec.String())
+
+	// tekton.UploadFilesToPod(clientset, pod.ObjectMeta.Name)
 }
