@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: sample-task-examplerun
+spec:
+  taskRef:
+    name: sample-task
+    kind: ClusterTask
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: tektontest
+

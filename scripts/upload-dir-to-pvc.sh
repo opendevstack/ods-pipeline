@@ -42,6 +42,8 @@ if [ -z "${SOURCE_DIRECTORY}" ]; then
   exit 1
 fi
 
+KUBECTL_BIN_WITH_NS="$KUBECTL_BIN -n $NAMESPACE"
+
 
 echo "Create PVC ..."
 echo "apiVersion: v1
@@ -56,7 +58,7 @@ spec:
     requests:
       storage: 1Gi
 " > pvc.yml
-$KUBECTL_BIN -n $NAMESPACE apply -f pvc.yml
+$KUBECTL_BIN_WITH_NS apply -f pvc.yml
 
 echo "Create Pod with PVC ..."
 echo "apiVersion: v1
@@ -82,7 +84,10 @@ spec:
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 " > pod.yml
-$KUBECTL_BIN -n $NAMESPACE apply -f pod.yml
+$KUBECTL_BIN_WITH_NS apply -f pod.yml
 
 echo "Upload source directory into PVC ..."
-$KUBECTL_BIN -n $NAMESPACE cp $SOURCE_DIRECTORY $POD_NAME:/tmp/mydir
+$KUBECTL_BIN_WITH_NS cp $SOURCE_DIRECTORY $POD_NAME:/tmp/mydir
+
+echo "Delete pod ..."
+$KUBECTL_BIN_WITH_NS delete pod/${POD_NAME}

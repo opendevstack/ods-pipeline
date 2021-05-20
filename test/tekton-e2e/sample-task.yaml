@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: sample-task
+spec:
+  description: Sample Task
+  steps:
+    - image: alpine
+      name: hello-world
+      resources: {}
+      script: |
+        ls -lah
+        echo "test" > out.txt
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

@@ -42,6 +42,8 @@ if [ -z "${TARGET_DIRECTORY}" ]; then
   exit 1
 fi
 
+KUBECTL_BIN_WITH_NS="$KUBECTL_BIN -n $NAMESPACE"
+
 echo "Create Pod with PVC ..."
 echo "apiVersion: v1
 kind: Pod
@@ -66,7 +68,10 @@ spec:
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 " > pod.yml
-$KUBECTL_BIN -n $NAMESPACE apply -f pod.yml
+$KUBECTL_BIN_WITH_NS apply -f pod.yml
 
 echo "Download from PVC into target directory ..."
-$KUBECTL_BIN -n $NAMESPACE cp $POD_NAME:/tmp/mydir $TARGET_DIRECTORY
+$KUBECTL_BIN_WITH_NS cp $POD_NAME:/tmp/mydir $TARGET_DIRECTORY
+
+echo "Delete pod ..."
+$KUBECTL_BIN_WITH_NS delete pod/${POD_NAME}
