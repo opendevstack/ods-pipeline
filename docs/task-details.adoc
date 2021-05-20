@@ -16,7 +16,7 @@ Information on each task will be available at a later stage once the tasks have 
 
 === Requirements
 
-1. Set Bitbucket build status to "failed" or "successful"
+1. Set Bitbucket build status to "failed" or "successful", see https://github.com/tektoncd/pipeline/pull/3817, available as of 0.24.
 2. Notification (what exactly? e.g. Teams channel?)
 
 == `ods-build-go`
