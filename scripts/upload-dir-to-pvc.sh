@@ -20,8 +20,6 @@ while [[ "$#" -gt 0 ]]; do
 
     # -h|--help) usage; exit 0;;
 
-    # -i|--insecure) INSECURE="--insecure";;
-
     -p|--pvc-name) PVC_NAME="$2"; shift;;
     -p=*|--pvc-name=*) PVC_NAME="${1#*=}";;
 
@@ -31,10 +29,21 @@ while [[ "$#" -gt 0 ]]; do
     -n|--namespace) NAMESPACE="$2"; shift;;
     -n=*|--namespace=*) NAMESPACE="${1#*=}";;
 
-    *) echo_error "Unknown parameter passed: $1"; exit 1;;
+    *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-# Create PVC
+if [ -z "${PVC_NAME}" ]; then
+  echo "--pvc-name is required"
+  exit 1
+fi
+
+if [ -z "${SOURCE_DIRECTORY}" ]; then
+  echo "--source-directory is required"
+  exit 1
+fi
+
+
+echo "Create PVC ..."
 echo "apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -47,11 +56,9 @@ spec:
     requests:
       storage: 1Gi
 " > pvc.yml
-
 $KUBECTL_BIN -n $NAMESPACE apply -f pvc.yml
 
-# Create Pod with PVC
-
+echo "Create Pod with PVC ..."
 echo "apiVersion: v1
 kind: Pod
 metadata:
@@ -75,7 +82,7 @@ spec:
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 " > pod.yml
-
 $KUBECTL_BIN -n $NAMESPACE apply -f pod.yml
 
-$KUBECTL_BIN -n $NAMESPACE cp -r $SOURCE_DIRECTORY $POD_NAME:/tmp/mydir
+echo "Upload source directory into PVC ..."
+$KUBECTL_BIN -n $NAMESPACE cp $SOURCE_DIRECTORY $POD_NAME:/tmp/mydir
