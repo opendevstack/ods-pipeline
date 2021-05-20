@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os/exec"
@@ -41,12 +42,30 @@ func main() {
 
 	applyYAMLFile(namespace, *tektonFilesDir, *taskFileName)
 	applyYAMLFile(namespace, *tektonFilesDir, *taskRunFileName)
+
+	// Wait for task to run
+	// Show logs
+	// Check if task was successful
+	// Check local folder
 }
 
 func applyYAMLFile(namespace string, fileDir string, fileName string) {
 
 	filePath := fmt.Sprintf("%s/%s", fileDir, fileName)
-	output, err := exec.Command("kubectl", "-n", namespace, "apply", "-f", filePath).Output()
+	stdout, stderr, err := runCmd("kubectl", []string{"-n", namespace, "apply", "-f", filePath})
+
+	fmt.Println(string(stdout))
+	fmt.Println(string(stderr))
 	check(err)
-	fmt.Println(string(output))
+}
+
+func runCmd(executable string, args []string) (outBytes, errBytes []byte, err error) {
+	cmd := exec.Command(executable, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	outBytes = stdout.Bytes()
+	errBytes = stderr.Bytes()
+	return outBytes, errBytes, err
 }

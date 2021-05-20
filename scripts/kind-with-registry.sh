@@ -19,6 +19,9 @@
 
 set -o errexit
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
+
 # desired cluster name; default is "kind"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 
@@ -73,7 +76,7 @@ nodes:
 - role: control-plane
   # add a mount from /path/to/my/files on the host to /files on the node
   extraMounts:
-  - hostPath: /mnt/c/src/ods-pipeline/test
+  - hostPath: ${ODS_PIPELINE_DIR}/test
     containerPath: /files
 containerdConfigPatches: 
 - |-

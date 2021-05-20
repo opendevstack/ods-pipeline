@@ -1,5 +1,9 @@
 # Testing Tekton Tasks
 
+We will make use of [Kind](https://kind.sigs.k8s.io) to run a Kubernetes cluster. That cluster should have a container registry and Tekton installed.
+
+With this setup, we will be able to run tests locally and on GitHub Actions.
+
 Tekton Tasks should be easily testeable. Every Tekton Task shall have a `TaskRun` associated that will serve to test the functionality of the `Task`.
 
 
@@ -26,3 +30,14 @@ Simplest-case scenario:
 Run a task that prints a hello world message and define a test in Go using Use [this](https://github.com/opendevstack/tailor/blob/master/pkg/openshift/filter_test.go#L105) approach as a reference.
 
 * Decide whether testing should be made public or internal.
+
+
+## Further resources
+
+* https://martinheinz.dev/blog/47
+* https://github.com/MartinHeinz/tekton-kickstarter
+* https://github.com/tektoncd/catalog/blob/main/CONTRIBUTING.md#end-to-end-testing
+* https://github.com/tektoncd/catalog/tree/main/test
+* Example test: https://github.com/tektoncd/catalog/tree/main/task/buildah/0.2/tests
+
+Compared to the catalog tests we likely do not want to hack a sidecar into the task for external dependencies. I'd rather use the standard ConfigMap/Secret/Deployment setup we have in the actual OpenShift namespaces.
