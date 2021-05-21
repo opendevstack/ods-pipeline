@@ -4,12 +4,18 @@ import (
 	"flag"
 	"path/filepath"
 
+	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
 
-func NewClient() *kubernetes.Clientset {
+type ClientsWrapper struct {
+	KubernetesClientSet *kubernetes.Clientset
+	TektonClientSet     *tekton.Clientset
+}
+
+func NewClients() *ClientsWrapper {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -24,11 +30,20 @@ func NewClient() *kubernetes.Clientset {
 		panic(err.Error())
 	}
 
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	// create the Kubernetes clientset
+	kubernetesClientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	return clientset
+	// create the Tekton clientset
+	tektonClientSet, err := tekton.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return &ClientsWrapper{
+		KubernetesClientSet: kubernetesClientset,
+		TektonClientSet:     tektonClientSet,
+	}
 }

@@ -29,8 +29,25 @@ Simplest-case scenario:
 
 Run a task that prints a hello world message and define a test in Go using Use [this](https://github.com/opendevstack/tailor/blob/master/pkg/openshift/filter_test.go#L105) approach as a reference.
 
+As part of the preconditions to run the tests, we shall:
+
+- Create a KinD cluster with a registry. (needed to push images for buildah)
+- Pull the images from DockerHub into the KinD registry (Tasks by default will use localhost:5000, make it easy later to override).
+- Install Tekton Core components
+- Apply the custom Tekton tasks under /deploy.
+- Verify we can run Tekton tests.
+- [LATER] Install SonarQube (plugins, auth token, etc.) and Nexus.
+- [LATER] Apply any ConfigMap, Secrets, etc for SonarQube and Nexus.
+
 * Decide whether testing should be made public or internal.
 
+* User will provide an array of parameters and a task name and a local folder optionally in case they need it to be mounted as a workspace.
+
+In Go, create a temporary folder within /test. Defer cleaning up. https://yourbasic.org/golang/temporary-file-directory/
+
+* User will write a Go test that will create a TaskRun on the fly based on the input parameters and run it with the tekton pkg.
+
+* We get back a TaskRun that can be queried to check the status of the run (success or fail).
 
 ## Further resources
 
