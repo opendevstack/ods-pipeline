@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	uuid "github.com/satori/go.uuid"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -14,21 +15,26 @@ func Run(tknClient *versioned.Clientset, taskName string, parameters map[string]
 
 	var tektonParams []tekton.Param
 
-	for _, p := range tektonParams {
+	for key, value := range parameters {
 
 		tektonParams = append(tektonParams, tekton.Param{
-			Name:  p.Name,
-			Value: tekton.ArrayOrString{StringVal: p.Value.StringVal},
+			Name: key,
+			Value: tekton.ArrayOrString{
+				Type:      "string", // we only provide support to string params for now
+				StringVal: value,
+			},
 		})
 
 	}
 
-	fmt.Printf("Tekton params: %s\n", tektonParams)
-
 	tr, err := tknClient.TektonV1beta1().TaskRuns(namespace).Create(context.TODO(),
 		&tekton.TaskRun{
+			ObjectMeta: v1.ObjectMeta{
+				Name: fmt.Sprintf("%s-taskrun-%s", taskName, uuid.NewV4()),
+			},
 			Spec: tekton.TaskRunSpec{
-				Params: tektonParams,
+				TaskRef: &tekton.TaskRef{Kind: "Task", Name: taskName},
+				Params:  tektonParams,
 				Workspaces: []tekton.WorkspaceBinding{
 					{
 						Name: workspaceName,
