@@ -33,8 +33,8 @@ func TestSatisfiedBy(t *testing.T) {
 		wantSuccess     string
 	}{
 		"task should return success": {
-			sourceDirectory: "C:\\src\\ods-pipeline\\goapp", //  for a local volume name, only \"[a-zA-Z0-9][a-zA-Z0-9_.-]\" are allowed. If you inte ││ nded to pass a host directory, use absolute path
-			workspaceName:   "source",                       // must exist in the Task definition
+			sourceDirectory: "/mnt/c/src/ods-pipeline/test/goapp", //  for a local volume name, only \"[a-zA-Z0-9][a-zA-Z0-9_.-]\" are allowed. If you inte ││ nded to pass a host directory, use absolute path
+			workspaceName:   "source",                             // must exist in the Task definition
 			claimName:       "task-pv-claim",
 			params:          map[string]string{"message": "foo"},
 			wantSuccess:     "True",
