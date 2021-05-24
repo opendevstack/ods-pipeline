@@ -44,6 +44,7 @@ func TestSatisfiedBy(t *testing.T) {
 		},
 	}
 
+	k8sClient := clients.KubernetesClientSet
 	tektonClient := clients.TektonClientSet
 
 	for name, tc := range tests {
@@ -55,7 +56,7 @@ func TestSatisfiedBy(t *testing.T) {
 		// - A local temporary directory.
 		// - A Persistent Volume (PV) with hostPath pointing to the local temp dir.
 		// - A Persistent Volume Claim (PVC) that will be referenced in the TaskRun to mount the local temp dir.
-		ns := tekton.PrepareConditionsForTaskRun(clients.KubernetesClientSet, &storageCapacity, &tc.sourceDirectory, &storageClassName, &tc.claimName)
+		ns := tekton.PrepareConditionsForTaskRun(k8sClient, &storageCapacity, &tc.sourceDirectory, &storageClassName, &tc.claimName)
 		applyYAMLFile(ns, tektonTasksDir, taskFileName)
 
 		t.Run(name, func(t *testing.T) {
@@ -71,7 +72,8 @@ func TestSatisfiedBy(t *testing.T) {
 
 			tr = waitForCondition(context.TODO(), t, tektonClient, tr.Name, ns, done, 120*time.Second)
 
-			// TODO: Show logs
+			// Show logs
+			CollectPodLogs(k8sClient, tr.Status.PodName, ns, t.Logf)
 
 			t.Logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
 			t.Logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
