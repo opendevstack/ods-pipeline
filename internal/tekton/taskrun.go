@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Run(tknClient *versioned.Clientset, taskName string, parameters map[string]string, workspaceName string, claimName string, namespace string) (*tekton.TaskRun, error) {
+func CreateTaskRunWithParams(tknClient *versioned.Clientset, taskName string, parameters map[string]string, workspaceName string, claimName string, namespace string) (*tekton.TaskRun, error) {
 
 	var tektonParams []tekton.Param
 

@@ -2,12 +2,15 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
 	"testing"
+	"time"
 
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/tekton"
+	"knative.dev/pkg/apis"
 )
 
 func check(e error) {
@@ -30,16 +33,18 @@ func TestSatisfiedBy(t *testing.T) {
 		workspaceName   string
 		claimName       string
 		params          map[string]string
-		wantSuccess     string
+		wantSuccess     bool
 	}{
 		"task should return success": {
 			sourceDirectory: "/mnt/c/src/ods-pipeline/test/goapp", //  for a local volume name, only \"[a-zA-Z0-9][a-zA-Z0-9_.-]\" are allowed. If you inte ││ nded to pass a host directory, use absolute path
 			workspaceName:   "source",                             // must exist in the Task definition
 			claimName:       "task-pv-claim",
 			params:          map[string]string{"message": "foo"},
-			wantSuccess:     "True",
+			wantSuccess:     true,
 		},
 	}
+
+	tektonClient := clients.TektonClientSet
 
 	for name, tc := range tests {
 
@@ -50,33 +55,45 @@ func TestSatisfiedBy(t *testing.T) {
 		// - A local temporary directory.
 		// - A Persistent Volume (PV) with hostPath pointing to the local temp dir.
 		// - A Persistent Volume Claim (PVC) that will be referenced in the TaskRun to mount the local temp dir.
-		namespace := tekton.PrepareConditionsForTaskRun(clients.KubernetesClientSet, &storageCapacity, &tc.sourceDirectory, &storageClassName, &tc.claimName)
-		applyYAMLFile(namespace, tektonTasksDir, taskFileName)
+		ns := tekton.PrepareConditionsForTaskRun(clients.KubernetesClientSet, &storageCapacity, &tc.sourceDirectory, &storageClassName, &tc.claimName)
+		applyYAMLFile(ns, tektonTasksDir, taskFileName)
 
 		t.Run(name, func(t *testing.T) {
-			actual, err := tekton.Run(clients.TektonClientSet, taskName, tc.params, tc.workspaceName, tc.claimName, namespace)
+			tr, err := tekton.CreateTaskRunWithParams(tektonClient, taskName, tc.params, tc.workspaceName, tc.claimName, ns)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			fmt.Printf("Status: %s\n", actual.Status.Status.Conditions[0].Status)
-			fmt.Printf("Reason: %s\n", actual.Status.Status.Conditions[0].Reason)
+			// Wait for task to run
 
-			status := string(actual.Status.Status.Conditions[0].Status)
+			// Give it a minute to complete.
+			waitForCondition(context.TODO(), t, tektonClient, tr.Name, ns, done, 60*time.Second)
 
-			if status != tc.wantSuccess {
-				t.Errorf("Got: %+v, want: %+v.", status, tc.wantSuccess)
+			tr = waitForCondition(context.TODO(), t, tektonClient, tr.Name, ns, done, 120*time.Second)
+
+			// TODO: Show logs
+
+			t.Logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
+			t.Logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
+			t.Logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
+
+			// Check if task was successful
+			if tr.IsSuccessful() != tc.wantSuccess {
+				t.Errorf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.wantSuccess)
 			}
+
+			// TODO: Check local folder
+
 		})
 
 		// TODO: tear-down code
 	}
 }
 
-func applyYAMLFile(namespace string, fileDir string, fileName string) {
+func applyYAMLFile(ns string, fileDir string, fileName string) {
 
 	filePath := fmt.Sprintf("%s/%s", fileDir, fileName)
-	stdout, stderr, err := runCmd("kubectl", []string{"-n", namespace, "apply", "-f", filePath})
+	stdout, stderr, err := runCmd("kubectl", []string{"-n", ns, "apply", "-f", filePath})
 
 	fmt.Println(string(stdout))
 	fmt.Println(string(stderr))
