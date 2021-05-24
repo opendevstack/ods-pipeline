@@ -14,13 +14,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup KinD
-        uses: engineerd/setup-kind@v0.5.0
-        with:
-          version: "v0.9.0"
-          name: kind-ods-github-actions
-          image: kindest/node:v1.19.1
-          skipClusterCreation: false
+      - name: Setup KinD cluster with internal registry
+        working-directory: scripts
+        run: ./kind-with-registry.sh
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v1
