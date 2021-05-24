@@ -3,7 +3,7 @@ name: Tekton Tasks Tests
 on: [push, pull_request]
 
 jobs:
-  openshift:
+  tekton-tests:
     name: K8s Cluster interaction
     runs-on: ubuntu-latest
     env:
@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@master
         with:
           fetch-depth: 0
+
       - name: Setup KinD
         uses: engineerd/setup-kind@v0.5.0
         with:
@@ -20,15 +21,18 @@ jobs:
           name: kind-ods-github-actions
           image: kindest/node:v1.19.1
           skipClusterCreation: false
+
       - name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
+
       - name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
-      - name: Create Tekton resources
-        run: |
-          kubectl apply -f ./scripts/task.yaml
-          kubectl apply -f ./scripts/taskrun.yaml
-      - name: List Tekton resources
-        run: |
-          kubectl get taskrun
+
+      - name: Setup Go 1.15
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Run tests
+        run: go test -v ./test/...
