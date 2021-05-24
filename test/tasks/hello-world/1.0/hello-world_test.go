@@ -18,7 +18,7 @@ func TestTaskHelloWorld(t *testing.T) {
 		framework.SetupOpts{
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
-			StorageClassName: "",                                   // if using KinD, set it to "standard"
+			StorageClassName: "standard",                           // if using KinD, set it to "standard"
 			TaskDir:          "../../../../deploy/hello-world/1.0", // relative dir where the Tekton Task YAML file is
 		},
 	)
@@ -31,10 +31,10 @@ func TestTaskHelloWorld(t *testing.T) {
 		wantSuccess     bool
 		wantFileContent string
 	}{
-		"task output should print foo": {
-			params:          map[string]string{"message": "foo"},
+		"task output should print Hello World": {
+			params:          map[string]string{"message": "World"},
 			wantSuccess:     true,
-			wantFileContent: "Hello foo",
+			wantFileContent: "Hello World",
 		},
 	}
 
