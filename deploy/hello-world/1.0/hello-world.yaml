@@ -13,8 +13,6 @@ spec:
       script: |
         pwd
         echo "Hello $(params.message)" > /workspace/source/msg.txt
-        ls -lah /workspace/source
         cat /workspace/source/msg.txt
-        echo "done"
   workspaces:
     - name: source

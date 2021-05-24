@@ -2,18 +2,17 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
+	"log"
 
-	uuid "github.com/satori/go.uuid"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreatePersistentVolume(clientset *kubernetes.Clientset, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
+func CreatePersistentVolume(clientset *kubernetes.Clientset, pvName string, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
 
-	pvName := uuid.NewV4().String()
+	log.Printf("Create persistent volume %s", pvName)
 
 	pv, err := clientset.CoreV1().PersistentVolumes().Create(context.TODO(),
 		&v1.PersistentVolume{
@@ -32,12 +31,13 @@ func CreatePersistentVolume(clientset *kubernetes.Clientset, capacity string, ho
 			},
 		}, metav1.CreateOptions{})
 
-	fmt.Printf("Created Persistent Volume: %s\n", pv.Name)
-
 	return pv, err
 }
 
-func CreatePersistentVolumeClaim(clientset *kubernetes.Clientset, pvcName string, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
+func CreatePersistentVolumeClaim(clientset *kubernetes.Clientset, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
+
+	pvcName := "task-pv-claim"
+	log.Printf("Create persistent volume claim %s", pvcName)
 
 	pvc, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Create(context.TODO(),
 		&v1.PersistentVolumeClaim{

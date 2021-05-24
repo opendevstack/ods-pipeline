@@ -10,12 +10,12 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type ClientsWrapper struct {
+type Clients struct {
 	KubernetesClientSet *kubernetes.Clientset
 	TektonClientSet     *tekton.Clientset
 }
 
-func NewClients() *ClientsWrapper {
+func NewClients() *Clients {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -42,7 +42,7 @@ func NewClients() *ClientsWrapper {
 		panic(err.Error())
 	}
 
-	return &ClientsWrapper{
+	return &Clients{
 		KubernetesClientSet: kubernetesClientset,
 		TektonClientSet:     tektonClientSet,
 	}
