@@ -30,14 +30,6 @@ type SetupOpts struct {
 func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 	t.Helper()
 
-	if _, err := os.Stat(opts.SourceDir); os.IsNotExist(err) {
-		t.Logf("Create directory %s\n", opts.SourceDir)
-		err := os.Mkdir(opts.SourceDir, os.ModeDir)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-
 	namespace := uuid.NewV4().String()
 	clients := k.NewClients()
 

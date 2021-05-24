@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -14,12 +13,10 @@ func TestTaskHelloWorld(t *testing.T) {
 
 	taskName := "hello-world"
 	workspaceName := "source" // must exist in the Task definition
-	wd, _ := os.Getwd()
-	sourceDir := wd + "\\output\\"
 
 	c, ns := framework.Setup(t,
 		framework.SetupOpts{
-			SourceDir:        sourceDir,
+			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
 			StorageClassName: "",                                   // if using KinD, set it to "standard"
 			TaskDir:          "../../../../deploy/hello-world/1.0", // relative dir where the Tekton Task YAML file is
@@ -64,13 +61,13 @@ func TestTaskHelloWorld(t *testing.T) {
 			}
 
 			// Check local folder and evaluate output of task if needed
-			content, err := ioutil.ReadFile(sourceDir + "msg.txt")
+			content, err := ioutil.ReadFile("../../../" + "msg.txt")
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if string(content) != tc.wantFileContent {
-				t.Errorf("Got: %+v, want: %+v.", content, tc.wantFileContent)
+				t.Errorf("Got: %+v, want: %+v.", string(content), tc.wantFileContent)
 			}
 
 		})

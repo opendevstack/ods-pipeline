@@ -19,7 +19,7 @@ func CollectPodLogs(c *kubernetes.Clientset, podName, namespace string, logf log
 	if err != nil {
 		logf("Could not get logs for pod %s: %s", podName, err)
 	}
-	logf("build logs %s", logs)
+	logf("pod logs %s", logs)
 }
 
 func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string) (string, error) {
