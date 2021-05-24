@@ -101,13 +101,14 @@ func TearDown(t *testing.T, cs *k.Clients, namespace string) {
 		return
 	}
 	if t.Failed() {
-		Header(t.Logf, fmt.Sprintf("Dumping objects from %s", namespace))
-		bs, err := getCRDYaml(cs, namespace)
-		if err != nil {
-			t.Error(err)
-		} else {
-			t.Log(string(bs))
-		}
+		// Not needed for now, but it could be a nice thing to have for a more in depth debug.
+		// Header(t.Logf, fmt.Sprintf("Dumping objects from %s", namespace))
+		// bs, err := getCRDYaml(cs, namespace)
+		// if err != nil {
+		// 	t.Error(err)
+		// } else {
+		// 	t.Log(string(bs))
+		// }
 		Header(t.Logf, fmt.Sprintf("Dumping logs from Pods in the %s", namespace))
 		taskruns, err := cs.TektonClientSet.TektonV1beta1().TaskRuns(namespace).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
