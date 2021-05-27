@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaceName string, namespace string) (*tekton.TaskRun, error) {
+var testdataWorkspacePath = "testdata/workspaces"
+
+func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaceName string, workspaceSubpath string, namespace string) (*tekton.TaskRun, error) {
 
 	var tektonParams []tekton.Param
 
@@ -55,6 +58,7 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 							ClaimName: "task-pv-claim",
 							ReadOnly:  false,
 						},
+						SubPath: filepath.Join(testdataWorkspacePath, workspaceSubpath),
 					},
 				},
 			},

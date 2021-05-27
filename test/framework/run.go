@@ -2,10 +2,15 @@ package framework
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 )
 
 type TestOpts struct {
@@ -17,13 +22,38 @@ type TestOpts struct {
 }
 
 type TestCase struct {
-	Params      map[string]string
-	WantSuccess bool
-	CheckFunc   func(t *testing.T)
+	WorkspaceSourceDirectory string
+	Params                   map[string]string
+	WantSuccess              bool
+	CheckFunc                func(t *testing.T, workspaceDir string)
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
-	tr, err := CreateTaskRunWithParams(testOpts.Clients.TektonClientSet, testOpts.TaskKindRef, testOpts.TaskName, tc.Params, testOpts.WorkspaceName, testOpts.Namespace)
+
+	workspaceSourceDirectory := filepath.Join(
+		projectpath.Root, "test", testdataWorkspacePath, tc.WorkspaceSourceDirectory,
+	)
+
+	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
+
+	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Workspace is in %s", tempDir)
+	tempDirName := filepath.Base(tempDir)
+
+	directory.Copy(workspaceSourceDirectory, tempDir)
+
+	tr, err := CreateTaskRunWithParams(
+		testOpts.Clients.TektonClientSet,
+		testOpts.TaskKindRef,
+		testOpts.TaskName,
+		tc.Params,
+		testOpts.WorkspaceName,
+		tempDirName,
+		testOpts.Namespace,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,9 +69,15 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	// Check if task was successful
 	if tr.IsSuccessful() != tc.WantSuccess {
-		t.Errorf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.WantSuccess)
+		t.Fatalf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.WantSuccess)
 	}
 
 	// Check local folder and evaluate output of task if needed
-	tc.CheckFunc(t)
+	tc.CheckFunc(t, tempDir)
+
+	// Clean up only if test is successful
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
