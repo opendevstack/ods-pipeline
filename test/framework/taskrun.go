@@ -3,20 +3,18 @@ package framework
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateTaskRunWithParams(tknClient *versioned.Clientset, taskName string, parameters map[string]string, workspaceName string, namespace string) (*tekton.TaskRun, error) {
+func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaceName string, namespace string) (*tekton.TaskRun, error) {
 
 	var tektonParams []tekton.Param
 
@@ -32,13 +30,23 @@ func CreateTaskRunWithParams(tknClient *versioned.Clientset, taskName string, pa
 
 	}
 
+	var tk tekton.TaskKind
+	switch taskRefKind {
+	case string(tekton.ClusterTaskKind):
+		tk = tekton.ClusterTaskKind
+	case string(tekton.NamespacedTaskKind):
+		tk = tekton.NamespacedTaskKind
+	default:
+		log.Fatalf("Don't know type %s\n", taskRefKind)
+	}
+
 	tr, err := tknClient.TektonV1beta1().TaskRuns(namespace).Create(context.TODO(),
 		&tekton.TaskRun{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("%s-taskrun-%s", taskName, uuid.NewV4()),
 			},
 			Spec: tekton.TaskRunSpec{
-				TaskRef: &tekton.TaskRef{Kind: "Task", Name: taskName},
+				TaskRef: &tekton.TaskRef{Kind: tk, Name: taskName},
 				Params:  tektonParams,
 				Workspaces: []tekton.WorkspaceBinding{
 					{
@@ -51,12 +59,12 @@ func CreateTaskRunWithParams(tknClient *versioned.Clientset, taskName string, pa
 				},
 			},
 		},
-		v1.CreateOptions{})
+		metav1.CreateOptions{})
 
 	return tr, err
 }
 
-func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string) (tr *v1beta1.TaskRun) {
+func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string) (tr *tekton.TaskRun) {
 	t.Helper()
 	tr, err := c.TektonV1beta1().TaskRuns(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -65,9 +73,9 @@ func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, nam
 	return tr
 }
 
-type conditionFn func(*v1beta1.TaskRun) bool
+type conditionFn func(*tekton.TaskRun) bool
 
-func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration) *v1beta1.TaskRun {
+func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration) *tekton.TaskRun {
 	t.Helper()
 
 	// Do a first quick check before setting the watch
@@ -95,7 +103,7 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 	for {
 		select {
 		case ev := <-w.ResultChan():
-			tr := ev.Object.(*v1beta1.TaskRun)
+			tr := ev.Object.(*tekton.TaskRun)
 			if cond(tr) {
 				return tr
 			}
@@ -105,6 +113,6 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 	}
 }
 
-func Done(tr *v1beta1.TaskRun) bool {
+func Done(tr *tekton.TaskRun) bool {
 	return tr.IsDone()
 }

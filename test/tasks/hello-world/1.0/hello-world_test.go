@@ -1,18 +1,13 @@
 package test
 
 import (
-	"context"
 	"io/ioutil"
 	"testing"
-	"time"
 
 	"github.com/opendevstack/pipeline/test/framework"
 )
 
 func TestTaskHelloWorld(t *testing.T) {
-
-	taskName := "hello-world"
-	workspaceName := "source" // must exist in the Task definition
 
 	c, ns := framework.Setup(t,
 		framework.SetupOpts{
@@ -26,49 +21,34 @@ func TestTaskHelloWorld(t *testing.T) {
 	framework.CleanupOnInterrupt(func() { framework.TearDown(t, c, ns) }, t.Logf)
 	defer framework.TearDown(t, c, ns)
 
-	tests := map[string]struct {
-		params          map[string]string
-		wantSuccess     bool
-		wantFileContent string
-	}{
+	tests := map[string]framework.TestCase{
 		"task output should print Hello World": {
-			params:          map[string]string{"message": "World"},
-			wantSuccess:     true,
-			wantFileContent: "Hello World",
+			Params:      map[string]string{"message": "World"},
+			WantSuccess: true,
+			CheckFunc: func(t *testing.T) {
+				content, err := ioutil.ReadFile("../../../" + "msg.txt")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if string(content) != "Hello World" {
+					t.Errorf("Got: %+v, want: %+v.", string(content), "Hello World")
+				}
+			},
 		},
 	}
 
 	for name, tc := range tests {
 
 		t.Run(name, func(t *testing.T) {
-			tr, err := framework.CreateTaskRunWithParams(c.TektonClientSet, taskName, tc.params, workspaceName, ns)
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			// Wait 2 minutes for task to complete.
-			tr = framework.WaitForCondition(context.TODO(), t, c.TektonClientSet, tr.Name, ns, framework.Done, 120*time.Second)
-
-			// Show logs
-			framework.CollectPodLogs(c.KubernetesClientSet, tr.Status.PodName, ns, t.Logf)
-
-			// Show info from Task result
-			framework.CollectTaskResultInfo(tr, t.Logf)
-
-			// Check if task was successful
-			if tr.IsSuccessful() != tc.wantSuccess {
-				t.Errorf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.wantSuccess)
-			}
-
-			// Check local folder and evaluate output of task if needed
-			content, err := ioutil.ReadFile("../../../" + "msg.txt")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if string(content) != tc.wantFileContent {
-				t.Errorf("Got: %+v, want: %+v.", string(content), tc.wantFileContent)
-			}
+			framework.Run(t, tc, framework.TestOpts{
+				TaskKindRef:   "Task",
+				TaskName:      "hello-world",
+				WorkspaceName: "source", // must exist in the Task definition
+				Clients:       c,
+				Namespace:     ns,
+			})
 
 		})
 
