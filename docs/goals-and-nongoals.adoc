@@ -26,8 +26,9 @@ A pipeline that fulfills the needs for BI X but has EDP in mind (meaning it is c
 * Integration with Jira
 * Integration with existing DocGen service
 * Support for exporting resources from DEV
-* Support of Tailor
+* Support of Tailor (or not if next gen of Quickstarters are developed with Helm)
 * Provisioning of projects and quickstarters (could be done via Tekton in the future though)
 * Deployment to AWS etc.
 * Notification of Teams channel on build status
 * Merge back into main branch (do that via Bitbucket buil-in features instead)
+
