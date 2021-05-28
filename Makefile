@@ -23,8 +23,13 @@ build-push-images: $(ROOTDIR)/build/package/Dockerfile.*
         done
 .PHONY: build-push-images
 
-# LOCAL ENVIRONMENT
-# Prepare local environment by spinning up a Kubernetes cluster alongside a local registry with KinD.
-# Build and push ODS images to the local registry.
-prepare-local-env: create-kind-with-registry build-push-images
+load-images-in-kind:
+	cd scripts && ./load-images-in-kind.sh
+.PHONY: load-images-in-kind
+
+install-tekton-pipelines:
+	cd scripts && ./install-tekton-pipelines.sh
+.PHONY: install-tekton-pipelines
+
+prepare-local-env: create-kind-with-registry load-images-in-kind install-tekton-pipelines 
 .PHONY: prepare-local-env
