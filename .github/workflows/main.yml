@@ -3,6 +3,26 @@ name: Tekton Tasks Tests
 on: [push, pull_request]
 
 jobs:
+  build-ods-images:
+    name: Build ODS Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Build & push ODS Build Go Docker image
+        uses: mr-smithers-excellent/docker-build-push@v5
+        with:
+          directory: build/package
+          image: ghcr.io/opendevstack/ods-build-go
+          tags: latest
+          registry: ghcr.io
+          dockerfile: Dockerfile.go-toolset
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN  }}
+
   tekton-tests:
     name: K8s Cluster interaction
     runs-on: ubuntu-latest
