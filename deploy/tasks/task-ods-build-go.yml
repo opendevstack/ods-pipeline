@@ -9,6 +9,10 @@ spec:
       description: The location of the Go builder image.
       name: go-image
       type: string
+    - default: "false"
+      description: Whether to enable CGO.
+      name: enable-cgo
+      type: string
     - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest"
       description: The location of the Sonar image.
       name: sonar-image
@@ -22,22 +26,22 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - # - env:
-      #     - name: NEXUS_URL
-      #       valueFrom:
-      #         configMapKeyRef:
-      #           key: url
-      #           name: nexus
-      #     - name: NEXUS_USERNAME
-      #       valueFrom:
-      #         secretKeyRef:
-      #           key: username
-      #           name: nexus-user
-      #     - name: NEXUS_PASSWORD
-      #       valueFrom:
-      #         secretKeyRef:
-      #           key: password
-      #           name: nexus-user
+    - env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: nexus-auth
       image: $(params.go-image)
       name: build-go-binary
       resources: {}
@@ -55,29 +59,30 @@ spec:
         build-go \
           --project=${odsProject} \
           --repository=${odsRepository} \
-          --git-commit=${odsGitCommit}
+          --git-commit=${odsGitCommit} \
+          --enable-cgo=$(params.enable-cgo)
       workingDir: $(workspaces.source.path)
-    - # - env:
-      #     - name: SONAR_URL
-      #       valueFrom:
-      #         configMapKeyRef:
-      #           key: url
-      #           name: sonar
-      #     - name: SONAR_AUTH_TOKEN
-      #       valueFrom:
-      #         secretKeyRef:
-      #           key: password
-      #           name: sonar-user
-      #     - name: BITBUCKET_URL
-      #       valueFrom:
-      #         configMapKeyRef:
-      #           key: url
-      #           name: bitbucket
-      #     - name: BITBUCKET_ACCESS_TOKEN
-      #       valueFrom:
-      #         secretKeyRef:
-      #           key: password
-      #           name: ods-bitbucket-token
+    - env:
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: sonar-auth
+        - name: BITBUCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: bitbucket
+        - name: BITBUCKET_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: bitbucket-auth
       image: $(params.sonar-image)
       name: scan-with-sonar
       resources: {}

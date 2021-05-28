@@ -35,7 +35,7 @@ func TestTaskHelloWorld(t *testing.T) {
 				}
 
 				if string(content) != "Hello World" {
-					t.Errorf("Got: %+v, want: %+v.", string(content), "Hello World")
+					t.Fatalf("Got: %+v, want: %+v.", string(content), "Hello World")
 				}
 			},
 		},

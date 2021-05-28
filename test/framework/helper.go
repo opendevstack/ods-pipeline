@@ -24,6 +24,7 @@ type SetupOpts struct {
 	StorageCapacity  string
 	StorageClassName string
 	TaskDir          string
+	EnvironmentDir   string
 }
 
 func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
@@ -45,6 +46,10 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 	}
 
 	applyYAMLFilesInDir(t, namespace, opts.TaskDir)
+
+	if len(opts.EnvironmentDir) > 0 {
+		applyYAMLFilesInDir(t, namespace, opts.EnvironmentDir)
+	}
 
 	return clients, namespace
 }

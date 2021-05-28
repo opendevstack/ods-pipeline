@@ -1,8 +1,8 @@
 package test
 
 import (
-	"bytes"
-	"os/exec"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/projectpath"
@@ -15,8 +15,9 @@ func TestTaskODSBuildGo(t *testing.T) {
 		framework.SetupOpts{
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
-			StorageClassName: "standard",                         // if using KinD, set it to "standard"
-			TaskDir:          projectpath.Root + "/deploy/tasks", // relative dir where the Tekton Task YAML file is
+			StorageClassName: "standard", // if using KinD, set it to "standard"
+			TaskDir:          projectpath.Root + "/deploy/tasks",
+			EnvironmentDir:   projectpath.Root + "/test/testdata/deploy/cd-namespace",
 		},
 	)
 
@@ -35,13 +36,27 @@ func TestTaskODSBuildGo(t *testing.T) {
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 
-				b, _, err := runCmd(wsDir+"/docker/app-linux-amd64", []string{})
-				if err != nil {
-					t.Fatal(err)
+				wantFiles := []string{
+					"docker/Dockerfile",
+					"docker/app-linux-amd64",
+					"build/test-results/test/report.xml",
+					"coverage.out",
+					"test-results.txt",
 				}
-				if string(b) != "Hello World" {
-					t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+				for _, wf := range wantFiles {
+					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
+						t.Fatalf("Want %s, but got nothing", wf)
+					}
 				}
+
+				// TODO: How to test this cross-platform?
+				// b, _, err := command.Run(wsDir+"/docker/app-linux-amd64", []string{})
+				// if err != nil {
+				// 	t.Fatal(err)
+				// }
+				// if string(b) != "Hello World" {
+				// 	t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+				// }
 			},
 		},
 	}
@@ -60,15 +75,4 @@ func TestTaskODSBuildGo(t *testing.T) {
 		})
 
 	}
-}
-
-func runCmd(executable string, args []string) (outBytes, errBytes []byte, err error) {
-	cmd := exec.Command(executable, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
 }
