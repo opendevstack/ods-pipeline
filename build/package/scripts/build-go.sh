@@ -4,6 +4,7 @@ set -eu
 ODS_PROJECT=""
 ODS_REPOSITORY=""
 ODS_GIT_COMMIT=""
+ENABLE_CGO="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -17,12 +18,16 @@ while [[ "$#" -gt 0 ]]; do
     --git-commit) ODS_GIT_COMMIT="$2"; shift;;
     --git-commit=*) ODS_GIT_COMMIT="${1#*=}";;
 
-  *) echo_error "Unknown parameter passed: $1"; exit 1;;
+    --enable-cgo) ENABLE_CGO="$2"; shift;;
+    --enable-cgo=*) ENABLE_CGO="${1#*=}";;
+
+  *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 echo "Run Go build"
-# TODO: CGO might be required at times - we need to make this configurable.
-export CGO_ENABLED=0
+if [ "${ENABLE_CGO}" = "false" ]; then
+  export CGO_ENABLED=0
+fi
 go version
 
 echo "Check format"
