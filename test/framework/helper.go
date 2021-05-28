@@ -3,7 +3,6 @@ package framework
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -99,26 +98,6 @@ func TearDown(t *testing.T, cs *k.Clients, namespace string) {
 	t.Helper()
 	if cs.KubernetesClientSet == nil {
 		return
-	}
-	if t.Failed() {
-		// Not needed for now, but it could be a nice thing to have for a more in depth debug.
-		// Header(t.Logf, fmt.Sprintf("Dumping objects from %s", namespace))
-		// bs, err := getCRDYaml(cs, namespace)
-		// if err != nil {
-		// 	t.Error(err)
-		// } else {
-		// 	t.Log(string(bs))
-		// }
-		Header(t.Logf, fmt.Sprintf("Dumping logs from Pods in the %s", namespace))
-		taskruns, err := cs.TektonClientSet.TektonV1beta1().TaskRuns(namespace).List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			t.Errorf("Error getting TaskRun list %s", err)
-		}
-		for _, tr := range taskruns.Items {
-			if tr.Status.PodName != "" {
-				CollectPodLogs(cs.KubernetesClientSet, tr.Status.PodName, namespace, t.Logf)
-			}
-		}
 	}
 
 	t.Logf("Deleting namespace %s", namespace)

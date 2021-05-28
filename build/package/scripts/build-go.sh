@@ -67,13 +67,13 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   if [ -f test-results.txt ]; then
       set -e
       go-junit-report < test-results.txt > build/test-results/test/report.xml
-      nexus-upload \
-        -nexus-url=${NEXUS_URL} \
-        -nexus-user=${NEXUS_USERNAME} \
-        -nexus-password=${NEXUS_PASSWORD} \
-        -repository=${ODS_PROJECT} \
-        -group=/${ODS_REPOSITORY}/${ODS_GIT_COMMIT}/test-reports \
-        -file=build/test-results/test/report.xml || true
+      # nexus-upload \
+      #   -nexus-url=${NEXUS_URL} \
+      #   -nexus-user=${NEXUS_USERNAME} \
+      #   -nexus-password=${NEXUS_PASSWORD} \
+      #   -repository=${ODS_PROJECT} \
+      #   -group=/${ODS_REPOSITORY}/${ODS_GIT_COMMIT}/test-reports \
+      #   -file=build/test-results/test/report.xml || true
   else
     echo "no test results found"
   fi

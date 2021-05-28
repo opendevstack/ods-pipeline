@@ -1,0 +1,92 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-build-go-v0-1
+spec:
+  description: ODS Build Go applications
+  params:
+    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-build-go:latest"
+      description: The location of the Go builder image.
+      name: go-image
+      type: string
+    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest"
+      description: The location of the Sonar image.
+      name: sonar-image
+      type: string
+    - default: "false"
+      description: Whether quality gate needs to pass.
+      name: sonar-quality-gate
+      type: string
+    - default: "false"
+      description: Whether to skip the SonarQube analysis or not.
+      name: sonar-skip
+      type: string
+  steps:
+    - # - env:
+      #     - name: NEXUS_URL
+      #       valueFrom:
+      #         configMapKeyRef:
+      #           key: url
+      #           name: nexus
+      #     - name: NEXUS_USERNAME
+      #       valueFrom:
+      #         secretKeyRef:
+      #           key: username
+      #           name: nexus-user
+      #     - name: NEXUS_PASSWORD
+      #       valueFrom:
+      #         secretKeyRef:
+      #           key: password
+      #           name: nexus-user
+      image: $(params.go-image)
+      name: build-go-binary
+      resources: {}
+      script: |
+
+        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+
+        odsProject=$(cat .ods/project)
+
+        odsRepository=$(cat .ods/repository)
+
+        odsGitCommit=$(cat .ods/git-commit)
+
+        echo "Run Go build"
+        build-go \
+          --project=${odsProject} \
+          --repository=${odsRepository} \
+          --git-commit=${odsGitCommit}
+      workingDir: $(workspaces.source.path)
+    - # - env:
+      #     - name: SONAR_URL
+      #       valueFrom:
+      #         configMapKeyRef:
+      #           key: url
+      #           name: sonar
+      #     - name: SONAR_AUTH_TOKEN
+      #       valueFrom:
+      #         secretKeyRef:
+      #           key: password
+      #           name: sonar-user
+      #     - name: BITBUCKET_URL
+      #       valueFrom:
+      #         configMapKeyRef:
+      #           key: url
+      #           name: bitbucket
+      #     - name: BITBUCKET_ACCESS_TOKEN
+      #       valueFrom:
+      #         secretKeyRef:
+      #           key: password
+      #           name: ods-bitbucket-token
+      image: $(params.sonar-image)
+      name: scan-with-sonar
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          sonar -quality-gate=$(params.sonar-quality-gate)
+        fi
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source
