@@ -4,21 +4,25 @@ on: [push, pull_request]
 
 jobs:
   build-ods-images:
-    name: Build ODS Docker images
+    name: Build ODS images
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerFileSuffix:
+          ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
     steps:
       - name: Checkout
         uses: actions/checkout@master
         with:
           fetch-depth: 0
 
-      - name: Build & push ODS Build Go Docker image
+      - name: Build & push image
         uses: mr-smithers-excellent/docker-build-push@v5
         with:
-          image: opendevstack/ods-build-go
+          image: opendevstack/${{ matrix.dockerFileSuffix }}
           tags: latest
           registry: ghcr.io
-          dockerfile: build/package/Dockerfile.go-toolset
+          dockerfile: build/package/Dockerfile.${{ matrix.dockerFileSuffix }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
   tekton-tests:
