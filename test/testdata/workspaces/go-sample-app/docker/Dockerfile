@@ -22,8 +22,8 @@ FROM alpine
 #    && apk del --purge .build-deps glibc-i18n \
 #    && rm -rf /tmp/*.apk /var/cache/apk/*
 
-COPY app-linux-amd64 app-linux-amd64
+COPY app app
 
 EXPOSE 8080
 
-CMD ["./app-linux-amd64"]
+CMD ["./app"]

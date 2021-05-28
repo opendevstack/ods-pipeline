@@ -13,6 +13,14 @@ spec:
       description: Whether to enable CGO.
       name: enable-cgo
       type: string
+    - default: ""
+      description: GOOS variable.
+      name: go-os
+      type: string
+    - default: ""
+      description: GOARCH variable.
+      name: go-arch
+      type: string
     - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest"
       description: The location of the Sonar image.
       name: sonar-image
@@ -60,7 +68,9 @@ spec:
           --project=${odsProject} \
           --repository=${odsRepository} \
           --git-commit=${odsGitCommit} \
-          --enable-cgo=$(params.enable-cgo)
+          --enable-cgo=$(params.enable-cgo) \
+          --go-os=$(params.go-os) \
+          --go-arch=$(params.go-arch)
       workingDir: $(workspaces.source.path)
     - env:
         - name: SONAR_URL

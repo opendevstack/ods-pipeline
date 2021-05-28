@@ -5,6 +5,8 @@ ODS_PROJECT=""
 ODS_REPOSITORY=""
 ODS_GIT_COMMIT=""
 ENABLE_CGO="false"
+GO_OS=""
+GO_ARCH=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -21,14 +23,26 @@ while [[ "$#" -gt 0 ]]; do
     --enable-cgo) ENABLE_CGO="$2"; shift;;
     --enable-cgo=*) ENABLE_CGO="${1#*=}";;
 
+    --go-os) GO_OS="$2"; shift;;
+    --go-os=*) GO_OS="${1#*=}";;
+
+    --go-arch) GO_ARCH="$2"; shift;;
+    --go-arch=*) GO_ARCH="${1#*=}";;
+
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 echo "Run Go build"
+go version
 if [ "${ENABLE_CGO}" = "false" ]; then
   export CGO_ENABLED=0
 fi
-go version
+if [ -n "${GO_OS}" ]; then
+  export GOOS="${GO_OS}"
+fi
+if [ -n "${GO_ARCH}" ]; then
+  export GOARCH="${GO_ARCH}"
+fi
 
 echo "Check format"
 make -q ci-checkfmt &> /dev/null || makeErrorCode=$?
@@ -56,7 +70,7 @@ fi
 echo "Build"
 make -q ci-build &> /dev/null || makeErrorCode=$?
 if [ "${makeErrorCode}" -eq 2 ]; then
-  go build -o docker/app-linux-amd64
+  go build -o docker/app
 else
   make ci-build
 fi

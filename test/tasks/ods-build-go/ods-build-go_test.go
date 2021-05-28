@@ -3,8 +3,10 @@ package test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/test/framework"
 )
@@ -30,7 +32,9 @@ func TestTaskODSBuildGo(t *testing.T) {
 			Params: map[string]string{
 				"sonar-skip":  "true",
 				"go-image":    "localhost:5000/ods/ods-build-go:latest",
-				"sonar-image": "localhost:5000/ods/ods-sonar:latest",
+				"sonar-image": "localhost:5000/ods/ods-build-go:latest",
+				"go-os":       runtime.GOOS,
+				"go-arch":     runtime.GOARCH,
 			},
 			WantSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
@@ -38,7 +42,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 				wantFiles := []string{
 					"docker/Dockerfile",
-					"docker/app-linux-amd64",
+					"docker/app",
 					"build/test-results/test/report.xml",
 					"coverage.out",
 					"test-results.txt",
@@ -49,14 +53,13 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 				}
 
-				// TODO: How to test this cross-platform?
-				// b, _, err := command.Run(wsDir+"/docker/app-linux-amd64", []string{})
-				// if err != nil {
-				// 	t.Fatal(err)
-				// }
-				// if string(b) != "Hello World" {
-				// 	t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
-				// }
+				b, _, err := command.Run(wsDir+"/docker/app", []string{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(b) != "Hello World" {
+					t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+				}
 			},
 		},
 	}
