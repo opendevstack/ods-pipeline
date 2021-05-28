@@ -15,11 +15,10 @@ jobs:
       - name: Build & push ODS Build Go Docker image
         uses: mr-smithers-excellent/docker-build-push@v5
         with:
-          directory: build/package
-          image: ghcr.io/opendevstack/ods-build-go
+          image: opendevstack/ods-build-go
           tags: latest
           registry: ghcr.io
-          dockerfile: Dockerfile.go-toolset
+          dockerfile: build/package/Dockerfile.go-toolset
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN  }}
 
