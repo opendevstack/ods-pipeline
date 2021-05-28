@@ -7,6 +7,7 @@ jobs:
     name: Build ODS images
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         dockerFileSuffix:
           ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
