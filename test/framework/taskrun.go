@@ -17,7 +17,7 @@ import (
 
 var testdataWorkspacePath = "testdata/workspaces"
 
-func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaceName string, workspaceSubpath string, namespace string) (*tekton.TaskRun, error) {
+func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaces map[string]string, namespace string) (*tekton.TaskRun, error) {
 
 	var tektonParams []tekton.Param
 
@@ -43,24 +43,28 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 		log.Fatalf("Don't know type %s\n", taskRefKind)
 	}
 
+	taskWorkspaces := []tekton.WorkspaceBinding{}
+	for wn, wd := range workspaces {
+		wsDirName := filepath.Base(wd)
+		taskWorkspaces = append(taskWorkspaces, tekton.WorkspaceBinding{
+			Name: wn,
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: "task-pv-claim",
+				ReadOnly:  false,
+			},
+			SubPath: filepath.Join(testdataWorkspacePath, wsDirName),
+		})
+	}
+
 	tr, err := tknClient.TektonV1beta1().TaskRuns(namespace).Create(context.TODO(),
 		&tekton.TaskRun{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("%s-taskrun-%s", taskName, uuid.NewV4()),
 			},
 			Spec: tekton.TaskRunSpec{
-				TaskRef: &tekton.TaskRef{Kind: tk, Name: taskName},
-				Params:  tektonParams,
-				Workspaces: []tekton.WorkspaceBinding{
-					{
-						Name: workspaceName,
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: "task-pv-claim",
-							ReadOnly:  false,
-						},
-						SubPath: filepath.Join(testdataWorkspacePath, workspaceSubpath),
-					},
-				},
+				TaskRef:    &tekton.TaskRef{Kind: tk, Name: taskName},
+				Params:     tektonParams,
+				Workspaces: taskWorkspaces,
 			},
 		},
 		metav1.CreateOptions{})

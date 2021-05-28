@@ -14,44 +14,47 @@ import (
 )
 
 type TestOpts struct {
-	TaskKindRef   string
-	TaskName      string
-	WorkspaceName string
-	Clients       *kubernetes.Clients
-	Namespace     string
+	TaskKindRef string
+	TaskName    string
+	Clients     *kubernetes.Clients
+	Namespace   string
 }
 
 type TestCase struct {
-	WorkspaceSourceDirectory string
-	Params                   map[string]string
-	WantSuccess              bool
-	CheckFunc                func(t *testing.T, workspaceDir string)
+	// Map workspace name of task to local directory under test/testdata/workspaces.
+	WorkspaceDirMapping map[string]string
+	Params              map[string]string
+	WantSuccess         bool
+	CheckFunc           func(t *testing.T, workspaces map[string]string)
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
-	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", testdataWorkspacePath, tc.WorkspaceSourceDirectory,
-	)
+	taskWorkspaces := map[string]string{}
+	for wn, wd := range tc.WorkspaceDirMapping {
+		workspaceSourceDirectory := filepath.Join(
+			projectpath.Root, "test", testdataWorkspacePath, wd,
+		)
 
-	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
+		workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
 
-	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
-	if err != nil {
-		t.Fatal(err)
+		tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("Workspace is in %s", tempDir)
+		taskWorkspaces[wn] = tempDir
+
+		directory.Copy(workspaceSourceDirectory, tempDir)
+
 	}
-	t.Logf("Workspace is in %s", tempDir)
-	tempDirName := filepath.Base(tempDir)
-
-	directory.Copy(workspaceSourceDirectory, tempDir)
 
 	tr, err := CreateTaskRunWithParams(
 		testOpts.Clients.TektonClientSet,
 		testOpts.TaskKindRef,
 		testOpts.TaskName,
 		tc.Params,
-		testOpts.WorkspaceName,
-		tempDirName,
+		taskWorkspaces,
 		testOpts.Namespace,
 	)
 	if err != nil {
@@ -73,11 +76,13 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	// Check local folder and evaluate output of task if needed
-	tc.CheckFunc(t, tempDir)
+	tc.CheckFunc(t, taskWorkspaces)
 
 	// Clean up only if test is successful
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		t.Fatal(err)
+	for _, wd := range taskWorkspaces {
+		err = os.RemoveAll(wd)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }

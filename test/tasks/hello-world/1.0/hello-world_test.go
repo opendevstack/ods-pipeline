@@ -24,11 +24,12 @@ func TestTaskHelloWorld(t *testing.T) {
 
 	tests := map[string]framework.TestCase{
 		"task output should print Hello World": {
-			WorkspaceSourceDirectory: "hello-world",
-			Params:                   map[string]string{"message": "World"},
-			WantSuccess:              true,
-			CheckFunc: func(t *testing.T, ws string) {
-				content, err := ioutil.ReadFile(ws + "/" + "msg.txt")
+			WorkspaceDirMapping: map[string]string{"source": "hello-world"},
+			Params:              map[string]string{"message": "World"},
+			WantSuccess:         true,
+			CheckFunc: func(t *testing.T, workspaces map[string]string) {
+				wsDir := workspaces["source"]
+				content, err := ioutil.ReadFile(wsDir + "/" + "msg.txt")
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -45,11 +46,10 @@ func TestTaskHelloWorld(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			framework.Run(t, tc, framework.TestOpts{
-				TaskKindRef:   "Task",        // could be read from task definition
-				TaskName:      "hello-world", // could be read from task definition
-				WorkspaceName: "source",      // must exist in the Task definition, could be read
-				Clients:       c,
-				Namespace:     ns,
+				TaskKindRef: "Task",        // could be read from task definition
+				TaskName:    "hello-world", // could be read from task definition
+				Clients:     c,
+				Namespace:   ns,
 			})
 
 		})
