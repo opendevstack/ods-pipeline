@@ -27,3 +27,5 @@ Now networking is possible via:
 ```
 curl nexustest.kind:8081
 ```
+
+Bitbucket licenses: https://developer.atlassian.com/platform/marketplace/timebomb-licenses-for-testing-server-apps/.

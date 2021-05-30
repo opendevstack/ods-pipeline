@@ -82,7 +82,7 @@ apiVersion: v1
 metadata:
   name: sonar
 data:
-  url: 'http://sonarqubetest:9000'
+  url: 'http://${CONTAINER_NAME}.kind:9000'
 EOF
 
 echo "Created secret with token for '${SONAR_USERNAME}' in ${K8S_SECRET_FILE}."

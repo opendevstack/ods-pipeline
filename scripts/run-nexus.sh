@@ -134,7 +134,7 @@ apiVersion: v1
 metadata:
   name: nexus
 data:
-  url: 'http://nexustest:8081'
+  url: 'http://${CONTAINER_NAME}.kind:8081'
 EOF
 
 echo "Created secret with password for '${DEVELOPER_USERNAME}' in ${K8S_SECRET_FILE}."
