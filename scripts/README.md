@@ -14,3 +14,16 @@ Run an E2E example:
 ```
 
 This will place a file "out.txt" into test/tekton-e2e/output.
+
+
+# Running supporting services
+
+Start container on kind network:
+```
+docker run -d -p "8081:8081" --net kind -e HTTP_PROXY="" -e HTTPS_PROXY="" -e NO_PROXY="" --name nexustest sonatype/nexus3:3.27.0
+```
+
+Now networking is possible via:
+```
+curl nexustest.kind:8081
+```

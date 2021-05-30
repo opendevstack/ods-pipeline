@@ -111,9 +111,11 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 	for {
 		select {
 		case ev := <-w.ResultChan():
-			tr := ev.Object.(*tekton.TaskRun)
-			if cond(tr) {
-				return tr
+			if ev.Object != nil {
+				tr := ev.Object.(*tekton.TaskRun)
+				if cond(tr) {
+					return tr
+				}
 			}
 		case <-timeoutChan:
 			t.Fatal("time out")

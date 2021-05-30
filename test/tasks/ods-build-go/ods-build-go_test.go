@@ -19,7 +19,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 			StorageCapacity:  "1Gi",
 			StorageClassName: "standard", // if using KinD, set it to "standard"
 			TaskDir:          projectpath.Root + "/deploy/tasks",
-			EnvironmentDir:   projectpath.Root + "/test/testdata/deploy/cd-namespace",
+			EnvironmentDir:   projectpath.Root + "/test/testdata/deploy/cd-kind",
 		},
 	)
 
@@ -30,9 +30,9 @@ func TestTaskODSBuildGo(t *testing.T) {
 		"task should build go app": {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 			Params: map[string]string{
-				"sonar-skip":  "true",
+				//"sonar-skip":  "true",
 				"go-image":    "localhost:5000/ods/ods-build-go:latest",
-				"sonar-image": "localhost:5000/ods/ods-build-go:latest",
+				"sonar-image": "localhost:5000/ods/ods-sonar:latest",
 				"go-os":       runtime.GOOS,
 				"go-arch":     runtime.GOARCH,
 			},
