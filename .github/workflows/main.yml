@@ -20,7 +20,7 @@ jobs:
       - name: Build & push image
         uses: mr-smithers-excellent/docker-build-push@v5
         with:
-          image: opendevstack/${{ matrix.dockerFileSuffix }}
+          image: ${{ matrix.dockerFileSuffix }}
           tags: latest
           registry: ghcr.io
           dockerfile: build/package/Dockerfile.${{ matrix.dockerFileSuffix }}
