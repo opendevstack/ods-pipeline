@@ -3,3 +3,4 @@
 * Enable script settings in Nexus out of the box to avoid waiting
 * Figure out best way to enter timebomb licenses in Bitbucket
 * Figure out how to create project in Bitbucket
+* Stream log output from task while it is running

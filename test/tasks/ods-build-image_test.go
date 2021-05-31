@@ -1,11 +1,15 @@
 package tasks
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/test/framework"
 )
@@ -46,7 +50,22 @@ func TestTaskODSBuildImage(t *testing.T) {
 					}
 				}
 
-				// TODO: run resulting docker container to see message
+				sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				stdout, stderr, err := command.Run("docker", []string{
+					"run", "--rm",
+					fmt.Sprintf("localhost:5000/%s/hello-world:%s", ns, sha),
+				})
+				if err != nil {
+					t.Fatalf("could not run resultind docker container: %s, stderr: %s", err, string(stderr))
+				}
+				got := strings.TrimSpace(string(stdout))
+				want := "Hello World"
+				if got != want {
+					t.Fatalf("Want %s, but got %s", want, got)
+				}
 			},
 		},
 	}
@@ -66,4 +85,12 @@ func TestTaskODSBuildImage(t *testing.T) {
 		})
 
 	}
+}
+
+func getTrimmedFileContent(filename string) (string, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(content)), nil
 }
