@@ -89,8 +89,7 @@ spec:
         - mountPath: /var/lib/containers
           name: varlibcontainers
       workingDir: $(workspaces.source.path)
-    - env:
-      image: $(params.builder-image)
+    - image: $(params.builder-image)
       name: push-image
       resources: {}
       script: |
