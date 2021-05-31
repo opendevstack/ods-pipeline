@@ -1,7 +1,6 @@
 package kubernetes
 
 import (
-	"flag"
 	"path/filepath"
 
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -16,16 +15,12 @@ type Clients struct {
 }
 
 func NewClients() *Clients {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
+	// TODO: make configurable from outside
+	home := homedir.HomeDir()
+	kubeconfig := filepath.Join(home, ".kube", "config")
 
 	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
