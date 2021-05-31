@@ -113,7 +113,7 @@ spec:
           mkdir -p /tekton/results
           cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
 
-          mkdir -p $(workspaces.source.path)/ods/artifacts/image-digests
+          mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
           cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/$imageStream.json
           cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
         fi
