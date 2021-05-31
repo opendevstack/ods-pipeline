@@ -1,15 +1,19 @@
 name: Tekton Tasks Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches-ignore:
+      - master
 
 jobs:
-  build-ods-images:
-    name: Build ODS images
+  pipeline-tests:
+    name: Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dockerFileSuffix:
-          ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
+    env:
+      TKN_VERSION: "v0.22.0"
     steps:
       -
         name: Checkout
@@ -17,62 +21,76 @@ jobs:
         with:
           fetch-depth: 0
       -
+        name: Setup KinD cluster with internal registry
+        working-directory: scripts
+        run: ./kind-with-registry.sh
+      -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      # -
-      #   name: Login to GitHub Container Registry
-      #   uses: docker/login-action@v1
-      #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
       -
-        name: Build & Push
+        name: Build & Push buildah
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          file: build/package/Dockerfile.${{ matrix.dockerFileSuffix }}
-          tags: localhost:5000/ods/${{ matrix.dockerFileSuffix }}:latest
-
-  tekton-tests:
-    name: K8s Cluster interaction
-    runs-on: ubuntu-latest
-    env:
-      TKN_VERSION: "v0.22.0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@master
+          file: build/package/Dockerfile.buildah
+          tags: localhost:5000/ods/buildah:latest
+      -
+        name: Build & Push go-toolset
+        uses: docker/build-push-action@v2
         with:
-          fetch-depth: 0
-
-      - name: Setup KinD cluster with internal registry
-        working-directory: scripts
-        run: ./kind-with-registry.sh
-
-      - name: Setup kubectl
+          context: .
+          push: true
+          file: build/package/Dockerfile.go-toolset
+          tags: localhost:5000/ods/go-toolset:latest
+      -
+        name: Build & Push helm
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.helm
+          tags: localhost:5000/ods/helm:latest
+      -
+        name: Build & Push interceptor
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.interceptor
+          tags: localhost:5000/ods/interceptor:latest
+      -
+        name: Build & Push sonar
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.sonar
+          tags: localhost:5000/ods/sonar:latest
+      -
+        name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
-
-      - name: Install Tekton Core Components
+      -
+        name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
-
-      - name: Spin up Bitbucket container
+      -
+        name: Spin up Bitbucket container
         working-directory: scripts
         run: ./run-bitbucket.sh
-
-      - name: Spin up Nexus container
+      -
+        name: Spin up Nexus container
         working-directory: scripts
         run: ./run-nexus.sh
-
-      - name: Spin up SonarQube container
+      -
+        name: Spin up SonarQube container
         working-directory: scripts
         run: ./run-sonarqube.sh
-
-      - name: Setup Go 1.15
+      -
+        name: Setup Go 1.15
         uses: actions/setup-go@v2
         with:
           go-version: 1.15
-
-      - name: Run tests
+      -
+        name: Run tests
         run: go test -v ./test/...
