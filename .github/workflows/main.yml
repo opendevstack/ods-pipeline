@@ -3,14 +3,15 @@ name: Tekton Tasks Tests
 on: [push, pull_request]
 
 jobs:
-  build-ods-images:
-    name: Build ODS images
+  tekton-tests:
+    name: K8s Cluster interaction
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         dockerFileSuffix:
           ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
+    env:
+      TKN_VERSION: "v0.22.0"
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -26,17 +27,6 @@ jobs:
           dockerfile: build/package/Dockerfile.${{ matrix.dockerFileSuffix }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-  tekton-tests:
-    name: K8s Cluster interaction
-    runs-on: ubuntu-latest
-    env:
-      TKN_VERSION: "v0.22.0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@master
-        with:
-          fetch-depth: 0
-
       - name: Setup KinD cluster with internal registry
         working-directory: scripts
         run: ./kind-with-registry.sh
@@ -47,6 +37,18 @@ jobs:
 
       - name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
+
+      - name: Spin up Bitbucket container
+        working-directory: scripts
+        run: ./run-bitbucket.sh
+
+      - name: Spin up Nexus container
+        working-directory: scripts
+        run: ./run-nexus.sh
+
+      - name: Spin up SonarQube container
+        working-directory: scripts
+        run: ./run-sonarqube.sh
 
       - name: Setup Go 1.15
         uses: actions/setup-go@v2
