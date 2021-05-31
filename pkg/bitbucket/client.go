@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/opendevstack/pipeline/pkg/logging"
 )
 
 // Loosely based on https://github.com/brandur/wanikaniapi.
@@ -20,12 +22,17 @@ type ClientConfig struct {
 	HTTPClient *http.Client
 	MaxRetries int
 	BaseURL    string
+	// Logger is the logger to send logging messages to.
+	Logger logging.LeveledLoggerInterface
 }
 
 func NewClient(clientConfig *ClientConfig) *Client {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 10 * time.Second}
+	}
+	if clientConfig.Logger == nil {
+		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
 	return &Client{
 		httpClient:   httpClient,
@@ -34,6 +41,7 @@ func NewClient(clientConfig *ClientConfig) *Client {
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
+	c.clientConfig.Logger.Debugf("GET %s", urlPath)
 	req, err := http.NewRequest("GET", c.clientConfig.BaseURL+urlPath, nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
@@ -50,6 +58,7 @@ func (c *Client) get(urlPath string) (int, []byte, error) {
 }
 
 func (c *Client) post(urlPath string, payload []byte) (int, []byte, error) {
+	c.clientConfig.Logger.Debugf("POST %s", urlPath)
 	req, err := http.NewRequest("POST", c.clientConfig.BaseURL+urlPath, bytes.NewReader(payload))
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)

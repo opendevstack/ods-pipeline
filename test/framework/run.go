@@ -25,6 +25,7 @@ type TestCase struct {
 	WorkspaceDirMapping map[string]string
 	Params              map[string]string
 	WantSuccess         bool
+	PrepareFunc         func(t *testing.T, workspaces map[string]string)
 	CheckFunc           func(t *testing.T, workspaces map[string]string)
 }
 
@@ -47,6 +48,10 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 		directory.Copy(workspaceSourceDirectory, tempDir)
 
+	}
+
+	if tc.PrepareFunc != nil {
+		tc.PrepareFunc(t, taskWorkspaces)
 	}
 
 	tr, err := CreateTaskRunWithParams(
