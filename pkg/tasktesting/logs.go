@@ -1,5 +1,5 @@
 // from https://github.com/tektoncd/cli/blob/c996b3004650658c73ae8b1c0ce98f5165107af5/test/framework/logs.go
-package framework
+package tasktesting
 
 import (
 	"context"

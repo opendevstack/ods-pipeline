@@ -11,13 +11,13 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/test/framework"
+	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSBuildImage(t *testing.T) {
 
-	c, ns := framework.Setup(t,
-		framework.SetupOpts{
+	c, ns := tasktesting.Setup(t,
+		tasktesting.SetupOpts{
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
 			StorageClassName: "standard", // if using KinD, set it to "standard"
@@ -26,15 +26,15 @@ func TestTaskODSBuildImage(t *testing.T) {
 		},
 	)
 
-	framework.CleanupOnInterrupt(func() { framework.TearDown(t, c, ns) }, t.Logf)
-	defer framework.TearDown(t, c, ns)
+	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
+	defer tasktesting.TearDown(t, c, ns)
 
-	tests := map[string]framework.TestCase{
+	tests := map[string]tasktesting.TestCase{
 		"task should build image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			Params: map[string]string{
 				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/ods-buildah:latest",
+				"builder-image": "localhost:5000/ods/buildah:latest",
 				"tls-verify":    "false",
 			},
 			WantSuccess: true,
@@ -74,7 +74,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 
-			framework.Run(t, tc, framework.TestOpts{
+			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef: "ClusterTask",          // could be read from task definition
 				TaskName:    "ods-build-image-v0-1", // could be read from task definition
 				Clients:     c,

@@ -9,13 +9,13 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/test/framework"
+	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSBuildGo(t *testing.T) {
 
-	c, ns := framework.Setup(t,
-		framework.SetupOpts{
+	c, ns := tasktesting.Setup(t,
+		tasktesting.SetupOpts{
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
 			StorageClassName: "standard", // if using KinD, set it to "standard"
@@ -24,36 +24,36 @@ func TestTaskODSBuildGo(t *testing.T) {
 		},
 	)
 
-	framework.CleanupOnInterrupt(func() { framework.TearDown(t, c, ns) }, t.Logf)
-	defer framework.TearDown(t, c, ns)
+	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
+	defer tasktesting.TearDown(t, c, ns)
 
-	tests := map[string]framework.TestCase{
+	tests := map[string]tasktesting.TestCase{
 		"task should build go app": {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				os.Chdir(wsDir)
-				err := framework.InitAndCommit(wsDir)
+				err := tasktesting.InitAndCommit(wsDir)
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				projectKey := "FOO"
 				// wsName := filepath.Base(wsDir)
-				// err = framework.PushToBitbucket(c.KubernetesClientSet, ns, projectKey, wsName)
+				// err = tasktesting.PushToBitbucket(c.KubernetesClientSet, ns, projectKey, wsName)
 				// if err != nil {
 				// 	t.Fatal(err)
 				// }
 
-				err = framework.WriteDotOds(wsDir, projectKey)
+				err = tasktesting.WriteDotOds(wsDir, projectKey)
 				if err != nil {
 					t.Fatal(err)
 				}
 			},
 			Params: map[string]string{
 				//"sonar-skip":  "true",
-				"go-image":    "localhost:5000/ods/ods-build-go:latest",
-				"sonar-image": "localhost:5000/ods/ods-sonar:latest",
+				"go-image":    "localhost:5000/ods/go-toolset:latest",
+				"sonar-image": "localhost:5000/ods/sonar:latest",
 				"go-os":       runtime.GOOS,
 				"go-arch":     runtime.GOARCH,
 			},
@@ -90,7 +90,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 
-			framework.Run(t, tc, framework.TestOpts{
+			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef: "ClusterTask",       // could be read from task definition
 				TaskName:    "ods-build-go-v0-1", // could be read from task definition
 				Clients:     c,
