@@ -1,12 +1,18 @@
 package framework
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/logging"
+	kclient "k8s.io/client-go/kubernetes"
 )
 
 func InitAndCommit(wsDir string) error {
@@ -31,6 +37,54 @@ func InitAndCommit(wsDir string) error {
 	_, _, err = command.Run("git", []string{"commit", "-m", "initial commit"})
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoName string) error {
+	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
+	if err != nil {
+		return err
+	}
+	bbURL = "http://localhost:7990"
+	bbToken, err := kubernetes.GetSecretKey(c, ns, "bitbucket-auth", "password")
+	if err != nil {
+		return err
+	}
+
+	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+		Timeout:    10 * time.Second,
+		APIToken:   bbToken,
+		MaxRetries: 2,
+		BaseURL:    bbURL,
+		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
+	})
+
+	proj := bitbucket.Project{Key: projectKey}
+	repo, err := bitbucketClient.RepoCreate(proj.Key, bitbucket.RepoCreatePayload{
+		Name:          repoName,
+		SCMID:         "git",
+		Forkable:      true,
+		DefaultBranch: "master",
+	})
+	if err != nil {
+		return err
+	}
+
+	bbCredentialsURL := strings.Replace(
+		bbURL,
+		"http://",
+		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
+		-1,
+	)
+	origin := fmt.Sprintf("%s/scm/%s/%s.git", bbCredentialsURL, proj.Key, repo.Slug)
+	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", origin})
+	if err != nil {
+		return fmt.Errorf("failed to add remote origin=%s: %s, stderr: %s", origin, err, stderr)
+	}
+	_, stderr, err = command.Run("git", []string{"push", "-u", "origin", "master"})
+	if err != nil {
+		return fmt.Errorf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
 	return nil
 }

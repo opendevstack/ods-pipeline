@@ -15,11 +15,32 @@ docker rm -f ${CONTAINER_NAME} || true
 docker run -d --name ${CONTAINER_NAME} -e ELASTICSEARCH_ENABLED=false --net kind -p "${HOST_PORT}:7990" -p 7999:7999 atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
 
 BITBUCKET_URL="http://localhost:${HOST_PORT}"
+echo "Waiting up to 3 minutes for Bitbucket to start ..."
+n=0
+set +e
+until [ $n -ge 18 ]; do
+    health=$(curl -s ${INSECURE} "${SONARQUBE_URL}/status" | jq -r .state)
+    if [ "${health}" == "RUNNING" ]; then
+        echo " success"
+        break
+    else
+        if [ "${health}" == "FIRST_RUN" ]; then
+            echo " up but still needs setup"
+            break
+        else
+            echo -n "."
+            sleep 10s
+            n=$((n+1))
+        fi
+    fi
+done
+set -e
+
 cat <<EOF >${K8S_SECRET_FILE}
 apiVersion: v1
-data:
-  password: YWRtaW4=
-  username: YWRtaW4=
+stringData:
+  password: create_access_token_and_enter_here
+  username: admin
 kind: Secret
 metadata:
   name: bitbucket-auth
@@ -35,5 +56,5 @@ data:
   url: 'http://${CONTAINER_NAME}.kind:7999'
 EOF
 
-echo "Visit ${BITBUCKET_URL} to setup Bitbucket."
+echo "If setup is needed, visit ${BITBUCKET_URL} and create an access token and a project 'FOO'."
 echo "Use timebomb license from https://developer.atlassian.com/platform/marketplace/timebomb-licenses-for-testing-server-apps/ (3 hour expiration for all Atlassian host products)"

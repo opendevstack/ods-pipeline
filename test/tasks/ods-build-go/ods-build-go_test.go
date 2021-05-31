@@ -39,6 +39,11 @@ func TestTaskODSBuildGo(t *testing.T) {
 				}
 
 				projectKey := "FOO"
+				// wsName := filepath.Base(wsDir)
+				// err = framework.PushToBitbucket(c.KubernetesClientSet, ns, projectKey, wsName)
+				// if err != nil {
+				// 	t.Fatal(err)
+				// }
 
 				err = framework.WriteDotOds(wsDir, projectKey)
 				if err != nil {
