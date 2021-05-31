@@ -67,7 +67,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					"build/test-results/test/report.xml",
 					"coverage.out",
 					"test-results.txt",
-					".ods/artifacts/xunit-reports.xml",
+					".ods/artifacts/xunit-reports/report.xml",
 				}
 				for _, wf := range wantFiles {
 					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

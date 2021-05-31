@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/opendevstack/pipeline/internal/random"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -59,7 +59,7 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 	tr, err := tknClient.TektonV1beta1().TaskRuns(namespace).Create(context.TODO(),
 		&tekton.TaskRun{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("%s-taskrun-%s", taskName, uuid.NewV4()),
+				Name: fmt.Sprintf("%s-taskrun-%s", taskName, random.PseudoString()),
 			},
 			Spec: tekton.TaskRunSpec{
 				TaskRef:    &tekton.TaskRef{Kind: tk, Name: taskName},

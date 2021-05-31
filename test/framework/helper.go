@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
-	uuid "github.com/satori/go.uuid"
+	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v2"
@@ -30,7 +30,7 @@ type SetupOpts struct {
 func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 	t.Helper()
 
-	namespace := uuid.NewV4().String()
+	namespace := random.PseudoString()
 	clients := k.NewClients()
 
 	k.CreateNamespace(clients.KubernetesClientSet, namespace)
