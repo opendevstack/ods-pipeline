@@ -4,6 +4,7 @@ set -ue
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
+INSECURE=""
 HOST_PORT="7990"
 CONTAINER_NAME="bitbuckettest"
 BITBUCKET_IMAGE_TAG="latest"
@@ -20,7 +21,7 @@ echo "Waiting up to 3 minutes for Bitbucket to start ..."
 n=0
 set +e
 until [ $n -ge 18 ]; do
-    health=$(curl -s ${INSECURE} "${SONARQUBE_URL}/status" | jq -r .state)
+    health=$(curl -s ${INSECURE} "${BITBUCKET_URL}/status" | jq -r .state)
     if [ "${health}" == "RUNNING" ]; then
         echo " success"
         break
