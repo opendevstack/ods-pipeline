@@ -45,6 +45,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 						t.Fatalf("Want %s, but got nothing", wf)
 					}
 				}
+
+				// TODO: run resulting docker container to see message
 			},
 		},
 	}
