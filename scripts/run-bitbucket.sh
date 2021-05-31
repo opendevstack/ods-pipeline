@@ -10,7 +10,7 @@ BITBUCKET_IMAGE_TAG="latest"
 K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-bitbucket-auth.yml"
 K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-bitbucket.yml"
 
-echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
+echo "Run container using image tag ${BITBUCKET_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 docker run -d --name ${CONTAINER_NAME} -e ELASTICSEARCH_ENABLED=false --net kind -p "${HOST_PORT}:7990" -p 7999:7999 atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
 
