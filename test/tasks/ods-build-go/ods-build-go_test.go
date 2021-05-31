@@ -29,6 +29,21 @@ func TestTaskODSBuildGo(t *testing.T) {
 	tests := map[string]framework.TestCase{
 		"task should build go app": {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
+			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
+				wsDir := workspaces["source"]
+				os.Chdir(wsDir)
+				err := framework.InitAndCommit(wsDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				projectKey := "FOO"
+
+				err = framework.WriteDotOds(wsDir, projectKey)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
 			Params: map[string]string{
 				//"sonar-skip":  "true",
 				"go-image":    "localhost:5000/ods/ods-build-go:latest",
