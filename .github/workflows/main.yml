@@ -3,15 +3,13 @@ name: Tekton Tasks Tests
 on: [push, pull_request]
 
 jobs:
-  tekton-tests:
-    name: K8s Cluster interaction
+  build-ods-images:
+    name: Build ODS images
     runs-on: ubuntu-latest
     strategy:
       matrix:
         dockerFileSuffix:
           ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
-    env:
-      TKN_VERSION: "v0.22.0"
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -26,6 +24,17 @@ jobs:
           registry: ghcr.io
           dockerfile: build/package/Dockerfile.${{ matrix.dockerFileSuffix }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+  tekton-tests:
+    name: K8s Cluster interaction
+    runs-on: ubuntu-latest
+    env:
+      TKN_VERSION: "v0.22.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
 
       - name: Setup KinD cluster with internal registry
         working-directory: scripts
