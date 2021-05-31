@@ -18,6 +18,7 @@ type TestOpts struct {
 	TaskName    string
 	Clients     *kubernetes.Clients
 	Namespace   string
+	Timeout     time.Duration
 }
 
 type TestCase struct {
@@ -30,6 +31,11 @@ type TestCase struct {
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
+
+	// Set default timeout for running the test
+	if testOpts.Timeout == 0 {
+		testOpts.Timeout = 120 * time.Second
+	}
 
 	taskWorkspaces := map[string]string{}
 	for wn, wd := range tc.WorkspaceDirMapping {
@@ -66,8 +72,8 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	// Wait 2 minutes for task to complete.
-	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, 120*time.Second)
+	// Wait X minutes for task to complete.
+	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout)
 
 	// Show logs
 	CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf)
