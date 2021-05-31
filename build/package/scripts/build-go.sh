@@ -1,24 +1,12 @@
 #!/bin/bash
 set -eu
 
-ODS_PROJECT=""
-ODS_REPOSITORY=""
-ODS_GIT_COMMIT=""
 ENABLE_CGO="false"
 GO_OS=""
 GO_ARCH=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-
-    --project) ODS_PROJECT="$2"; shift;;
-    --project=*) ODS_PROJECT="${1#*=}";;
-
-    --repository) ODS_REPOSITORY="$2"; shift;;
-    --repository=*) ODS_REPOSITORY="${1#*=}";;
-
-    --git-commit) ODS_GIT_COMMIT="$2"; shift;;
-    --git-commit=*) ODS_GIT_COMMIT="${1#*=}";;
 
     --enable-cgo) ENABLE_CGO="$2"; shift;;
     --enable-cgo=*) ENABLE_CGO="${1#*=}";;
@@ -86,13 +74,8 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   if [ -f test-results.txt ]; then
       set -e
       go-junit-report < test-results.txt > build/test-results/test/report.xml
-      # nexus-upload \
-      #   -nexus-url=${NEXUS_URL} \
-      #   -nexus-user=${NEXUS_USERNAME} \
-      #   -nexus-password=${NEXUS_PASSWORD} \
-      #   -repository=${ODS_PROJECT} \
-      #   -group=/${ODS_REPOSITORY}/${ODS_GIT_COMMIT}/test-reports \
-      #   -file=build/test-results/test/report.xml || true
+      mkdir -p ./ods/artifacts/xunit-reports
+      cp build/test-results/test/report.xml ./ods/artifacts/xunit-reports/report.xml
   else
     echo "no test results found"
   fi

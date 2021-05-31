@@ -16,6 +16,7 @@ docker run -d --name ${CONTAINER_NAME} -e ELASTICSEARCH_ENABLED=false --net kind
 
 BITBUCKET_URL="http://localhost:${HOST_PORT}"
 echo "Waiting up to 3 minutes for Bitbucket to start ..."
+# https://confluence.atlassian.com/bitbucketserverkb/how-to-monitor-if-bitbucket-server-is-up-and-running-975014635.html
 n=0
 set +e
 until [ $n -ge 18 ]; do

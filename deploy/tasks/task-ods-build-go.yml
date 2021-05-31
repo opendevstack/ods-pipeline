@@ -34,40 +34,11 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - env:
-        - name: NEXUS_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: nexus
-        - name: NEXUS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: nexus-auth
-        - name: NEXUS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: nexus-auth
-      image: $(params.go-image)
+    - image: $(params.go-image)
       name: build-go-binary
       resources: {}
       script: |
-
-        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
-
-        odsProject=$(cat .ods/project)
-
-        odsRepository=$(cat .ods/repository)
-
-        odsGitCommit=$(cat .ods/git-commit)
-
-        echo "Run Go build"
         build-go \
-          --project=${odsProject} \
-          --repository=${odsRepository} \
-          --git-commit=${odsGitCommit} \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch)
