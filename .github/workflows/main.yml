@@ -46,15 +46,12 @@ jobs:
     env:
       TKN_VERSION: "v0.22.0"
     steps:
-      - name: Download Buildx Cache
+      - 
+        name: Download Buildx Cache
         uses: actions/download-artifact@v2
         with:
           name: buildx-cache
           path: /tmp/.buildx-cache-new
-      - 
-        name: Display structure of downloaded files
-        run: ls -R
-        working-directory: /tmp/.buildx-cache-new
       -
         name: Checkout
         uses: actions/checkout@v2
