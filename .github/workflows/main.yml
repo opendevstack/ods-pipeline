@@ -29,8 +29,8 @@ jobs:
         with:
           context: .
           push: false
-          file: build/package/Dockerfile.buildah
-          tags: localhost:5000/ods/buildah:latest
+          file: build/package/Dockerfile.${{ matrix.image }}
+          tags: localhost:5000/ods/${{ matrix.image }}:latest
           cache-to: type=local,dest=/tmp/.buildx-cache-new
       - 
         name: Upload Buildx Cache
