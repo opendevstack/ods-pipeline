@@ -4,3 +4,4 @@
 * Figure out best way to enter timebomb licenses in Bitbucket
 * Figure out how to create project in Bitbucket
 * Stream log output from task while it is running
+* Fail when test services are not up after 3 minutes

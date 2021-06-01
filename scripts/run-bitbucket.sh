@@ -9,10 +9,10 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 INSECURE=""
 BITBUCKET_SERVER_HOST_PORT="7990"
-BITBUCKET_SERVER_CONTAINER_NAME="bitbucket-server"
+BITBUCKET_SERVER_CONTAINER_NAME="bitbucket-server-test"
 BITBUCKET_SERVER_IMAGE_TAG="7.2"
-BITBUCKET_POSTGRES_HOST_PORT="7990"
-BITBUCKET_POSTGRES_CONTAINER_NAME="bitbucket-postgres"
+BITBUCKET_POSTGRES_HOST_PORT="5432"
+BITBUCKET_POSTGRES_CONTAINER_NAME="bitbucket-postgres-test"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
 K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-bitbucket-auth.yml"
 K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-bitbucket.yml"
@@ -21,7 +21,7 @@ K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-b
 echo "Run Postgres container"
 docker rm -f ${BITBUCKET_POSTGRES_CONTAINER_NAME} || true
 docker run  --name ${BITBUCKET_POSTGRES_CONTAINER_NAME} \
-  -v ${ODS_PIPELINE_DIR}/testdata/bitbucket.sql:/docker-entrypoint-initdb.d/init.sql \
+  -v ${ODS_PIPELINE_DIR}/test/testdata/bitbucket-sql:/docker-entrypoint-initdb.d \
   -e POSTGRES_PASSWORD=jellyfish -e POSTGRES_USER=bitbucketuser -e POSTGRES_DB=bitbucket \
   -d --net kind -p "${BITBUCKET_POSTGRES_HOST_PORT}:5432" \
   postgres:${BITBUCKET_POSTGRES_IMAGE_TAG}
@@ -48,14 +48,9 @@ until [ $n -ge 18 ]; do
         echo " success"
         break
     else
-        if [ "${health}" == "FIRST_RUN" ]; then
-            echo " up but still needs setup"
-            break
-        else
-            echo -n "."
-            sleep 10s
-            n=$((n+1))
-        fi
+        echo -n "."
+        sleep 10s
+        n=$((n+1))
     fi
 done
 set -e
