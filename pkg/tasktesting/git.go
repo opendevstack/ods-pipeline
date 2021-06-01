@@ -31,6 +31,14 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
 	if err != nil {
 		t.Fatalf("error running git init: %s, stderr: %s", err, stderr)
 	}
+	_, stderr, err = command.Run("git", []string{"config", "user.email", "testing@opendevstack.org"})
+	if err != nil {
+		t.Fatalf("error running git config.user.email: %s, stderr: %s", err, stderr)
+	}
+	_, stderr, err = command.Run("git", []string{"config", "user.name", "testing"})
+	if err != nil {
+		t.Fatalf("error running git config.user.name: %s, stderr: %s", err, stderr)
+	}
 	_, stderr, err = command.Run("git", []string{"add", "."})
 	if err != nil {
 		t.Fatalf("error running git add: %s, stderr: %s", err, stderr)
