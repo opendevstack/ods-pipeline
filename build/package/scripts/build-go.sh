@@ -74,8 +74,8 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   if [ -f test-results.txt ]; then
       set -e
       go-junit-report < test-results.txt > build/test-results/test/report.xml
-      mkdir -p ./ods/artifacts/xunit-reports
-      cp build/test-results/test/report.xml ./ods/artifacts/xunit-reports/report.xml
+      mkdir -p .ods/artifacts/xunit-reports
+      cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
   else
     echo "no test results found"
   fi
