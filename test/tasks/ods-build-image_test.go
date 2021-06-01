@@ -40,32 +40,27 @@ func TestTaskODSBuildImage(t *testing.T) {
 			WantSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
-
-				wantFiles := []string{
-					".ods/artifacts/image-digests/hello-world.json",
-				}
-				for _, wf := range wantFiles {
-					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-						t.Fatalf("Want %s, but got nothing", wf)
-					}
-				}
-
-				sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				stdout, stderr, err := command.Run("docker", []string{
-					"run", "--rm",
-					fmt.Sprintf("localhost:5000/%s/hello-world:%s", ns, sha),
-				})
-				if err != nil {
-					t.Fatalf("could not run resultind docker container: %s, stderr: %s", err, string(stderr))
-				}
-				got := strings.TrimSpace(string(stdout))
-				want := "Hello World"
-				if got != want {
-					t.Fatalf("Want %s, but got %s", want, got)
-				}
+				checkResultingFiles(t, wsDir)
+				checkResultingImage(t, ns, wsDir)
+			},
+		},
+		"task should reuse existing image": {
+			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+			Params: map[string]string{
+				"registry":      "kind-registry.kind:5000",
+				"builder-image": "localhost:5000/ods/buildah:latest",
+				"tls-verify":    "false",
+			},
+			WantSuccess: true,
+			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
+				wsDir := workspaces["source"]
+				buildAndPushImage(t, ns, wsDir)
+			},
+			CheckFunc: func(t *testing.T, workspaces map[string]string) {
+				wsDir := workspaces["source"]
+				checkResultingFiles(t, wsDir)
+				checkResultingImage(t, ns, wsDir)
+				// TODO: actually check that we did not rebuild the image ...
 			},
 		},
 	}
@@ -85,6 +80,56 @@ func TestTaskODSBuildImage(t *testing.T) {
 		})
 
 	}
+}
+
+func buildAndPushImage(t *testing.T, ns, wsDir string) {
+	tag := getDockerImageTag(t, ns, wsDir)
+	_, stderr, err := command.Run("docker", []string{
+		"build", "-t", tag, filepath.Join(wsDir, "docker"),
+	})
+	if err != nil {
+		t.Fatalf("could not build image: %s, stderr: %s", err, string(stderr))
+	}
+	_, stderr, err = command.Run("docker", []string{
+		"push", tag,
+	})
+	if err != nil {
+		t.Fatalf("could not push image: %s, stderr: %s", err, string(stderr))
+	}
+}
+
+func checkResultingFiles(t *testing.T, wsDir string) {
+	wantFiles := []string{
+		".ods/artifacts/image-digests/hello-world.json",
+	}
+	for _, wf := range wantFiles {
+		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
+			t.Fatalf("Want %s, but got nothing", wf)
+		}
+	}
+}
+
+func checkResultingImage(t *testing.T, ns, wsDir string) {
+	stdout, stderr, err := command.Run("docker", []string{
+		"run", "--rm",
+		getDockerImageTag(t, ns, wsDir),
+	})
+	if err != nil {
+		t.Fatalf("could not run built image: %s, stderr: %s", err, string(stderr))
+	}
+	got := strings.TrimSpace(string(stdout))
+	want := "Hello World"
+	if got != want {
+		t.Fatalf("Want %s, but got %s", want, got)
+	}
+}
+
+func getDockerImageTag(t *testing.T, ns, wsDir string) string {
+	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit"))
+	if err != nil {
+		t.Fatalf("could not read git-commit: %s", err)
+	}
+	return fmt.Sprintf("localhost:5000/%s/hello-world:%s", ns, sha)
 }
 
 func getTrimmedFileContent(filename string) (string, error) {
