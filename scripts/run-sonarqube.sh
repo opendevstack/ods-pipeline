@@ -43,6 +43,7 @@ docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_D
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
 echo "Waiting up to 3 minutes for SonarQube to start ..."
 n=0
+health="RED"
 set +e
 until [ $n -ge 18 ]; do
     health=$(curl -s ${INSECURE} --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
@@ -57,6 +58,10 @@ until [ $n -ge 18 ]; do
     fi
 done
 set -e
+if [ "${health}" != "GREEN" ]; then
+    echo "SonarQube did not start, got health=${health}."
+    exit 1
+fi
 
 echo "Creating token for '${SONAR_USERNAME}' ..."
 tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \

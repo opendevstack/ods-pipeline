@@ -34,11 +34,11 @@ NEXUS_URL="http://localhost:${HOST_PORT}"
 function waitForReady {
     echo "Waiting up to 3 minutes for Nexus to start ..."
     local n=0
-    local httpOk=
+    local http_code=
     set +e
     until [ $n -ge 18 ]; do
-        httpOk=$(curl ${INSECURE} -s -o /dev/null -w "%{http_code}" "${NEXUS_URL}/service/rest/v1/status/writable")
-        if [ "${httpOk}" == "200" ]; then
+        http_code=$(curl ${INSECURE} -s -o /dev/null -w "%{http_code}" "${NEXUS_URL}/service/rest/v1/status/writable")
+        if [ "${http_code}" == "200" ]; then
             echo " success"
             break
         else
@@ -49,8 +49,8 @@ function waitForReady {
     done
     set -e
 
-    if [ "${httpOk}" != "200" ]; then
-        echo "Nexus did not start, got HTTP code ${httpOk}."
+    if [ "${http_code}" != "200" ]; then
+        echo "Nexus did not start, got http_code=${http_code}."
         exit 1
     fi
 }
