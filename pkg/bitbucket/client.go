@@ -41,8 +41,9 @@ func NewClient(clientConfig *ClientConfig) *Client {
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
-	c.clientConfig.Logger.Debugf("GET %s", urlPath)
-	req, err := http.NewRequest("GET", c.clientConfig.BaseURL+urlPath, nil)
+	u := c.clientConfig.BaseURL + urlPath
+	c.clientConfig.Logger.Debugf("GET %s", u)
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}
@@ -58,8 +59,9 @@ func (c *Client) get(urlPath string) (int, []byte, error) {
 }
 
 func (c *Client) post(urlPath string, payload []byte) (int, []byte, error) {
-	c.clientConfig.Logger.Debugf("POST %s", urlPath)
-	req, err := http.NewRequest("POST", c.clientConfig.BaseURL+urlPath, bytes.NewReader(payload))
+	u := c.clientConfig.BaseURL + urlPath
+	c.clientConfig.Logger.Debugf("POST %s", u)
+	req, err := http.NewRequest("POST", u, bytes.NewReader(payload))
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}

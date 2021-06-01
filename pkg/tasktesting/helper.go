@@ -1,14 +1,13 @@
 package tasktesting
 
 import (
-	"bytes"
 	"context"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strings"
 	"testing"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -56,24 +55,13 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 
 func applyYAMLFilesInDir(t *testing.T, ns string, fileDir string) {
 
-	stdout, stderr, err := runCmd("kubectl", []string{"-n", ns, "apply", "-f", fileDir})
+	stdout, stderr, err := command.Run("kubectl", []string{"-n", ns, "apply", "-f", fileDir})
 
 	t.Logf(string(stdout))
 	t.Logf(string(stderr))
 	if err != nil {
 		t.Error(err)
 	}
-}
-
-func runCmd(executable string, args []string) (outBytes, errBytes []byte, err error) {
-	cmd := exec.Command(executable, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
 }
 
 func Header(logf logging.FormatLogger, text string) {

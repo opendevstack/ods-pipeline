@@ -1,12 +1,12 @@
 package sonar
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
 	"time"
+
+	"github.com/opendevstack/pipeline/pkg/logging"
 )
 
 // Loosely based on https://github.com/brandur/wanikaniapi.
@@ -23,12 +23,17 @@ type ClientConfig struct {
 	BaseURL       string
 	ServerEdition string
 	Debug         bool
+	// Logger is the logger to send logging messages to.
+	Logger logging.LeveledLoggerInterface
 }
 
 func NewClient(clientConfig *ClientConfig) *Client {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 10 * time.Second}
+	}
+	if clientConfig.Logger == nil {
+		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
 	return &Client{
 		httpClient:   httpClient,
@@ -37,7 +42,9 @@ func NewClient(clientConfig *ClientConfig) *Client {
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
-	req, err := http.NewRequest("GET", c.clientConfig.BaseURL+urlPath, nil)
+	u := c.clientConfig.BaseURL + urlPath
+	c.clientConfig.Logger.Debugf("GET %s", u)
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}
@@ -56,15 +63,4 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.clientConfig.APIToken)
 	return c.httpClient.Do(req)
-}
-
-func runCmd(executable string, args []string) (outBytes, errBytes []byte, err error) {
-	cmd := exec.Command(executable, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
 }

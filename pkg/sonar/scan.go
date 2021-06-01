@@ -2,6 +2,8 @@ package sonar
 
 import (
 	"fmt"
+
+	"github.com/opendevstack/pipeline/internal/command"
 )
 
 type BitbucketServer struct {
@@ -46,7 +48,7 @@ func (c *Client) Scan(project, branch, commit string, bb *BitbucketServer, pr *P
 
 	fmt.Printf("scan params: %v", scannerParams)
 	scannerParams = append(scannerParams, fmt.Sprintf("-Dsonar.login=%s", c.clientConfig.APIToken))
-	stdout, stderr, err := runCmd("sonar-scanner", scannerParams)
+	stdout, stderr, err := command.Run("sonar-scanner", scannerParams)
 	if err != nil {
 		fmt.Println(string(stdout))
 		fmt.Println(string(stderr))
