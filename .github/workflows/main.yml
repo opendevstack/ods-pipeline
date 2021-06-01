@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah"] #, "go-toolset", "helm", "interceptor", "sonar"
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
     steps:
       -
         name: Checkout
@@ -80,6 +80,24 @@ jobs:
           file: build/package/Dockerfile.buildah
           tags: localhost:5000/ods/buildah:latest
           cache-from: type=local,src=/tmp/.buildx-cache-new
+      -
+        name: Push go-toolset
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.go-toolset
+          tags: localhost:5000/ods/go-toolset:latest
+          cache-from: type=local,src=/tmp/.buildx-cache-new
+      -
+        name: Push sonar
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.sonar
+          tags: localhost:5000/ods/sonar:latest
+          cache-from: type=local,src=/tmp/.buildx-cache-new          
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
