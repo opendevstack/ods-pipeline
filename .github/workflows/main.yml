@@ -41,22 +41,22 @@ jobs:
           push: true
           file: build/package/Dockerfile.go-toolset
           tags: localhost:5000/ods/go-toolset:latest
-      -
-        name: Build & Push helm
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.helm
-          tags: localhost:5000/ods/helm:latest
-      -
-        name: Build & Push interceptor
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.interceptor
-          tags: localhost:5000/ods/interceptor:latest
+      # -
+      #   name: Build & Push helm
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     push: true
+      #     file: build/package/Dockerfile.helm
+      #     tags: localhost:5000/ods/helm:latest
+      # -
+      #   name: Build & Push interceptor
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     push: true
+      #     file: build/package/Dockerfile.interceptor
+      #     tags: localhost:5000/ods/interceptor:latest
       -
         name: Build & Push sonar
         uses: docker/build-push-action@v2
