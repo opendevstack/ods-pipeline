@@ -65,9 +65,7 @@ spec:
 
         set +e
 
-        imageDigest=$(oc -n $odsNamespace get istag \
-        $imageStream:$odsGitCommit \
-        -ojsonpath='{.image.metadata.name}' 2> /dev/null)
+        imageDigest=$(skopeo inspect --format '{{.Digest}}' --tls-verify=$(params.tls-verify) docker://kind-registry.kind:5000/$odsNamespace/$imageStream:$odsGitCommit)
 
         if [ "$?" = "0" ]; then
           set -e
