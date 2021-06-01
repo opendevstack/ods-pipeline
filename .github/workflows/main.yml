@@ -12,6 +12,11 @@ jobs:
         image: ["buildah"] #, "go-toolset", "helm", "interceptor", "sonar"
     steps:
       -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
         with:
