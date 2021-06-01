@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -15,28 +16,28 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
-func InitAndCommit(wsDir string) error {
+func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		t.Fatalf("could not get current working directory: %s", err)
 	}
 	defer os.Chdir(cwd)
 	os.Chdir(wsDir)
 	err = writeFile(".gitignore", ".ods/")
 	if err != nil {
-		return err
+		t.Fatalf("could not write .gitignore: %s", err)
 	}
-	_, _, err = command.Run("git", []string{"init"})
+	_, stderr, err := command.Run("git", []string{"init"})
 	if err != nil {
-		return err
+		t.Fatalf("error running git init: %s, stderr: %s", err, stderr)
 	}
-	_, _, err = command.Run("git", []string{"add", "."})
+	_, stderr, err = command.Run("git", []string{"add", "."})
 	if err != nil {
-		return err
+		t.Fatalf("error running git add: %s, stderr: %s", err, stderr)
 	}
-	_, _, err = command.Run("git", []string{"commit", "-m", "initial commit"})
+	_, stderr, err = command.Run("git", []string{"commit", "-m", "initial commit"})
 	if err != nil {
-		return err
+		t.Fatalf("error running git commit: %s, stderr: %s", err, stderr)
 	}
 	return nil
 }

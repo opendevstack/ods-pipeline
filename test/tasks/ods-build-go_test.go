@@ -33,7 +33,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				os.Chdir(wsDir)
-				err := tasktesting.InitAndCommit(wsDir)
+				err := tasktesting.InitAndCommitOrFatal(t, wsDir)
 				if err != nil {
 					t.Fatal(err)
 				}
