@@ -91,18 +91,18 @@ spec:
       name: push-image
       resources: {}
       script: |
+        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+
+        odsGitCommit=$(cat .ods/git-commit)
+
+        imageStreamParam="$(params.image-stream)"
+        imageStream=${imageStreamParam:-$(cat .ods/component)}
+
+        image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
+
         if cat /tekton/results/image-digest &> /dev/null; then
           echo "Image exists already"
         else
-          odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
-
-          odsGitCommit=$(cat .ods/git-commit)
-
-          imageStreamParam="$(params.image-stream)"
-          imageStream=${imageStreamParam:-$(cat .ods/component)}
-
-          image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
-
           buildah --storage-driver=$(params.storage-driver) push \
             $(params.buildah-push-extra-args) --tls-verify=$(params.tls-verify) \
             --digestfile $(workspaces.source.path)/image-digest $image \
@@ -110,11 +110,9 @@ spec:
           
           mkdir -p /tekton/results
           cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
-
-          mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
-          cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/$imageStream.json
-          cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
         fi
+        mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
+        cp /tekton/results/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream
       securityContext:
         privileged: true
       volumeMounts:
