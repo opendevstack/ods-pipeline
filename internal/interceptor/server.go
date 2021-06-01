@@ -22,14 +22,14 @@ import (
 
 // Server represents this service, and is a global.
 type Server struct {
-	Client    Client
-	Namespace string
-	Project   string
-	RepoBase  string
-	Token     string
+	OpenShiftClient Client
+	Namespace       string
+	Project         string
+	RepoBase        string
+	Token           string
+	BitbucketClient *bitbucket.Client
 }
 
-// PipelineData represents the data to be rendered into the pipeline template.
 type PipelineData struct {
 	Name            string `json:"name"`
 	ResourceVersion int    `json:"resourceVersion"`
@@ -55,12 +55,19 @@ func init() {
 
 // NewServer returns a new server.
 func NewServer(client Client, namespace string, project string, repoBase string, token string) *Server {
+	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+		Timeout:    10 * time.Second,
+		APIToken:   token,
+		MaxRetries: 2,
+		BaseURL:    strings.TrimSuffix(repoBase, "/scm"),
+	})
 	return &Server{
-		Client:    client,
-		Namespace: namespace,
-		Project:   project,
-		RepoBase:  repoBase,
-		Token:     token,
+		OpenShiftClient: client,
+		Namespace:       namespace,
+		Project:         project,
+		RepoBase:        repoBase,
+		Token:           token,
+		BitbucketClient: bitbucketClient,
 	}
 }
 
@@ -98,20 +105,25 @@ type requestBitbucket struct {
 
 // HandleRoot handles all requests to this service.
 func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
+
+	// read request body into Go object
+	// extract pipeline data
+	// extend body with data
+	// create/update pipeline
+
 	requestID := randStringBytes(6)
 	log.Println(requestID, "---START---")
-
-	req := &requestBitbucket{}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println(requestID, err.Error())
-		http.Error(w, "Could not read body", http.StatusInternalServerError)
+		http.Error(w, "could not read body", http.StatusInternalServerError)
 		return
 	}
 
+	req := &requestBitbucket{}
 	if err := json.Unmarshal(body, &req); err != nil {
-		msg := fmt.Sprintf("Cannot parse JSON: %s", err)
+		msg := fmt.Sprintf("cannot parse JSON: %s", err)
 		log.Println(requestID, msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
@@ -121,6 +133,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	var gitRef string
 	var gitFullRef string
 	var project string
+	var projectParam string
 	var component string
 	var commitSHA string
 	commentText := ""
@@ -131,24 +144,18 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		gitRef = strings.ToLower(change.Ref.DisplayID)
 		gitFullRef = change.Ref.ID
 
-		proj, err := s.readProjectParam(req.Repository.Project.Key, requestID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		project = proj
+		projectParam = req.Repository.Project.Key
 		commitSHA = change.ToHash
 	} else if strings.HasPrefix(req.EventKey, "pr:") {
 		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
 		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
 		gitFullRef = req.PullRequest.FromRef.ID
 
-		proj, err := s.readProjectParam(req.PullRequest.FromRef.Repository.Project.Key, requestID)
+		projectParam = req.PullRequest.FromRef.Repository.Project.Key
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		project = proj
 		if req.Comment != nil {
 			commentText = req.Comment.Text
 		}
@@ -160,6 +167,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	project = determineProject(s.Project, projectParam)
 	component = strings.TrimPrefix(repo, project+"-")
 
 	gitURI := fmt.Sprintf(
@@ -170,7 +178,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	)
 
 	pipelineName := makePipelineName(component, gitRef)
-	resourceVersion, err := s.Client.GetPipelineResourceVersion(pipelineName)
+	resourceVersion, err := s.OpenShiftClient.GetPipelineResourceVersion(pipelineName)
 	if err != nil {
 		msg := "Could not retrieve pipeline resourceVersion"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -194,35 +202,26 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		Comment:         commentText,
 	}
 
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   s.Token,
-		MaxRetries: 2,
-		BaseURL:    strings.TrimSuffix(pData.RepoBase, "/scm"),
-	})
-
 	if len(commitSHA) == 0 {
-		commitList, err := bitbucketClient.CommitList(pData.Project, pData.Repository, bitbucket.CommitListParams{
-			Until: pData.GitFullRef,
-		})
+		csha, err := getCommitSHA(s.BitbucketClient, pData.Project, pData.Repository, pData.GitFullRef)
 		if err != nil {
-			msg := "Could not get commit list"
+			msg := "could not get commit SHA"
 			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		commitSHA = commitList.Values[0].ID
+		commitSHA = csha
 	}
 	pData.GitSHA = commitSHA
 
-	skip := shouldSkip(bitbucketClient, pData.Project, pData.Repository, commitSHA)
+	skip := shouldSkip(s.BitbucketClient, pData.Project, pData.Repository, commitSHA)
 	if skip {
 		msg := "Commit should be skipped"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 		http.Error(w, msg, http.StatusNoContent)
 		return
 	}
-	prInfo, err := extractPullRequestInfo(bitbucketClient, pData.Project, pData.Repository, commitSHA)
+	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pData.Project, pData.Repository, commitSHA)
 	if err != nil {
 		msg := "Could not extract PR info"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -249,7 +248,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	phasesList, err := s.collectPhasesList(bitbucketClient, pData)
+	phasesList, err := s.collectPhasesList(s.BitbucketClient, pData)
 	if err != nil {
 		msg := "Could not collect phases list"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -273,13 +272,23 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createStatusCode, createErr := s.Client.ApplyPipeline(jsonBytes, pData)
+	createStatusCode, createErr := s.OpenShiftClient.ApplyPipeline(jsonBytes, pData)
 	if createErr != nil {
 		msg := "Could not create/update pipeline"
 		log.Println(requestID, fmt.Sprintf("%s [%d]: %s", msg, createStatusCode, createErr))
 		http.Error(w, msg, createStatusCode)
 		return
 	}
+}
+
+func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (string, error) {
+	commitList, err := bitbucketClient.CommitList(project, repository, bitbucket.CommitListParams{
+		Until: gitFullRef,
+	})
+	if err != nil {
+		return "", fmt.Errorf("could not get commit list: %w", err)
+	}
+	return commitList.Values[0].ID, nil
 }
 
 func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef, filename string) (*config.ODS, error) {
@@ -333,12 +342,12 @@ func (s *Server) collectPhasesList(bitbucketClient *bitbucket.Client, pData Pipe
 	return phasesList, nil
 }
 
-func (s *Server) readProjectParam(projectParam string, requestID string) (string, error) {
+func determineProject(serverProject string, projectParam string) string {
 	projectParam = strings.ToLower(projectParam)
 	if len(projectParam) > 0 {
-		return projectParam, nil
+		return projectParam
 	}
-	return strings.ToLower(s.Project), nil
+	return strings.ToLower(serverProject)
 }
 
 func extendBodyWithExtensions(body []byte, data PipelineData) ([]byte, error) {
