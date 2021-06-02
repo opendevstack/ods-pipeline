@@ -36,7 +36,7 @@ jobs:
         name: Upload Buildx Cache
         uses: actions/upload-artifact@v2
         with:
-          name: buildx-cache
+          name: buildx-cache-${{ matrix.image }}
           path: /tmp/.buildx-cache-new
           
   pipeline-tests:
@@ -47,10 +47,13 @@ jobs:
       TKN_VERSION: "v0.22.0"
     steps:
       - 
+        name: Display structure of downloaded files
+        run: |
+          ls -R /tmp/.buildx-cache-new
+      - 
         name: Download Buildx Cache
         uses: actions/download-artifact@v2
         with:
-          name: buildx-cache
           path: /tmp/.buildx-cache-new
       -
         name: Checkout
