@@ -14,11 +14,12 @@ import (
 )
 
 type TestOpts struct {
-	TaskKindRef string
-	TaskName    string
-	Clients     *kubernetes.Clients
-	Namespace   string
-	Timeout     time.Duration
+	TaskKindRef             string
+	TaskName                string
+	Clients                 *kubernetes.Clients
+	Namespace               string
+	Timeout                 time.Duration
+	AlwaysKeepTmpWorkspaces bool
 }
 
 type TestCase struct {
@@ -89,11 +90,13 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	// Check local folder and evaluate output of task if needed
 	tc.CheckFunc(t, taskWorkspaces)
 
-	// Clean up only if test is successful
-	for _, wd := range taskWorkspaces {
-		err = os.RemoveAll(wd)
-		if err != nil {
-			t.Fatal(err)
+	if !testOpts.AlwaysKeepTmpWorkspaces {
+		// Clean up only if test is successful
+		for _, wd := range taskWorkspaces {
+			err = os.RemoveAll(wd)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }

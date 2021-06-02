@@ -125,4 +125,4 @@ jobs:
           go-version: 1.15
       -
         name: Run tests
-        run: go test -v ./test/...
+        run: go test -v ./test/... -always-keep-tmp-workspaces

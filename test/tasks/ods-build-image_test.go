@@ -70,11 +70,12 @@ func TestTaskODSBuildImage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef: "ClusterTask",          // could be read from task definition
-				TaskName:    "ods-build-image-v0-1", // could be read from task definition
-				Clients:     c,
-				Namespace:   ns,
-				Timeout:     5 * time.Minute, // depending on  the task we may need to increase or decrease it
+				TaskKindRef:             "ClusterTask",          // could be read from task definition
+				TaskName:                "ods-build-image-v0-1", // could be read from task definition
+				Clients:                 c,
+				Namespace:               ns,
+				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
+				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
 			})
 
 		})
