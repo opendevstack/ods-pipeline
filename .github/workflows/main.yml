@@ -31,7 +31,7 @@ jobs:
           push: false
           file: build/package/Dockerfile.${{ matrix.image }}
           tags: localhost:5000/ods/${{ matrix.image }}:latest
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=min
       - 
         name: Upload Buildx Cache
         uses: actions/upload-artifact@v2
