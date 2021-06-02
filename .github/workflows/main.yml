@@ -47,10 +47,6 @@ jobs:
       TKN_VERSION: "v0.22.0"
     steps:
       - 
-        name: Display structure of downloaded files
-        run: |
-          ls -R /tmp/.buildx-cache-new
-      - 
         name: Download Buildx Cache
         uses: actions/download-artifact@v2
         with:
