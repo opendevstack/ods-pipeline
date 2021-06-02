@@ -13,8 +13,7 @@ jobs:
         name: Fix permissions
         # See https://github.com/actions/checkout/issues/211.
         run: |
-          pwd
-          sudo chown -R $USER:$USER /home/github/actions-runner/_work/ods-pipeline
+          sudo chown -R $USER:$USER /home/runner/work/ods-pipeline/ods-pipeline
       -
         name: Checkout
         uses: actions/checkout@v2
