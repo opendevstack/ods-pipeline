@@ -6,7 +6,7 @@
 
 ODS provides CI/CD pipeline support based on OpenShift Pipelines. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
 
-The "user perspective" of what the ODS pipeline is and how it works is described in https://github.com/michaelsauter/ods-pipeline/wiki. It is important to understand this before looking at this repository, which is the actual "plumbing".
+The "user perspective" of what the ODS pipeline is and how it works is described in the [ODS Pipeline Introduction](/docs/introduction.adoc). It is important to understand this before looking at this repository, which is the actual "plumbing".
 
 ## How is this repository organized?
 

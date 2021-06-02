@@ -12,7 +12,7 @@ DEVELOPER_USERNAME="developer"
 DEVELOPER_PASSWORD="s3cr3t"
 NEXUS_URL=
 CONTAINER_NAME="nexustest"
-NEXUS_IMAGE_TAG="3.27.0"
+NEXUS_IMAGE_TAG="3.30.1"
 K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-nexus-auth.yml"
 K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-nexus.yml"
 
