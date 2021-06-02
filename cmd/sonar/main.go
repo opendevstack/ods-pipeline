@@ -118,10 +118,11 @@ func main() {
 	fmt.Printf("prBase=%s\n", prBase)
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *sonarAuthTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *sonarqubeURLFlag,
+		Timeout:       10 * time.Second,
+		APIToken:      *sonarAuthTokenFlag,
+		MaxRetries:    2,
+		BaseURL:       *sonarqubeURLFlag,
+		ServerEdition: "community",
 	})
 
 	sonarProject := fmt.Sprintf("%s-%s", project, component)

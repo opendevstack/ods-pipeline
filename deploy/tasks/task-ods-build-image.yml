@@ -65,9 +65,7 @@ spec:
 
         set +e
 
-        imageDigest=$(oc -n $odsNamespace get istag \
-        $imageStream:$odsGitCommit \
-        -ojsonpath='{.image.metadata.name}' 2> /dev/null)
+        imageDigest=$(skopeo inspect --format '{{.Digest}}' --tls-verify=$(params.tls-verify) docker://kind-registry.kind:5000/$odsNamespace/$imageStream:$odsGitCommit)
 
         if [ "$?" = "0" ]; then
           set -e
@@ -89,42 +87,22 @@ spec:
         - mountPath: /var/lib/containers
           name: varlibcontainers
       workingDir: $(workspaces.source.path)
-    - env:
-        - name: NEXUS_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: nexus
-        - name: NEXUS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: nexus-user
-        - name: NEXUS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: nexus-user
-      image: $(params.builder-image)
+    - image: $(params.builder-image)
       name: push-image
       resources: {}
       script: |
+        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+
+        odsGitCommit=$(cat .ods/git-commit)
+
+        imageStreamParam="$(params.image-stream)"
+        imageStream=${imageStreamParam:-$(cat .ods/component)}
+
+        image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
+
         if cat /tekton/results/image-digest &> /dev/null; then
           echo "Image exists already"
         else
-          odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
-
-          odsProject=$(cat .ods/project)
-
-          odsRepository=$(cat .ods/repository)
-
-          odsGitCommit=$(cat .ods/git-commit)
-
-          imageStreamParam="$(params.image-stream)"
-          imageStream=${imageStreamParam:-$(cat .ods/component)}
-
-          image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
-
           buildah --storage-driver=$(params.storage-driver) push \
             $(params.buildah-push-extra-args) --tls-verify=$(params.tls-verify) \
             --digestfile $(workspaces.source.path)/image-digest $image \
@@ -132,18 +110,9 @@ spec:
           
           mkdir -p /tekton/results
           cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
-
-          mkdir -p $(workspaces.source.path)/.ods
-          cp $(workspaces.source.path)/image-digest $(workspaces.source.path)/.ods/$imageStream.json
-          
-          nexus-upload \
-            -nexus-url=$NEXUS_URL \
-            -nexus-user=$NEXUS_USERNAME \
-            -nexus-password=$NEXUS_PASSWORD \
-            -repository=$odsProject \
-            -group=/$odsRepository/$odsGitCommit/image-digests \
-            -file=$(workspaces.source.path)/.ods/$imageStream.json
         fi
+        mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
+        cp /tekton/results/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream
       securityContext:
         privileged: true
       volumeMounts:

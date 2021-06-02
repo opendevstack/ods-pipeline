@@ -1,29 +1,36 @@
 #!/bin/bash
 set -eu
 
-ODS_PROJECT=""
-ODS_REPOSITORY=""
-ODS_GIT_COMMIT=""
+ENABLE_CGO="false"
+GO_OS=""
+GO_ARCH=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
-    --project) ODS_PROJECT="$2"; shift;;
-    --project=*) ODS_PROJECT="${1#*=}";;
+    --enable-cgo) ENABLE_CGO="$2"; shift;;
+    --enable-cgo=*) ENABLE_CGO="${1#*=}";;
 
-    --repository) ODS_REPOSITORY="$2"; shift;;
-    --repository=*) ODS_REPOSITORY="${1#*=}";;
+    --go-os) GO_OS="$2"; shift;;
+    --go-os=*) GO_OS="${1#*=}";;
 
-    --git-commit) ODS_GIT_COMMIT="$2"; shift;;
-    --git-commit=*) ODS_GIT_COMMIT="${1#*=}";;
+    --go-arch) GO_ARCH="$2"; shift;;
+    --go-arch=*) GO_ARCH="${1#*=}";;
 
-  *) echo_error "Unknown parameter passed: $1"; exit 1;;
+  *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 echo "Run Go build"
-# TODO: CGO might be required at times - we need to make this configurable.
-export CGO_ENABLED=0
 go version
+if [ "${ENABLE_CGO}" = "false" ]; then
+  export CGO_ENABLED=0
+fi
+if [ -n "${GO_OS}" ]; then
+  export GOOS="${GO_OS}"
+fi
+if [ -n "${GO_ARCH}" ]; then
+  export GOARCH="${GO_ARCH}"
+fi
 
 echo "Check format"
 make -q ci-checkfmt &> /dev/null || makeErrorCode=$?
@@ -51,7 +58,7 @@ fi
 echo "Build"
 make -q ci-build &> /dev/null || makeErrorCode=$?
 if [ "${makeErrorCode}" -eq 2 ]; then
-  go build -o docker/app-linux-amd64
+  go build -o docker/app
 else
   make ci-build
 fi
@@ -67,13 +74,8 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   if [ -f test-results.txt ]; then
       set -e
       go-junit-report < test-results.txt > build/test-results/test/report.xml
-      nexus-upload \
-        -nexus-url=${NEXUS_URL} \
-        -nexus-user=${NEXUS_USERNAME} \
-        -nexus-password=${NEXUS_PASSWORD} \
-        -repository=${ODS_PROJECT} \
-        -group=/${ODS_REPOSITORY}/${ODS_GIT_COMMIT}/test-reports \
-        -file=build/test-results/test/report.xml || true
+      mkdir -p .ods/artifacts/xunit-reports
+      cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
   else
     echo "no test results found"
   fi

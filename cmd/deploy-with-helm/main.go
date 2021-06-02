@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"sigs.k8s.io/yaml"
@@ -167,7 +166,7 @@ func main() {
 		fmt.Printf("destRegistry=%s\n", destImageStreamUrl)
 		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
 		// matches the SHA referenced by the Git commit tag.
-		stdout, stderr, err := runCmd(
+		stdout, stderr, err := command.Run(
 			"skopeo",
 			[]string{
 				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
@@ -187,7 +186,7 @@ func main() {
 
 	fmt.Println("list helm plugins...")
 
-	stdout, stderr, err := runCmd(
+	stdout, stderr, err := command.Run(
 		"helm",
 		[]string{
 			"plugin",
@@ -232,7 +231,7 @@ func main() {
 	fmt.Println("packaging helm chart ...")
 	chartVersion, err := getChartVersion(filepath.Join(*chartDir, "Chart.yaml"))
 	check(err)
-	_, _, err = runCmd(
+	_, _, err = command.Run(
 		"helm",
 		[]string{
 			"package",
@@ -254,7 +253,7 @@ func main() {
 	}
 
 	fmt.Printf("diffing helm release against %s...\n", helmArchive)
-	stdout, stderr, err = runCmd(
+	stdout, stderr, err = command.Run(
 		"helm",
 		[]string{
 			"--namespace=" + releaseNamespace,
@@ -277,7 +276,7 @@ func main() {
 	}
 
 	fmt.Printf("upgrading helm release to %s...\n", helmArchive)
-	stdout, stderr, err = runCmd(
+	stdout, stderr, err = command.Run(
 		"helm",
 		[]string{
 			"--namespace=" + releaseNamespace,
@@ -317,17 +316,6 @@ func getGitCommitSHAInDir(refSpec string, dir string) (string, error) {
 
 func getGitRepository() (string, error) {
 	return getTrimmedFileContent(".ods/repository")
-}
-
-func runCmd(executable string, args []string) (outBytes, errBytes []byte, err error) {
-	cmd := exec.Command(executable, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
 }
 
 func getConfig(filename string) (config.ODS, error) {
@@ -399,7 +387,7 @@ func getHelmArchive(name string) (string, error) {
 }
 
 func getImageStreamUrl(namespace, imageStream string) (string, error) {
-	stdout, _, err := runCmd(
+	stdout, _, err := command.Run(
 		"oc",
 		[]string{
 			"--namespace=" + namespace,

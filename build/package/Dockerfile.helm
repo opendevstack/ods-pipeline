@@ -57,8 +57,6 @@ COPY go.* /etc/go/
 COPY cmd /etc/go/cmd
 COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
-RUN cd /etc/go/cmd/nexus-upload && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-upload
-RUN cd /etc/go/cmd/nexus-download && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-download
 RUN cd /etc/go/cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
 
 WORKDIR /go

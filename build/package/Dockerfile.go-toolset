@@ -22,15 +22,6 @@ RUN go get -u github.com/jstemmer/go-junit-report
 
 RUN chmod g+w /go
 
-# Add Go binaries
-RUN mkdir -p /etc/go
-COPY go.* /etc/go/
-COPY cmd /etc/go/cmd
-COPY internal /etc/go/internal
-COPY pkg /etc/go/pkg
-RUN cd /etc/go/cmd/nexus-upload && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-upload
-RUN cd /etc/go/cmd/nexus-download && CGO_ENABLED=0 go build -o /usr/local/bin/nexus-download
-
 # Add scripts
 COPY build/package/scripts/build-go.sh /usr/local/bin/build-go
 RUN chmod +x /usr/local/bin/build-go

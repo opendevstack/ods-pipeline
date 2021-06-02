@@ -1,6 +1,10 @@
 package sonar
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/opendevstack/pipeline/internal/command"
+)
 
 func (c *Client) GenerateReport(project, author, branch string) (string, error) {
 	reportParams := []string{
@@ -11,7 +15,7 @@ func (c *Client) GenerateReport(project, author, branch string) (string, error) 
 		"-a", author,
 		branch,
 	}
-	stdout, stderr, err := runCmd("java", reportParams)
+	stdout, stderr, err := command.Run("java", reportParams)
 	if err != nil {
 		fmt.Println(string(stdout))
 		fmt.Println(string(stderr))
