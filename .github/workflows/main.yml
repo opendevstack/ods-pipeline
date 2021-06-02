@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "go-toolset", "sonar"]
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
     steps:
       -
         name: Checkout
