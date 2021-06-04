@@ -55,15 +55,17 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 	}
 }
 
-func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoName string) error {
+func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
+
+	repoName := filepath.Base(wsDir)
 	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
 	if err != nil {
-		return err
+		t.Fatalf("could not get Bitbucket URL: %s", err)
 	}
 	bbURL = "http://localhost:7990"
 	bbToken, err := kubernetes.GetSecretKey(c, ns, "bitbucket-auth", "password")
 	if err != nil {
-		return err
+		t.Fatalf("could not get Bitbucket token: %s", err)
 	}
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
@@ -82,25 +84,27 @@ func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoNam
 		DefaultBranch: "master",
 	})
 	if err != nil {
-		return err
+		t.Fatalf("could not create Bitbucket repository: %s", err)
 	}
 
-	bbCredentialsURL := strings.Replace(
-		bbURL,
+	originURL := fmt.Sprintf("%s/scm/%s/%s.git", bbURL, proj.Key, repo.Slug)
+
+	originURLWithCredentials := strings.Replace(
+		originURL,
 		"http://",
 		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
 		-1,
 	)
-	origin := fmt.Sprintf("%s/scm/%s/%s.git", bbCredentialsURL, proj.Key, repo.Slug)
-	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", origin})
+	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", originURLWithCredentials})
 	if err != nil {
-		return fmt.Errorf("failed to add remote origin=%s: %s, stderr: %s", origin, err, stderr)
+		t.Fatalf("failed to add remote origin=%s: %s, stderr: %s", originURL, err, stderr)
 	}
 	_, stderr, err = command.Run("git", []string{"push", "-u", "origin", "master"})
 	if err != nil {
-		return fmt.Errorf("failed to push to remote: %s, stderr: %s", err, stderr)
+		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
-	return nil
+
+	return originURL
 }
 
 func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {

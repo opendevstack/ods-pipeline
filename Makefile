@@ -29,6 +29,11 @@ run-bitbucket:
 	cd scripts && ./run-bitbucket.sh
 .PHONY: run-bitbucket
 
+## Restart Bitbucket server (re-activating timebomb license).
+restart-bitbucket:
+	cd scripts && ./restart-bitbucket.sh
+.PHONY: restart-bitbucket
+
 ## Run Nexus server (in "kind" network).
 run-nexus:
 	cd scripts && ./run-nexus.sh
