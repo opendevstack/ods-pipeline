@@ -109,7 +109,7 @@ spec:
         fi
 
 
-        CHECKOUT_DIR="$(workspaces.output.path)/$(params.subdirectory)"
+        CHECKOUT_DIR="$(workspaces.source.path)/$(params.subdirectory)"
 
 
         cleandir() {
@@ -188,4 +188,4 @@ spec:
         echo -n "$(params.pr-base)" > .ods/pr-base
   workspaces:
     - description: The git repo will be cloned onto the volume backing this workspace
-      name: output
+      name: source
