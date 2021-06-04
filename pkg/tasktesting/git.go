@@ -16,13 +16,19 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
-func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
+func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("could not get current working directory: %s", err)
 	}
 	defer os.Chdir(cwd)
 	os.Chdir(wsDir)
+	if _, err := os.Stat(".ods"); os.IsNotExist(err) {
+		err = os.Mkdir(".ods", 0755)
+		if err != nil {
+			t.Fatalf("could not create .ods: %s", err)
+		}
+	}
 	err = writeFile(".gitignore", ".ods/")
 	if err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
@@ -47,7 +53,6 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stderr: %s", err, stderr)
 	}
-	return nil
 }
 
 func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoName string) error {
@@ -98,35 +103,34 @@ func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoNam
 	return nil
 }
 
-func WriteDotOds(wsDir string, projectKey string) error {
+func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		t.Fatalf("could not get current working directory: %s", err)
 	}
 	defer os.Chdir(cwd)
 	wsName := filepath.Base(wsDir)
 	os.Chdir(wsDir)
 	err = writeFile(".ods/project", projectKey)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/project: %s", err)
 	}
 	err = writeFile(".ods/repository", wsName)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/repository: %s", err)
 	}
 	err = writeFile(".ods/component", wsName)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/component: %s", err)
 	}
 	sha, err := getTrimmedFileContent(".git/refs/heads/master")
 	if err != nil {
-		return err
+		t.Fatalf("error reading .git/refs/heads/master: %s", err)
 	}
 	err = writeFile(".ods/git-commit-sha", sha)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/git-commit-sha: %s", err)
 	}
-	return nil
 }
 
 func writeFile(filename, content string) error {

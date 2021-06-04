@@ -37,6 +37,11 @@ func TestTaskODSBuildImage(t *testing.T) {
 				"builder-image": "localhost:5000/ods/buildah:latest",
 				"tls-verify":    "false",
 			},
+			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
+				wsDir := workspaces["source"]
+				tasktesting.InitAndCommitOrFatal(t, wsDir)
+				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+			},
 			WantSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
@@ -51,11 +56,13 @@ func TestTaskODSBuildImage(t *testing.T) {
 				"builder-image": "localhost:5000/ods/buildah:latest",
 				"tls-verify":    "false",
 			},
-			WantSuccess: true,
 			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
+				tasktesting.InitAndCommitOrFatal(t, wsDir)
+				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 				buildAndPushImage(t, ns, wsDir)
 			},
+			WantSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				checkResultingFiles(t, wsDir)
@@ -101,7 +108,7 @@ func buildAndPushImage(t *testing.T, ns, wsDir string) {
 
 func checkResultingFiles(t *testing.T, wsDir string) {
 	wantFiles := []string{
-		".ods/artifacts/image-digests/hello-world",
+		fmt.Sprintf(".ods/artifacts/image-digests/%s", filepath.Base(wsDir)),
 	}
 	for _, wf := range wantFiles {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -126,11 +133,11 @@ func checkResultingImage(t *testing.T, ns, wsDir string) {
 }
 
 func getDockerImageTag(t *testing.T, ns, wsDir string) string {
-	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit"))
+	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit-sha"))
 	if err != nil {
-		t.Fatalf("could not read git-commit: %s", err)
+		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
-	return fmt.Sprintf("localhost:5000/%s/hello-world:%s", ns, sha)
+	return fmt.Sprintf("localhost:5000/%s/%s:%s", ns, filepath.Base(wsDir), sha)
 }
 
 func getTrimmedFileContent(filename string) (string, error) {

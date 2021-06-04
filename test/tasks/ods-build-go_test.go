@@ -33,10 +33,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				os.Chdir(wsDir)
-				err := tasktesting.InitAndCommitOrFatal(t, wsDir)
-				if err != nil {
-					t.Fatal(err)
-				}
+				tasktesting.InitAndCommitOrFatal(t, wsDir)
 
 				projectKey := "FOO"
 				// wsName := filepath.Base(wsDir)
@@ -45,10 +42,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 				// 	t.Fatal(err)
 				// }
 
-				err = tasktesting.WriteDotOds(wsDir, projectKey)
-				if err != nil {
-					t.Fatal(err)
-				}
+				tasktesting.WriteDotOdsOrFatal(t, wsDir, projectKey)
 			},
 			Params: map[string]string{
 				//"sonar-skip":  "true",

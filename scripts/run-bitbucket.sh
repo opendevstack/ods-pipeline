@@ -18,6 +18,13 @@ BITBUCKET_POSTGRES_IMAGE_TAG="12"
 K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-bitbucket-auth.yml"
 K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-bitbucket.yml"
 
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+
+    -v|--verbose) set -x;;
+
+    *) echo "Unknown parameter passed: $1"; exit 1;;
+esac; shift; done
 
 echo "Run Postgres container"
 docker rm -f ${BITBUCKET_POSTGRES_CONTAINER_NAME} || true

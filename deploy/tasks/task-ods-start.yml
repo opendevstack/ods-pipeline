@@ -169,8 +169,6 @@ spec:
 
         echo -n "$(context.taskRun.namespace)" > .ods/namespace
 
-        echo -n "$RESULT_SHA" > .ods/git-commit
-
         echo -n "$RESULT_SHA" > .ods/git-commit-sha
 
         echo -n "$(params.url)" > .ods/git-url

@@ -1,5 +1,7 @@
 = Goals and Non-Goals
 
+NOTE: Currently this only addresses the first prototype (mid-2021) and does not consider goals and non-goals beyond that. E.g. some non-goals below will likely become goals in a second iteration.
+
 == Scope
 
 A pipeline that fulfills the needs for BI X but has EDP in mind (meaning it is clear how to extend the prototype to fulfill EDP needs in the future).
