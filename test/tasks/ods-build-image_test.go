@@ -37,7 +37,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				"builder-image": "localhost:5000/ods/buildah:latest",
 				"tls-verify":    "false",
 			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
+			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
 				wsDir := workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
@@ -56,7 +56,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				"builder-image": "localhost:5000/ods/buildah:latest",
 				"tls-verify":    "false",
 			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
+			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
 				wsDir := workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)

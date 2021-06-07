@@ -68,6 +68,8 @@ if [ "${status}" != "RUNNING" ]; then
     exit 1
 fi
 
+BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
+
 # Personal access token (PAT) is baked into the SQL dump.
 cat <<EOF >${K8S_SECRET_FILE}
 apiVersion: v1
@@ -77,6 +79,8 @@ stringData:
 kind: Secret
 metadata:
   name: bitbucket-auth
+  annotations:
+    tekton.dev/git-0: '${BITBUCKET_URL_FULL}'
 type: kubernetes.io/basic-auth
 EOF
 
@@ -86,5 +90,5 @@ apiVersion: v1
 metadata:
   name: bitbucket
 data:
-  url: 'http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7999'
+  url: '${BITBUCKET_URL_FULL}'
 EOF

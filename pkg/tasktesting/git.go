@@ -104,7 +104,13 @@ func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
 
-	return originURL
+	originURLWithKind := strings.Replace(
+		originURL,
+		"http://localhost",
+		"http://bitbucket-server-test.kind",
+		-1,
+	)
+	return originURLWithKind
 }
 
 func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {

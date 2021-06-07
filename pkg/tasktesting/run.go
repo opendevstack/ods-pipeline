@@ -27,7 +27,7 @@ type TestCase struct {
 	WorkspaceDirMapping map[string]string
 	Params              map[string]string
 	WantSuccess         bool
-	PrepareFunc         func(t *testing.T, workspaces map[string]string)
+	PrepareFunc         func(t *testing.T, workspaces map[string]string, params map[string]string)
 	CheckFunc           func(t *testing.T, workspaces map[string]string)
 }
 
@@ -58,7 +58,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	if tc.PrepareFunc != nil {
-		tc.PrepareFunc(t, taskWorkspaces)
+		tc.PrepareFunc(t, taskWorkspaces, tc.Params)
 	}
 
 	tr, err := CreateTaskRunWithParams(

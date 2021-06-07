@@ -1,0 +1,44 @@
+FROM registry.access.redhat.com/ubi8
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV GO_VERSION 1.16.3
+ENV TEKTON_VERSION 0.22.0
+ENV TEKTONCD_PATH /opt/app-root/src/go/src/github.com/tektoncd
+
+RUN mkdir -p $TEKTONCD_PATH && \
+    cd /tmp && \
+    curl -LO https://github.com/tektoncd/pipeline/archive/refs/tags/v$TEKTON_VERSION.tar.gz && \
+    tar -C $TEKTONCD_PATH -xzf v$TEKTON_VERSION.tar.gz && \
+    rm -f *.tar.gz && \
+    ln -s $TEKTONCD_PATH/pipeline-$TEKTON_VERSION $TEKTONCD_PATH/pipeline && \
+    cd -
+
+RUN yum install -y openssh-clients git
+
+RUN cd /tmp && \
+    curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
+    rm -f *.tar.gz && \
+    cd - && \
+    mkdir /go
+
+ENV PATH $PATH:/usr/local/go/bin
+ENV GOBIN /usr/local/bin
+
+RUN chmod g+w /go
+
+ENV BINARY=git-init.orig \
+    KO_APP=/ko-app
+
+WORKDIR $TEKTONCD_PATH/pipeline
+
+RUN CGO_ENABLED=0 go build -o /tmp/openshift-pipelines-git-init ./cmd/git-init && \
+    mkdir ${KO_APP} && cp /tmp/openshift-pipelines-git-init ${KO_APP}/${BINARY}
+
+COPY build/package/scripts/uidwrapper ${KO_APP}/git-init
+
+RUN chgrp -R 0 ${KO_APP} && \
+    chmod -R g=u ${KO_APP} /etc/passwd
+
+ENTRYPOINT ["/ko-app/git-init"]

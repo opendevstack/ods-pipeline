@@ -3,16 +3,14 @@ package tasks
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
-func TestTaskODSBuildGo(t *testing.T) {
+func TestTaskODSStart(t *testing.T) {
 
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{
@@ -27,20 +25,23 @@ func TestTaskODSBuildGo(t *testing.T) {
 	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
 	defer tasktesting.TearDown(t, c, ns)
 
+	var originURL string
 	tests := map[string]tasktesting.TestCase{
-		"task should build go app": {
-			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
+		"clones the app": {
+			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+			Params: map[string]string{
+				"image":      "localhost:5000/ods/start:latest",
+				"url":        "",     // set later in prepare func
+				"project":    "proj", // TODO: make this param optional?
+				"component":  "comp", // TODO: make this param optional?
+				"repository": "repo", // TODO: make this param optional?
+			},
 			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
 				wsDir := workspaces["source"]
 				os.Chdir(wsDir)
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
-			},
-			Params: map[string]string{
-				"go-image":    "localhost:5000/ods/go-toolset:latest",
-				"sonar-image": "localhost:5000/ods/sonar:latest",
-				"go-os":       runtime.GOOS,
-				"go-arch":     runtime.GOARCH,
+				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
+				originURL = tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
+				params["url"] = originURL
 			},
 			WantSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
@@ -48,27 +49,11 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 				wantFiles := []string{
 					"docker/Dockerfile",
-					"docker/app",
-					"build/test-results/test/report.xml",
-					"coverage.out",
-					"test-results.txt",
-					".ods/artifacts/xunit-reports/report.xml",
-					".ods/artifacts/code-coverage/coverage.out",
-					".ods/artifacts/sonarqube-analysis/analysis-report.md",
-					".ods/artifacts/sonarqube-analysis/issues-report.csv",
 				}
 				for _, wf := range wantFiles {
 					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
 						t.Fatalf("Want %s, but got nothing", wf)
 					}
-				}
-
-				b, _, err := command.Run(wsDir+"/docker/app", []string{})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(b) != "Hello World" {
-					t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
 				}
 			},
 		},
@@ -79,8 +64,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             "ClusterTask",       // could be read from task definition
-				TaskName:                "ods-build-go-v0-1", // could be read from task definition
+				TaskKindRef:             "ClusterTask",      // could be read from task definition
+				TaskName:                "ods-start-v0-1-0", // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
