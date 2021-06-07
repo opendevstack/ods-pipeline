@@ -98,7 +98,11 @@ jobs:
           push: true
           file: build/package/Dockerfile.sonar
           tags: localhost:5000/ods/sonar:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new          
+          cache-from: type=local,src=/tmp/.buildx-cache-new
+      -
+        name: Pre-pull ODS images with kube-fledged
+        working-directory: scripts
+        run: ./pre-pull-images.sh
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1

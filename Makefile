@@ -19,6 +19,11 @@ build-and-push-images:
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
 
+## Pre-pull images.
+pre-pull-images:
+		cd scripts && ./pre-pull-images.sh
+.PHONY: pre-pull-images
+
 ## Install Tekton pipelines in kind cluster.
 install-tekton-pipelines:
 	cd scripts && ./install-tekton-pipelines.sh
@@ -45,7 +50,7 @@ run-sonarqube:
 .PHONY: run-sonarqube
 
 ## Prepare local environment from scratch.
-prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube
+prepare-local-env: create-kind-with-registry build-and-push-images pre-pull-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube
 .PHONY: prepare-local-env
 
 ## Run testsuite.
