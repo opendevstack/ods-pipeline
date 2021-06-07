@@ -32,11 +32,11 @@ docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} sonatyp
 
 NEXUS_URL="http://localhost:${HOST_PORT}"
 function waitForReady {
-    echo "Waiting up to 3 minutes for Nexus to start ..."
+    echo "Waiting up to 6 minutes for Nexus to start ..."
     local n=0
     local http_code=
     set +e
-    until [ $n -ge 18 ]; do
+    until [ $n -ge 36 ]; do
         http_code=$(curl ${INSECURE} -s -o /dev/null -w "%{http_code}" "${NEXUS_URL}/service/rest/v1/status/writable")
         if [ "${http_code}" == "200" ]; then
             echo " success"
