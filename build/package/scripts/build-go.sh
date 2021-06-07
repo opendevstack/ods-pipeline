@@ -71,13 +71,19 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   set +e
   go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
   exitcode=$?
+  set -e
   if [ -f test-results.txt ]; then
-      set -e
       go-junit-report < test-results.txt > build/test-results/test/report.xml
       mkdir -p .ods/artifacts/xunit-reports
       cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
   else
     echo "no test results found"
+  fi
+  if [ -f coverage.out ]; then
+      mkdir -p .ods/artifacts/code-coverage
+      cp coverage.out .ods/artifacts/code-coverage/coverage.out
+  else
+    echo "no code coverage found"
   fi
   exit $exitcode
 else

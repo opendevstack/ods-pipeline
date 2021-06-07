@@ -33,25 +33,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				os.Chdir(wsDir)
-				err := tasktesting.InitAndCommitOrFatal(t, wsDir)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				projectKey := "FOO"
-				// wsName := filepath.Base(wsDir)
-				// err = tasktesting.PushToBitbucket(c.KubernetesClientSet, ns, projectKey, wsName)
-				// if err != nil {
-				// 	t.Fatal(err)
-				// }
-
-				err = tasktesting.WriteDotOds(wsDir, projectKey)
-				if err != nil {
-					t.Fatal(err)
-				}
+				tasktesting.InitAndCommitOrFatal(t, wsDir)
+				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 			},
 			Params: map[string]string{
-				//"sonar-skip":  "true",
 				"go-image":    "localhost:5000/ods/go-toolset:latest",
 				"sonar-image": "localhost:5000/ods/sonar:latest",
 				"go-os":       runtime.GOOS,
@@ -68,6 +53,9 @@ func TestTaskODSBuildGo(t *testing.T) {
 					"coverage.out",
 					"test-results.txt",
 					".ods/artifacts/xunit-reports/report.xml",
+					".ods/artifacts/code-coverage/coverage.out",
+					".ods/artifacts/sonarqube-analysis/analysis-report.md",
+					".ods/artifacts/sonarqube-analysis/issues-report.csv",
 				}
 				for _, wf := range wantFiles {
 					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

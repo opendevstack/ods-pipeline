@@ -71,6 +71,7 @@ spec:
         if [ "$(params.sonar-skip)" = "true" ]; then
           echo "Skipping SonarQube analysis"
         else
+          mkdir -p .ods/artifacts/sonarqube-analysis
           sonar -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)

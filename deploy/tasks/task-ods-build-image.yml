@@ -58,7 +58,7 @@ spec:
 
         odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
 
-        odsGitCommit=$(cat .ods/git-commit)
+        odsGitCommit=$(cat .ods/git-commit-sha)
 
         imageStreamParam="$(params.image-stream)"
         imageStream=${imageStreamParam:-$(cat .ods/component)}
@@ -93,7 +93,7 @@ spec:
       script: |
         odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
 
-        odsGitCommit=$(cat .ods/git-commit)
+        odsGitCommit=$(cat .ods/git-commit-sha)
 
         imageStreamParam="$(params.image-stream)"
         imageStream=${imageStreamParam:-$(cat .ods/component)}

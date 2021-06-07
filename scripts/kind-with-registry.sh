@@ -24,6 +24,17 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 # desired cluster name; default is "kind"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
+RECREATE_KIND_CLUSTER="false"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+
+    -v|--verbose) set -x;;
+
+    --recreate) RECREATE_KIND_CLUSTER="true";;
+
+    *) echo "Unknown parameter passed: $1"; exit 1;;
+esac; shift; done
 
 kind_version=$(kind version)
 reg_name='kind-registry'
@@ -67,6 +78,10 @@ if [ "${reg_ip}" = "" ]; then
     exit 1
 fi
 echo "Registry IP: ${reg_ip}"
+
+if [ "${RECREATE_KIND_CLUSTER}" == "true" ]; then
+  kind delete cluster --name "${KIND_CLUSTER_NAME}"
+fi
 
 # create a cluster with the local registry enabled in containerd
 cat <<EOF | kind create cluster --name "${KIND_CLUSTER_NAME}" --config=-

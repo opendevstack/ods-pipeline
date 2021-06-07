@@ -1,0 +1,88 @@
+= Task Requirements
+
+== link:/deploy/task-ods-start.yml[`ods-start`]
+
+[cols="1,1"]
+|===
+| REQ-TASK-START-1
+| Clone repository for given refspec
+
+| REQ-TASK-START-2
+| Read ODS config and clone any child repositories
+
+| REQ-TASK-START-3
+a| For each repository, store context information under `.ods/`:
+
+* repo related information is sourced on repository data like the project key, component key, repository name, refspec, etc.
+* artifacts from Nexus belonging to the same commit are downloaded and placed into `.ods/artifacts`
+
+| REQ-TASK-START-4
+| Set Bitbucket build status to "in progress"
+|===
+
+== link:/deploy/task-ods-finish.yml[`ods-finish`]
+
+[cols="1,1"]
+|===
+| REQ-TASK-FINISH-1
+| Set Bitbucket build status to "failed" or "successful", see https://github.com/tektoncd/pipeline/pull/3817, available as of 0.24.
+
+| REQ-TASK-FINISH-2
+| Upload all files in `.ods/artifacts` to Nexus in a folder named like the Git commit SHA.
+
+| REQ-TASK-FINISH-3 (?)
+| Optional notification of failure/success of Teams channel based on `ConfigMap`
+|===
+
+== link:/deploy/task-ods-build-go.yml[`ods-build-go`]
+
+[cols="1,1"]
+|===
+| REQ-TASK-BUILD-GO-1
+| Build Go module based Go binary into `docker/app`.
+
+| REQ-TASK-BUILD-GO-2
+| Run golanglint-ci, fail on failure.
+
+| REQ-TASK-BUILD-GO-3
+| Run go test, creating code coverage and xUnit report, and place them into `.ods/artifacts`.
+
+| REQ-TASK-BUILD-GO-4
+| Allow to run Make targets (ci-build, ci-lint, ci-test) instead of REQ-TASK-BUILD-GO-1,2,3.
+
+| REQ-TASK-BUILD-GO-5
+| Run sonar-scanner on branch.
+
+| REQ-TASK-BUILD-GO-6
+| Run sonar-scanner with PR analysis.
+|===
+
+== link:/deploy/task-ods-build-image.yml[`ods-build-image`]
+
+[cols="1,1"]
+|===
+| REQ-TASK-BUILD-IMAGE-1
+| Build image based on `Dockerfile` in Docker context directory `docker`. Both Dockerfile and directory can be changed via parameter. The resulting SHA shall be placed in `.ods/artifacts`.
+
+| REQ-TASK-BUILD-IMAGE-2
+| Scan image with Aqua scanner. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
+
+| REQ-TASK-BUILD-IMAGE-3
+| Push image to registry.
+|===
+
+== link:/deploy/task-ods-deploy-helm.yml[`ods-deploy-helm`]
+
+[cols="1,1"]
+|===
+| REQ-TASK-DEPLOY-HELM-1
+| Push images into the target namespace. The images that are pushed are determined by the artifacts in `.ods/artifacts/image-digests` (which contains information from where to get the images). TODO: define how to select the target namespace (somehow based on branch/tag/YAML).
+
+| REQ-TASK-DEPLOY-HELM-2
+| It errors if there is no chart at the location identified by the `chartDir` parameter (defaulting to `chart`).
+
+| REQ-TASK-DEPLOY-HELM-3
+| Upgrade (or install) Helm chart, showing a diff beforehand and decrypting secrets on the fly.
+
+| REQ-TASK-DEPLOY-HELM-4 (?)
+| Lint chart before applying and error if there is a failure.

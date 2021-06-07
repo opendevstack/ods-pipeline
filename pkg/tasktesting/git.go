@@ -16,13 +16,19 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
-func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
+func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("could not get current working directory: %s", err)
 	}
 	defer os.Chdir(cwd)
 	os.Chdir(wsDir)
+	if _, err := os.Stat(".ods"); os.IsNotExist(err) {
+		err = os.Mkdir(".ods", 0755)
+		if err != nil {
+			t.Fatalf("could not create .ods: %s", err)
+		}
+	}
 	err = writeFile(".gitignore", ".ods/")
 	if err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
@@ -47,18 +53,19 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) error {
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stderr: %s", err, stderr)
 	}
-	return nil
 }
 
-func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoName string) error {
+func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
+
+	repoName := filepath.Base(wsDir)
 	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
 	if err != nil {
-		return err
+		t.Fatalf("could not get Bitbucket URL: %s", err)
 	}
 	bbURL = "http://localhost:7990"
 	bbToken, err := kubernetes.GetSecretKey(c, ns, "bitbucket-auth", "password")
 	if err != nil {
-		return err
+		t.Fatalf("could not get Bitbucket token: %s", err)
 	}
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
@@ -77,56 +84,57 @@ func PushToBitbucket(c *kclient.Clientset, ns string, projectKey string, repoNam
 		DefaultBranch: "master",
 	})
 	if err != nil {
-		return err
+		t.Fatalf("could not create Bitbucket repository: %s", err)
 	}
 
-	bbCredentialsURL := strings.Replace(
-		bbURL,
+	originURL := fmt.Sprintf("%s/scm/%s/%s.git", bbURL, proj.Key, repo.Slug)
+
+	originURLWithCredentials := strings.Replace(
+		originURL,
 		"http://",
 		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
 		-1,
 	)
-	origin := fmt.Sprintf("%s/scm/%s/%s.git", bbCredentialsURL, proj.Key, repo.Slug)
-	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", origin})
+	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", originURLWithCredentials})
 	if err != nil {
-		return fmt.Errorf("failed to add remote origin=%s: %s, stderr: %s", origin, err, stderr)
+		t.Fatalf("failed to add remote origin=%s: %s, stderr: %s", originURL, err, stderr)
 	}
 	_, stderr, err = command.Run("git", []string{"push", "-u", "origin", "master"})
 	if err != nil {
-		return fmt.Errorf("failed to push to remote: %s, stderr: %s", err, stderr)
+		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
-	return nil
+
+	return originURL
 }
 
-func WriteDotOds(wsDir string, projectKey string) error {
+func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		t.Fatalf("could not get current working directory: %s", err)
 	}
 	defer os.Chdir(cwd)
 	wsName := filepath.Base(wsDir)
 	os.Chdir(wsDir)
 	err = writeFile(".ods/project", projectKey)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/project: %s", err)
 	}
 	err = writeFile(".ods/repository", wsName)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/repository: %s", err)
 	}
 	err = writeFile(".ods/component", wsName)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/component: %s", err)
 	}
 	sha, err := getTrimmedFileContent(".git/refs/heads/master")
 	if err != nil {
-		return err
+		t.Fatalf("error reading .git/refs/heads/master: %s", err)
 	}
 	err = writeFile(".ods/git-commit-sha", sha)
 	if err != nil {
-		return err
+		t.Fatalf("could not write .ods/git-commit-sha: %s", err)
 	}
-	return nil
 }
 
 func writeFile(filename, content string) error {
