@@ -1,0 +1,124 @@
+= Release Management
+
+We like to have a way to manage releases of the application via Git. It should be possible to see in Git which target environments there are, and which versions are on which environment, as well as full traceability how the pipeline looked like that deployed a certain version of the application to a target environment.
+
+The approach should somehow be compatible with "ODS classic", as in there should be a way to integrate this with Jira (triggering a release from there), as well as work without the Jira integration.
+
+While the approach may sound initially like GitOps, it is not pure GitOps for several reasons. For some background of the current problems with GitOps, read https://codefresh.io/about-gitops/pains-gitops-1-0/. Apart from the issues mentioned, we are also in a situation where we have targets which are not Kubernetes, such as AWS, Salesforce, SAP. They are easier integrated into a pipeline-style approach.
+
+== Approach
+
+The above talks about an "application" but does not define what it is. In ODS, one repository typically corresponds to one application component only. In "ODS classic" the release manager repository ties multiple components together into one "application". At the same time, this repository also contains information about environments.
+
+This proposal wants to split the repo into two:
+
+* an "environment" / "release" repo, containing information about the environments ("what version is deployed where?")
+
+* an "app" / "deployable" repository, containing the pipeline definition, the sub-repos and e.g. a Helm umbrella chart ("what was deployed and how?").
+
+The "app" / "deployable" repo (and any referenced sub-repos / components) has a list of Git tags that can be deployed or have been already deployed in the the past. By default the "app" / "deployable" repo only needs one branch (typically `master`), however people can make use of additional (e.g. `release/`) branches if wanted/needed.
+
+The "environment" / "release" repo has one branch per environment, for example an `environment/qa` branch on which it describes what is deployed in the QA environment. Promotion between environments simply means opening a pull request between the environment branches, such as from `environment/qa` to `environment/prod`. The content of the repository is basically just one file, which contains:
+
+* description of the environments (e.g. API and credentials to use)
+* a version (such as `1.0.0`)
+* the name of the "app" / "deployable" repo
+
+When a push is made to a branch in the "environment" / "release" repo, a pipeline starts which deploys the "app" / "deployable" repo in the desired version in the corresponding environment, using the pipeline definition in the "app" / "deployable" repo.
+
+We still need to define if we auto-create the tags or not, and which form they take. My current thinking is:
+
+* development environment uses `version: WIP`, creates no tags, just deploys the configured branch (typically `master`)
+* QA environment uses e.g. `version: 1.0.0` and auto-creates tags of form `vVERSION-rc.NUMBER` from either the configured branch (typically `master`) or a more specific release branch (`release/VERSION`) if it exists.
+* PROD env uses e.g. `version: 1.0.0` and selects the matching tag with the highest `rc` number, auto-creates a corresponding `vVERSION` tag. The pipeline aborts if there is no matching rc tag.
+
+== Example
+
+To illustrate the concept, let's assume your project (`foo`) has two components, a backend and a frontend, stored in two repositories (`foo-backend` and `foo-frontend`). To tie both components together as an application, create a `foo-app` repository, which contains one file, `ods.yml`:
+
+[source,yaml]
+----
+repositories:
+- name: foo-backend
+- name: foo-frontend
+pipeline: {} # pipeline definition (redacted for brevity)
+----
+
+To deploy the application into an environment, you create another repository, `foo-release`, which contains a `release.yml` file on its `master` branch:
+
+[source,yaml]
+----
+application: foo-app
+version: WIP
+environments:
+- name: dev-eu
+  namespace: foo-dev
+  kind: dev
+  branch: master
+----
+
+When a pipeline is triggered for the `master` branch, the pipeline defined in `foo-app` on the `master` branch is started, witht the target environment set to `foo-dev`.
+
+Assume you now have finished developing the first version of your application, and you want to bring it to a QA environment for acceptance testing before you release into production.
+
+In the `foo-release` repository, create a new branch `environment/qa-eu` and adjust the contents of `release.yml`:
+
+[source,yaml]
+----
+application: foo-app
+version: 1.0.0
+environments:
+- name: dev-eu
+  namespace: foo-dev
+  kind: dev
+  branch: master
+- name: qa-eu
+  namespace: foo-test
+  kind: qa
+----
+
+As the `environment/qa-eu` corresponds to the `qa-eu` environment, the application is deployed into the `foo-test` namespace. The pipeline tags the `master` branch of the repositories `foo-backend`, `foo-frontend` and `foo-app` with `v1.0.0-rc.1`. This happens because the `kind` of the environment is set to `qa`.
+
+If testing is successful, create a new branch `environment/prod-eu` with the following contents of `release.yml`:
+
+[source,yaml]
+----
+application: foo-app
+version: 1.0.0
+environments:
+- name: dev-eu
+  namespace: foo-dev
+  kind: dev
+  branch: master
+- name: qa-eu
+  namespace: foo-test
+  kind: qa
+- name: prod-eu
+  namespace: foo-prod
+  kind: prod
+----
+
+This will checkout the repositories at `v1.0.0-rc.1` (or whatever is the latest release candidate for the given version), apply the `v1.0.0` tag and deploy the application into `foo-prod`.
+
+== Additional Remarks
+
+* To prevent accidents, there should be rules in Bitbucket to prevent any changes without PR as well as prevention to rewrite history etc.
+* Pipelines running for `kind: prod` require that there is a Git tag in the app repo that was created by a pipeline run for `kind: qa`.
+* Pipelines could check that the deployed commit to `kind:prod` is an ancestor of previously deployed commit (do we want this?)
+* The `repository` config in the "app" repo allows to configure a different default branch such as `main` or `develop`
+* The commits tagged with `vVERSION-rc.NUMBER` are the heads of the `master` branch only if there is no more specific release branch (`release/VERSION`). This allows teams to continue development on `master` while keeping deployment to QA stable. Also, if there is already a tag `vVERSION`, then this tag is deployed to QA, which allows to bring a PROD version into the QA for debugging purposes for example.
+* If the "release" application does not specify the `version` field, we can continue to use the "ODS classic" JIRA approach: you simply pass the target environment as the branch name, and the version to deploy, the rest is the same process.
+
+== Nice properties
+
+* The state of each environment can be seen by looking at the branch's `version` information.
+* Promoting from QA to PROD is by pull request from `qa` branch to `prod` branch.
+* No unwanted deploys if environments are edited in the wrong branch. Only the environment matching the branch is deployed.
+* In theory the app repo can be merged into one monorepo with the subrepos.
+* One can create a separate namespace (e.g. `foo-deploy`) and a second set of "release" and "app" repos. Their Bitbucket webhook points to an event listener in the separate namespace. This 2nd repo/namespace can be used for restricted access so that developers can build the application, but do not see or have access to e.g. the production environment
+* VERSION is opaque - it can be any string that is valid in a Git tag. We should validate the version field though to prevent surprises.
+
+== Questions
+
+* The "app" repo probably contains an umbrella Helm chart. How to pass the right values to the Helm chart, and how to include the charts from the subrepos? How does this interact with the `kind` field of environments?
+* Should the version for dev environments be `WIP` or an actual version? Since we have the `kind` field, we always know that it is "WIP", so we could also work with an actual version, which would allow a PR flow to promote from DEV to QA.
