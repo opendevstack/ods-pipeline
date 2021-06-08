@@ -47,14 +47,17 @@ func TestTaskODSStart(t *testing.T) {
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 
-				wantFiles := []string{
-					"docker/Dockerfile",
-				}
-				for _, wf := range wantFiles {
-					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-						t.Fatalf("Want %s, but got nothing", wf)
-					}
-				}
+				checkFileContent(t, wsDir, ".ods/component", "comp")
+				// checkFileContent(t, wsDir, ".ods/git-commit-sha", "proj")
+				// checkFileContent(t, wsDir, ".ods/git-full-ref", "proj")
+				// checkFileContent(t, wsDir, ".ods/git-ref", "proj")
+				// checkFileContent(t, wsDir, ".ods/git-url", "proj")
+				checkFileContent(t, wsDir, ".ods/namespace", ns)
+				checkFileContent(t, wsDir, ".ods/pr-base", "")
+				checkFileContent(t, wsDir, ".ods/pr-key", "")
+				checkFileContent(t, wsDir, ".ods/project", "proj")
+				checkFileContent(t, wsDir, ".ods/repository", "repo")
+
 			},
 		},
 	}
@@ -74,5 +77,15 @@ func TestTaskODSStart(t *testing.T) {
 
 		})
 
+	}
+}
+
+func checkFileContent(t *testing.T, wsDir, filename, want string) {
+	got, err := getTrimmedFileContent(filepath.Join(wsDir, filename))
+	if err != nil {
+		t.Fatalf("could not read %s: %s", filename, err)
+	}
+	if got != want {
+		t.Fatalf("got '%s', want '%s' in file %s", got, want, filename)
 	}
 }
