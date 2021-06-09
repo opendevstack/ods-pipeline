@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -91,15 +90,5 @@ func TestTaskODSStart(t *testing.T) {
 
 		})
 
-	}
-}
-
-func checkFileContent(t *testing.T, wsDir, filename, want string) {
-	got, err := getTrimmedFileContent(filepath.Join(wsDir, filename))
-	if err != nil {
-		t.Fatalf("could not read %s: %s", filename, err)
-	}
-	if got != want {
-		t.Fatalf("got '%s', want '%s' in file %s", got, want, filename)
 	}
 }

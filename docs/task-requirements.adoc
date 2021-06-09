@@ -86,3 +86,4 @@ a| For each repository, store context information under `.ods/`:
 
 | REQ-TASK-DEPLOY-HELM-4 (?)
 | Lint chart before applying and error if there is a failure.
+|===

@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -138,12 +137,4 @@ func getDockerImageTag(t *testing.T, ns, wsDir string) string {
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
 	return fmt.Sprintf("localhost:5000/%s/%s:%s", ns, filepath.Base(wsDir), sha)
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
 }

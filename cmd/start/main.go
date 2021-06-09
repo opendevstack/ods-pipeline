@@ -119,7 +119,7 @@ func main() {
 		ctxt.Namespace,
 		*pipelineRunNameFlag,
 	)
-	_, _, err = bitbucketClient.BuildStatusPost(ctxt.GitCommitSHA, bitbucket.BuildStatusPostPayload{
+	err = bitbucketClient.BuildStatusPost(ctxt.GitCommitSHA, bitbucket.BuildStatusPostPayload{
 		State:       "INPROGRESS",
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
