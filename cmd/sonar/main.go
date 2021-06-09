@@ -13,6 +13,7 @@ import (
 func main() {
 	sonarAuthTokenFlag := flag.String("sonar-auth-token", os.Getenv("SONAR_AUTH_TOKEN"), "sonar-auth-token")
 	sonarqubeURLFlag := flag.String("sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
+	sonarqubeEditionFlag := flag.String("sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
 	qualityGateFlag := flag.Bool("quality-gate", false, "require quality gate pass")
 
 	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
@@ -49,7 +50,7 @@ func main() {
 		APIToken:      *sonarAuthTokenFlag,
 		MaxRetries:    2,
 		BaseURL:       *sonarqubeURLFlag,
-		ServerEdition: "community",
+		ServerEdition: *sonarqubeEditionFlag,
 	})
 
 	sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)

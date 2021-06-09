@@ -119,10 +119,10 @@ jobs:
         working-directory: scripts
         run: ./run-sonarqube.sh
       -
-        name: Setup Go 1.15
+        name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.16
       -
         name: Run tests
         run: go test -v ./test/... -always-keep-tmp-workspaces
