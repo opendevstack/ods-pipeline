@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -29,34 +30,45 @@ func TestTaskODSStart(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"clones the app": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"image":      "localhost:5000/ods/start:latest",
-				"url":        "",     // set later in prepare func
-				"project":    "proj", // TODO: make this param optional?
-				"component":  "comp", // TODO: make this param optional?
-				"repository": "repo", // TODO: make this param optional?
-			},
-			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
-				wsDir := workspaces["source"]
+			PreTaskRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				os.Chdir(wsDir)
 				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
 				originURL = tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
-				params["url"] = originURL
+
+				ctxt.ODS = &pipelinectxt.ODSContext{
+					Namespace: ns,
+					Project:   bitbucketProjectKey,
+					GitURL:    originURL,
+				}
+				err := ctxt.ODS.Assemble(wsDir)
+				if err != nil {
+					t.Fatalf("could not assemble ODS context information: %s", err)
+				}
+
+				ctxt.Params = map[string]string{
+					"image":      "localhost:5000/ods/start:latest",
+					"url":        originURL,
+					"git-ref":    "master",
+					"project":    ctxt.ODS.Project,
+					"component":  ctxt.ODS.Component,
+					"repository": ctxt.ODS.Repository,
+				}
 			},
 			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			PostTaskRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 
-				checkFileContent(t, wsDir, ".ods/component", "comp")
-				// checkFileContent(t, wsDir, ".ods/git-commit-sha", "proj")
-				// checkFileContent(t, wsDir, ".ods/git-full-ref", "proj")
-				// checkFileContent(t, wsDir, ".ods/git-ref", "proj")
-				// checkFileContent(t, wsDir, ".ods/git-url", "proj")
+				checkFileContent(t, wsDir, ".ods/component", ctxt.ODS.Component)
+				checkFileContent(t, wsDir, ".ods/git-commit-sha", ctxt.ODS.GitCommitSHA)
+				// checkFileContent(t, wsDir, ".ods/git-full-ref", ctxt.ODS.GitFullRef) // TODO: implement in task
+				// checkFileContent(t, wsDir, ".ods/git-ref", ctxt.ODS.GitRef) // TODO: implement in task
+				checkFileContent(t, wsDir, ".ods/git-url", ctxt.ODS.GitURL)
 				checkFileContent(t, wsDir, ".ods/namespace", ns)
 				checkFileContent(t, wsDir, ".ods/pr-base", "")
 				checkFileContent(t, wsDir, ".ods/pr-key", "")
-				checkFileContent(t, wsDir, ".ods/project", "proj")
-				checkFileContent(t, wsDir, ".ods/repository", "repo")
+				checkFileContent(t, wsDir, ".ods/project", ctxt.ODS.Project)
+				checkFileContent(t, wsDir, ".ods/repository", ctxt.ODS.Repository)
 
 			},
 		},

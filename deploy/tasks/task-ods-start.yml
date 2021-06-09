@@ -45,29 +45,29 @@ spec:
       description: >-
         defines if http.sslVerify should be set to true or false in the global
         git config
-      name: sslVerify
+      name: ssl-verify
       type: string
-    - default: ''
-      description: subdirectory inside the "output" workspace to clone the git repo into
+    - default: '.'
+      description: subdirectory inside the "source" workspace to clone the git repo into
       name: subdirectory
       type: string
     - default: 'true'
       description: >-
         clean out the contents of the repo's destination directory (if it
         already exists) before trying to clone the repo there
-      name: deleteExisting
+      name: delete-existing
       type: string
     - default: ''
       description: git HTTP proxy server for non-SSL requests
-      name: httpProxy
+      name: http-proxy
       type: string
     - default: ''
       description: git HTTPS proxy server for SSL requests
-      name: httpsProxy
+      name: https-proxy
       type: string
     - default: ''
       description: git no proxy - opt out of proxying HTTP/HTTPS requests
-      name: noProxy
+      name: no-proxy
       type: string
     - default: 'true'
       description: log the commands used during execution
@@ -96,99 +96,48 @@ spec:
     - description: The precise URL that was fetched by this Task
       name: url
   steps:
-    - image: $(params.image)
+    - # default image: build/package/Dockerfile.start
+      image: $(params.image)
       name: clone
+      env:
+        - name: BITBUCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: bitbucket
+        - name: BITBUCKET_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: bitbucket-auth
       resources: {}
-      script: >
-        #!/bin/sh
+      workingDir: $(workspaces.source.path)
+      script: |
 
-        set -eu -o pipefail
+        # ods-start is built from cmd/start/main.go.
+        ods-start \
+          -project=$(params.project) \
+          -repository=$(params.repository) \
+          -component=$(params.component) \
+          -git-ref=$(params.git-ref) \
+          -git-ref-spec=$(params.refspec) \
+          -url=$(params.url) \
+          -http-proxy=$(params.http-proxy) \
+          -https-proxy=$(params.https-proxy) \
+          -no-proxy=$(params.no-proxy) \
+          -ssl-verify=$(params.ssl-verify) \
+          -submodules=$(params.submodules) \
+          -depth=$(params.depth) \
+          -subdirectory=$(params.subdirectory)
 
-        id
-
-
-        if [[ "$(params.verbose)" == "true" ]] ; then
-          set -x
-        fi
-
-
-        CHECKOUT_DIR="$(workspaces.source.path)/$(params.subdirectory)"
-
-
-        cleandir() {
-          # Delete any existing contents of the repo directory if it exists.
-          #
-          # We don't just "rm -rf $CHECKOUT_DIR" because $CHECKOUT_DIR might be "/"
-          # or the root of a mounted volume.
-          if [[ -d "$CHECKOUT_DIR" ]] ; then
-            # Delete non-hidden files and directories
-            rm -rf "$CHECKOUT_DIR"/*
-            # Delete files and directories starting with . but excluding ..
-            rm -rf "$CHECKOUT_DIR"/.[!.]*
-            # Delete files and directories starting with .. plus any other character
-            rm -rf "$CHECKOUT_DIR"/..?*
-          fi
-        }
-
-
-        if [[ "$(params.deleteExisting)" == "true" ]] ; then
-          cleandir
-        fi
-
-
-        test -z "$(params.httpProxy)" || export HTTP_PROXY=$(params.httpProxy)
-
-        test -z "$(params.httpsProxy)" || export
-        HTTPS_PROXY=$(params.httpsProxy)
-
-        test -z "$(params.noProxy)" || export NO_PROXY=$(params.noProxy)
-
-
-        /ko-app/git-init \
-          -url "$(params.url)" \
-          -revision "$(params.git-ref)" \
-          -refspec "$(params.refspec)" \
-          -path "$CHECKOUT_DIR" \
-          -sslVerify="$(params.sslVerify)" \
-          -submodules="$(params.submodules)" \
-          -depth "$(params.depth)"
-        cd "$CHECKOUT_DIR"
-
-        RESULT_SHA="$(git rev-parse HEAD)"
-
-        EXIT_CODE="$?"
-
-        if [ "$EXIT_CODE" != 0 ] ; then
-          exit $EXIT_CODE
-        fi
-
-        # ensure we don't add a trailing newline to the result
-
-        echo -n "$RESULT_SHA" > $(results.commit.path)
+        cp .ods/git-commit-sha $(results.commit.path)
 
         echo -n "$(params.url)" > $(results.url.path)
 
-        mkdir -p .ods
+        pwd
 
-        echo -n "$(context.taskRun.namespace)" > .ods/namespace
+        ls -lah .
 
-        echo -n "$RESULT_SHA" > .ods/git-commit-sha
-
-        echo -n "$(params.url)" > .ods/git-url
-
-        echo -n "$(params.git-ref)" > .ods/git-ref
-
-        echo -n "$(params.git-full-ref)" > .ods/git-full-ref
-
-        echo -n "$(params.project)" > .ods/project
-
-        echo -n "$(params.component)" > .ods/component
-
-        echo -n "$(params.repository)" > .ods/repository
-
-        echo -n "$(params.pr-key)" > .ods/pr-key
-
-        echo -n "$(params.pr-base)" > .ods/pr-base
   workspaces:
     - description: The git repo will be cloned onto the volume backing this workspace
       name: source

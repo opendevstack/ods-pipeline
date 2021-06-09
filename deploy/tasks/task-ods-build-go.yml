@@ -34,16 +34,22 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - image: $(params.go-image)
+    - # default image: build/package/Dockerfile.go-toolset
+      image: $(params.go-image)
       name: build-go-binary
       resources: {}
       script: |
+
+        # build-go is build/package/scripts/build-go.sh.
         build-go \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch)
       workingDir: $(workspaces.source.path)
-    - env:
+    - # default image: build/package/Dockerfile.sonar
+      image: $(params.sonar-image)
+      name: scan-with-sonar
+      env:
         - name: SONAR_URL
           valueFrom:
             configMapKeyRef:
@@ -64,14 +70,13 @@ spec:
             secretKeyRef:
               key: password
               name: bitbucket-auth
-      image: $(params.sonar-image)
-      name: scan-with-sonar
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then
           echo "Skipping SonarQube analysis"
         else
           mkdir -p .ods/artifacts/sonarqube-analysis
+          # sonar is built from cmd/sonar/main.go.
           sonar -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)

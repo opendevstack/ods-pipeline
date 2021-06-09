@@ -13,6 +13,7 @@ type BuildStatusPostPayload struct {
 	Description string `json:"description"`
 }
 
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-build-rest.html#idp6
 func (c *Client) BuildStatusPost(gitCommit string, payload BuildStatusPostPayload) (int, []byte, error) {
 	urlPath := fmt.Sprintf("/rest/build-status/1.0/commits/%s", gitCommit)
 	b, err := json.Marshal(payload)

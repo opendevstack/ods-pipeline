@@ -3,22 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
-)
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-const (
-	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 func main() {
@@ -38,84 +27,22 @@ func main() {
 	prBaseFlag := flag.String("pr-base", "", "pull request base")
 	flag.Parse()
 
-	var namespace string
-	if len(*namespaceFlag) > 0 {
-		namespace = *namespaceFlag
-	} else {
-		kubernetesNamespace, err := getTrimmedFileContent(namespaceFile)
-		if err != nil {
-			panic(err.Error())
-		}
-		namespace = kubernetesNamespace
+	// TODO: should we read them before parsing flags and have them as a default?
+	// TODO: git ref param: full or short?
+	ctxt := &pipelinectxt.ODSContext{
+		Namespace:       *namespaceFlag,
+		Project:         *projectFlag,
+		Repository:      *repositoryFlag,
+		Component:       *componentFlag,
+		GitFullRef:      *gitRefSpecFlag,
+		GitCommitSHA:    *gitCommitSHAFlag,
+		PullRequestBase: *prBaseFlag,
+		PullRequestKey:  *prKeyFlag,
 	}
-	fmt.Printf("namespace=%s\n", namespace)
-
-	var project string
-	if len(*projectFlag) > 0 {
-		project = *projectFlag
-	} else {
-		project = strings.TrimSuffix(namespace, "-cd")
+	err := ctxt.ReadCache(".")
+	if err != nil {
+		panic(err.Error())
 	}
-	fmt.Printf("project=%s\n", project)
-
-	var repository string
-	if len(*repositoryFlag) > 0 {
-		repository = *repositoryFlag
-	} else {
-		r, err := getGitRepository()
-		check(err)
-		repository = r
-	}
-	fmt.Printf("repository=%s\n", repository)
-
-	var component string
-	if len(*componentFlag) > 0 {
-		component = *componentFlag
-	} else {
-		component = strings.TrimPrefix(repository, fmt.Sprintf("%s-", project))
-	}
-	fmt.Printf("component=%s\n", component)
-
-	var gitRefSpec string
-	if len(*gitRefSpecFlag) > 0 {
-		gitRefSpec = *gitRefSpecFlag
-	} else {
-		grs, err := getGitFullRef()
-		check(err)
-		gitRefSpec = grs
-	}
-	fmt.Printf("gitRefSpec=%s\n", gitRefSpec)
-
-	var gitCommitSHA string
-	if len(*gitCommitSHAFlag) > 0 {
-		gitCommitSHA = *gitCommitSHAFlag
-	} else {
-		gcs, err := getGitCommitSHA(gitRefSpec)
-		check(err)
-		gitCommitSHA = gcs
-	}
-	fmt.Printf("gitCommitSHA=%s\n", gitCommitSHA)
-	gitRef, _ := getGitFullRef()
-
-	var prKey string
-	if len(*prKeyFlag) > 0 {
-		prKey = *prKeyFlag
-	} else {
-		k, err := getTrimmedFileContent(".ods/pr-key")
-		check(err)
-		prKey = k
-	}
-	fmt.Printf("prKey=%s\n", prKey)
-
-	var prBase string
-	if len(*prBaseFlag) > 0 {
-		prBase = *prBaseFlag
-	} else {
-		k, err := getTrimmedFileContent(".ods/pr-base")
-		check(err)
-		prBase = k
-	}
-	fmt.Printf("prBase=%s\n", prBase)
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
 		Timeout:       10 * time.Second,
@@ -125,22 +52,26 @@ func main() {
 		ServerEdition: "community",
 	})
 
-	sonarProject := fmt.Sprintf("%s-%s", project, component)
+	sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)
 
 	fmt.Println("scanning with sonar ...")
 	var prInfo *sonar.PullRequest
-	if len(prKey) > 0 && prKey != "0" && len(prBase) > 0 {
-		prInfo = &sonar.PullRequest{Key: prKey, Branch: gitRef, Base: prBase}
+	if len(ctxt.PullRequestKey) > 0 && ctxt.PullRequestKey != "0" && len(ctxt.PullRequestBase) > 0 {
+		prInfo = &sonar.PullRequest{
+			Key:    ctxt.PullRequestKey,
+			Branch: ctxt.GitRef,
+			Base:   ctxt.PullRequestBase,
+		}
 	}
 	stdout, err := sonarClient.Scan(
 		sonarProject,
-		gitRef,
-		gitCommitSHA,
+		ctxt.GitRef,
+		ctxt.GitCommitSHA,
 		&sonar.BitbucketServer{
 			URL:        *bitbucketURLFlag,
 			Token:      *bitbucketAccessTokenFlag,
-			Project:    project,
-			Repository: repository,
+			Project:    ctxt.Project,
+			Repository: ctxt.Repository,
 		},
 		prInfo,
 	)
@@ -151,7 +82,7 @@ func main() {
 	fmt.Println(stdout)
 
 	fmt.Println("generating report ...")
-	stdout, err = sonarClient.GenerateReport(sonarProject, "author", gitRef)
+	stdout, err = sonarClient.GenerateReport(sonarProject, "author", ctxt.GitRef)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -174,28 +105,4 @@ func main() {
 			fmt.Println("quality gate passed")
 		}
 	}
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
-}
-
-func getGitFullRef() (string, error) {
-	return getTrimmedFileContent(".ods/git-full-ref")
-}
-
-func getGitCommitSHA(refSpec string) (string, error) {
-	return getTrimmedFileContent(".ods/git-commit-sha")
-}
-
-func getGitCommitSHAInDir(refSpec string, dir string) (string, error) {
-	return getTrimmedFileContent(dir + "/.ods/git-commit-sha")
-}
-
-func getGitRepository() (string, error) {
-	return getTrimmedFileContent(".ods/repository")
 }
