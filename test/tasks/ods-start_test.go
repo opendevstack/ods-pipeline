@@ -30,7 +30,7 @@ func TestTaskODSStart(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"clones the app": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			PreTaskRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
 				os.Chdir(wsDir)
 				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
@@ -47,22 +47,24 @@ func TestTaskODSStart(t *testing.T) {
 				}
 
 				ctxt.Params = map[string]string{
-					"image":      "localhost:5000/ods/start:latest",
-					"url":        originURL,
-					"git-ref":    "master",
-					"project":    ctxt.ODS.Project,
-					"component":  ctxt.ODS.Component,
-					"repository": ctxt.ODS.Repository,
+					"image":             "localhost:5000/ods/start:latest",
+					"url":               originURL,
+					"git-full-ref":      "refs/heads/master",
+					"project":           ctxt.ODS.Project,
+					"component":         ctxt.ODS.Component,
+					"repository":        ctxt.ODS.Repository,
+					"console-url":       "http://example.com",
+					"pipeline-run-name": "foo",
 				}
 			},
-			WantSuccess: true,
-			PostTaskRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
 
 				checkFileContent(t, wsDir, ".ods/component", ctxt.ODS.Component)
 				checkFileContent(t, wsDir, ".ods/git-commit-sha", ctxt.ODS.GitCommitSHA)
-				// checkFileContent(t, wsDir, ".ods/git-full-ref", ctxt.ODS.GitFullRef) // TODO: implement in task
-				// checkFileContent(t, wsDir, ".ods/git-ref", ctxt.ODS.GitRef) // TODO: implement in task
+				checkFileContent(t, wsDir, ".ods/git-full-ref", ctxt.ODS.GitFullRef)
+				checkFileContent(t, wsDir, ".ods/git-ref", ctxt.ODS.GitRef)
 				checkFileContent(t, wsDir, ".ods/git-url", ctxt.ODS.GitURL)
 				checkFileContent(t, wsDir, ".ods/namespace", ns)
 				checkFileContent(t, wsDir, ".ods/pr-base", "")

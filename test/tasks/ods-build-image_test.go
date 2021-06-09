@@ -42,7 +42,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 			},
-			WantSuccess: true,
+			WantRunSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				checkResultingFiles(t, wsDir)
@@ -62,7 +62,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 				buildAndPushImage(t, ns, wsDir)
 			},
-			WantSuccess: true,
+			WantRunSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 				checkResultingFiles(t, wsDir)

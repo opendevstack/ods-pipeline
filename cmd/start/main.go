@@ -26,20 +26,19 @@ func main() {
 	//gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
 	prKeyFlag := flag.String("pr-key", "", "pull request key")
 	prBaseFlag := flag.String("pr-base", "", "pull request base")
-	subdirectoryFlag := flag.String("subdirectory", ".", "subdirectory to checkout into")
 	httpProxyFlag := flag.String("http-proxy", ".", "HTTP_PROXY")
 	httpsProxyFlag := flag.String("https-proxy", ".", "HTTPS_PROXY")
 	noProxyFlag := flag.String("no-proxy", ".", "NO_PROXY")
 	urlFlag := flag.String("url", ".", "URL to clone")
-	gitRefFlag := flag.String("git-ref", "", "Git ref to clone")
+	gitFullRefFlag := flag.String("git-full-ref", "", "Git (full) ref to clone")
 	sslVerifyFlag := flag.String("ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
 	submodulesFlag := flag.String("submodules", "true", "defines if the resource should initialize and fetch the submodules")
 	depthFlag := flag.String("depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
+	consoleURLFlag := flag.String("console-url", "", "web console URL")
+	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	flag.Parse()
 
-	// Calculate checkout dir
-	// nothing to do, right?
-	checkoutDir := *subdirectoryFlag
+	checkoutDir := "."
 
 	// clean dir
 	err := deleteDirectoryContents(checkoutDir)
@@ -70,7 +69,7 @@ func main() {
 	// git-init
 	stdout, stderr, err := command.Run("/ko-app/git-init", []string{
 		"-url", *urlFlag,
-		"-revision", *gitRefFlag,
+		"-revision", *gitFullRefFlag,
 		"-refspec", *gitRefSpecFlag,
 		"-path", checkoutDir,
 		"-sslVerify", *sslVerifyFlag,
@@ -84,8 +83,6 @@ func main() {
 	fmt.Println(string(stdout))
 
 	// write ODS cache
-	// TODO: should we read them before parsing flags and have them as a default?
-	// TODO: git ref param: full or short?
 	sha, err := getCommitSHA()
 	if err != nil {
 		log.Fatal(err)
@@ -95,17 +92,16 @@ func main() {
 		Project:         *projectFlag,
 		Repository:      *repositoryFlag,
 		Component:       *componentFlag,
-		GitRef:          *gitRefFlag,
-		GitFullRef:      *gitRefSpecFlag, // TODO: this is incorrect
+		GitFullRef:      *gitFullRefFlag,
 		GitCommitSHA:    sha,
 		PullRequestBase: *prBaseFlag,
 		PullRequestKey:  *prKeyFlag,
 	}
-	err = ctxt.Assemble(".")
+	err = ctxt.Assemble(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ctxt.WriteCache(".")
+	err = ctxt.WriteCache(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,12 +113,17 @@ func main() {
 		MaxRetries: 2,
 		BaseURL:    *bitbucketURLFlag,
 	})
-	url := "http://foo"
+	pipelineRunURL := fmt.Sprintf(
+		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
+		*consoleURLFlag,
+		ctxt.Namespace,
+		*pipelineRunNameFlag,
+	)
 	_, _, err = bitbucketClient.BuildStatusPost(ctxt.GitCommitSHA, bitbucket.BuildStatusPostPayload{
 		State:       "INPROGRESS",
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
-		URL:         url,
+		URL:         pipelineRunURL,
 		Description: "ODS Pipeline Build",
 	})
 	if err != nil {

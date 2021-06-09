@@ -42,7 +42,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 				"go-os":       runtime.GOOS,
 				"go-arch":     runtime.GOARCH,
 			},
-			WantSuccess: true,
+			WantRunSuccess: true,
 			CheckFunc: func(t *testing.T, workspaces map[string]string) {
 				wsDir := workspaces["source"]
 
