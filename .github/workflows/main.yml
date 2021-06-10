@@ -48,10 +48,10 @@ jobs:
       TKN_VERSION: "v0.22.0"
     steps:
       - 
-        name: Download buildah artifact
+        name: Download image artifacts
         uses: actions/download-artifact@v2
         with:
-          path: /tmp/image-buildah.tar
+          path: /tmp
       -
         name: Checkout
         uses: actions/checkout@v2
@@ -71,7 +71,7 @@ jobs:
       -
         name: Push buildah
         run: |
-          docker load --input /tmp/image-buildah.tar
+          docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
       -
         name: Push go-toolset
