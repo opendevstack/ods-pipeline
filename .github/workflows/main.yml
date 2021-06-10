@@ -87,6 +87,10 @@ jobs:
           docker load --input /tmp/buildx-image-start/image-start.tar
           docker push localhost:5000/ods/start:latest
       -
+        name: Delete image tarballs
+        run: |
+          rm -rf /tmp/buildx-image-*
+      -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
