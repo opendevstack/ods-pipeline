@@ -62,44 +62,30 @@ jobs:
         working-directory: scripts
         run: ./kind-with-registry.sh
       -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-            network=host
-      -
-        name: Push buildah
+        name: Push buildah image
         run: |
           docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
       -
-        name: Push go-toolset
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.go-toolset
-          tags: localhost:5000/ods/go-toolset:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        name: Push go-toolset image
+        run: |
+          docker load --input /tmp/buildx-image-go-toolset/image-go-toolset.tar
+          docker push localhost:5000/ods/go-toolset:latest
       -
-        name: Push sonar
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.sonar
-          tags: localhost:5000/ods/sonar:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        name: Push helm image
+        run: |
+          docker load --input /tmp/buildx-image-helm/image-helm.tar
+          docker push localhost:5000/ods/helm:latest
       -
-        name: Push start
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.start
-          tags: localhost:5000/ods/start:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        name: Push sonar image
+        run: |
+          docker load --input /tmp/buildx-image-sonar/image-sonar.tar
+          docker push localhost:5000/ods/sonar:latest
+      -
+        name: Push start image
+        run: |
+          docker load --input /tmp/buildx-image-start/image-start.tar
+          docker push localhost:5000/ods/start:latest
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
