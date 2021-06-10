@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start"]
     steps:
       -
         name: Checkout
@@ -24,21 +24,22 @@ jobs:
             image=moby/buildkit:master
             network=host
       -
-        name: Build buildah
+        name: Build image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: false
           file: build/package/Dockerfile.${{ matrix.image }}
           tags: localhost:5000/ods/${{ matrix.image }}:latest
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=min
+          outputs: type=docker,dest=/tmp/image-${{ matrix.image }}.tar
       - 
-        name: Upload Buildx Cache
+        name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: buildx-cache-${{ matrix.image }}
-          path: /tmp/.buildx-cache-new
-          
+          name: buildx-image-${{ matrix.image }}
+          path: /tmp/image-${{ matrix.image }}.tar
+          retention-days: 1
+
   pipeline-tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -47,15 +48,10 @@ jobs:
       TKN_VERSION: "v0.22.0"
     steps:
       - 
-        name: Download Buildx Cache
+        name: Download buildah artifact
         uses: actions/download-artifact@v2
         with:
-          path: /tmp/.buildx-cache-new
-      -
-        name: Fix permissions
-        # See https://github.com/actions/checkout/issues/211.
-        run: |
-          sudo chown -R $USER:$USER /home/runner/work/ods-pipeline/ods-pipeline
+          path: /tmp/image-buildah.tar
       -
         name: Checkout
         uses: actions/checkout@v2
@@ -74,13 +70,9 @@ jobs:
             network=host
       -
         name: Push buildah
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.buildah
-          tags: localhost:5000/ods/buildah:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        run: |
+          docker load --input /tmp/image-buildah.tar
+          docker push localhost:5000/ods/buildah:latest
       -
         name: Push go-toolset
         uses: docker/build-push-action@v2
@@ -98,7 +90,16 @@ jobs:
           push: true
           file: build/package/Dockerfile.sonar
           tags: localhost:5000/ods/sonar:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new          
+          cache-from: type=local,src=/tmp/.buildx-cache-new
+      -
+        name: Push start
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: build/package/Dockerfile.start
+          tags: localhost:5000/ods/start:latest
+          cache-from: type=local,src=/tmp/.buildx-cache-new
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1

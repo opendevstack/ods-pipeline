@@ -31,39 +31,41 @@ func TestTaskODSBuildImage(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"task should build image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
-			},
-			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
-				wsDir := workspaces["source"]
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
 			WantRunSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
 			},
 		},
 		"task should reuse existing image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
-			},
-			PrepareFunc: func(t *testing.T, workspaces, params map[string]string) {
-				wsDir := workspaces["source"]
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 				buildAndPushImage(t, ns, wsDir)
+
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
 			WantRunSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
 				// TODO: actually check that we did not rebuild the image ...

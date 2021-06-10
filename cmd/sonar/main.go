@@ -15,31 +15,11 @@ func main() {
 	sonarqubeURLFlag := flag.String("sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
 	sonarqubeEditionFlag := flag.String("sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
 	qualityGateFlag := flag.Bool("quality-gate", false, "require quality gate pass")
-
 	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	namespaceFlag := flag.String("namespace", "", "namespace")
-	projectFlag := flag.String("project", "", "project")
-	repositoryFlag := flag.String("repository", "", "repository")
-	componentFlag := flag.String("component", "", "component")
-	gitRefSpecFlag := flag.String("git-ref-spec", "", "Git ref spec")
-	gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
-	prKeyFlag := flag.String("pr-key", "", "pull request key")
-	prBaseFlag := flag.String("pr-base", "", "pull request base")
 	flag.Parse()
 
-	// TODO: should we read them before parsing flags and have them as a default?
-	// TODO: git ref param: full or short?
-	ctxt := &pipelinectxt.ODSContext{
-		Namespace:       *namespaceFlag,
-		Project:         *projectFlag,
-		Repository:      *repositoryFlag,
-		Component:       *componentFlag,
-		GitFullRef:      *gitRefSpecFlag,
-		GitCommitSHA:    *gitCommitSHAFlag,
-		PullRequestBase: *prBaseFlag,
-		PullRequestKey:  *prKeyFlag,
-	}
+	ctxt := &pipelinectxt.ODSContext{}
 	err := ctxt.ReadCache(".")
 	if err != nil {
 		panic(err.Error())

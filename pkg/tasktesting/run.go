@@ -30,11 +30,8 @@ type TestOpts struct {
 type TestCase struct {
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
-	Params              map[string]string
 	WantRunSuccess      bool
-	PrepareFunc         func(t *testing.T, workspaces map[string]string, params map[string]string)
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
-	CheckFunc           func(t *testing.T, workspaces map[string]string)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 }
 
@@ -74,21 +71,15 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		Workspaces: taskWorkspaces,
 	}
 
-	params := tc.Params
-	if tc.PrepareFunc != nil {
-		tc.PrepareFunc(t, taskWorkspaces, tc.Params)
-	}
-
 	if tc.PreRunFunc != nil {
 		tc.PreRunFunc(t, testCaseContext)
-		params = testCaseContext.Params
 	}
 
 	tr, err := CreateTaskRunWithParams(
 		testOpts.Clients.TektonClientSet,
 		testOpts.TaskKindRef,
 		testOpts.TaskName,
-		params,
+		testCaseContext.Params,
 		taskWorkspaces,
 		testOpts.Namespace,
 	)
@@ -111,10 +102,6 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	// Check local folder and evaluate output of task if needed
-	if tc.CheckFunc != nil {
-		tc.CheckFunc(t, taskWorkspaces)
-	}
-
 	if tc.PostRunFunc != nil {
 		tc.PostRunFunc(t, testCaseContext)
 	}

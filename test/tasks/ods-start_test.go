@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -25,15 +24,13 @@ func TestTaskODSStart(t *testing.T) {
 	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
 	defer tasktesting.TearDown(t, c, ns)
 
-	var originURL string
 	tests := map[string]tasktesting.TestCase{
 		"clones the app": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
-				os.Chdir(wsDir)
 				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
-				originURL = tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
+				originURL := tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
 
 				ctxt.ODS = &pipelinectxt.ODSContext{
 					Namespace: ns,

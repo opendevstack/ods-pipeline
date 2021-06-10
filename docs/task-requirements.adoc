@@ -30,8 +30,8 @@ a| For each repository, store context information under `.ods/`:
 | REQ-TASK-FINISH-2
 | Upload all files in `.ods/artifacts` to Nexus in a folder named like the Git commit SHA.
 
-| REQ-TASK-FINISH-3 (?)
-| Optional notification of failure/success of Teams channel based on `ConfigMap`
+| REQ-TASK-FINISH-3
+| Optional notification of failure/success of Teams channel based on `ConfigMap` (out of scope for now)
 |===
 
 == link:/deploy/task-ods-build-go.yml[`ods-build-go`]
@@ -65,7 +65,7 @@ a| For each repository, store context information under `.ods/`:
 | Build image based on `Dockerfile` in Docker context directory `docker`. Both Dockerfile and directory can be changed via parameter. The resulting SHA shall be placed in `.ods/artifacts`.
 
 | REQ-TASK-BUILD-IMAGE-2
-| Scan image with Aqua scanner. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
+| Scan the built image with Aqua scanner. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
 
 | REQ-TASK-BUILD-IMAGE-3
 | Push image to registry.
