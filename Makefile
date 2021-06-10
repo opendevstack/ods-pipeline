@@ -53,6 +53,11 @@ test:
 	go test -v -count=1 ./test/...
 .PHONY: test
 
+## Clear temporary workspaces created in testruns.
+clear-tmp-workspaces:
+	rm -rf test/testdata/workspaces/workspace-*
+.PHONY: clear-tmp-workspaces
+
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
 help:

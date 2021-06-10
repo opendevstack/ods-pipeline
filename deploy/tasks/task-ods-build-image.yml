@@ -51,7 +51,8 @@ spec:
     - description: Digest of the image just built.
       name: image-digest
   steps:
-    - image: $(params.builder-image)
+    - # default image: build/package/Dockerfile.buildah
+      image: $(params.builder-image)
       name: build-image
       resources: {}
       script: |
@@ -87,7 +88,8 @@ spec:
         - mountPath: /var/lib/containers
           name: varlibcontainers
       workingDir: $(workspaces.source.path)
-    - image: $(params.builder-image)
+    - # default image: build/package/Dockerfile.buildah
+      image: $(params.builder-image)
       name: push-image
       resources: {}
       script: |

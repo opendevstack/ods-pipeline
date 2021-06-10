@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar"]
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start"]
     steps:
       -
         name: Checkout
@@ -24,21 +24,22 @@ jobs:
             image=moby/buildkit:master
             network=host
       -
-        name: Build buildah
+        name: Build image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: false
           file: build/package/Dockerfile.${{ matrix.image }}
           tags: localhost:5000/ods/${{ matrix.image }}:latest
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=min
+          outputs: type=docker,dest=/tmp/image-${{ matrix.image }}.tar
       - 
-        name: Upload Buildx Cache
+        name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: buildx-cache-${{ matrix.image }}
-          path: /tmp/.buildx-cache-new
-          
+          name: buildx-image-${{ matrix.image }}
+          path: /tmp/image-${{ matrix.image }}.tar
+          retention-days: 1
+
   pipeline-tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -47,15 +48,10 @@ jobs:
       TKN_VERSION: "v0.22.0"
     steps:
       - 
-        name: Download Buildx Cache
+        name: Download image artifacts
         uses: actions/download-artifact@v2
         with:
-          path: /tmp/.buildx-cache-new
-      -
-        name: Fix permissions
-        # See https://github.com/actions/checkout/issues/211.
-        run: |
-          sudo chown -R $USER:$USER /home/runner/work/ods-pipeline/ods-pipeline
+          path: /tmp
       -
         name: Checkout
         uses: actions/checkout@v2
@@ -66,39 +62,34 @@ jobs:
         working-directory: scripts
         run: ./kind-with-registry.sh
       -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-            network=host
+        name: Push buildah image
+        run: |
+          docker load --input /tmp/buildx-image-buildah/image-buildah.tar
+          docker push localhost:5000/ods/buildah:latest
       -
-        name: Push buildah
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.buildah
-          tags: localhost:5000/ods/buildah:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        name: Push go-toolset image
+        run: |
+          docker load --input /tmp/buildx-image-go-toolset/image-go-toolset.tar
+          docker push localhost:5000/ods/go-toolset:latest
       -
-        name: Push go-toolset
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.go-toolset
-          tags: localhost:5000/ods/go-toolset:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new
+        name: Push helm image
+        run: |
+          docker load --input /tmp/buildx-image-helm/image-helm.tar
+          docker push localhost:5000/ods/helm:latest
       -
-        name: Push sonar
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          file: build/package/Dockerfile.sonar
-          tags: localhost:5000/ods/sonar:latest
-          cache-from: type=local,src=/tmp/.buildx-cache-new          
+        name: Push sonar image
+        run: |
+          docker load --input /tmp/buildx-image-sonar/image-sonar.tar
+          docker push localhost:5000/ods/sonar:latest
+      -
+        name: Push start image
+        run: |
+          docker load --input /tmp/buildx-image-start/image-start.tar
+          docker push localhost:5000/ods/start:latest
+      -
+        name: Delete image tarballs
+        run: |
+          rm -rf /tmp/buildx-image-*
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
@@ -119,10 +110,10 @@ jobs:
         working-directory: scripts
         run: ./run-sonarqube.sh
       -
-        name: Setup Go 1.15
+        name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.16
       -
         name: Run tests
         run: go test -v ./test/... -always-keep-tmp-workspaces

@@ -1,0 +1,6 @@
+FROM sonatype/nexus3:3.30.1
+
+USER root
+RUN echo "storage.diskCache.diskFreeSpaceLimit=2048" >> /opt/sonatype/nexus/etc/karaf/system.properties && \
+    echo "nexus.scripts.allowCreation=true" >> /opt/sonatype/nexus/etc/nexus-default.properties
+USER nexus

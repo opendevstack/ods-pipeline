@@ -56,7 +56,12 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 }
 
 func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
-
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(cwd)
+	os.Chdir(wsDir)
 	repoName := filepath.Base(wsDir)
 	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
 	if err != nil {
@@ -104,7 +109,13 @@ func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
 
-	return originURL
+	originURLWithKind := strings.Replace(
+		originURL,
+		"http://localhost",
+		"http://bitbucket-server-test.kind",
+		-1,
+	)
+	return originURLWithKind
 }
 
 func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {

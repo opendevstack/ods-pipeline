@@ -30,21 +30,20 @@ func TestTaskODSBuildGo(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"task should build go app": {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
-				os.Chdir(wsDir)
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+				ctxt.Params = map[string]string{
+					"go-image":    "localhost:5000/ods/go-toolset:latest",
+					"sonar-image": "localhost:5000/ods/sonar:latest",
+					"go-os":       runtime.GOOS,
+					"go-arch":     runtime.GOARCH,
+				}
 			},
-			Params: map[string]string{
-				"go-image":    "localhost:5000/ods/go-toolset:latest",
-				"sonar-image": "localhost:5000/ods/sonar:latest",
-				"go-os":       runtime.GOOS,
-				"go-arch":     runtime.GOARCH,
-			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 
 				wantFiles := []string{
 					"docker/Dockerfile",

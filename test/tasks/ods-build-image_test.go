@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,39 +31,41 @@ func TestTaskODSBuildImage(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"task should build image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
-			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
 			},
 		},
 		"task should reuse existing image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
-			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir)
 				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
 				buildAndPushImage(t, ns, wsDir)
+
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
 				// TODO: actually check that we did not rebuild the image ...
@@ -138,12 +139,4 @@ func getDockerImageTag(t *testing.T, ns, wsDir string) string {
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
 	return fmt.Sprintf("localhost:5000/%s/%s:%s", ns, filepath.Base(wsDir), sha)
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
 }

@@ -28,15 +28,18 @@ esac; shift; done
 
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
-docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} sonatype/nexus3:${NEXUS_IMAGE_TAG}
+cd ${SCRIPT_DIR}/nexus
+docker build -t nexustest .
+cd -
+docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
 
 NEXUS_URL="http://localhost:${HOST_PORT}"
 function waitForReady {
-    echo "Waiting up to 3 minutes for Nexus to start ..."
+    echo "Waiting up to 4 minutes for Nexus to start ..."
     local n=0
     local http_code=
     set +e
-    until [ $n -ge 18 ]; do
+    until [ $n -ge 24 ]; do
         http_code=$(curl ${INSECURE} -s -o /dev/null -w "%{http_code}" "${NEXUS_URL}/service/rest/v1/status/writable")
         if [ "${http_code}" == "200" ]; then
             echo " success"
@@ -51,6 +54,7 @@ function waitForReady {
 
     if [ "${http_code}" != "200" ]; then
         echo "Nexus did not start, got http_code=${http_code}."
+        docker logs ${CONTAINER_NAME}
         exit 1
     fi
 }
@@ -76,24 +80,6 @@ function runJsonScript {
         "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}"
 }
 
-function changeScriptSetting {
-    local allowCreation=$1
-    echo "Changing nexus.scripts.allowCreation to '${allowCreation}'"
-    local cmd="echo 'nexus.scripts.allowCreation=${allowCreation}' >> /nexus-data/etc/nexus.properties"
-
-    if ! docker exec -t "${CONTAINER_NAME}" sh -c "${cmd}"; then
-        echo "Cannot exec in local container"
-        docker logs "${CONTAINER_NAME}"
-        exit 1
-    fi
-    echo "Restart local container to apply changes"
-    docker stop "${CONTAINER_NAME}" &> /dev/null
-    docker start "${CONTAINER_NAME}" &> /dev/null
-}
-
-waitForReady
-# TODO: Set to true in image to avoid one restart.
-changeScriptSetting "true"
 waitForReady
 
 echo "Retrieving admin password"

@@ -11,6 +11,11 @@ import (
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+)
+
+const (
+	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 type TestOpts struct {
@@ -25,10 +30,15 @@ type TestOpts struct {
 type TestCase struct {
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
-	Params              map[string]string
-	WantSuccess         bool
-	PrepareFunc         func(t *testing.T, workspaces map[string]string)
-	CheckFunc           func(t *testing.T, workspaces map[string]string)
+	WantRunSuccess      bool
+	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
+	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
+}
+
+type TaskRunContext struct {
+	Workspaces map[string]string
+	Params     map[string]string
+	ODS        *pipelinectxt.ODSContext
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -57,15 +67,19 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	}
 
-	if tc.PrepareFunc != nil {
-		tc.PrepareFunc(t, taskWorkspaces)
+	testCaseContext := &TaskRunContext{
+		Workspaces: taskWorkspaces,
+	}
+
+	if tc.PreRunFunc != nil {
+		tc.PreRunFunc(t, testCaseContext)
 	}
 
 	tr, err := CreateTaskRunWithParams(
 		testOpts.Clients.TektonClientSet,
 		testOpts.TaskKindRef,
 		testOpts.TaskName,
-		tc.Params,
+		testCaseContext.Params,
 		taskWorkspaces,
 		testOpts.Namespace,
 	)
@@ -83,12 +97,14 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	CollectTaskResultInfo(tr, t.Logf)
 
 	// Check if task was successful
-	if tr.IsSuccessful() != tc.WantSuccess {
-		t.Fatalf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.WantSuccess)
+	if tr.IsSuccessful() != tc.WantRunSuccess {
+		t.Fatalf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.WantRunSuccess)
 	}
 
 	// Check local folder and evaluate output of task if needed
-	tc.CheckFunc(t, taskWorkspaces)
+	if tc.PostRunFunc != nil {
+		tc.PostRunFunc(t, testCaseContext)
+	}
 
 	if !testOpts.AlwaysKeepTmpWorkspaces {
 		// Clean up only if test is successful
