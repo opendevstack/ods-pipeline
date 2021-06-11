@@ -26,6 +26,12 @@ type ProjectCreatePayload struct {
 	Avatar      string `json:"avatar"`
 }
 
+// ProjectCreate creates a new project.
+// To include a custom avatar for the project, the project definition should contain an additional attribute with the key avatar and the value a data URI containing Base64-encoded image data. The URI should be in the following format:
+//      data:(content type, e.g. image/png);base64,(data)
+// If the data is not Base64-encoded, or if a character set is defined in the URI, or the URI is otherwise invalid, project creation will fail.
+// The authenticated user must have PROJECT_CREATE permission to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp148
 func (c *Client) ProjectCreate(payload ProjectCreatePayload) (*Project, error) {
 	urlPath := "/rest/api/1.0/projects"
 	b, err := json.Marshal(payload)

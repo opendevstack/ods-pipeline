@@ -160,6 +160,9 @@ func (c *Client) CommitGet(projectKey, repositorySlug, commitID string) (*Commit
 	return &commit, nil
 }
 
+// CommitPullRequestList retrieves a page of pull requests in the current repository that contain the given commit.
+// The user must be authenticated and have access to the specified repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp243
 func (c *Client) CommitPullRequestList(projectKey, repositorySlug, commitID string) (*PullRequestPage, error) {
 	urlPath := fmt.Sprintf(
 		"/rest/api/1.0/projects/%s/repos/%s/commits/%s/pull-requests",

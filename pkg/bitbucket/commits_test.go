@@ -36,3 +36,19 @@ func TestCommitList(t *testing.T) {
 		t.Fatalf("got %d, want %d", l.Size, 1)
 	}
 }
+
+func TestCommitPullRequestList(t *testing.T) {
+	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
+	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
+		"/rest/api/1.0/projects/myproject/repos/myrepo/commits/" + sha + "/pull-requests": {
+			StatusCode: 200, Fixture: "bitbucket/commit-pull-request-list.json",
+		},
+	})
+	l, err := bitbucketClient.CommitPullRequestList("myproject", "myrepo", sha)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.Size != 1 {
+		t.Fatalf("got %d, want %d", l.Size, 1)
+	}
+}

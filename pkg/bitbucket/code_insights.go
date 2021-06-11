@@ -39,7 +39,8 @@ type InsightReportCreatePayload struct {
 // InsightReportCreate creates a new insight report, or replace the existing one if a report already exists for the given repository, commit, and report key. A request to replace an existing report will be rejected if the authenticated user was not the creator of the specified report.
 // The report key should be a unique string chosen by the reporter and should be unique enough not to potentially clash with report keys from other reporters. We recommend using reverse DNS namespacing or a similar standard to ensure that collision is avoided.
 //
-// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-code-insights-rest.html
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-code-insights-rest.html#idp9
+// TODO: Must be PUT
 func (c *Client) InsightReportCreate(projectKey, repositorySlug, commitID, key string, payload InsightReportCreatePayload) (*InsightReport, error) {
 	urlPath := fmt.Sprintf(
 		"/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s",

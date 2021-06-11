@@ -28,7 +28,7 @@ type TagCreatePayload struct {
 //'LIGHTWEIGHT' and 'ANNOTATED' are the two type of tags that can be created.
 // The 'startPoint' can either be a ref or a 'commit'.
 //
-// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-git-rest.html
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp395
 func (c *Client) TagCreate(projectKey string, repositorySlug string, payload TagCreatePayload) (*Tag, error) {
 	urlPath := fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/tags", projectKey, repositorySlug)
 	b, err := json.Marshal(payload)
