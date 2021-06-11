@@ -74,12 +74,23 @@ func patchServiceAccount(t *testing.T, ns string) {
 		"--type", "json",
 		"-p", "[{\"op\": \"add\", \"path\": \"/secrets\", \"value\":[{\"name\": \"bitbucket-auth\"}]}]",
 	})
-
-	t.Logf(string(stdout))
-	t.Logf(string(stderr))
 	if err != nil {
-		t.Error(err)
+		t.Logf(string(stderr))
+		t.Fatal(err)
 	}
+	t.Logf(string(stdout))
+
+	stdout, stderr, err = command.Run("kubectl", []string{
+		"-n", ns,
+		"create", "rolebinding", "edit",
+		"--clusterrole", "edit",
+		"--serviceaccount", ns + ":default",
+	})
+	if err != nil {
+		t.Logf(string(stderr))
+		t.Fatal(err)
+	}
+	t.Logf(string(stdout))
 }
 
 func Header(logf logging.FormatLogger, text string) {

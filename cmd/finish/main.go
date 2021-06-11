@@ -18,7 +18,6 @@ func main() {
 	consoleURLFlag := flag.String("console-url", "", "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
-	// required flags (but not needed as task input)
 	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")

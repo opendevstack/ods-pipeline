@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-deploy-helm-v0-1
+  name: ods-deploy-helm-v0-1-0
 spec:
   description: >-
     These tasks will install / upgrade a helm chart into your Kubernetes /
@@ -46,22 +46,7 @@ spec:
       name: overwrite-values
       type: string
   steps:
-    - env:
-        - name: NEXUS_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: nexus
-        - name: NEXUS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: nexus-user
-        - name: NEXUS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: nexus-user
+    - # default image: build/package/Dockerfile.helm
       image: $(params.image)
       name: upgrade-from-repo
       resources: {}

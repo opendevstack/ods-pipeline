@@ -10,7 +10,8 @@
 
 PRIO 1
 * finish task
-* helm task
+* helm task basic
+* defining environment / release concept
 * aqua scanning of built image -> allow to run it locally, disable scanning in github
 
 
