@@ -25,7 +25,7 @@ func TestTaskODSFinish(t *testing.T) {
 
 	tests := map[string]tasktesting.TestCase{
 		"set bitbucket build status to successful": {
-			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+			WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
 				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
