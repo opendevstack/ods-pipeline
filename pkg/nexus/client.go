@@ -48,7 +48,7 @@ func (c *Client) URLs(group string) ([]string, error) {
 	return res, nil
 }
 
-// Upload uploads
+// Upload a file to a repository group
 func (c *Client) Upload(group, file string) error {
 
 	link := fmt.Sprintf("%s/repository/%s%s/%s", c.RM.Info().Host, c.Repository, group, file)

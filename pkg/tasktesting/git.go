@@ -39,7 +39,7 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	}
 	err = ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could write .ods: %s", err)
+		t.Fatalf("could not write .ods: %s", err)
 	}
 	return ctxt
 }
@@ -67,12 +67,12 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
 	err = ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could write .ods: %s", err)
+		t.Fatalf("could not write .ods: %s", err)
 	}
 	return ctxt
 }
 
-// SetupGitRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
+// SetupBitbucketRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
 func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) *pipelinectxt.ODSContext {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -96,7 +96,7 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 
 	err = ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could write .ods: %s", err)
+		t.Fatalf("could not write .ods: %s", err)
 	}
 	return ctxt
 }

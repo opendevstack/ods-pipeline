@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +58,7 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 	return nil
 }
 
-// ReadCache wreads ODS context from .ods
+// ReadCache reads ODS context from .ods
 // TODO: test that this works
 func (o *ODSContext) ReadCache(wsDir string) error {
 	files := map[string]*string{
@@ -138,6 +139,43 @@ func (o *ODSContext) Assemble(wsDir string) error {
 		o.GitCommitSHA = gitSHA
 	}
 	return nil
+}
+
+func (o *ODSContext) ReadArtifactsDir() (map[string][]string, error) {
+
+	artifactsMap := map[string][]string{}
+
+	items, err := ioutil.ReadDir(".ods/artifacts")
+	if err != nil {
+		return artifactsMap, fmt.Errorf("%w", err)
+	}
+
+	for _, item := range items {
+		if item.IsDir() {
+			// artifact subdir here, e.g. "xunit-reports"
+			subitems, _ := ioutil.ReadDir(item.Name())
+			filesInSubDir := []string{}
+			for _, subitem := range subitems {
+				if !subitem.IsDir() {
+					// artifact file here, e.g. "report.xml"
+					log.Println(item.Name() + "/" + subitem.Name())
+					filesInSubDir = append(filesInSubDir, subitem.Name())
+				}
+			}
+
+			artifactsMap[item.Name()] = filesInSubDir
+		}
+	}
+
+	log.Println("artifactsMap: ", artifactsMap)
+
+	// map of directories and files under .ods/artifacts, e.g
+	// [
+	//	"xunit-reports": ["report.xml"]
+	//	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
+	// ]
+
+	return artifactsMap, nil
 }
 
 func readRemoteOriginURL(gitConfigFilename string) (string, error) {

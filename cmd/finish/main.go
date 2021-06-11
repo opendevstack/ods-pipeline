@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -17,6 +18,10 @@ func main() {
 	consoleURLFlag := flag.String("console-url", "", "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
+	// required flags (but not needed as task input)
+	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
+	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
+	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -49,8 +54,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: Upload all files in .ods/artifacts to Nexus in a folder named like the Git commit SHA.
+	// Upload all files in .ods/artifacts to Nexus in a folder named like the Git commit SHA.
+	nexusClient, err := nexus.NewClient(
+		*nexusURLFlag,
+		*nexusUsernameFlag,
+		*nexusPasswordFlag,
+		ctxt.Project, // should it be repository?
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// Read files from .ods/artifacts
+	artifactsMap, err := ctxt.ReadArtifactsDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for artifactsSubDir, files := range artifactsMap {
+		for _, filename := range files {
+			err = nexusClient.Upload(fmt.Sprintf("/%s/%s/%s", ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir), filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 }
 
 func getBuildStatus(aggregateTasksStatusFlag *string) string {
