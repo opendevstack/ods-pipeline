@@ -33,9 +33,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
-
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				ctxt.Params = map[string]string{
 					"registry":      "kind-registry.kind:5000",
 					"builder-image": "localhost:5000/ods/buildah:latest",
@@ -53,10 +51,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				buildAndPushImage(t, ns, wsDir)
-
 				ctxt.Params = map[string]string{
 					"registry":      "kind-registry.kind:5000",
 					"builder-image": "localhost:5000/ods/buildah:latest",
