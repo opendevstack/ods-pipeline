@@ -17,7 +17,7 @@ spec:
       type: string
     - name: aggregate-tasks-status
       description: The aggregate status of all the tasks.
-      default: "false"
+      default: "None"
   steps:
     - # default image: build/package/Dockerfile.finish
       image: $(params.image)
@@ -34,7 +34,7 @@ spec:
               key: password
               name: bitbucket-auth
       resources: {}
-      workingDir: $(workspaces.output.path)
+      workingDir: $(workspaces.source.path)
       script: |
 
         # ods-finish is built from cmd/finish/main.go.
@@ -45,4 +45,4 @@ spec:
 
   workspaces:
     - description: The git repo will be present onto the volume backing this workspace
-      name: output
+      name: source

@@ -16,7 +16,7 @@ func main() {
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
 	consoleURLFlag := flag.String("console-url", "", "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
-	aggregateTasksStatusFlag := flag.Bool("aggregate-tasks-status", false, "aggregate status of all the tasks")
+	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -53,8 +53,9 @@ func main() {
 
 }
 
-func getBuildStatus(aggregateTasksStatusFlag *bool) string {
-	if *aggregateTasksStatusFlag {
+func getBuildStatus(aggregateTasksStatusFlag *string) string {
+
+	if *aggregateTasksStatusFlag == "Succeeded" {
 		return "SUCCESSFUL"
 	} else {
 		return "FAILED"

@@ -28,7 +28,7 @@ func TestTaskODSFinish(t *testing.T) {
 		"set bitbucket build status to successful": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-				wsDir := ctxt.Workspaces["output"]
+				wsDir := ctxt.Workspaces["source"]
 				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
 				originURL := tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
 
@@ -42,19 +42,21 @@ func TestTaskODSFinish(t *testing.T) {
 					t.Fatalf("could not assemble ODS context information: %s", err)
 				}
 
+				err = ctxt.ODS.WriteCache(wsDir)
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				ctxt.Params = map[string]string{
 					"image":                  "localhost:5000/ods/finish:latest",
-					"project":                ctxt.ODS.Project,
-					"component":              ctxt.ODS.Component,
-					"repository":             ctxt.ODS.Repository,
 					"console-url":            "http://example.com",
 					"pipeline-run-name":      "foo",
-					"aggregate-tasks-status": "true",
+					"aggregate-tasks-status": "Succeeded",
 				}
 			},
 			WantRunSuccess: true,
 			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-				wsDir := ctxt.Workspaces["output"]
+				wsDir := ctxt.Workspaces["source"]
 
 				checkFileContent(t, wsDir, ".ods/component", ctxt.ODS.Component)
 				checkFileContent(t, wsDir, ".ods/git-commit-sha", ctxt.ODS.GitCommitSHA)

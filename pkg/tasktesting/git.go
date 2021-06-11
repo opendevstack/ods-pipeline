@@ -49,9 +49,9 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 	if err != nil {
 		t.Fatalf("error running git add: %s, stderr: %s", err, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"commit", "-m", "initial commit"})
+	stdout, stderr, err := command.Run("git", []string{"commit", "-m", "initial commit"})
 	if err != nil {
-		t.Fatalf("error running git commit: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, string(stdout), string(stderr))
 	}
 }
 
