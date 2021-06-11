@@ -109,6 +109,9 @@ type CommitListParams struct {
 	Until string `json:"until"`
 }
 
+// CommitList retrieves a page of commits from a given starting commit or "between" two commits. If no explicit commit is specified, the tip of the repository's default branch is assumed. commits may be identified by branch or tag name or by ID. A path may be supplied to restrict the returned commits to only those which affect that path.
+// The authenticated user must have REPO_READ permission for the specified repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp222
 func (c *Client) CommitList(projectKey string, repositorySlug string, params CommitListParams) (*CommitPage, error) {
 
 	q := url.Values{}
@@ -133,6 +136,9 @@ func (c *Client) CommitList(projectKey string, repositorySlug string, params Com
 	return &commitPage, nil
 }
 
+// CommitGet etrieves a single commit identified by its ID. In general, that ID is a SHA1. From 2.11, ref names like "refs/heads/master" are no longer accepted by this resource.
+// The authenticated user must have REPO_READ permission for the specified repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp224
 func (c *Client) CommitGet(projectKey, repositorySlug, commitID string) (*Commit, error) {
 	urlPath := fmt.Sprintf(
 		"/rest/api/1.0/projects/%s/repos/%s/commits/%s",
