@@ -22,6 +22,7 @@ func main() {
 	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
+	nexusRepositoryFlag := flag.String("nexus-repository", "ods-pipelines", "Nexus repository")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -59,7 +60,7 @@ func main() {
 		*nexusURLFlag,
 		*nexusUsernameFlag,
 		*nexusPasswordFlag,
-		"ods-pipelines",
+		*nexusRepositoryFlag,
 	)
 	if err != nil {
 		log.Fatal(err)
