@@ -59,7 +59,7 @@ func main() {
 		*nexusURLFlag,
 		*nexusUsernameFlag,
 		*nexusPasswordFlag,
-		ctxt.Project, // should it be repository?
+		"ods-pipelines",
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -73,7 +73,7 @@ func main() {
 
 	for artifactsSubDir, files := range artifactsMap {
 		for _, filename := range files {
-			err = nexusClient.Upload(fmt.Sprintf("/%s/%s/%s", ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir), filename)
+			err = nexusClient.Upload(fmt.Sprintf("/%s/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir), ".ods/artifacts/"+artifactsSubDir+"/"+filename)
 			if err != nil {
 				log.Fatal(err)
 			}

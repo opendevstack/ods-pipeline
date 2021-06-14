@@ -4,6 +4,11 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV GO_VERSION 1.16.3
 
+ENV http_proxy http://appaccess-zscaler.boehringer.com:80 
+ENV https_proxy http://appaccess-zscaler.boehringer.com:80 
+ENV HTTP_PROXY http://appaccess-zscaler.boehringer.com:80 
+ENV HTTPS_PROXY http://appaccess-zscaler.boehringer.com:80 
+
 RUN yum install -y git
 
 RUN cd /tmp && \
@@ -27,3 +32,8 @@ COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/finish && CGO_ENABLED=0 go build -o /usr/local/bin/ods-finish
 
 WORKDIR /go
+
+ENV http_proxy=
+ENV https_proxy=
+ENV HTTP_PROXY=
+ENV HTTPS_PROXY= 

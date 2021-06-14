@@ -23,6 +23,21 @@ spec:
       image: $(params.image)
       name: ods-finish
       env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: nexus-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
