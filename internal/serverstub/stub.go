@@ -38,6 +38,7 @@ func Stub(l logging.SimpleLogger, endpoints map[string]*FakeResponse) (http.Hand
 			}
 			return
 		}
+		l.Logf("no stub response registered for path %s", r.URL.Path)
 		http.NotFound(w, r)
 	}, nil
 }

@@ -292,7 +292,7 @@ func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFul
 }
 
 func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef, filename string) (*config.ODS, error) {
-	body, err := bitbucketClient.RawGet(project, repository, gitFullRef, filename)
+	body, err := bitbucketClient.RawGet(project, repository, filename, gitFullRef)
 	if err != nil {
 		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, err)
 	}

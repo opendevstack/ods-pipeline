@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -41,27 +42,25 @@ func NewClient(clientConfig *ClientConfig) *Client {
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
-	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("GET %s", u)
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return 0, nil, fmt.Errorf("could not create request: %s", err)
-	}
-
-	res, err := c.do(req)
-	if err != nil {
-		return 500, nil, fmt.Errorf("got error %s", err)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	return res.StatusCode, body, err
+	return c.createRequest("GET", urlPath, nil)
 }
 
 func (c *Client) post(urlPath string, payload []byte) (int, []byte, error) {
+	return c.createRequest("POST", urlPath, payload)
+}
+
+func (c *Client) put(urlPath string, payload []byte) (int, []byte, error) {
+	return c.createRequest("PUT", urlPath, payload)
+}
+
+func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []byte, error) {
 	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("POST %s", u)
-	req, err := http.NewRequest("POST", u, bytes.NewReader(payload))
+	c.clientConfig.Logger.Debugf("%s %s", method, u)
+	var requestBody io.Reader
+	if payload != nil {
+		requestBody = bytes.NewReader(payload)
+	}
+	req, err := http.NewRequest(method, u, requestBody)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}
@@ -72,8 +71,8 @@ func (c *Client) post(urlPath string, payload []byte) (int, []byte, error) {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
-	return res.StatusCode, body, err
+	responseBody, err := ioutil.ReadAll(res.Body)
+	return res.StatusCode, responseBody, err
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
