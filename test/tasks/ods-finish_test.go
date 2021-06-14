@@ -1,11 +1,24 @@
 package tasks
 
 import (
+	"fmt"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
+)
+
+// TODO:
+// Read the from configmap and secret files
+// from test/testdata/deploy/cd-kind
+const (
+	nexusURL        = "http://localhost:8081"
+	nexusUser       = "developer"
+	nexusPassword   = "s3cr3t"
+	nexusRepository = "ods-pipelines"
 )
 
 func TestTaskODSFinish(t *testing.T) {
@@ -24,7 +37,7 @@ func TestTaskODSFinish(t *testing.T) {
 	defer tasktesting.TearDown(t, c, ns)
 
 	tests := map[string]tasktesting.TestCase{
-		"set bitbucket build status to successful": {
+		"set bitbucket build status to successful and artifacts are in Nexus": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
@@ -38,19 +51,10 @@ func TestTaskODSFinish(t *testing.T) {
 			},
 			WantRunSuccess: true,
 			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-				wsDir := ctxt.Workspaces["source"]
 
-				checkFileContent(t, wsDir, ".ods/component", ctxt.ODS.Component)
-				checkFileContent(t, wsDir, ".ods/git-commit-sha", ctxt.ODS.GitCommitSHA)
-				checkFileContent(t, wsDir, ".ods/git-full-ref", ctxt.ODS.GitFullRef)
-				checkFileContent(t, wsDir, ".ods/git-ref", ctxt.ODS.GitRef)
-				checkFileContent(t, wsDir, ".ods/git-url", ctxt.ODS.GitURL)
-				checkFileContent(t, wsDir, ".ods/namespace", ns)
-				checkFileContent(t, wsDir, ".ods/pr-base", "")
-				checkFileContent(t, wsDir, ".ods/pr-key", "")
-				checkFileContent(t, wsDir, ".ods/project", ctxt.ODS.Project)
-				checkFileContent(t, wsDir, ".ods/repository", ctxt.ODS.Repository)
+				// TODO: Check Bitbucket build status is successful
 
+				checkArtifactsAreInNexus(t, ctxt)
 			},
 		},
 	}
@@ -71,4 +75,63 @@ func TestTaskODSFinish(t *testing.T) {
 		})
 
 	}
+}
+
+func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+
+	nexusClient, err := nexus.NewClient(
+		nexusURL,
+		nexusUser,
+		nexusPassword,
+		nexusRepository,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// List of artifacts expected to have been uploaded to Nexus
+	artifactsMap := map[string][]string{
+		"xunit-reports":      {"report.xml"},
+		"code-coverage":      {"coverage.out"},
+		"sonarqube-analysis": {"analysis-report.md", "issues-report.csv"},
+	}
+
+	for artifactsSubDir, files := range artifactsMap {
+
+		// e.g: "/ODSPIPELINETEST/workspace-190880007/935e5229b084dd60d44a5eddd2d023720ec153c1/xunit-reports"
+		group := fmt.Sprintf("/%s/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir)
+		log.Printf("nexus group: %s\n", group)
+		artifactURLs, err := nexusClient.URLs(group)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		log.Printf("artifactURLs: %v\n", artifactURLs)
+
+		if len(artifactURLs) != len(artifactsMap) {
+			t.Fatalf("Got: %d artifacts, want: %d artifacts.", len(artifactURLs), len(artifactsMap))
+		}
+
+		for _, file := range files {
+
+			// e.g. "http://localhost:8081/repository/ods-pipelines/ODSPIPELINETEST/workspace-866704509/b1415e831b4f5b24612abf24499663ddbff6babb/xunit-reports/report.xml"
+			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusURL, nexusRepository, ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
+
+			if !contains(artifactURLs, url) {
+				t.Fatalf("URL %+v is not present in %v", url, artifactURLs)
+			}
+		}
+
+	}
+}
+
+// contains checks if a string is present in a slice
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
