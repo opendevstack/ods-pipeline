@@ -13,7 +13,7 @@ func TestBuildStatusCreate(t *testing.T) {
 			StatusCode: 204, Fixture: "",
 		},
 	})
-	err := bitbucketClient.BuildStatusCreate(sha, BuildStatusPostPayload{
+	err := bitbucketClient.BuildStatusCreate(sha, BuildStatusCreatePayload{
 		State:       "INPROGRESS",
 		Key:         sha,
 		Name:        sha,
