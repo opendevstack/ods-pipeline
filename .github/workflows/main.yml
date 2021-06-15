@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start"]
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start", "finish"]
     steps:
       -
         name: Checkout
@@ -86,6 +86,11 @@ jobs:
         run: |
           docker load --input /tmp/buildx-image-start/image-start.tar
           docker push localhost:5000/ods/start:latest
+      -
+        name: Push finish image
+        run: |
+          docker load --input /tmp/buildx-image-start/image-finish.tar
+          docker push localhost:5000/ods/finish:latest          
       -
         name: Delete image tarballs
         run: |
