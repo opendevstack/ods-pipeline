@@ -89,7 +89,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 		t.Fatal(err)
 	}
 
-	// List of artifacts expected to have been uploaded to Nexus
+	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{
 		"xunit-reports":      {"report.xml"},
 		"code-coverage":      {"coverage.out"},
@@ -98,18 +98,15 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 
 	for artifactsSubDir, files := range artifactsMap {
 
+		filesCountInSubDir := len(artifactsMap[artifactsSubDir])
+
 		// e.g: "/ODSPIPELINETEST/workspace-190880007/935e5229b084dd60d44a5eddd2d023720ec153c1/xunit-reports"
 		group := fmt.Sprintf("/%s/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir)
-		log.Printf("nexus group: %s\n", group)
-		artifactURLs, err := nexusClient.URLs(group)
-		if err != nil {
-			t.Fatal(err)
-		}
 
-		log.Printf("artifactURLs: %v\n", artifactURLs)
-
-		if len(artifactURLs) != len(artifactsMap) {
-			t.Fatalf("Got: %d artifacts, want: %d artifacts.", len(artifactURLs), len(artifactsMap))
+		// The test is so fast that, when we reach this line, the artifacts could still being uploaded to Nexus
+		artifactURLs := waitForArtifacts(t, nexusClient, group, filesCountInSubDir, 5*time.Second)
+		if len(artifactURLs) != filesCountInSubDir {
+			t.Fatalf("Got: %d artifacts in subdir %s, want: %d.", len(artifactURLs), artifactsMap[artifactsSubDir], filesCountInSubDir)
 		}
 
 		for _, file := range files {
@@ -118,11 +115,37 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusURL, nexusRepository, ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
 
 			if !contains(artifactURLs, url) {
-				t.Fatalf("URL %+v is not present in %v", url, artifactURLs)
+				t.Fatalf("Artifact %s with URL %+v not found in Nexus under any of the following URLs: %v", file, url, artifactURLs)
 			}
 		}
 
 	}
+}
+
+func waitForArtifacts(t *testing.T, nexusClient *nexus.Client, group string, expectedArtifactsCount int, timeout time.Duration) []string {
+
+	start := time.Now().UTC()
+	elapsed := time.Since(start)
+	artifactURLs := []string{}
+
+	for elapsed < timeout {
+		artifactURLs, err := nexusClient.URLs(group)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(artifactURLs) == expectedArtifactsCount {
+			return artifactURLs
+		}
+
+		log.Printf("Artifacts are not yet available in Nexus...\n")
+		time.Sleep(1 * time.Second)
+
+		elapsed = time.Since(start)
+	}
+
+	log.Printf("Time out reached.\n")
+	return artifactURLs
 }
 
 // contains checks if a string is present in a slice
