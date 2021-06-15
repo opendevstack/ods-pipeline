@@ -127,5 +127,6 @@ jobs:
           go test -v ./test/tasks/... -always-keep-tmp-workspaces
       -
         name: Docker logs nexustest
+        if: ${{ failure() }}
         run: |
-          docker logs nexustest -f          
+          docker logs nexustest      
