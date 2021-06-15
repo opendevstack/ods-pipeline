@@ -16,7 +16,6 @@ func (c *Client) RawGet(project, repository, filename, gitFullRef string) ([]byt
 		filename,
 		url.QueryEscape(gitFullRef),
 	)
-	fmt.Println(urlPath)
 	statusCode, body, err := c.get(urlPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get file: %w", err)

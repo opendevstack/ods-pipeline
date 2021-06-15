@@ -3,15 +3,19 @@ package bitbucket
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/serverstub"
+	"github.com/opendevstack/pipeline/test/testserver"
 )
 
 func TestTagCreate(t *testing.T) {
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/api/1.0/projects/PRJ/repos/my-repo/tags": {
-			StatusCode: 201, Fixture: "bitbucket/tag-create.json",
-		},
-	})
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/PRJ/repos/my-repo/tags",
+		201, "bitbucket/tag-create.json",
+	)
+
 	tag, err := bitbucketClient.TagCreate("PRJ", "my-repo", TagCreatePayload{
 		Name: "release-2.0.0",
 	})

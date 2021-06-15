@@ -3,15 +3,19 @@ package bitbucket
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/serverstub"
+	"github.com/opendevstack/pipeline/test/testserver"
 )
 
 func TestRepoCreate(t *testing.T) {
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/api/1.0/projects/PRJ/repos": {
-			StatusCode: 201, Fixture: "bitbucket/repo-create.json",
-		},
-	})
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/PRJ/repos",
+		201, "bitbucket/repo-create.json",
+	)
+
 	r, err := bitbucketClient.RepoCreate("PRJ", RepoCreatePayload{
 		Name: "my-repo",
 	})

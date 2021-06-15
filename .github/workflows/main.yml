@@ -116,4 +116,7 @@ jobs:
           go-version: 1.16
       -
         name: Run tests
-        run: go test -v ./test/... -always-keep-tmp-workspaces
+        run: |
+          go test -v ./internal/...
+          go test -v ./pkg/...
+          go test -v ./test/... -always-keep-tmp-workspaces

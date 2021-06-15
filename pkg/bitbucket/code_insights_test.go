@@ -3,16 +3,21 @@ package bitbucket
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/serverstub"
+	"github.com/opendevstack/pipeline/test/testserver"
 )
 
 func TestInsightReportCreate(t *testing.T) {
 	sha := "56625c80087b034847001d22502063adae9759f2"
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/insights/1.0/projects/PRJ/repos/my-repo/commits/" + sha + "/reports/report.key": {
-			StatusCode: 200, Fixture: "bitbucket/insight-report-create.json",
-		},
-	})
+
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/insights/1.0/projects/PRJ/repos/my-repo/commits/"+sha+"/reports/report.key",
+		200, "bitbucket/insight-report-create.json",
+	)
+
 	r, err := bitbucketClient.InsightReportCreate(
 		"PRJ", "my-repo", sha, "report.key",
 		InsightReportCreatePayload{

@@ -4,16 +4,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/serverstub"
+	"github.com/opendevstack/pipeline/test/testserver"
 )
 
 func TestRawGet(t *testing.T) {
 	at := "refs/heads/master"
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/projects/PRJ/repos/my-repo/raw/example.txt": {
-			StatusCode: 200, Fixture: "bitbucket/example.txt",
-		},
-	})
+
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/projects/PRJ/repos/my-repo/raw/example.txt",
+		200, "bitbucket/example.txt",
+	)
+
 	r, err := bitbucketClient.RawGet(
 		"PRJ", "my-repo", "example.txt", at,
 	)

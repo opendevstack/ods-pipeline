@@ -3,17 +3,22 @@ package bitbucket
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/serverstub"
+	"github.com/opendevstack/pipeline/test/testserver"
 )
 
 func TestCommitGet(t *testing.T) {
 	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/api/1.0/projects/myproject/repos/myrepo/commits/" + sha: {
-			StatusCode: 200, Fixture: "bitbucket/commit-get.json",
-		},
-	})
-	c, err := bitbucketClient.CommitGet("myproject", "myrepo", sha)
+
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits/"+sha,
+		200, "bitbucket/commit-get.json",
+	)
+
+	c, err := bitbucketClient.CommitGet("myproject", "my-repo", sha)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,12 +28,16 @@ func TestCommitGet(t *testing.T) {
 }
 
 func TestCommitList(t *testing.T) {
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/api/1.0/projects/myproject/repos/myrepo/commits": {
-			StatusCode: 200, Fixture: "bitbucket/commit-list.json",
-		},
-	})
-	l, err := bitbucketClient.CommitList("myproject", "myrepo", CommitListParams{})
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits",
+		200, "bitbucket/commit-list.json",
+	)
+
+	l, err := bitbucketClient.CommitList("myproject", "my-repo", CommitListParams{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,12 +48,17 @@ func TestCommitList(t *testing.T) {
 
 func TestCommitPullRequestList(t *testing.T) {
 	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
-	bitbucketClient := testClient(t, map[string]*serverstub.FakeResponse{
-		"/rest/api/1.0/projects/myproject/repos/myrepo/commits/" + sha + "/pull-requests": {
-			StatusCode: 200, Fixture: "bitbucket/commit-pull-request-list.json",
-		},
-	})
-	l, err := bitbucketClient.CommitPullRequestList("myproject", "myrepo", sha)
+
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits/"+sha+"/pull-requests",
+		200, "bitbucket/commit-pull-request-list.json",
+	)
+
+	l, err := bitbucketClient.CommitPullRequestList("myproject", "my-repo", sha)
 	if err != nil {
 		t.Fatal(err)
 	}
