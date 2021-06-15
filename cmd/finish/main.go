@@ -44,7 +44,7 @@ func main() {
 		ctxt.Namespace,
 		*pipelineRunNameFlag,
 	)
-	err = bitbucketClient.BuildStatusPost(ctxt.GitCommitSHA, bitbucket.BuildStatusPostPayload{
+	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       getBuildStatus(aggregateTasksStatusFlag),
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,

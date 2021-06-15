@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
@@ -15,10 +16,12 @@ import (
 // Read the from configmap and secret files
 // from test/testdata/deploy/cd-kind
 const (
-	nexusURL        = "http://localhost:8081"
-	nexusUser       = "developer"
-	nexusPassword   = "s3cr3t"
-	nexusRepository = "ods-pipelines"
+	nexusURL          = "http://localhost:8081"
+	nexusUser         = "developer"
+	nexusPassword     = "s3cr3t"
+	nexusRepository   = "ods-pipelines"
+	bitbucketURLFlag  = "http://localhost:7990"
+	bitbucketAPIToken = "NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP"
 )
 
 func TestTaskODSFinish(t *testing.T) {
@@ -37,6 +40,23 @@ func TestTaskODSFinish(t *testing.T) {
 	defer tasktesting.TearDown(t, c, ns)
 
 	tests := map[string]tasktesting.TestCase{
+		"set bitbucket build status to failed": {
+			WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
+				ctxt.Params = map[string]string{
+					"image":                  "localhost:5000/ods/finish:latest",
+					"console-url":            "http://example.com",
+					"pipeline-run-name":      "foo",
+					"aggregate-tasks-status": "None",
+				}
+			},
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "FAILED")
+			},
+		},
 		"set bitbucket build status to successful and artifacts are in Nexus": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -51,9 +71,7 @@ func TestTaskODSFinish(t *testing.T) {
 			},
 			WantRunSuccess: true,
 			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-
-				// TODO: Check Bitbucket build status is successful
-
+				checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "SUCCESSFUL")
 				checkArtifactsAreInNexus(t, ctxt)
 			},
 		},
@@ -75,6 +93,26 @@ func TestTaskODSFinish(t *testing.T) {
 		})
 
 	}
+}
+
+func checkBuildStatus(t *testing.T, gitCommit, wantBuildStatus string) {
+
+	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+		Timeout:    10 * time.Second,
+		APIToken:   bitbucketAPIToken,
+		MaxRetries: 2,
+		BaseURL:    bitbucketURLFlag,
+	})
+
+	buildStatus, err := bitbucketClient.BuildStatusGet(gitCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if buildStatus.State != wantBuildStatus {
+		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
+	}
+
 }
 
 func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
