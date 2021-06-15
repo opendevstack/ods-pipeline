@@ -125,4 +125,7 @@ jobs:
           go test -v ./internal/...
           go test -v ./pkg/...
           go test -v ./test/tasks/... -always-keep-tmp-workspaces
-          docker logs nexustest -f
+      -
+        name: Docker logs nexustest
+        run: |
+          docker logs nexustest -f          
