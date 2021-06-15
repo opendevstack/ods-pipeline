@@ -113,3 +113,13 @@ type LeveledLoggerInterface interface {
 	// Warnf logs a warning message using Printf conventions.
 	Warnf(format string, v ...interface{})
 }
+
+type SimpleLogger interface {
+	// Log inserts a log entry.  Arguments may be handled in the manner
+	// of fmt.Print, but the underlying logger may also decide to handle
+	// them differently.
+	Log(v ...interface{})
+	// Logf insets a log entry.  Arguments are handled in the manner of
+	// fmt.Printf.
+	Logf(format string, v ...interface{})
+}

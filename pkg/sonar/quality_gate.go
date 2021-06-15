@@ -18,13 +18,16 @@ type QualityGateGetParams struct {
 	Project string `json:"project"`
 }
 
-func (c *Client) QualityGateGet(p QualityGateGetParams) (QualityGate, error) {
+func (c *Client) QualityGateGet(p QualityGateGetParams) (*QualityGate, error) {
 	urlPath := fmt.Sprintf("/api/qualitygates/project_status?projectKey=%s", p.Project)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return QualityGate{ProjectStatus: QualityGateProjectStatus{Status: "UNKNOWN"}}, nil
+		return &QualityGate{ProjectStatus: QualityGateProjectStatus{Status: "UNKNOWN"}}, nil
 	}
-	var qg QualityGate
+	if statusCode != 200 {
+		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
+	}
+	var qg *QualityGate
 	err = json.Unmarshal(response, &qg)
 	if err != nil {
 		return qg, err

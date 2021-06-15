@@ -18,9 +18,9 @@
         }
     },
     "repository": {
-        "slug": "paci",
+        "slug": "ods-pipeline",
         "id": 8733,
-        "name": "paci",
+        "name": "ods-pipeline",
         "scmId": "git",
         "state": "AVAILABLE",
         "statusMessage": "Available",
@@ -53,7 +53,7 @@
             ],
             "self": [
                 {
-                    "href": "https://bitbucket.acme.org/projects/FOO/repos/paci/browse"
+                    "href": "https://bitbucket.acme.org/projects/FOO/repos/ods-pipeline/browse"
                 }
             ]
         }
