@@ -6,6 +6,14 @@ metadata:
   resourceVersion: "0"
 spec:
   description: ODS
+  finally:
+  - name: finish
+    taskRef:
+      kind: ClusterTask
+      name: ods-finish-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
   params:
   - default: foo-bar
     name: repository
@@ -19,7 +27,7 @@ spec:
   - default: foo-cd
     name: namespace
     type: string
-  - default: https://bitbucket.example.com/scm/foo/bar.git
+  - default: https://bitbucket.acme.org/scm/foo/bar.git
     name: git-repo-url
     type: string
   - default: main
@@ -38,18 +46,16 @@ spec:
     name: comment
     type: string
   - default: "0"
-    name: prKey
+    name: pr-key
     type: string
   - default: ""
-    name: prBase
+    name: pr-base
     type: string
   tasks:
-  - name: fetch-repository
+  - name: start
     params:
     - name: url
       value: $(params.git-repo-url)
-    - name: deleteExisting
-      value: "true"
     - name: git-ref
       value: $(params.git-ref)
     - name: git-full-ref
@@ -60,11 +66,15 @@ spec:
       value: $(params.component)
     - name: repository
       value: $(params.repository)
+    - name: pr-key
+      value: $(params.pr-key)
+    - name: pr-base
+      value: $(params.pr-base)
     taskRef:
-      kind: Task
-      name: ods-git-clone
+      kind: ClusterTask
+      name: ods-start-v0-1-0
     workspaces:
-    - name: output
+    - name: source
       workspace: shared-workspace
   - name: go-helm-build
     params:
@@ -75,7 +85,7 @@ spec:
     - name: IMAGE_STREAM
       value: go-helm
     runAfter:
-    - fetch-repository
+    - start
     taskRef:
       kind: Task
       name: ods-build-go
