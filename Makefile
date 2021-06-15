@@ -49,9 +49,23 @@ prepare-local-env: create-kind-with-registry build-and-push-images install-tekto
 .PHONY: prepare-local-env
 
 ## Run testsuite.
-test:
-	go test -v -count=1 ./test/...
+test: test-internal test-pkg test-tasks
 .PHONY: test
+
+## Run testsuite of internal packages.
+test-internal:
+	go test -v -count=1 ./internal/...
+.PHONY: test-internal
+
+## Run testsuite of public packages.
+test-pkg:
+	go test -v -count=1 ./pkg/...
+.PHONY: test-pkg
+
+## Run testsuite.
+test-tasks:
+	go test -v -count=1 ./test/tasks/...
+.PHONY: test-tasks
 
 ## Clear temporary workspaces created in testruns.
 clear-tmp-workspaces:

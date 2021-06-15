@@ -35,6 +35,9 @@ type RepoCreatePayload struct {
 	DefaultBranch string `json:"defaultBranch"`
 }
 
+// RepoCreate creates a new repository. Requires an existing project in which this repository will be created. The only parameters which will be used are name and scmId.
+// The authenticated user must have PROJECT_ADMIN permission for the context project to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp174
 func (c *Client) RepoCreate(projectKey string, payload RepoCreatePayload) (*Repo, error) {
 	urlPath := fmt.Sprintf("/rest/api/1.0/projects/%s/repos", projectKey)
 	b, err := json.Marshal(payload)

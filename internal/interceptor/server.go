@@ -20,6 +20,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	taskKind    = "ClusterTask"
+	taskVersion = "v0-1-0"
+)
+
 // Server represents this service, and is a global.
 type Server struct {
 	OpenShiftClient Client
@@ -292,7 +297,7 @@ func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFul
 }
 
 func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef, filename string) (*config.ODS, error) {
-	body, err := bitbucketClient.RawGet(project, repository, gitFullRef, filename)
+	body, err := bitbucketClient.RawGet(project, repository, filename, gitFullRef)
 	if err != nil {
 		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, err)
 	}
@@ -401,22 +406,15 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
 		Name:    "start",
-		TaskRef: &tekton.TaskRef{Kind: "ClusterTask", Name: "ods-start-v0-1"},
+		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-" + taskVersion},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
-			{Name: "output", Workspace: "shared-workspace"},
+			{Name: "source", Workspace: "shared-workspace"},
 		},
 		Params: []tekton.Param{
 			{
 				Name: "url",
 				Value: tekton.ArrayOrString{
 					StringVal: "$(params.git-repo-url)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "deleteExisting",
-				Value: tekton.ArrayOrString{
-					StringVal: "true",
 					Type:      tekton.ParamTypeString,
 				},
 			},
@@ -511,9 +509,9 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 	finallyTasks := []tekton.PipelineTask{
 		{
 			Name:    "finish",
-			TaskRef: &tekton.TaskRef{Kind: "ClusterTask", Name: "ods-finish-v0-1"},
+			TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-" + taskVersion},
 			Workspaces: []tekton.WorkspacePipelineTaskBinding{
-				{Name: "output", Workspace: "shared-workspace"},
+				{Name: "source", Workspace: "shared-workspace"},
 			},
 		},
 	}

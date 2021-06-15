@@ -18,9 +18,9 @@
         }
     },
     "repository": {
-        "slug": "paci",
+        "slug": "ods-pipeline",
         "id": 8733,
-        "name": "paci",
+        "name": "ods-pipeline",
         "scmId": "git",
         "state": "AVAILABLE",
         "statusMessage": "Available",
