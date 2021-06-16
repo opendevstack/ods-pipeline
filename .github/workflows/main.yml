@@ -52,33 +52,21 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: /tmp
-      - 
-        name: Show disk space
-        run: df -h
       -
         name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
-      - 
-        name: Show disk space
-        run: df -h          
+          fetch-depth: 0      
       -
         name: Setup KinD cluster with internal registry
         working-directory: scripts
-        run: ./kind-with-registry.sh
-      - 
-        name: Show disk space
-        run: df -h        
+        run: ./kind-with-registry.sh    
       -
         name: Push buildah image
         run: |
           docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
-          docker rmi localhost:5000/ods/buildah:latest
-      - 
-        name: Show disk space
-        run: df -h          
+          docker rmi localhost:5000/ods/buildah:latest         
       -
         name: Push go-toolset image
         run: |
@@ -112,17 +100,11 @@ jobs:
       -
         name: Delete image tarballs
         run: |
-          rm -rf /tmp/buildx-image-*
-      - 
-        name: Show disk space
-        run: df -h          
+          rm -rf /tmp/buildx-image-*      
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
-        id: install
-      - 
-        name: Show disk space
-        run: df -h        
+        id: install     
       -
         name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
@@ -132,17 +114,11 @@ jobs:
       -
         name: Spin up Bitbucket container
         working-directory: scripts
-        run: ./run-bitbucket.sh
-      - 
-        name: Show disk space
-        run: df -h        
+        run: ./run-bitbucket.sh     
       -
         name: Spin up Nexus container
         working-directory: scripts
-        run: ./run-nexus.sh
-      - 
-        name: Show disk space
-        run: df -h        
+        run: ./run-nexus.sh     
       -
         name: Spin up SonarQube container
         working-directory: scripts
@@ -154,10 +130,7 @@ jobs:
         name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
-      - 
-        name: Show disk space
-        run: df -h          
+          go-version: 1.16       
       -
         name: Run tests
         run: |
