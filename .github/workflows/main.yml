@@ -47,6 +47,15 @@ jobs:
     env:
       TKN_VERSION: "v0.22.0"
     steps:
+      - # this should gain about 7-8 GB additional space
+        name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
       - 
         name: Download image artifacts
         uses: actions/download-artifact@v2
