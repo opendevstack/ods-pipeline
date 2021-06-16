@@ -6,8 +6,8 @@ import (
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
-// Download gets URLs
-func Download(URL, user, password, repository, group string) ([]string, error) {
+// Search gets URLs
+func Search(URL, user, password, repository, group string) ([]string, error) {
 	rm, err := nexusrm.New(
 		URL,
 		user,

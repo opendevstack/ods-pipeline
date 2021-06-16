@@ -32,8 +32,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				ctxt.Params = map[string]string{
 					"go-image":    "localhost:5000/ods/go-toolset:latest",
 					"sonar-image": "localhost:5000/ods/sonar:latest",

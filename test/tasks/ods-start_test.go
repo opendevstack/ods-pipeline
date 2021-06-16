@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -29,22 +28,10 @@ func TestTaskODSStart(t *testing.T) {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 				wsDir := ctxt.Workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir) // will be cleaned by task
-				originURL := tasktesting.PushToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
-
-				ctxt.ODS = &pipelinectxt.ODSContext{
-					Namespace: ns,
-					Project:   bitbucketProjectKey,
-					GitURL:    originURL,
-				}
-				err := ctxt.ODS.Assemble(wsDir)
-				if err != nil {
-					t.Fatalf("could not assemble ODS context information: %s", err)
-				}
-
+				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
 				ctxt.Params = map[string]string{
 					"image":             "localhost:5000/ods/start:latest",
-					"url":               originURL,
+					"url":               ctxt.ODS.GitURL,
 					"git-full-ref":      "refs/heads/master",
 					"project":           ctxt.ODS.Project,
 					"component":         ctxt.ODS.Component,

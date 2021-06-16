@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start"]
+        image: ["buildah", "go-toolset", "helm", "interceptor", "sonar", "start", "finish"]
     steps:
       -
         name: Checkout
@@ -56,67 +56,89 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0      
       -
         name: Setup KinD cluster with internal registry
         working-directory: scripts
-        run: ./kind-with-registry.sh
+        run: ./kind-with-registry.sh    
       -
         name: Push buildah image
         run: |
           docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
+          docker rmi localhost:5000/ods/buildah:latest         
       -
         name: Push go-toolset image
         run: |
           docker load --input /tmp/buildx-image-go-toolset/image-go-toolset.tar
           docker push localhost:5000/ods/go-toolset:latest
+          docker rmi localhost:5000/ods/go-toolset:latest
       -
         name: Push helm image
         run: |
           docker load --input /tmp/buildx-image-helm/image-helm.tar
           docker push localhost:5000/ods/helm:latest
+          docker rmi localhost:5000/ods/helm:latest
       -
         name: Push sonar image
         run: |
           docker load --input /tmp/buildx-image-sonar/image-sonar.tar
           docker push localhost:5000/ods/sonar:latest
+          docker rmi localhost:5000/ods/sonar:latest
       -
         name: Push start image
         run: |
           docker load --input /tmp/buildx-image-start/image-start.tar
           docker push localhost:5000/ods/start:latest
+          docker rmi localhost:5000/ods/start:latest
+      -
+        name: Push finish image
+        run: |
+          docker load --input /tmp/buildx-image-finish/image-finish.tar
+          docker push localhost:5000/ods/finish:latest
+          docker rmi localhost:5000/ods/finish:latest
       -
         name: Delete image tarballs
         run: |
-          rm -rf /tmp/buildx-image-*
+          rm -rf /tmp/buildx-image-*      
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
-        id: install
+        id: install     
       -
         name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Spin up Bitbucket container
         working-directory: scripts
-        run: ./run-bitbucket.sh
+        run: ./run-bitbucket.sh     
       -
         name: Spin up Nexus container
         working-directory: scripts
-        run: ./run-nexus.sh
+        run: ./run-nexus.sh     
       -
         name: Spin up SonarQube container
         working-directory: scripts
         run: ./run-sonarqube.sh
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.16       
       -
         name: Run tests
         run: |
           go test -v ./internal/...
           go test -v ./pkg/...
           go test -v ./test/tasks/... -always-keep-tmp-workspaces
+      -
+        name: Docker logs nexustest
+        if: ${{ failure() }}
+        run: |
+          docker logs nexustest      
