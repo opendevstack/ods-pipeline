@@ -47,20 +47,11 @@ jobs:
     env:
       TKN_VERSION: "v0.22.0"
     steps:
-      - # this should gain about 7-8 GB additional space
-        name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 512
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
       - 
         name: Download image artifacts
         uses: actions/download-artifact@v2
         with:
-          path: /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts
+          path: /tmp
       -
         name: Checkout
         uses: actions/checkout@v2
@@ -73,37 +64,37 @@ jobs:
       -
         name: Push buildah image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-buildah/image-buildah.tar
+          docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
       -
         name: Push go-toolset image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-go-toolset/image-go-toolset.tar
+          docker load --input /tmp/buildx-image-go-toolset/image-go-toolset.tar
           docker push localhost:5000/ods/go-toolset:latest
       -
         name: Push helm image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-helm/image-helm.tar
+          docker load --input /tmp/buildx-image-helm/image-helm.tar
           docker push localhost:5000/ods/helm:latest
       -
         name: Push sonar image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-sonar/image-sonar.tar
+          docker load --input /tmp/buildx-image-sonar/image-sonar.tar
           docker push localhost:5000/ods/sonar:latest
       -
         name: Push start image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-start/image-start.tar
+          docker load --input /tmp/buildx-image-start/image-start.tar
           docker push localhost:5000/ods/start:latest
       -
         name: Push finish image
         run: |
-          docker load --input /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-finish/image-finish.tar
+          docker load --input /tmp/buildx-image-finish/image-finish.tar
           docker push localhost:5000/ods/finish:latest          
       -
         name: Delete image tarballs
         run: |
-          rm -rf /home/runner/work/ods-pipeline/ods-pipeline/image-artifacts/buildx-image-*
+          rm -rf /tmp/buildx-image-*
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
