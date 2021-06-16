@@ -75,6 +75,7 @@ jobs:
         run: |
           docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
+          docker rmi localhost:5000/ods/buildah:latest
       - 
         name: Show disk space
         run: df -h          
@@ -83,26 +84,31 @@ jobs:
         run: |
           docker load --input /tmp/buildx-image-go-toolset/image-go-toolset.tar
           docker push localhost:5000/ods/go-toolset:latest
+          docker rmi localhost:5000/ods/go-toolset:latest
       -
         name: Push helm image
         run: |
           docker load --input /tmp/buildx-image-helm/image-helm.tar
           docker push localhost:5000/ods/helm:latest
+          docker rmi localhost:5000/ods/helm:latest
       -
         name: Push sonar image
         run: |
           docker load --input /tmp/buildx-image-sonar/image-sonar.tar
           docker push localhost:5000/ods/sonar:latest
+          docker rmi localhost:5000/ods/sonar:latest
       -
         name: Push start image
         run: |
           docker load --input /tmp/buildx-image-start/image-start.tar
           docker push localhost:5000/ods/start:latest
+          docker rmi localhost:5000/ods/start:latest
       -
         name: Push finish image
         run: |
           docker load --input /tmp/buildx-image-finish/image-finish.tar
-          docker push localhost:5000/ods/finish:latest          
+          docker push localhost:5000/ods/finish:latest
+          docker rmi localhost:5000/ods/finish:latest
       -
         name: Delete image tarballs
         run: |
