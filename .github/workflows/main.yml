@@ -52,20 +52,32 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: /tmp
+      - 
+        name: Show disk space
+        run: df -h
       -
         name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - 
+        name: Show disk space
+        run: df -h          
       -
         name: Setup KinD cluster with internal registry
         working-directory: scripts
         run: ./kind-with-registry.sh
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Push buildah image
         run: |
           docker load --input /tmp/buildx-image-buildah/image-buildah.tar
           docker push localhost:5000/ods/buildah:latest
+      - 
+        name: Show disk space
+        run: df -h          
       -
         name: Push go-toolset image
         run: |
@@ -95,30 +107,51 @@ jobs:
         name: Delete image tarballs
         run: |
           rm -rf /tmp/buildx-image-*
+      - 
+        name: Show disk space
+        run: df -h          
       -
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Spin up Bitbucket container
         working-directory: scripts
         run: ./run-bitbucket.sh
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Spin up Nexus container
         working-directory: scripts
         run: ./run-nexus.sh
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Spin up SonarQube container
         working-directory: scripts
         run: ./run-sonarqube.sh
+      - 
+        name: Show disk space
+        run: df -h        
       -
         name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
+      - 
+        name: Show disk space
+        run: df -h          
       -
         name: Run tests
         run: |

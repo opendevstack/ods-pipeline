@@ -31,8 +31,7 @@ docker rm -f ${CONTAINER_NAME} || true
 cd ${SCRIPT_DIR}/nexus
 docker build -t nexustest .
 cd -
-docker volume create --name nexus-vol --driver local --opt type=tmpfs --opt device=tmpfs --opt o=size=2G
-docker run -d -p "${HOST_PORT}:8081" -v nexus-vol --net kind --name ${CONTAINER_NAME} nexustest
+docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
 
 NEXUS_URL="http://localhost:${HOST_PORT}"
 function waitForReady {
