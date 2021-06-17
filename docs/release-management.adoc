@@ -1,0 +1,122 @@
+# Managing releases
+
+There are two ways to manage releases:
+
+* Deploying each application component individually without a common application version. This mode works well for microservice approaches in unregulated environments.
+* Deploying the application as a whole, using one version across all application components. This mode works well for monoliths and microservices in regulated environments.
+
+## Deploying components individually ("component mode")
+
+This is the default mode in ODS. Each component defines which environments it can be deployed to, as well as which Git branches should be deployed to which environment. In this mode each repository is independent from other repositories.
+
+A repository is required to contain an `ods.yml` file, which may define `environments` and an `branchToEnvironmentMapping` like this:
+
+```yml
+environments:
+- name: dev
+  namespace: foo-dev
+  stage: dev
+- name: qa
+  namespace: foo-test
+  stage: qa
+- name: prod-eu
+  namespace: foo-prod
+  stage: prod
+- name: prod-cn
+  url: https://api.cn.openshift.com
+  credentials: prod-cn-api-auth
+  namespace: foo-prod
+  stage: prod
+
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+- branch: release/*
+  environment: qa-eu
+- branch: production-eu
+  environment: prod-eu
+- branch: production-cn
+  environment: prod-cn
+
+phases: { ... omitted for brevity ... }
+```
+
+In the example above, any pipelines triggered from the `master` branch deploy into the `dev` environment which is provided by the `foo-dev` namespace on the same cluster as on which the pipeline runs. Pipelines triggered from any `release/*` branch are deployed into `foo-test`. For production, there are two different deployments: the `prod-eu` branch deploys to `foo-prod` on the same cluster while the `prod-cn` branch deploys to an external cluster (`https://api.cn.openshift.com`) using the credentials provided in the `Secret` `prod-cn-api-auth`.
+
+## Deploying applications as a whole ("application mode")
+
+This mode requires an additional "umbrella" repository which defines which repositories are part of the application. This "umbrella" repository also needs to contain an `environments` configuration - the configuration of `environments` in any of the components has no effect in this case.
+
+An example `ods.yml` in an "umbrella" repository is:
+```yml
+environments:
+- name: dev
+  namespace: foo-dev
+  stage: dev
+- name: qa
+  namespace: foo-test
+  stage: qa
+- name: prod-eu
+  namespace: foo-prod
+  stage: prod
+- name: prod-cn
+  url: https://api.cn.openshift.com
+  credentials: prod-cn-api-auth
+  namespace: foo-prod
+  stage: prod
+
+repositories:
+- name: foo-component-a
+- name: foo-component-b
+  defaultBranch: develop
+
+phases: { ... omitted for brevity ... }
+```
+
+The `environments` configuration looks exactly the same as in the component mode. `repositories` lists each repository which should be part of the application, where `name` is the full name of the repository. It is possible to specify a `defaultBranch` - if omitted `master` is used.
+
+Note that the "umbrella" repository should not have any webhook configured. The selection which environment should be deployed to is not driven by a `branchToEnvironmentMapping` in this mode. Instead, it can be either driven by an external system such as Jira, or using a Git-centric approch.
+
+### Environment selection using an external system like Jira
+
+In this case, the pipeline for the umbrella repository is not triggered by a webhook request originating from Bitbucket. Instead, the external system sends a direct request to the event listener. This API request must contain information which environment to select, and which version should be deployed. An example request looks like this:
+
+```json
+{
+    "project": "bar"
+    "repository": "bar-foo",
+    "branch": "master",
+    "environment": "dev",
+    "version": "1.0.0"
+}
+```
+
+Based on the value of `environment`, an environment from the list of configured `environments` is selected. The `version` parameter is used to tag the Git heads of the referenced repositories. The exact mechanism how branches and tags work is described further below as it also applies to the evironment selection using a Git-centric approach, described in the next section.
+
+### Environment selection using a Git-centric approach
+
+In this case, the information which environment to select and which version should be deployed is not sent from an external system, but is encoded in a separate repository containing an `ods.yml` file like this:
+
+```yml
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+- branch: release/*
+  environment: qa-eu
+- branch: production-eu
+  environment: prod-eu
+- branch: production-cn
+  environment: prod-cn
+
+umbrella:
+    name: foo-app
+    version: 1.0.0
+```
+
+When a webhook request is fired for this repository, the environment is selected based on the `branchToEnvironmentMapping` and the webhook interceptor triggers a pipeline for the repository identified by `umbrella.name`, using the version specified. The umbrella repository processes this information in the same way as in the Jira case.
+
+### Branching model and Git tags
+
+In the application mode, the umbrella repository refers to its component repositories. When deployment for a version is triggered, the component repositories are checked out at the head of a `release/VERSION` (e.g. `release/1.0.0`) branch if it exists, otherwise the head of the configured default branch (`master` if not configured explicitly).
+
+Pipelines running for an environment stage `dev` do no create any Git tags. When the target stage is `qa`, a Git tag of format `vVERSION-rc.NUMBER` is applied. The number starts with 1 and increases for every pipeline run. Conceptually this means that every state of the application being deployed into QA is considered to be a release candidate. Pipelines running for the `prod` stage take the release candidate tag with the highest version number (the latest release candidate) and apply another tag, `vVERSION` to it. Note that if a pipeline runs for stage `qa` and there is already a `vVERSION` tag, no release candidate tag is created. Similarily, if a pipeline runs for stage `prod` and there is already a `vVERSION` tag, that tag is used instead of the highest release candidate tag.
