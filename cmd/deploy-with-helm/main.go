@@ -3,150 +3,78 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/config"
-	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"sigs.k8s.io/yaml"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-const (
-	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-)
-
 func main() {
-	// optional flags (can be empty or not given)
-	namespaceFlag := flag.String("namespace", "", "namespace")
-	projectFlag := flag.String("project", "", "project")
-	repositoryFlag := flag.String("repository", "", "repository")
-	componentFlag := flag.String("component", "", "component")
-	gitRefSpecFlag := flag.String("git-ref-spec", "", "Git ref spec")
-	gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
-	releaseNameFlag := flag.String("release-name", "", "release-name")
-
-	// required flags (but not needed as task input)
-	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
-	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
-	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
 	chartDir := flag.String("chart-dir", "", "Chart dir")
 	environment := flag.String("environment", "", "environment")
+	releaseNameFlag := flag.String("release-name", "", "release-name")
 	target := flag.String("target", "", "target")
 	flag.Parse()
 
-	var namespace string
-	if len(*namespaceFlag) > 0 {
-		namespace = *namespaceFlag
-	} else {
-		kubernetesNamespace, err := getTrimmedFileContent(namespaceFile)
-		if err != nil {
-			panic(err.Error())
-		}
-		namespace = kubernetesNamespace
+	ctxt := &pipelinectxt.ODSContext{}
+	err := ctxt.ReadCache(".")
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Printf("namespace=%s\n", namespace)
-
-	var project string
-	if len(*projectFlag) > 0 {
-		project = *projectFlag
-	} else {
-		project = strings.TrimSuffix(namespace, "-cd")
-	}
-	fmt.Printf("project=%s\n", project)
-
-	var repository string
-	if len(*repositoryFlag) > 0 {
-		repository = *repositoryFlag
-	} else {
-		r, err := getGitRepository()
-		check(err)
-		repository = r
-	}
-	fmt.Printf("repository=%s\n", repository)
-
-	var component string
-	if len(*componentFlag) > 0 {
-		component = *componentFlag
-	} else {
-		component = strings.TrimPrefix(repository, fmt.Sprintf("%s-", project))
-	}
-	fmt.Printf("component=%s\n", component)
 
 	var releaseName string
 	if len(*releaseNameFlag) > 0 {
 		releaseName = *releaseNameFlag
 	} else {
-		releaseName = component
+		releaseName = ctxt.Component
 	}
 	fmt.Printf("releaseName=%s\n", releaseName)
-
-	var gitRefSpec string
-	if len(*gitRefSpecFlag) > 0 {
-		gitRefSpec = *gitRefSpecFlag
-	} else {
-		grs, err := getGitFullRef()
-		check(err)
-		gitRefSpec = grs
-	}
-	fmt.Printf("gitRefSpec=%s\n", gitRefSpec)
-
-	var gitCommitSHA string
-	if len(*gitCommitSHAFlag) > 0 {
-		gitCommitSHA = *gitCommitSHAFlag
-	} else {
-		gcs, err := getGitCommitSHA(gitRefSpec)
-		check(err)
-		gitCommitSHA = gcs
-	}
-	fmt.Printf("gitCommitSHA=%s\n", gitCommitSHA)
 
 	// read ods.yml
 	odsConfig, err := getConfig("ods.yml")
 	if err != nil {
-		panic(fmt.Sprintf("err during ods config reading %s", err))
+		log.Fatal(fmt.Sprintf("err during ods config reading %s", err))
 	}
 	targetConfig, err := getTarget(odsConfig, *environment, *target)
 	if err != nil {
-		panic(fmt.Sprintf("err during namespace extraction %s", err))
+		log.Fatal(fmt.Sprintf("err during namespace extraction %s", err))
 	}
 
 	releaseNamespace := targetConfig.Namespace
 	if len(releaseNamespace) == 0 {
-		panic("no namespace to deploy to")
+		log.Fatal("no namespace to deploy to")
 	}
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 
-	nexusClient, err := nexus.NewClient(
-		*nexusURLFlag,
-		*nexusUsernameFlag,
-		*nexusPasswordFlag,
-		project,
-	)
-	check(err)
-	nexusGroupPrefix := fmt.Sprintf("/%s/%s", repository, gitCommitSHA)
+	var files []fs.FileInfo
+	imageDigestsDir := ".ods/artifacts/image-digests"
+	if _, err := os.Stat(imageDigestsDir); os.IsNotExist(err) {
+		fmt.Printf("no image digest in %s\n", imageDigestsDir)
+	} else {
+		f, err := ioutil.ReadDir(imageDigestsDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		files = f
+	}
 
-	fmt.Println("copying images...")
-
-	urls, _ := nexusClient.URLs(
-		fmt.Sprintf("%s/image-digests", nexusGroupPrefix),
-	)
-
-	for _, u := range urls {
-		imageStream := strings.TrimSuffix(filepath.Base(u), ".json")
+	for _, f := range files {
+		filename := f.Name()
+		imageStream := strings.TrimSuffix(filepath.Base(filename), ".json")
 		fmt.Println("copying image", imageStream)
 		// TODO: should we also allow external registries? maybe not ...
-		srcImageStreamUrl, err := getImageStreamUrl(namespace, imageStream)
+		srcImageStreamUrl, err := getImageStreamUrl(ctxt.Namespace, imageStream)
 		srcRegistryTLSVerify := false
-		check(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
 		var destImageStreamUrl string
@@ -158,7 +86,9 @@ func main() {
 			}
 		} else {
 			disu, err := getImageStreamUrl(releaseNamespace, imageStream)
-			check(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 			destImageStreamUrl = disu
 			destRegistryTLSVerify = false
 		}
@@ -171,17 +101,15 @@ func main() {
 			[]string{
 				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, gitCommitSHA),
-				fmt.Sprintf("docker://%s:%s", destImageStreamUrl, gitCommitSHA),
+				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, ctxt.GitCommitSHA),
+				fmt.Sprintf("docker://%s:%s", destImageStreamUrl, ctxt.GitCommitSHA),
 			},
 		)
 		if err != nil {
-			fmt.Println(err)
 			fmt.Println(string(stderr))
-		} else {
-			fmt.Println(string(stdout))
-			fmt.Println(string(stderr))
+			log.Fatal(err)
 		}
+		fmt.Println(string(stdout))
 	}
 
 	fmt.Println("list helm plugins...")
@@ -194,63 +122,79 @@ func main() {
 		},
 	)
 	if err != nil {
-		fmt.Println(err)
 		fmt.Println(string(stderr))
-	} else {
-		fmt.Println(string(stdout))
-		fmt.Println(string(stderr))
+		log.Fatal(err)
 	}
+	fmt.Println(string(stdout))
 
 	// if child repos exist, collect helm charts for them and place into charts/
-	if len(odsConfig.Repositories) > 0 {
-		cwd, err := os.Getwd()
-		check(err)
-		fmt.Println("pulling in helm chart packages from child repositories ...")
-		for _, childRepo := range odsConfig.Repositories {
-			childCommitSHA, err := getGitCommitSHAInDir(gitRefSpec, ".ods/repositories/"+childRepo.Name)
-			check(err)
-			// TODO: This should only return one URL - should we enforce this?
-			helmChartURLs, err := nexusClient.URLs(
-				fmt.Sprintf("/%s/%s/helm-charts", childRepo.Name, childCommitSHA),
-			)
-			check(err)
-			// helm pull
-			chartsPath := filepath.Join(*chartDir, "charts")
-			err = os.Mkdir(chartsPath, 0644)
-			check(err)
-			err = os.Chdir(chartsPath)
-			check(err)
-			for _, helmChartURL := range helmChartURLs {
-				nexusClient.Download(helmChartURL)
-			}
-			err = os.Chdir(cwd)
-			check(err)
-		}
-	}
+	// if len(odsConfig.Repositories) > 0 {
+	// 	cwd, err := os.Getwd()
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	fmt.Println("pulling in helm chart packages from child repositories ...")
+	// 	for _, childRepo := range odsConfig.Repositories {
+	// 		childCommitSHA, err := getGitCommitSHAInDir(".ods/repositories/" + childRepo.Name)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 		// TODO: This should only return one URL - should we enforce this?
+	// 		helmChartURLs, err := nexusClient.URLs(
+	// 			fmt.Sprintf("/%s/%s/helm-charts", childRepo.Name, childCommitSHA),
+	// 		)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 		// helm pull
+	// 		chartsPath := filepath.Join(*chartDir, "charts")
+	// 		err = os.Mkdir(chartsPath, 0644)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 		err = os.Chdir(chartsPath)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 		for _, helmChartURL := range helmChartURLs {
+	// 			nexusClient.Download(helmChartURL)
+	// 		}
+	// 		err = os.Chdir(cwd)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 	}
+	// }
 
 	fmt.Println("packaging helm chart ...")
 	chartVersion, err := getChartVersion(filepath.Join(*chartDir, "Chart.yaml"))
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, _, err = command.Run(
 		"helm",
 		[]string{
 			"package",
-			fmt.Sprintf("--app-version=%s", gitCommitSHA),
-			fmt.Sprintf("--version=%s+%s", chartVersion, gitCommitSHA),
+			fmt.Sprintf("--app-version=%s", ctxt.GitCommitSHA),
+			fmt.Sprintf("--version=%s+%s", chartVersion, ctxt.GitCommitSHA),
 			*chartDir,
 		},
 	)
-	check(err)
-
-	helmArchive, err := getHelmArchive(component)
-	check(err)
-
-	fmt.Println("uploading helm chart package ...")
-	// TODO: check err
-	err = nexusClient.Upload(fmt.Sprintf("%s/helm-charts", nexusGroupPrefix), helmArchive)
 	if err != nil {
-		fmt.Printf("got err: %s", err)
+		log.Fatal(err)
 	}
+
+	helmArchive, err := getHelmArchive(ctxt.Component)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// fmt.Println("uploading helm chart package ...")
+	// // TODO: check err
+	// err = nexusClient.Upload(fmt.Sprintf("%s/helm-charts", nexusGroupPrefix), helmArchive)
+	// if err != nil {
+	// 	fmt.Printf("got err: %s", err)
+	// }
 
 	fmt.Printf("diffing helm release against %s...\n", helmArchive)
 	stdout, stderr, err = command.Run(
@@ -270,10 +214,9 @@ func main() {
 	if err == nil {
 		fmt.Println("no diff ...")
 		os.Exit(0)
-	} else {
-		fmt.Println(string(stdout))
-		fmt.Println(string(stderr))
 	}
+	fmt.Println(string(stdout))
+	fmt.Println(string(stderr))
 
 	fmt.Printf("upgrading helm release to %s...\n", helmArchive)
 	stdout, stderr, err = command.Run(
@@ -287,35 +230,11 @@ func main() {
 			helmArchive,
 		},
 	)
-
-	check(err)
-
-	fmt.Println(string(stdout))
-	fmt.Println(string(stderr))
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", err
+		fmt.Println(string(stderr))
+		log.Fatal(err)
 	}
-	return strings.TrimSpace(string(content)), nil
-}
-
-func getGitFullRef() (string, error) {
-	return getTrimmedFileContent(".ods/git-full-ref")
-}
-
-func getGitCommitSHA(refSpec string) (string, error) {
-	return getTrimmedFileContent(".ods/git-commit-sha")
-}
-
-func getGitCommitSHAInDir(refSpec string, dir string) (string, error) {
-	return getTrimmedFileContent(dir + "/.ods/git-commit-sha")
-}
-
-func getGitRepository() (string, error) {
-	return getTrimmedFileContent(".ods/repository")
+	fmt.Println(string(stdout))
 }
 
 func getConfig(filename string) (config.ODS, error) {

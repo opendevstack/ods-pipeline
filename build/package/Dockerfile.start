@@ -1,10 +1,13 @@
-FROM registry.access.redhat.com/ubi8
+FROM registry.access.redhat.com/ubi8/go-toolset:latest
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV GO_VERSION 1.16.3
-ENV TEKTON_VERSION 0.22.0
-ENV TEKTONCD_PATH /opt/app-root/src/go/src/github.com/tektoncd
+ENV TEKTON_VERSION=0.22.0 \
+    TEKTONCD_PATH=/opt/app-root/src/go/src/github.com/tektoncd \
+    BINARY=git-init.orig \
+    KO_APP=/ko-app
+
+USER root
 
 RUN mkdir -p $TEKTONCD_PATH && \
     cd /tmp && \
@@ -14,22 +17,7 @@ RUN mkdir -p $TEKTONCD_PATH && \
     ln -s $TEKTONCD_PATH/pipeline-$TEKTON_VERSION $TEKTONCD_PATH/pipeline && \
     cd -
 
-RUN yum install -y openssh-clients git
-
-RUN cd /tmp && \
-    curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
-    rm -f *.tar.gz && \
-    cd - && \
-    mkdir /go
-
-ENV PATH $PATH:/usr/local/go/bin
-ENV GOBIN /usr/local/bin
-
-RUN chmod g+w /go
-
-ENV BINARY=git-init.orig \
-    KO_APP=/ko-app
+RUN yum install -y openssh-clients
 
 WORKDIR $TEKTONCD_PATH/pipeline
 
@@ -50,3 +38,5 @@ COPY cmd /etc/go/cmd
 COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/start && CGO_ENABLED=0 go build -o /usr/local/bin/ods-start
+
+USER 1001
