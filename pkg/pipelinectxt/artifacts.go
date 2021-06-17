@@ -1,9 +1,11 @@
 package pipelinectxt
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 )
 
@@ -16,11 +18,26 @@ const (
 	ImageDigestsPath  = ArtifactsPath + "/" + ImageDigestsDir
 	SonarAnalysisDir  = "sonarqube-analysis"
 	SonarAnalysisPath = ArtifactsPath + "/" + SonarAnalysisDir
+	AquaScansDir      = "aquasec-scans"
+	AquaScansPath     = ArtifactsPath + "/" + AquaScansDir
 	CodeCoveragesDir  = "code-coverage"
 	CodeCoveragesPath = ArtifactsPath + "/" + CodeCoveragesDir
 	XUnitReportsDir   = "xunit-reports"
 	XUnitReportsPath  = ArtifactsPath + "/" + XUnitReportsDir
 )
+
+// WriteJsonArtifact marshals given "in" struct and writes it into "artifactsPath" as "filename".
+func WriteJsonArtifact(in interface{}, artifactsPath, filename string) error {
+	out, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("could not marshal artifact: %w", err)
+	}
+	err = os.MkdirAll(artifactsPath, 0755)
+	if err != nil {
+		return fmt.Errorf("could not create %s: %w", artifactsPath, err)
+	}
+	return ioutil.WriteFile(filepath.Join(artifactsPath, filename), out, 0644)
+}
 
 func ReadArtifactsDir() (map[string][]string, error) {
 

@@ -38,6 +38,20 @@ sonarUsername: ''
 # SonarQube password for the user identified by "sonarUsername" in clear text.
 sonarAuthToken: ''
 
+# Aqua
+# Aqua URL (including scheme). Example: https://aqua.example.com.
+# Leave empty when not using Aqua.
+aquaUrl: ''
+# Aqua registry name.
+# Leave empty when not using Aqua.
+aquaRegistry: ''
+# Aqua username. Example: developer.
+# Leave empty when not using Aqua.
+aquaUsername: ''
+# Aqua password for the user identified by "aquaUsername" in clear text.
+# Leave empty when not using Aqua.
+aquaPassword: ''
+
 # PVC
 # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
 storageProvisioner: 'kubernetes.io/aws-ebs'

@@ -5,6 +5,11 @@ import (
 	"fmt"
 )
 
+const (
+	InsightReportPass = "PASS"
+	InsightReportFail = "FAIL"
+)
+
 type InsightReport struct {
 	Data        []InsightReportData `json:"data"`
 	CreatedDate int                 `json:"createdDate"`
