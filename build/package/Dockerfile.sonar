@@ -51,8 +51,9 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
 
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
-FROM registry.access.redhat.com/ubi8/openjdk-11
+RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
 
 COPY --from=builder /usr/local/bin/sonar /usr/local/bin/sonar
 COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli
