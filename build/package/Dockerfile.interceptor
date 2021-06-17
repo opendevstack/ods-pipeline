@@ -1,5 +1,4 @@
-FROM golang:1.15-alpine
-
+FROM golang:1.15-alpine AS builder
 
 RUN apk add --no-cache ca-certificates
 
@@ -10,6 +9,8 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/webhook-interceptor && CGO_ENABLED=0 go build -o /usr/local/bin/webhook-interceptor
 
+FROM registry.access.redhat.com/ubi8/ubi-micro
+COPY --from=builder /usr/local/bin/webhook-interceptor /usr/local/bin/webhook-interceptor
 EXPOSE 8080
 
 CMD webhook-interceptor
