@@ -79,7 +79,7 @@ stringData:
   username: admin
 kind: Secret
 metadata:
-  name: bitbucket-auth
+  name: ods-bitbucket-auth
   annotations:
     tekton.dev/git-0: '${BITBUCKET_URL_FULL}'
 type: kubernetes.io/basic-auth
@@ -89,7 +89,7 @@ cat <<EOF >${K8S_CONFIGMAP_FILE}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: bitbucket
+  name: ods-bitbucket
 data:
   url: '${BITBUCKET_URL_FULL}'
 EOF

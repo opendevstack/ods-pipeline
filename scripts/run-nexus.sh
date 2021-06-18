@@ -110,7 +110,7 @@ stringData:
   username: ${DEVELOPER_USERNAME}
 kind: Secret
 metadata:
-  name: nexus-auth
+  name: ods-nexus-auth
 type: kubernetes.io/basic-auth
 EOF
 
@@ -118,7 +118,7 @@ cat <<EOF >${K8S_CONFIGMAP_FILE}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: nexus
+  name: ods-nexus
 data:
   url: 'http://${CONTAINER_NAME}.kind:8081'
 EOF

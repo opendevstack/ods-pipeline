@@ -18,7 +18,7 @@ We'll look at *Tekton Pipelines* in detail now, and will look at *Tekton Trigger
 
 A Tekton pipeline (a Kubernetes resource named `Pipeline`) references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artefacts, deploying, etc. Tekton distinguishes between the definition (`Pipeline` and `Task` resources) and the actual execution (also modelled as resources, namely `PipelineRun` and `TaskRun`). The `PipelineRun` provides a workspace to the pipeline, which is a Kubernetes volume mounted in the task pods. If the volume is a PVC, it can be shared between tasks, allowing the tasks to work e.g. on the same repository checkout. The following illustrates the basic Tekton architecture:
 
-![Tekton Architecture](https://raw.githubusercontent.com/openshift/pipelines-tutorial/master/docs/images/tekton-architecture.svg)
+image::https://raw.githubusercontent.com/openshift/pipelines-tutorial/master/docs/images/tekton-architecture.svg[Tekton Architecture]
 
 At this stage you know just enough about Tekton to continue with this introduction, but if you want to know more about it, you can read the https://tekton.dev/docs/[Tekton docs] and/or follow the https://github.com/openshift/pipelines-tutorial[OpenShift Pipelines tutorial].
 

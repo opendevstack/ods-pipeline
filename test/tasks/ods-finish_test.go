@@ -46,7 +46,7 @@ func TestTaskODSFinish(t *testing.T) {
 				wsDir := ctxt.Workspaces["source"]
 				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
 				ctxt.Params = map[string]string{
-					"image":                  "localhost:5000/ods/finish:latest",
+					"image":                  "localhost:5000/ods/ods-finish:latest",
 					"console-url":            "http://example.com",
 					"pipeline-run-name":      "foo",
 					"aggregate-tasks-status": "None",
@@ -63,7 +63,7 @@ func TestTaskODSFinish(t *testing.T) {
 				wsDir := ctxt.Workspaces["source"]
 				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
 				ctxt.Params = map[string]string{
-					"image":                  "localhost:5000/ods/finish:latest",
+					"image":                  "localhost:5000/ods/ods-finish:latest",
 					"console-url":            "http://example.com",
 					"pipeline-run-name":      "foo",
 					"aggregate-tasks-status": "Succeeded",

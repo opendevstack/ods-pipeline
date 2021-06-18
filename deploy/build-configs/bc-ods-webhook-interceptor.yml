@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: ods-build-go
+  name: ods-webhook-interceptor
 parameters:
 - name: GIT_URL
   description: "Git repository URL"
@@ -12,23 +12,23 @@ objects:
 - kind: BuildConfig
   apiVersion: build.openshift.io/v1
   metadata:
-    name: ods-build-go
+    name: ods-webhook-interceptor
   spec:
     nodeSelector: null
     output:
       to:
         kind: ImageStreamTag
-        name: 'ods-build-go:latest'
+        name: 'ods-webhook-interceptor:latest'
     resources: {}
     successfulBuildsHistoryLimit: 5
     failedBuildsHistoryLimit: 5
     strategy:
       type: Docker
       dockerStrategy:
-        dockerfilePath: build/package/Dockerfile.go-toolset
+        dockerfilePath: build/package/Dockerfile.webhook-interceptor
         from:
           kind: DockerImage
-          name: 'registry.redhat.io/ubi8'
+          name: 'registry.redhat.io/ubi8/ubi-micro'
         pullSecret:
           name: registry.redhat.io
     postCommit: {}

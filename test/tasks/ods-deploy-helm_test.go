@@ -34,7 +34,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				wsDir := ctxt.Workspaces["source"]
 				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				ctxt.Params = map[string]string{
-					"image": "localhost:5000/ods/helm:latest",
+					"image": "localhost:5000/ods/ods-helm:latest",
 				}
 
 				o := &config.ODS{
