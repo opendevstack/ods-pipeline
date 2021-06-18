@@ -7,122 +7,122 @@ metadata:
 spec:
   description: ODS
   finally:
-    - name: finish
-      taskRef:
-        kind: Task
-        name: ods-finish-v0-1-0
-      workspaces:
-        - name: source
-          workspace: shared-workspace
+  - name: finish
+    taskRef:
+      kind: Task
+      name: ods-finish-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
   params:
-    - default: foo-bar
-      name: repository
-      type: string
-    - default: foo
-      name: project
-      type: string
-    - default: bar
-      name: component
-      type: string
-    - default: foo-cd
-      name: namespace
-      type: string
-    - default: https://bitbucket.acme.org/scm/foo/bar.git
-      name: git-repo-url
-      type: string
-    - default: main
-      name: git-ref
-      type: string
-    - default: refs/heads/main
-      name: git-full-ref
-      type: string
-    - default: ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca
-      name: git-sha
-      type: string
-    - default: repo:refs_changed
-      name: trigger-event
-      type: string
-    - default: ""
-      name: comment
-      type: string
-    - default: "0"
-      name: pr-key
-      type: string
-    - default: ""
-      name: pr-base
-      type: string
+  - default: foo-bar
+    name: repository
+    type: string
+  - default: foo
+    name: project
+    type: string
+  - default: bar
+    name: component
+    type: string
+  - default: foo-cd
+    name: namespace
+    type: string
+  - default: https://bitbucket.acme.org/scm/foo/bar.git
+    name: git-repo-url
+    type: string
+  - default: main
+    name: git-ref
+    type: string
+  - default: refs/heads/main
+    name: git-full-ref
+    type: string
+  - default: ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca
+    name: git-sha
+    type: string
+  - default: repo:refs_changed
+    name: trigger-event
+    type: string
+  - default: ""
+    name: comment
+    type: string
+  - default: "0"
+    name: pr-key
+    type: string
+  - default: ""
+    name: pr-base
+    type: string
   tasks:
-    - name: start
-      params:
-        - name: url
-          value: $(params.git-repo-url)
-        - name: git-ref
-          value: $(params.git-ref)
-        - name: git-full-ref
-          value: $(params.git-full-ref)
-        - name: project
-          value: $(params.project)
-        - name: component
-          value: $(params.component)
-        - name: repository
-          value: $(params.repository)
-        - name: pr-key
-          value: $(params.pr-key)
-        - name: pr-base
-          value: $(params.pr-base)
-      taskRef:
-        kind: Task
-        name: ods-start-v0-1-0
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: go-helm-build
-      params:
-        - name: DOCKER_CONTEXT
-          value: docker
-        - name: TLSVERIFY
-          value: "false"
-        - name: IMAGE_STREAM
-          value: go-helm
-      runAfter:
-        - start
-      taskRef:
-        kind: Task
-        name: ods-build-go
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: go-helm-deploy
-      params:
-        - name: RELEASE_NAME
-          value: go-helm
-        - name: RELEASE_NAMESPACE
-          value: $(params.project)-dev
-        - name: PROJECT
-          value: $(params.project)
-        - name: REPOSITORY
-          value: michael-go-helm
-        - name: NAMESPACE
-          value: $(params.namespace)
-      runAfter:
-        - go-helm-build
-      taskRef:
-        kind: Task
-        name: ods-deploy-helm
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: go-helm-finalize
-      params:
-        - name: IMAGE_STREAM
-          value: go-helm
-      runAfter:
-        - go-helm-deploy
-      taskRef:
-        kind: Task
-        name: ods-finalize-docgen
-      workspaces:
-        - name: source
-          workspace: shared-workspace
+  - name: start
+    params:
+    - name: url
+      value: $(params.git-repo-url)
+    - name: git-ref
+      value: $(params.git-ref)
+    - name: git-full-ref
+      value: $(params.git-full-ref)
+    - name: project
+      value: $(params.project)
+    - name: component
+      value: $(params.component)
+    - name: repository
+      value: $(params.repository)
+    - name: pr-key
+      value: $(params.pr-key)
+    - name: pr-base
+      value: $(params.pr-base)
+    taskRef:
+      kind: ClusterTask
+      name: ods-start-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: go-helm-build
+    params:
+    - name: DOCKER_CONTEXT
+      value: docker
+    - name: TLSVERIFY
+      value: "false"
+    - name: IMAGE_STREAM
+      value: go-helm
+    runAfter:
+    - start
+    taskRef:
+      kind: Task
+      name: ods-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: go-helm-deploy
+    params:
+    - name: RELEASE_NAME
+      value: go-helm
+    - name: RELEASE_NAMESPACE
+      value: $(params.project)-dev
+    - name: PROJECT
+      value: $(params.project)
+    - name: REPOSITORY
+      value: michael-go-helm
+    - name: NAMESPACE
+      value: $(params.namespace)
+    runAfter:
+    - go-helm-build
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: go-helm-finalize
+    params:
+    - name: IMAGE_STREAM
+      value: go-helm
+    runAfter:
+    - go-helm-deploy
+    taskRef:
+      kind: Task
+      name: ods-finalize-docgen
+    workspaces:
+    - name: source
+      workspace: shared-workspace
   workspaces:
-    - name: shared-workspace
+  - name: shared-workspace
