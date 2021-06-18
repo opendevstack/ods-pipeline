@@ -27,27 +27,27 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: ods-nexus
+              name: nexus
         - name: NEXUS_USERNAME
           valueFrom:
             secretKeyRef:
               key: username
-              name: ods-nexus-auth
+              name: nexus-auth
         - name: NEXUS_PASSWORD
           valueFrom:
             secretKeyRef:
               key: password
-              name: ods-nexus-auth
+              name: nexus-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: ods-bitbucket
+              name: bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: ods-bitbucket-auth
+              name: bitbucket-auth
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |

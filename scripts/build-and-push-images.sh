@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 SKIP_BUILD="false"
-IMAGES="buildah finish go-toolset helm sonar start webhook-interceptor"
+IMAGES="go-toolset sonar buildah helm start"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in

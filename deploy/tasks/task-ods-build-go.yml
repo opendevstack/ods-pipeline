@@ -54,22 +54,22 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: ods-sonar
+              name: sonar
         - name: SONAR_AUTH_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: ods-sonar-auth
+              name: sonar-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: ods-bitbucket
+              name: bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: ods-bitbucket-auth
+              name: bitbucket-auth
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then
