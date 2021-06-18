@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: demo-pipeline-run-
+spec:
+  pipelineRef:
+    name: demo-pipeline
+  workspaces:
+    - name: pipeline-ws-source
+      persistentVolumeClaim:
+        claimName: demo-pipeline-pvc # this PVC must already exist

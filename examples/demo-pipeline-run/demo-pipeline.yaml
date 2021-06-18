@@ -1,0 +1,86 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: demo-pipeline
+spec:
+  tasks:
+    - name: ods-start-v0-1-0
+      params:
+        - name: image
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/deleteme1-dev/ods-start:latest
+        - name: submodules
+          value: "true"
+        - name: depth
+          value: "1"
+        - name: ssl-verify
+          value: "true"
+        - name: delete-existing
+          value: "true"
+        - name: verbose
+          value: "true"
+        - name: git-full-ref
+          value: refs/heads/master
+        - name: console-url
+          value: >-
+            https://<OPENSHIFT_CONSOLE_URL>
+        - name: pipeline-run-name
+          value: demo-pipeline-run
+        - name: repository
+          value: hello-world-app
+        - name: component
+          value: hello-world-app-component
+        - name: project
+          value: deleteme1
+        - name: url
+          value: "https://<BITBUCKET_URL>/scm/deleteme1/hello-world-app.git"
+      taskRef:
+        kind: Task
+        name: ods-start-v0-1-0
+      workspaces:
+        - name: source
+          workspace: pipeline-ws-source
+    - name: ods-build-go-v0-1
+      params:
+        - name: go-image
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/ods/ods-build-go:latest
+        - name: enable-cgo
+          value: "false"
+        - name: sonar-image
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest
+        - name: sonar-quality-gate
+          value: "false"
+        - name: sonar-skip
+          value: "false"
+      runAfter:
+        - ods-start-v0-1-0
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-1
+      workspaces:
+        - name: source
+          workspace: pipeline-ws-source
+    - name: ods-finish-v0-1-0
+      params:
+        - name: image
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/deleteme1-dev/ods-finish:latest
+        - name: aggregate-tasks-status
+          value: IDONTKNOW
+        - name: console-url
+          value: >-
+            https://<OPENSHIFT_CONSOLE_URL>
+        - name: pipeline-run-name
+          value: demo-pipeline-run
+      runAfter:
+        - ods-build-go-v0-1
+      taskRef:
+        kind: Task
+        name: ods-finish-v0-1-0
+      workspaces:
+        - name: source
+          workspace: pipeline-ws-source
+  workspaces:
+    - name: pipeline-ws-source
