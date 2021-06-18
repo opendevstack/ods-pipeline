@@ -1,61 +1,61 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
 metadata:
   name: ods-start-v0-1-0
 spec:
   description: >-
     The task will clone a repo from the provided url into the workspace.
   params:
-    - default: 'gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.21.0'
+    - default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.21.0"
       description: The location of the image.
       name: image
       type: string
     - description: git url to clone
       name: url
       type: string
-    - default: ''
-      description: 'git revision to checkout (branch, tag, sha, ref…)'
+    - default: ""
+      description: "git revision to checkout (branch, tag, sha, ref…)"
       name: git-full-ref
       type: string
-    - default: ''
+    - default: ""
       description: (optional) git refspec to fetch before checking out revision
       name: refspec
       type: string
-    - default: 'true'
+    - default: "true"
       description: defines if the resource should initialize and fetch the submodules
       name: submodules
       type: string
-    - default: '1'
+    - default: "1"
       description: >-
         performs a shallow clone where only the most recent commit(s) will be
         fetched
       name: depth
       type: string
-    - default: 'true'
+    - default: "true"
       description: >-
         defines if http.sslVerify should be set to true or false in the global
         git config
       name: ssl-verify
       type: string
-    - default: 'true'
+    - default: "true"
       description: >-
         clean out the contents of the repo's destination directory (if it
         already exists) before trying to clone the repo there
       name: delete-existing
       type: string
-    - default: ''
+    - default: ""
       description: git HTTP proxy server for non-SSL requests
       name: http-proxy
       type: string
-    - default: ''
+    - default: ""
       description: git HTTPS proxy server for SSL requests
       name: https-proxy
       type: string
-    - default: ''
+    - default: ""
       description: git no proxy - opt out of proxying HTTP/HTTPS requests
       name: no-proxy
       type: string
-    - default: 'true'
+    - default: "true"
       description: log the commands used during execution
       name: verbose
       type: string
@@ -68,11 +68,11 @@ spec:
     - description: repository
       name: repository
       type: string
-    - default: ''
+    - default: ""
       description: pull request key
       name: pr-key
       type: string
-    - default: ''
+    - default: ""
       description: pull request base
       name: pr-base
       type: string

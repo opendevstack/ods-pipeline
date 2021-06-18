@@ -77,7 +77,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             "ClusterTask",       // could be read from task definition
+				TaskKindRef:             "Task",              // could be read from task definition
 				TaskName:                "ods-build-go-v0-1", // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,

@@ -1,5 +1,5 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
 metadata:
   name: ods-deploy-helm-v0-1-0
 spec:
@@ -7,7 +7,7 @@ spec:
     These tasks will install / upgrade a helm chart into your Kubernetes /
     OpenShift Cluster using Helm
   params:
-    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-helm:latest'
+    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-helm:latest"
       description: Image to use
       name: image
       type: string
@@ -15,11 +15,11 @@ spec:
       description: Specify chart dir that will be deployed
       name: chart-dir
       type: string
-    - default: ''
+    - default: ""
       description: The helm release name
       name: release-name
       type: string
-    - default: ''
+    - default: ""
       description: The namespace of the pipeline
       name: namespace
       type: string
@@ -31,15 +31,15 @@ spec:
       description: The target to deploy into
       name: target
       type: string
-    - default: ''
+    - default: ""
       description: Project
       name: project
       type: string
-    - default: ''
+    - default: ""
       description: Repository
       name: repository
       type: string
-    - default: ''
+    - default: ""
       description: >-
         Specify the values you want to overwrite, comma separated:
         autoscaling.enabled=true,replicas=1

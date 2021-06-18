@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	taskKind    = "ClusterTask"
+	taskKind    = "Task"
 	taskVersion = "v0-1-0"
 )
 

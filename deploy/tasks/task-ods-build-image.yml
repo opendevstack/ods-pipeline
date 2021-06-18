@@ -1,15 +1,15 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
 metadata:
   name: ods-build-image-v0-1
 spec:
   description: Package application into container image.
   params:
-    - default: ''
+    - default: ""
       description: Reference of the image stream buildah will produce.
       name: image-stream
       type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:latest'
+    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:latest"
       description: The location of the buildah builder image.
       name: builder-image
       type: string
@@ -25,25 +25,25 @@ spec:
       description: Path to the directory to use as Docker context.
       name: context-dir
       type: string
-    - default: 'true'
+    - default: "true"
       description: >-
         Verify the TLS on the registry endpoint (for push/pull to a non-TLS
         registry)
       name: tls-verify
       type: string
     - default: oci
-      description: 'The format of the built container, oci or docker'
+      description: "The format of the built container, oci or docker"
       name: format
       type: string
-    - default: ''
+    - default: ""
       description: Extra parameters passed for the build command when building images.
       name: buildah-build-extra-args
       type: string
-    - default: ''
+    - default: ""
       description: Extra parameters passed for the push command when pushing images.
       name: buildah-push-extra-args
       type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000'
+    - default: "image-registry.openshift-image-registry.svc:5000"
       description: Image registry
       name: registry
       type: string
