@@ -26,7 +26,6 @@ RUN mkdir -p /tmp/helm \
     && chmod a+x /usr/local/bin/helm \
     && helm version \
     && helm env \
-    # && sops --version \
     && rm -rf /tmp/helm
 
 # Add Go binaries
@@ -51,6 +50,7 @@ COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
 RUN mkdir -p $HELM_PLUGINS \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/databus23/helm-diff --version v${HELM_PLUGIN_DIFF_VERSION} \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/jkroepke/helm-secrets --version v${HELM_PLUGIN_SECRETS_VERSION} \
-    && ls -lah $HELM_PLUGINS
+    && ls -lah $HELM_PLUGINS \
+    && sops --version
 
 WORKDIR /go
