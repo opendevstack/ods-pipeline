@@ -96,12 +96,12 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: bitbucket
+              name: ods-bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: bitbucket-auth
+              name: ods-bitbucket-auth
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |
