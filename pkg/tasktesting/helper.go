@@ -72,7 +72,7 @@ func patchServiceAccount(t *testing.T, ns string) {
 		"-n", ns,
 		"patch", "sa", "default",
 		"--type", "json",
-		"-p", "[{\"op\": \"add\", \"path\": \"/secrets\", \"value\":[{\"name\": \"bitbucket-auth\"}]}]",
+		"-p", "[{\"op\": \"add\", \"path\": \"/secrets\", \"value\":[{\"name\": \"ods-bitbucket-auth\"}]}]",
 	})
 	if err != nil {
 		t.Logf(string(stderr))

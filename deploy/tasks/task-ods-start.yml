@@ -6,7 +6,7 @@ spec:
   description: >-
     The task will clone a repo from the provided url into the workspace.
   params:
-    - default: 'gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.21.0'
+    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-start:latest'
       description: The location of the image.
       name: image
       type: string
@@ -96,12 +96,12 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: bitbucket
+              name: ods-bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: bitbucket-auth
+              name: ods-bitbucket-auth
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |

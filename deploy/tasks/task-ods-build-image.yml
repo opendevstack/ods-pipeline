@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-image-v0-1
+  name: ods-build-image-v0-1-0
 spec:
   description: Package application into container image.
   params:

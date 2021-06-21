@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-go-v0-1
+  name: ods-build-go-v0-1-0
 spec:
   description: ODS Build Go applications
   params:
@@ -54,22 +54,22 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: sonar
+              name: ods-sonar
         - name: SONAR_AUTH_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: sonar-auth
+              name: ods-sonar-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: bitbucket
+              name: ods-bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: bitbucket-auth
+              name: ods-bitbucket-auth
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then

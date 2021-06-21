@@ -36,7 +36,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				ctxt.Params = map[string]string{
 					"registry":      "kind-registry.kind:5000",
-					"builder-image": "localhost:5000/ods/buildah:latest",
+					"builder-image": "localhost:5000/ods/ods-buildah:latest",
 					"tls-verify":    "false",
 				}
 			},
@@ -55,7 +55,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				buildAndPushImage(t, ns, wsDir)
 				ctxt.Params = map[string]string{
 					"registry":      "kind-registry.kind:5000",
-					"builder-image": "localhost:5000/ods/buildah:latest",
+					"builder-image": "localhost:5000/ods/ods-buildah:latest",
 					"tls-verify":    "false",
 				}
 			},
@@ -74,8 +74,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             "ClusterTask",          // could be read from task definition
-				TaskName:                "ods-build-image-v0-1", // could be read from task definition
+				TaskKindRef:             "ClusterTask",            // could be read from task definition
+				TaskName:                "ods-build-image-v0-1-0", // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it

@@ -148,12 +148,12 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	defer os.Chdir(cwd)
 	os.Chdir(wsDir)
 	repoName := filepath.Base(wsDir)
-	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
+	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "ods-bitbucket", "url")
 	if err != nil {
 		t.Fatalf("could not get Bitbucket URL: %s", err)
 	}
 	bbURL = "http://localhost:7990"
-	bbToken, err := kubernetes.GetSecretKey(c, ns, "bitbucket-auth", "password")
+	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")
 	if err != nil {
 		t.Fatalf("could not get Bitbucket token: %s", err)
 	}

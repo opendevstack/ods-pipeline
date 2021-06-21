@@ -72,6 +72,37 @@ clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
 
+## Apply ImageStreams ODS manifests
+deploy-ods-image-streams:
+	oc create -f deploy/image-streams
+.PHONY: deploy-ods-image-streams
+
+## Apply BuildConfig ODS manifests
+deploy-bc-ods:
+	oc create -f deploy/build-configs
+.PHONY: deploy-bc-ods
+
+## Start BuildConfig ODS manifests
+start-bc-ods:
+	oc process -f deploy/build-configs/bc-ods-build-go.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-build-go
+	oc process -f deploy/build-configs/bc-ods-buildah.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-buildah
+	oc process -f deploy/build-configs/bc-ods-helm.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-helm
+	oc process -f deploy/build-configs/bc-ods-sonar.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-sonar
+	oc process -f deploy/build-configs/bc-ods-start.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-start
+	oc process -f deploy/build-configs/bc-ods-finish.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-finish
+.PHONY: start-bc-ods
+
+## Apply Tasks ODS manifests
+deploy-ods-tasks:
+	oc create -f deploy/tasks
+.PHONY: deploy-ods-tasks
+
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
 help:

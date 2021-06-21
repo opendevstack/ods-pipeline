@@ -5,7 +5,7 @@ metadata:
 spec:
   description: Finishes the pipeline
   params:
-    - default: "localhost:5000/ods/finish:latest"
+    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-finish:latest"
       description: The location of the image.
       name: image
       type: string
@@ -27,27 +27,27 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: url
-              name: nexus
+              name: ods-nexus
         - name: NEXUS_USERNAME
           valueFrom:
             secretKeyRef:
               key: username
-              name: nexus-auth
+              name: ods-nexus-auth
         - name: NEXUS_PASSWORD
           valueFrom:
             secretKeyRef:
               key: password
-              name: nexus-auth
+              name: ods-nexus-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: bitbucket
+              name: ods-bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: bitbucket-auth
+              name: ods-bitbucket-auth
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |

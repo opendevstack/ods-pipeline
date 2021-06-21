@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: sonarqube
+  name: ods-sonar
 parameters:
 - name: GIT_URL
   description: "Git repository URL"
@@ -28,7 +28,7 @@ objects:
         dockerfilePath: build/package/Dockerfile.sonar
         from:
           kind: DockerImage
-          name: 'registry.redhat.io/ubi8/openjdk-11'
+          name: 'registry.redhat.io/ubi8/ubi-minimal'
         pullSecret:
           name: registry.redhat.io
     postCommit: {}

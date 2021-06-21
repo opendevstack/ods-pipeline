@@ -78,7 +78,7 @@ stringData:
   username: ${SONAR_USERNAME}
 kind: Secret
 metadata:
-  name: sonar-auth
+  name: ods-sonar-auth
 type: kubernetes.io/basic-auth
 EOF
 
@@ -86,7 +86,7 @@ cat <<EOF >${K8S_CONFIGMAP_FILE}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: sonar
+  name: ods-sonar
 data:
   url: 'http://${CONTAINER_NAME}.kind:9000'
 EOF
