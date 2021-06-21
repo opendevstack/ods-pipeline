@@ -45,15 +45,15 @@ An ODS installation provides you with the following tasks, which are implemented
 * `ods-build-python`: Build a Python application (includes Sonar scan)
 * `ods-build-nodejs`: Build a TypeScript/JavaScript application (includes Sonar scan)
 * `ods-build-image`: Package application into container image (includes Aqua scan)
-* `ods-deploy-helm`: Deploy Helm chart
+* `ods-deploy-helm`: Deploy a Helm chart
 * `ods-test-geb`: Run Geb/Spock tests
 * `ods-test-cypress`: Run Cypress tests
-* `ods-finish`: Set Bitbucket build status
+* `ods-finish`: Set Bitbucket build status and upload artifacts to Nexus
 
 Let's look at the `ods-build-*` tasks in more detail to understand what such tasks provide. The `ods-build-go` tasks consist of the following steps:
 
 * Build Go binary (through running `go build`, `go test`, `golangci-lint run` etc.)
-* Scan binary with Sonar
+* Run static analysis of Go application against SonarQube
 
 The other "language build tasks" like `ods-build-java` have the same steps, except that they make use of e.g. `gradle build` to build a JAR instead of a Go binary.
 
@@ -63,7 +63,7 @@ The `ods-build-image` tasks consist of the following steps:
 * Scan image with Trivy / Aqua
 * Push container image to image stream
 
-The produced images are tagged with the Git commit SHA being built. If the task detects this tag to be already present in the image stream, all steps are skipped.
+The produced images are tagged with the Git commit SHA being built. If the task detects this image tag to be already present in the image stream, all steps are skipped.
 
 The behaviour of each task can be customized by setting parameters. For example, the `ods-build-image` tasks assumes the `Dockerfile` to be located in the `docker` directory by default. You can instruct the task to use a different Docker context by providing the `context-dir` parameter to the task.
 
@@ -144,3 +144,5 @@ This custom ODS interceptor is a small service, provided by ODS, and running in 
 With the above in place, you do not need to manage pipelines manually. Every repository with an `ods.yml` file and a webhook configuration automatically manages and triggers pipelines based on the defined tasks.
 
 At this stage you know just enough to get started using and modifying CI/CD pipelines with ODS. Read on for more complex scenarios (e.g. multi-repo pipelines) and some additional considerations.
+
+TODO: Describe multi-repo pipelines (weaving tasks together based on referenced repositories and phases).
