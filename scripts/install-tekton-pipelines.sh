@@ -4,6 +4,8 @@ set -eu
 KUBE_CONTEXT="--context kind-kind"
 KUBECTL_BIN="kubectl $KUBE_CONTEXT"
 TKN_VERSION="v0.22.0"
+TKN_DASHBOARD_VERSION="v0.17.0"
+TKN_TRIGGERS="v0.12.0" # Version supported by OCP 4.7 as of today: https://docs.openshift.com/container-platform/4.7/cicd/pipelines/op-release-notes.html
 NAMESPACE="default"
 
 if ! which kubectl &> /dev/null; then
@@ -25,6 +27,8 @@ esac; shift; done
 if ! $KUBECTL_BIN get namespace tekton-pipelines &> /dev/null; then
     echo "Installing Tekton ..."
     $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
+    $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/${TKN_DASHBOARD_VERSION}/tekton-dashboard-release.yaml
+    $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TKN_TRIGGERS}/release.yaml
 else
     echo "Tekton already installed."
 fi

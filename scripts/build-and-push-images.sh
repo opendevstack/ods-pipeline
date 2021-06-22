@@ -10,6 +10,10 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 SKIP_BUILD="false"
 IMAGES="buildah finish go-toolset helm sonar start webhook-interceptor"
+http_proxy="${http_proxy:-}"
+https_proxy="${https_proxy:-}"
+HTTP_PROXY="${HTTP_PROXY:-}"
+HTTPS_PROXY="${HTTPS_PROXY:-}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -28,9 +32,15 @@ cd $ODS_PIPELINE_DIR
 
 for image in $IMAGES; do
     if [ "${SKIP_BUILD}" != "true" ]; then
-        echo "Building image $REGISTRY/$NAMESPACE/$image ..."
-        docker build -f build/package/Dockerfile.$image -t $REGISTRY/$NAMESPACE/$image .
+        odsImage="ods-$image" 
+        echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
+        docker build \
+            --build-arg http_proxy=$http_proxy \
+            --build-arg https_proxy=$https_proxy \
+            --build-arg HTTP_PROXY=$HTTP_PROXY \
+            --build-arg HTTPS_PROXY=$HTTPS_PROXY  \
+            -f build/package/Dockerfile.$image -t $REGISTRY/$NAMESPACE/$odsImage .
     fi
-    echo "Pushing image to $REGISTRY/$NAMESPACE/$image ..."
-    docker push "$REGISTRY/$NAMESPACE/$image"
+    echo "Pushing image to $REGISTRY/$NAMESPACE/$odsImage ..."
+    docker push "$REGISTRY/$NAMESPACE/$odsImage"
 done
