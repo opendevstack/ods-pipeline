@@ -133,6 +133,9 @@ jobs:
         name: Show disk space
         run: df -h
       -
+        name: Install cluster tasks
+        run: kubectl create -f deploy/tasks
+      -
         name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:

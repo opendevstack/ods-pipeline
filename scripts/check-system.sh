@@ -5,7 +5,7 @@ set -ue
 
 ok="true"
 
-for exe in go docker jq kind kubectl; do 
+for exe in go docker jq kind kubectl helm; do
     if ! which $exe &> /dev/null; then
         ok="false"
         echo "$exe is required"

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -19,8 +18,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 			StorageCapacity:  "1Gi",
 			StorageClassName: "standard", // if using KinD, set it to "standard"
-			TaskDir:          projectpath.Root + "/deploy/tasks",
-			EnvironmentDir:   projectpath.Root + "/test/testdata/deploy/cd-kind",
 		},
 	)
 

@@ -4,11 +4,13 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"golang.org/x/xerrors"
@@ -22,8 +24,6 @@ type SetupOpts struct {
 	SourceDir        string
 	StorageCapacity  string
 	StorageClassName string
-	TaskDir          string
-	EnvironmentDir   string
 }
 
 func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
@@ -44,53 +44,28 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	applyYAMLFilesInDir(t, namespace, opts.TaskDir)
-
-	if len(opts.EnvironmentDir) > 0 {
-		applyYAMLFilesInDir(t, namespace, opts.EnvironmentDir)
-		patchServiceAccount(t, namespace)
-	}
+	installCDNamespaceResources(t, namespace, "default", "values.kind.yaml,values.generated.yaml")
 
 	return clients, namespace
 }
 
-func applyYAMLFilesInDir(t *testing.T, ns string, fileDir string) {
+func installCDNamespaceResources(t *testing.T, ns, serviceaccount, valuesFile string) {
 
-	stdout, stderr, err := command.Run("kubectl", []string{"-n", ns, "apply", "-f", fileDir})
+	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile}
+	if testing.Verbose() {
+		scriptArgs = append(scriptArgs, "-v")
+	}
+
+	stdout, stderr, err := command.Run(
+		filepath.Join(projectpath.Root, "scripts/install-cd-namespace-resources.sh"),
+		scriptArgs,
+	)
 
 	t.Logf(string(stdout))
-	t.Logf(string(stderr))
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-// TODO: How to avoid hardcoding this here?
-func patchServiceAccount(t *testing.T, ns string) {
-
-	stdout, stderr, err := command.Run("kubectl", []string{
-		"-n", ns,
-		"patch", "sa", "default",
-		"--type", "json",
-		"-p", "[{\"op\": \"add\", \"path\": \"/secrets\", \"value\":[{\"name\": \"ods-bitbucket-auth\"}]}]",
-	})
 	if err != nil {
 		t.Logf(string(stderr))
 		t.Fatal(err)
 	}
-	t.Logf(string(stdout))
-
-	stdout, stderr, err = command.Run("kubectl", []string{
-		"-n", ns,
-		"create", "rolebinding", "edit",
-		"--clusterrole", "edit",
-		"--serviceaccount", ns + ":default",
-	})
-	if err != nil {
-		t.Logf(string(stderr))
-		t.Fatal(err)
-	}
-	t.Logf(string(stdout))
 }
 
 func Header(logf logging.FormatLogger, text string) {

@@ -1,0 +1,26 @@
+# General
+serviceAccountName: 'default'
+
+# Webhook Interceptor
+interceptor:
+  replicaCount: 1
+  image:
+    registry: localhost:5000
+    # Overrides the image namespace whose default is the release namespace.
+    namespace: ods
+    # Overrides the image repository whose default is the chart name.
+    repository: ods-webhook-interceptor
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# PVC
+storageProvisioner: ''
+storageClassName: 'standard'

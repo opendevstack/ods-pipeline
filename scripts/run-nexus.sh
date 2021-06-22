@@ -13,8 +13,7 @@ DEVELOPER_PASSWORD="s3cr3t"
 NEXUS_URL=
 CONTAINER_NAME="nexustest"
 NEXUS_IMAGE_TAG="3.30.1"
-K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-nexus-auth.yml"
-K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-nexus.yml"
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -103,24 +102,6 @@ sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" ${SCRIPT_DIR}/nexus/develop
 runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password.json"
 rm ${SCRIPT_DIR}/nexus/developer-user-with-password.json
 
-cat <<EOF >${K8S_SECRET_FILE}
-apiVersion: v1
-stringData:
-  password: ${DEVELOPER_PASSWORD}
-  username: ${DEVELOPER_USERNAME}
-kind: Secret
-metadata:
-  name: ods-nexus-auth
-type: kubernetes.io/basic-auth
-EOF
-
-cat <<EOF >${K8S_CONFIGMAP_FILE}
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: ods-nexus
-data:
-  url: 'http://${CONTAINER_NAME}.kind:8081'
-EOF
-
-echo "Created secret with password for '${DEVELOPER_USERNAME}' in ${K8S_SECRET_FILE}."
+echo "nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'" >> ${HELM_VALUES_FILE}
+echo "nexusUsername: '${DEVELOPER_USERNAME}'" >> ${HELM_VALUES_FILE}
+echo "nexusPassword: '${DEVELOPER_PASSWORD}'" >> ${HELM_VALUES_FILE}
