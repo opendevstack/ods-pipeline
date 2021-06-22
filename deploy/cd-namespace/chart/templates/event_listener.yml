@@ -24,4 +24,4 @@ spec:
               namespace: {{ .Release.Namespace }}
       name: {{ include "chart.fullname" . }}
       template:
-        name: {{ include "chart.fullname" . }}
+        ref: {{ include "chart.fullname" . }}

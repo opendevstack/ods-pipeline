@@ -98,7 +98,7 @@ phases:
   - name: backend-build-go
     taskRef:
       kind: ClusterTask
-      name: ods-build-go
+      name: ods-build-go-v0-1-0
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -106,7 +106,7 @@ phases:
   - name: backend-build-image
     taskRef:
       kind: ClusterTask
-      name: ods-build-image
+      name: ods-build-image-v0-1-0
     runAfter:
     - backend-build-go
     params:
@@ -121,7 +121,7 @@ phases:
   - name: backend-deploy
     taskRef:
       kind: ClusterTask
-      name: ods-deploy-helm
+      name: ods-deploy-helm-v0-1-0
     params:
     - name: release-name
       value: backend

@@ -24,6 +24,11 @@ install-tekton-pipelines:
 	cd scripts && ./install-tekton-pipelines.sh --tekton-dashboard
 .PHONY: install-tekton-pipelines
 
+## Install resources in CD namespace via Helm.
+install-cd-namespace:
+	cd scripts && ./install-cd-namespace-resources.sh
+.PHONY: install-cd-namespace
+
 ## Run Bitbucket server (using timebomb license, in "kind" network).
 run-bitbucket:
 	cd scripts && ./run-bitbucket.sh
@@ -45,7 +50,7 @@ run-sonarqube:
 .PHONY: run-sonarqube
 
 ## Prepare local environment from scratch.
-prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube
+prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube deploy-ods-tasks
 .PHONY: prepare-local-env
 
 ## Run testsuite.
@@ -54,12 +59,12 @@ test: test-internal test-pkg test-tasks
 
 ## Run testsuite of internal packages.
 test-internal:
-	go test -v -count=1 ./internal/...
+	go test -v ./internal/...
 .PHONY: test-internal
 
 ## Run testsuite of public packages.
 test-pkg:
-	go test -v -count=1 ./pkg/...
+	go test -v ./pkg/...
 .PHONY: test-pkg
 
 ## Run testsuite.
@@ -100,7 +105,7 @@ start-bc-ods:
 
 ## Apply Tasks ODS manifests
 deploy-ods-tasks:
-	oc create -f deploy/tasks
+	kubectl create -f deploy/tasks
 .PHONY: deploy-ods-tasks
 
 ### HELP

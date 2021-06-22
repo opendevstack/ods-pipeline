@@ -12,9 +12,7 @@ SONAR_USERNAME="admin"
 SONAR_PASSWORD="admin"
 SONAR_EDITION="community"
 SONAR_IMAGE_TAG="${SONAR_VERSION}-${SONAR_EDITION}"
-K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-sonar-auth.yml"
-K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-sonar.yml"
-
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -71,24 +69,6 @@ tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_
 # {"login":"cd_user","name":"foo","token":"bar","createdAt":"2020-04-22T13:21:54+0000"}
 token=$(echo "${tokenResponse}" | jq -r .token)
 
-cat <<EOF >${K8S_SECRET_FILE}
-apiVersion: v1
-stringData:
-  password: ${token}
-  username: ${SONAR_USERNAME}
-kind: Secret
-metadata:
-  name: ods-sonar-auth
-type: kubernetes.io/basic-auth
-EOF
-
-cat <<EOF >${K8S_CONFIGMAP_FILE}
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: ods-sonar
-data:
-  url: 'http://${CONTAINER_NAME}.kind:9000'
-EOF
-
-echo "Created secret with token for '${SONAR_USERNAME}' in ${K8S_SECRET_FILE}."
+echo "sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'" >> ${HELM_VALUES_FILE}
+echo "sonarUsername: '${SONAR_USERNAME}'" >> ${HELM_VALUES_FILE}
+echo "sonarPassword: '${token}'" >> ${HELM_VALUES_FILE}

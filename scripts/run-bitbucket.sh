@@ -15,8 +15,7 @@ BITBUCKET_SERVER_IMAGE_TAG="7.6.5"
 BITBUCKET_POSTGRES_HOST_PORT="5432"
 BITBUCKET_POSTGRES_CONTAINER_NAME="bitbucket-postgres-test"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
-K8S_SECRET_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/secret-bitbucket-auth.yml"
-K8S_CONFIGMAP_FILE="${ODS_PIPELINE_DIR}/test/testdata/deploy/cd-kind/configmap-bitbucket.yml"
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -71,25 +70,6 @@ fi
 
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
-# Personal access token (PAT) is baked into the SQL dump.
-cat <<EOF >${K8S_SECRET_FILE}
-apiVersion: v1
-stringData:
-  password: NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP
-  username: admin
-kind: Secret
-metadata:
-  name: ods-bitbucket-auth
-  annotations:
-    tekton.dev/git-0: '${BITBUCKET_URL_FULL}'
-type: kubernetes.io/basic-auth
-EOF
-
-cat <<EOF >${K8S_CONFIGMAP_FILE}
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: ods-bitbucket
-data:
-  url: '${BITBUCKET_URL_FULL}'
-EOF
+echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> ${HELM_VALUES_FILE}
+echo "bitbucketUsername: 'admin'" >> ${HELM_VALUES_FILE}
+echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'" >> ${HELM_VALUES_FILE}

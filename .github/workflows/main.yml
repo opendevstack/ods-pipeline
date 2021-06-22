@@ -44,8 +44,6 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: build-images
-    env:
-      TKN_VERSION: "v0.22.0"
     steps:
       - 
         name: Download image artifacts
@@ -113,7 +111,7 @@ jobs:
         id: install
       -
         name: Install Tekton Core Components
-        run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
+        run: ./scripts/install-tekton-pipelines.sh
       - 
         name: Show disk space
         run: df -h
@@ -132,6 +130,9 @@ jobs:
       - 
         name: Show disk space
         run: df -h
+      -
+        name: Install cluster tasks
+        run: kubectl create -f deploy/tasks
       -
         name: Setup Go 1.16
         uses: actions/setup-go@v2

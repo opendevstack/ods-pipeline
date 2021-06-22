@@ -1,42 +1,19 @@
-# Default values for chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 # General
 serviceAccountName: 'default'
 
-# Bitbucket
-bitbucketUrl: ''
-bitbucketUsername: ''
-bitbucketAccessToken: ''
-
-# Nexus
-nexusUrl: ''
-nexusUsername: ''
-nexusPassword: ''
-
-# Sonar
-sonarUrl: ''
-sonarUsername: ''
-sonarAuthToken: ''
-
-# PVC
-storageProvisioner: 'kubernetes.io/aws-ebs'
-storageClassName: 'gp2'
-
 # Webhook Interceptor
 interceptor:
-  apiHost: 'openshift.default.svc.cluster.local'
+  apiHost: 'kubernetes.default.svc.cluster.local'
   replicaCount: 1
   image:
-    registry: image-registry.openshift-image-registry.svc:5000
+    registry: localhost:5000
     # Overrides the image namespace whose default is the release namespace.
     namespace: ods
     # Overrides the image repository whose default is the chart name.
     repository: ods-webhook-interceptor
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    # tag: "0.1.0"
+    tag: "latest"
   resources:
     limits:
       cpu: 100m
@@ -44,3 +21,7 @@ interceptor:
     requests:
       cpu: 100m
       memory: 128Mi
+
+# PVC
+storageProvisioner: ''
+storageClassName: 'standard'
