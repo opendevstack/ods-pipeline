@@ -11,11 +11,13 @@ spec:
   cacheSpec:
     # Specifies a list of images with no node selector, hence these images will be cached in all the nodes in the cluster
     - images:
-        - localhost:5000/ods/buildah:latest
-        - localhost:5000/ods/go-toolset:latest
-        - localhost:5000/ods/helm:latest
-        - localhost:5000/ods/interceptor:latest
-        - localhost:5000/ods/sonar:latest
+        - localhost:5000/ods/ods-buildah:latest
+        - localhost:5000/ods/ods-go-toolset:latest
+        - localhost:5000/ods/ods-helm:latest
+        - localhost:5000/ods/ods-start:latest
+        - localhost:5000/ods/ods-finish:latest
+        - localhost:5000/ods/ods-sonar:latest
+        - localhost:5000/ods/ods-webhook-interceptor:latest
     # Specifies a list of images (redis:latest and postgres:12.3) with a node selector, hence these images will be cached only on the nodes selected by the node selector
     # - images:
     #     - redis:latest

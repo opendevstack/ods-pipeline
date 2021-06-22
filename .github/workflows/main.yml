@@ -111,6 +111,9 @@ jobs:
         name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
+      - 
+        name: Pre-pull images
+        run: make pre-pull-images
       -
         name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
