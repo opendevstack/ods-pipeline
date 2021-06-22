@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,42 +31,40 @@ func TestTaskODSBuildImage(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"task should build image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/ods-buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
-			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
 			},
 		},
 		"task should reuse existing image": {
 			WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
-			Params: map[string]string{
-				"registry":      "kind-registry.kind:5000",
-				"builder-image": "localhost:5000/ods/buildah:latest",
-				"tls-verify":    "false",
-			},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
 				buildAndPushImage(t, ns, wsDir)
+				ctxt.Params = map[string]string{
+					"registry":      "kind-registry.kind:5000",
+					"builder-image": "localhost:5000/ods/ods-buildah:latest",
+					"tls-verify":    "false",
+				}
 			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 				checkResultingFiles(t, wsDir)
 				checkResultingImage(t, ns, wsDir)
-				// TODO: actually check that we did not rebuild the image ...
+				checkLabelOnImage(t, ns, wsDir, "tasktestrun", "true")
 			},
 		},
 	}
@@ -77,8 +74,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             "ClusterTask",          // could be read from task definition
-				TaskName:                "ods-build-image-v0-1", // could be read from task definition
+				TaskKindRef:             "ClusterTask",            // could be read from task definition
+				TaskName:                "ods-build-image-v0-1-0", // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
@@ -90,10 +87,15 @@ func TestTaskODSBuildImage(t *testing.T) {
 	}
 }
 
+// buildAndPushImage builds an image and pushes it to the registry.
+// The used image tag equals the Git SHA that is being built, so the task
+// will pick up the existing image.
+// The image is labelled with "tasktestrun=true" so that it is possible to
+// verify that the image has not been rebuild in the task.
 func buildAndPushImage(t *testing.T, ns, wsDir string) {
 	tag := getDockerImageTag(t, ns, wsDir)
 	_, stderr, err := command.Run("docker", []string{
-		"build", "-t", tag, filepath.Join(wsDir, "docker"),
+		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),
 	})
 	if err != nil {
 		t.Fatalf("could not build image: %s, stderr: %s", err, string(stderr))
@@ -114,6 +116,20 @@ func checkResultingFiles(t *testing.T, wsDir string) {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
 			t.Fatalf("Want %s, but got nothing", wf)
 		}
+	}
+}
+
+func checkLabelOnImage(t *testing.T, ns, wsDir, wantLabelKey, wantLabelValue string) {
+	stdout, stderr, err := command.Run("docker", []string{
+		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
+		getDockerImageTag(t, ns, wsDir),
+	})
+	if err != nil {
+		t.Fatalf("could not run get label on image: %s, stderr: %s", err, string(stderr))
+	}
+	got := strings.TrimSpace(string(stdout))
+	if got != wantLabelValue {
+		t.Fatalf("Want label %s=%s, but got value: %s", wantLabelKey, wantLabelValue, got)
 	}
 }
 
@@ -138,12 +154,4 @@ func getDockerImageTag(t *testing.T, ns, wsDir string) string {
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
 	return fmt.Sprintf("localhost:5000/%s/%s:%s", ns, filepath.Base(wsDir), sha)
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
 }

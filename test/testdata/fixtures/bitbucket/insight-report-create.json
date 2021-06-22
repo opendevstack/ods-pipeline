@@ -1,0 +1,17 @@
+{
+    "data": [
+        {
+            "title": "data.title",
+            "value": 9,
+            "type": "NUMBER"
+        }
+    ],
+    "createdDate": 12345,
+    "details": "This is the details of the report, it can be a longer string describing the report",
+    "key": "report.key",
+    "link": "http://integration.host.com",
+    "logoUrl": "http://integration.host.com/logo",
+    "result": "PASS",
+    "title": "report.title",
+    "reporter": "Reporter/tool that produced this report"
+}

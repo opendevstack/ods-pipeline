@@ -1,0 +1,29 @@
+= Artifacts
+
+Pipelines create artifacts based on the source code they work on. Artifacts are stored in Nexus. Artifacts used in released software version need to be archived for a long time. Artifacts used in released software versions should not be overwritable. Artifacts should be associated with the version / Git SHA from which they were created.
+
+== Artifact files
+
+* xUnit files
+* BDD test reports (?)
+* code coverage reports
+* static analysis reports
+* static analysis issues
+* image scan / dependency vulnerability scan results
+* image manifests
+* Pipeline logs
+* Helm charts
+* ?
+
+== Handling
+
+Pipelines write artifacts into `.ods/artifacts/<TYPE>/<ARTIFACT>`. This folder is uploaded to Nexus in the final task. If a pipeline starts, Nexus is searched for artifacts for the current revision and artifacts are placed into `.ods/artifacts`.
+
+Some activities inside tasks/steps may be skipped depending in existing artifacts (e.g. no need to re-run tests if xUnit files are present, no need to re-build image if manifest exists, etc.).
+
+== Storage
+
+The structure for regular commits in Nexus is /ods-pipeline-artifact-candidates/PROJECT/REPOSITORY/COMMIT/TYPE/ARTIFACT. This repository can be cleaned of old artifacts after some days (e.g. cleanup of artifacts not downloaded in the last 90 days)
+
+When the pipeline runs for a tag / branch (TBD - when a version is given), the artifacts are transfered to the long-term storage Nexus repository: /ods-pipeline-artifact-releases/PROJECT/REPOSITORY/VERSION/TYPE/ARTIFACT. This is never cleaned up. Documents can reference this to provide objective evidence. Maybe we can also provide a convenient download tool to get all artifacts of a given version.
+

@@ -67,25 +67,32 @@ echo "Test"
 make -q ci-test &> /dev/null || makeErrorCode=$?
 if [ "${makeErrorCode}" -eq 2 ]; then
   mkdir -p build/test-results/test
-  GOPKGS=$(go list ./... | grep -v /vendor)
-  set +e
-  go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
-  exitcode=$?
-  set -e
-  if [ -f test-results.txt ]; then
-      go-junit-report < test-results.txt > build/test-results/test/report.xml
-      mkdir -p .ods/artifacts/xunit-reports
-      cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
+  if [ -f .ods/artifacts/xunit-reports/report.xml ]; then
+    echo "restoring archived test artifacts ..."
+    cp .ods/artifacts/xunit-reports/report.xml build/test-results/test/report.xml
+    cp .ods/artifacts/code-coverage/coverage.out coverage.out
   else
-    echo "no test results found"
+    GOPKGS=$(go list ./... | grep -v /vendor)
+    set +e
+    echo "running tests ..."
+    go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
+    exitcode=$?
+    set -e
+    if [ -f test-results.txt ]; then
+        go-junit-report < test-results.txt > build/test-results/test/report.xml
+        mkdir -p .ods/artifacts/xunit-reports
+        cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
+    else
+      echo "no test results found"
+    fi
+    if [ -f coverage.out ]; then
+        mkdir -p .ods/artifacts/code-coverage
+        cp coverage.out .ods/artifacts/code-coverage/coverage.out
+    else
+      echo "no code coverage found"
+    fi
+    exit $exitcode
   fi
-  if [ -f coverage.out ]; then
-      mkdir -p .ods/artifacts/code-coverage
-      cp coverage.out .ods/artifacts/code-coverage/coverage.out
-  else
-    echo "no code coverage found"
-  fi
-  exit $exitcode
 else
   make ci-test
 fi

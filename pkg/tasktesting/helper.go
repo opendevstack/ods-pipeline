@@ -48,6 +48,7 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 
 	if len(opts.EnvironmentDir) > 0 {
 		applyYAMLFilesInDir(t, namespace, opts.EnvironmentDir)
+		patchServiceAccount(t, namespace)
 	}
 
 	return clients, namespace
@@ -62,6 +63,34 @@ func applyYAMLFilesInDir(t *testing.T, ns string, fileDir string) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+// TODO: How to avoid hardcoding this here?
+func patchServiceAccount(t *testing.T, ns string) {
+
+	stdout, stderr, err := command.Run("kubectl", []string{
+		"-n", ns,
+		"patch", "sa", "default",
+		"--type", "json",
+		"-p", "[{\"op\": \"add\", \"path\": \"/secrets\", \"value\":[{\"name\": \"ods-bitbucket-auth\"}]}]",
+	})
+	if err != nil {
+		t.Logf(string(stderr))
+		t.Fatal(err)
+	}
+	t.Logf(string(stdout))
+
+	stdout, stderr, err = command.Run("kubectl", []string{
+		"-n", ns,
+		"create", "rolebinding", "edit",
+		"--clusterrole", "edit",
+		"--serviceaccount", ns + ":default",
+	})
+	if err != nil {
+		t.Logf(string(stderr))
+		t.Fatal(err)
+	}
+	t.Logf(string(stdout))
 }
 
 func Header(logf logging.FormatLogger, text string) {

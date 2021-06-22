@@ -1,5 +1,7 @@
 # ODS Pipeline
 
+[![Tekton Tasks Tests](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yml/badge.svg)](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yml)
+
 **IMPORTANT: This is EXPERIMENTAL ONLY. This may or may not become part of ODS one day.**
 
 ## Introduction

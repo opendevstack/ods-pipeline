@@ -41,11 +41,11 @@ docker rm -f ${CONTAINER_NAME} || true
 docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" sonarqube:${SONAR_IMAGE_TAG}
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
-echo "Waiting up to 3 minutes for SonarQube to start ..."
+echo "Waiting up to 4 minutes for SonarQube to start ..."
 n=0
 health="RED"
 set +e
-until [ $n -ge 18 ]; do
+until [ $n -ge 24 ]; do
     health=$(curl -s ${INSECURE} --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
         "${SONARQUBE_URL}/api/system/health" | jq -r .health)
     if [ "${health}" == "GREEN" ]; then
@@ -60,6 +60,7 @@ done
 set -e
 if [ "${health}" != "GREEN" ]; then
     echo "SonarQube did not start, got health=${health}."
+    docker logs ${CONTAINER_NAME}
     exit 1
 fi
 
@@ -77,7 +78,7 @@ stringData:
   username: ${SONAR_USERNAME}
 kind: Secret
 metadata:
-  name: sonar-auth
+  name: ods-sonar-auth
 type: kubernetes.io/basic-auth
 EOF
 
@@ -85,7 +86,7 @@ cat <<EOF >${K8S_CONFIGMAP_FILE}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: sonar
+  name: ods-sonar
 data:
   url: 'http://${CONTAINER_NAME}.kind:9000'
 EOF

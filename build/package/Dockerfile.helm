@@ -1,21 +1,9 @@
-FROM registry.access.redhat.com/ubi8
+FROM registry.access.redhat.com/ubi8 AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV GO_VERSION=1.16.3 \
-    HELM_VERSION=3.5.2 \
-    HELM_PLUGIN_DIFF_VERSION=3.1.3 \
-    HELM_PLUGIN_SECRETS_VERSION=3.5.0 \
-    HELM_PLUGINS=/usr/local/helm/plugins
-
-# Add CentOS 8 repositories.
-COPY build/package/yum.repos.d/centos8.repo /etc/yum.repos.d/centos8.repo
-
-ADD https://downloads-openshift-console.apps.bi-x-ire.tftp.p1.openshiftapps.com/amd64/linux/oc.tar .
-
-RUN ls -lah . && tar -xf oc.tar && mv oc /usr/local/bin && oc version
-
-RUN yum install -y gcc gcc-c++ git
+    HELM_VERSION=3.5.2
 
 RUN cd /tmp && \
     curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
@@ -30,8 +18,7 @@ ENV GOBIN /usr/local/bin
 RUN chmod g+w /go
 
 # Install Helm.
-RUN mkdir -p $HELM_PLUGINS \
-    && mkdir -p /tmp/helm \
+RUN mkdir -p /tmp/helm \
     && cd /tmp \
     && curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz \
     && tar -zxvf helm-v${HELM_VERSION}-linux-amd64.tar.gz -C /tmp/helm \
@@ -39,17 +26,7 @@ RUN mkdir -p $HELM_PLUGINS \
     && chmod a+x /usr/local/bin/helm \
     && helm version \
     && helm env \
-    && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/databus23/helm-diff --version v${HELM_PLUGIN_DIFF_VERSION} \
-    && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/jkroepke/helm-secrets --version v${HELM_PLUGIN_SECRETS_VERSION} \
-    && sops --version \
-    && ls -lah $HELM_PLUGINS \
     && rm -rf /tmp/helm
-
-# Add skopeo.
-RUN yum install -y skopeo \
-    && yum clean all \
-    && rm -rf /var/cache/yum/* \
-    && skopeo --version
 
 # Add Go binaries
 RUN mkdir -p /etc/go
@@ -58,5 +35,22 @@ COPY cmd /etc/go/cmd
 COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+ENV HELM_PLUGIN_DIFF_VERSION=3.1.3 \
+    HELM_PLUGIN_SECRETS_VERSION=3.5.0 \
+    HELM_PLUGINS=/usr/local/helm/plugins
+
+RUN microdnf install skopeo git tar && microdnf clean all
+
+COPY --from=builder /usr/local/bin/deploy-with-helm /usr/local/bin/deploy-with-helm
+COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
+
+RUN mkdir -p $HELM_PLUGINS \
+    && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/databus23/helm-diff --version v${HELM_PLUGIN_DIFF_VERSION} \
+    && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/jkroepke/helm-secrets --version v${HELM_PLUGIN_SECRETS_VERSION} \
+    && ls -lah $HELM_PLUGINS \
+    && sops --version
 
 WORKDIR /go

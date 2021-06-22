@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-go-v0-1
+  name: ods-build-go-v0-1-0
 spec:
   description: ODS Build Go applications
   params:
@@ -34,44 +34,49 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - image: $(params.go-image)
+    - # default image: build/package/Dockerfile.go-toolset
+      image: $(params.go-image)
       name: build-go-binary
       resources: {}
       script: |
+
+        # build-go is build/package/scripts/build-go.sh.
         build-go \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch)
       workingDir: $(workspaces.source.path)
-    - env:
+    - # default image: build/package/Dockerfile.sonar
+      image: $(params.sonar-image)
+      name: scan-with-sonar
+      env:
         - name: SONAR_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: sonar
+              name: ods-sonar
         - name: SONAR_AUTH_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: sonar-auth
+              name: ods-sonar-auth
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
               key: url
-              name: bitbucket
+              name: ods-bitbucket
         - name: BITBUCKET_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               key: password
-              name: bitbucket-auth
-      image: $(params.sonar-image)
-      name: scan-with-sonar
+              name: ods-bitbucket-auth
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then
           echo "Skipping SonarQube analysis"
         else
           mkdir -p .ods/artifacts/sonarqube-analysis
+          # sonar is built from cmd/sonar/main.go.
           sonar -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)

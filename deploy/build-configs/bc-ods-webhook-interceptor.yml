@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: ods-webhook-interceptor
+parameters:
+- name: GIT_URL
+  description: "Git repository URL"
+- name: SOURCE_SERCET
+  description: "Name of source secret to access GIT_URL"
+  value: cd-user-token
+objects:
+- kind: BuildConfig
+  apiVersion: build.openshift.io/v1
+  metadata:
+    name: ods-webhook-interceptor
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'ods-webhook-interceptor:latest'
+    resources: {}
+    successfulBuildsHistoryLimit: 5
+    failedBuildsHistoryLimit: 5
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: build/package/Dockerfile.webhook-interceptor
+        from:
+          kind: DockerImage
+          name: 'registry.redhat.io/ubi8/ubi-micro'
+        pullSecret:
+          name: registry.redhat.io
+    postCommit: {}
+    source:
+      type: Git
+      git:
+        uri: ${GIT_URL}
+        ref: master
+      sourceSecret:
+        name: ${SOURCE_SERCET}
+    runPolicy: Serial

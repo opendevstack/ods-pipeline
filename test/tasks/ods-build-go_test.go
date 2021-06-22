@@ -30,21 +30,19 @@ func TestTaskODSBuildGo(t *testing.T) {
 	tests := map[string]tasktesting.TestCase{
 		"task should build go app": {
 			WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
-			PrepareFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
-				os.Chdir(wsDir)
-				tasktesting.InitAndCommitOrFatal(t, wsDir)
-				tasktesting.WriteDotOdsOrFatal(t, wsDir, bitbucketProjectKey)
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
+				ctxt.Params = map[string]string{
+					"go-image":    "localhost:5000/ods/ods-go-toolset:latest",
+					"sonar-image": "localhost:5000/ods/ods-sonar:latest",
+					"go-os":       runtime.GOOS,
+					"go-arch":     runtime.GOARCH,
+				}
 			},
-			Params: map[string]string{
-				"go-image":    "localhost:5000/ods/go-toolset:latest",
-				"sonar-image": "localhost:5000/ods/sonar:latest",
-				"go-os":       runtime.GOOS,
-				"go-arch":     runtime.GOARCH,
-			},
-			WantSuccess: true,
-			CheckFunc: func(t *testing.T, workspaces map[string]string) {
-				wsDir := workspaces["source"]
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
 
 				wantFiles := []string{
 					"docker/Dockerfile",
@@ -79,8 +77,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             "ClusterTask",       // could be read from task definition
-				TaskName:                "ods-build-go-v0-1", // could be read from task definition
+				TaskKindRef:             "ClusterTask",         // could be read from task definition
+				TaskName:                "ods-build-go-v0-1-0", // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it

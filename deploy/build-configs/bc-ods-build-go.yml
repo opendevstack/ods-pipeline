@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: sonarqube
+  name: ods-build-go
 parameters:
 - name: GIT_URL
   description: "Git repository URL"

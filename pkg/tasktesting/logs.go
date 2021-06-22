@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,20 +26,37 @@ func CollectPodLogs(c *kubernetes.Clientset, podName, namespace string, logf log
 func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string) (string, error) {
 	p, err := c.CoreV1().Pods(namespace).Get(context.Background(), pod, metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not get pod %s in namespace %s: %w", pod, namespace, err)
 	}
 
 	sb := strings.Builder{}
 	for _, container := range p.Spec.Containers {
+		deadline := time.Now().Add(30 * time.Second)
+		for {
+			containerIsReady := false
+			for _, cs := range p.Status.ContainerStatuses {
+				if cs.Name == container.Name && cs.Ready {
+					containerIsReady = true
+				}
+			}
+			if containerIsReady || time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+
 		sb.WriteString(fmt.Sprintf("\n>>> Container %s:\n", container.Name))
-		req := c.CoreV1().Pods(namespace).GetLogs(pod, &corev1.PodLogOptions{Follow: true, Container: container.Name})
+		req := c.CoreV1().Pods(namespace).GetLogs(pod, &corev1.PodLogOptions{
+			Follow:    true,
+			Container: container.Name,
+		})
 		rc, err := req.Stream(context.Background())
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", pod, namespace, err)
 		}
 		bs, err := ioutil.ReadAll(rc)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", pod, namespace, err)
 		}
 		sb.Write(bs)
 	}

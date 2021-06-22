@@ -1,10 +1,13 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11
+FROM registry.access.redhat.com/ubi8/openjdk-11 AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+ARG sonarEdition=community
+
 ENV SONAR_SCANNER_VERSION=3.1.0.1141 \
     CNES_REPORT_VERSION=3.2.2 \
-    GO_VERSION=1.16
+    GO_VERSION=1.16 \
+    SONAR_EDITION=$sonarEdition
 
 USER root
 
@@ -32,7 +35,6 @@ RUN cd /tmp \
     && mv sonar-scanner-${SONAR_SCANNER_VERSION} /usr/local/sonar-scanner-cli \
     && rm -rf sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
     && /usr/local/sonar-scanner-cli/bin/sonar-scanner --version
-ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
 
 # Install CNES report.
 RUN cd /tmp \
@@ -48,5 +50,15 @@ COPY cmd /etc/go/cmd
 COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
+
+COPY --from=builder /usr/local/bin/sonar /usr/local/bin/sonar
+COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli
+COPY --from=builder /usr/local/cnes/cnesreport.jar /usr/local/cnes/cnesreport.jar
+
+ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
 
 WORKDIR /go

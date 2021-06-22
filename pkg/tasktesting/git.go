@@ -11,12 +11,97 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	kclient "k8s.io/client-go/kubernetes"
 )
 
-func InitAndCommitOrFatal(t *testing.T, wsDir string) {
+// SetupFakeRepo writes .ods cache with fake data, without actually initializing a Git repo.
+func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(cwd)
+	os.Chdir(wsDir)
+
+	ctxt := &pipelinectxt.ODSContext{
+		Namespace:    ns,
+		Project:      "myproject",
+		Repository:   "myrepo",
+		Component:    "myrepo",
+		GitCommitSHA: random.PseudoSHA(),
+		GitFullRef:   "refs/heads/master",
+		GitRef:       "master",
+		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+	}
+	err = ctxt.WriteCache(wsDir)
+	if err != nil {
+		t.Fatalf("could not write .ods: %s", err)
+	}
+	return ctxt
+}
+
+// SetupGitRepo initializes a Git repo, commits and writes the result to the .ods cache.
+func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(cwd)
+	os.Chdir(wsDir)
+
+	initAndCommitOrFatal(t, wsDir)
+
+	ctxt := &pipelinectxt.ODSContext{
+		Namespace: ns,
+		Project:   "myproject",
+		GitURL:    "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+	}
+	err = ctxt.Assemble(wsDir)
+	if err != nil {
+		t.Fatalf("could not assemble ODS context information: %s", err)
+	}
+
+	err = ctxt.WriteCache(wsDir)
+	if err != nil {
+		t.Fatalf("could not write .ods: %s", err)
+	}
+	return ctxt
+}
+
+// SetupBitbucketRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
+func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) *pipelinectxt.ODSContext {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(cwd)
+	os.Chdir(wsDir)
+
+	initAndCommitOrFatal(t, wsDir)
+	originURL := pushToBitbucketOrFatal(t, c, ns, wsDir, projectKey)
+
+	ctxt := &pipelinectxt.ODSContext{
+		Namespace: ns,
+		Project:   projectKey,
+		GitURL:    originURL,
+	}
+	err = ctxt.Assemble(wsDir)
+	if err != nil {
+		t.Fatalf("could not assemble ODS context information: %s", err)
+	}
+
+	err = ctxt.WriteCache(wsDir)
+	if err != nil {
+		t.Fatalf("could not write .ods: %s", err)
+	}
+	return ctxt
+}
+
+func initAndCommitOrFatal(t *testing.T, wsDir string) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("could not get current working directory: %s", err)
@@ -33,37 +118,42 @@ func InitAndCommitOrFatal(t *testing.T, wsDir string) {
 	if err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
-	_, stderr, err := command.Run("git", []string{"init"})
+	stdout, stderr, err := command.Run("git", []string{"init"})
 	if err != nil {
-		t.Fatalf("error running git init: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git init: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"config", "user.email", "testing@opendevstack.org"})
+	stdout, stderr, err = command.Run("git", []string{"config", "user.email", "testing@opendevstack.org"})
 	if err != nil {
-		t.Fatalf("error running git config.user.email: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git config.user.email: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"config", "user.name", "testing"})
+	stdout, stderr, err = command.Run("git", []string{"config", "user.name", "testing"})
 	if err != nil {
-		t.Fatalf("error running git config.user.name: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git config.user.name: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"add", "."})
+	stdout, stderr, err = command.Run("git", []string{"add", "."})
 	if err != nil {
-		t.Fatalf("error running git add: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git add: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"commit", "-m", "initial commit"})
+	stdout, stderr, err = command.Run("git", []string{"commit", "-m", "initial commit"})
 	if err != nil {
-		t.Fatalf("error running git commit: %s, stderr: %s", err, stderr)
+		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
 }
 
-func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
-
+func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(cwd)
+	os.Chdir(wsDir)
 	repoName := filepath.Base(wsDir)
-	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "bitbucket", "url")
+	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "ods-bitbucket", "url")
 	if err != nil {
 		t.Fatalf("could not get Bitbucket URL: %s", err)
 	}
 	bbURL = "http://localhost:7990"
-	bbToken, err := kubernetes.GetSecretKey(c, ns, "bitbucket-auth", "password")
+	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")
 	if err != nil {
 		t.Fatalf("could not get Bitbucket token: %s", err)
 	}
@@ -104,47 +194,15 @@ func PushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
 
-	return originURL
-}
-
-func WriteDotOdsOrFatal(t *testing.T, wsDir string, projectKey string) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	wsName := filepath.Base(wsDir)
-	os.Chdir(wsDir)
-	err = writeFile(".ods/project", projectKey)
-	if err != nil {
-		t.Fatalf("could not write .ods/project: %s", err)
-	}
-	err = writeFile(".ods/repository", wsName)
-	if err != nil {
-		t.Fatalf("could not write .ods/repository: %s", err)
-	}
-	err = writeFile(".ods/component", wsName)
-	if err != nil {
-		t.Fatalf("could not write .ods/component: %s", err)
-	}
-	sha, err := getTrimmedFileContent(".git/refs/heads/master")
-	if err != nil {
-		t.Fatalf("error reading .git/refs/heads/master: %s", err)
-	}
-	err = writeFile(".ods/git-commit-sha", sha)
-	if err != nil {
-		t.Fatalf("could not write .ods/git-commit-sha: %s", err)
-	}
+	originURLWithKind := strings.Replace(
+		originURL,
+		"http://localhost",
+		"http://bitbucket-server-test.kind",
+		-1,
+	)
+	return originURLWithKind
 }
 
 func writeFile(filename, content string) error {
 	return ioutil.WriteFile(filename, []byte(content), 0644)
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
 }
