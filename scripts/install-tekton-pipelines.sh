@@ -7,6 +7,7 @@ TKN_VERSION="v0.22.0"
 TKN_DASHBOARD_VERSION="v0.17.0"
 TKN_TRIGGERS="v0.12.0" # Version supported by OCP 4.7 as of today: https://docs.openshift.com/container-platform/4.7/cicd/pipelines/op-release-notes.html
 NAMESPACE="default"
+INSTALL_TKN_DASHBOARD="false"
 
 if ! which kubectl &> /dev/null; then
     echo "kubectl is required"
@@ -16,6 +17,8 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
 
     -v|--verbose) set -x;;
+
+    --tekton-dashboard) INSTALL_TKN_DASHBOARD="true";;
 
     # -h|--help) usage; exit 0;;
 
@@ -27,8 +30,11 @@ esac; shift; done
 if ! $KUBECTL_BIN get namespace tekton-pipelines &> /dev/null; then
     echo "Installing Tekton ..."
     $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
-    $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/${TKN_DASHBOARD_VERSION}/tekton-dashboard-release.yaml
     $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TKN_TRIGGERS}/release.yaml
+    if [ "${INSTALL_TKN_DASHBOARD}" ]; then
+        echo "Installing Tekton Dashboard..."
+        $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/dashboard/previous/${TKN_DASHBOARD_VERSION}/tekton-dashboard-release.yaml
+    fi
 else
     echo "Tekton already installed."
 fi

@@ -12,8 +12,6 @@ SKIP_BUILD="false"
 IMAGES="buildah finish go-toolset helm sonar start webhook-interceptor"
 http_proxy="${http_proxy:-}"
 https_proxy="${https_proxy:-}"
-HTTP_PROXY="${HTTP_PROXY:-}"
-HTTPS_PROXY="${HTTPS_PROXY:-}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -37,8 +35,8 @@ for image in $IMAGES; do
         docker build \
             --build-arg http_proxy=$http_proxy \
             --build-arg https_proxy=$https_proxy \
-            --build-arg HTTP_PROXY=$HTTP_PROXY \
-            --build-arg HTTPS_PROXY=$HTTPS_PROXY  \
+            --build-arg HTTP_PROXY=$http_proxy \
+            --build-arg HTTPS_PROXY=$https_proxy  \
             -f build/package/Dockerfile.$image -t $REGISTRY/$NAMESPACE/$odsImage .
     fi
     echo "Pushing image to $REGISTRY/$NAMESPACE/$odsImage ..."
