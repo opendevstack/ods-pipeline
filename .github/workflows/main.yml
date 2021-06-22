@@ -9,28 +9,22 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image:
-          [
-            "buildah",
-            "finish",
-            "go-toolset",
-            "helm",
-            "sonar",
-            "start",
-            "webhook-interceptor",
-          ]
+        image: ["buildah", "finish", "go-toolset", "helm", "sonar", "start", "webhook-interceptor"]
     steps:
-      - name: Checkout
+      -
+        name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Set up Docker Buildx
+      -
+        name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
         with:
           driver-opts: |
             image=moby/buildkit:master
             network=host
-      - name: Build image
+      -
+        name: Build image
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -38,7 +32,8 @@ jobs:
           file: build/package/Dockerfile.${{ matrix.image }}
           tags: localhost:5000/ods/ods-${{ matrix.image }}:latest
           outputs: type=docker,dest=/tmp/image-ods-${{ matrix.image }}.tar
-      - name: Upload artifacts
+      - 
+        name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: buildx-image-ods-${{ matrix.image }}
@@ -52,83 +47,104 @@ jobs:
     env:
       TKN_VERSION: "v0.22.0"
     steps:
-      - name: Download image artifacts
+      - 
+        name: Download image artifacts
         uses: actions/download-artifact@v2
         with:
           path: /tmp
-      - name: Checkout
+      -
+        name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
-      - name: Setup KinD cluster with internal registry
+          fetch-depth: 0      
+      -
+        name: Setup KinD cluster with internal registry
         working-directory: scripts
-        run: ./kind-with-registry.sh
-      - name: Push buildah image
+        run: ./kind-with-registry.sh    
+      -
+        name: Push buildah image
         run: |
           docker load --input /tmp/buildx-image-ods-buildah/image-ods-buildah.tar
           docker push localhost:5000/ods/ods-buildah:latest
           docker rmi localhost:5000/ods/ods-buildah:latest
-      - name: Push finish image
+      -
+        name: Push finish image
         run: |
           docker load --input /tmp/buildx-image-ods-finish/image-ods-finish.tar
           docker push localhost:5000/ods/ods-finish:latest
           docker rmi localhost:5000/ods/ods-finish:latest
-      - name: Push go-toolset image
+      -
+        name: Push go-toolset image
         run: |
           docker load --input /tmp/buildx-image-ods-go-toolset/image-ods-go-toolset.tar
           docker push localhost:5000/ods/ods-go-toolset:latest
           docker rmi localhost:5000/ods/ods-go-toolset:latest
-      - name: Push helm image
+      -
+        name: Push helm image
         run: |
           docker load --input /tmp/buildx-image-ods-helm/image-ods-helm.tar
           docker push localhost:5000/ods/ods-helm:latest
           docker rmi localhost:5000/ods/ods-helm:latest
-      - name: Push sonar image
+      -
+        name: Push sonar image
         run: |
           docker load --input /tmp/buildx-image-ods-sonar/image-ods-sonar.tar
           docker push localhost:5000/ods/ods-sonar:latest
           docker rmi localhost:5000/ods/ods-sonar:latest
-      - name: Push start image
+      -
+        name: Push start image
         run: |
           docker load --input /tmp/buildx-image-ods-start/image-ods-start.tar
           docker push localhost:5000/ods/ods-start:latest
           docker rmi localhost:5000/ods/ods-start:latest
-      - name: Push webhook-interceptor image
+      -
+        name: Push webhook-interceptor image
         run: |
           docker load --input /tmp/buildx-image-ods-webhook-interceptor/image-ods-webhook-interceptor.tar
           docker push localhost:5000/ods/ods-webhook-interceptor:latest
           docker rmi localhost:5000/ods/ods-webhook-interceptor:latest
-      - name: Delete image tarballs
+      -
+        name: Delete image tarballs
         run: |
           rm -rf /tmp/buildx-image-*
-      - name: Setup kubectl
+      -
+        name: Setup kubectl
         uses: azure/setup-kubectl@v1
         id: install
-      - name: Install Tekton Core Components
+      -
+        name: Install Tekton Core Components
         run: kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TKN_VERSION}/release.notags.yaml
-      - name: Show disk space
+      - 
+        name: Show disk space
         run: df -h
-      - name: Spin up Bitbucket container
+      -
+        name: Spin up Bitbucket container
         working-directory: scripts
         run: ./run-bitbucket.sh
-      - name: Spin up Nexus container
+      -
+        name: Spin up Nexus container
         working-directory: scripts
         run: ./run-nexus.sh
-      - name: Spin up SonarQube container
+      -
+        name: Spin up SonarQube container
         working-directory: scripts
         run: ./run-sonarqube.sh
-      - name: Show disk space
+      - 
+        name: Show disk space
         run: df -h
-      - name: Setup Go 1.16
+      -
+        name: Setup Go 1.16
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
-      - name: Run tests
+      -
+        name: Run tests
         run: |
           go test -v ./internal/...
           go test -v ./pkg/...
           go test -v ./test/tasks/... -always-keep-tmp-workspaces
-      - name: Docker logs nexustest
+      -
+        name: Docker logs nexustest
         if: ${{ failure() }}
         run: |
           docker logs nexustest
