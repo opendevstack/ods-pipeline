@@ -34,6 +34,8 @@ spec:
                 secretKeyRef:
                   key: password
                   name: ods-bitbucket-auth
+            - name: API_HOST
+              value: '{{ .Values.interceptor.apiHost }}'
           resources:
             {{- toYaml .Values.interceptor.resources | nindent 12 }}
       serviceAccountName: '{{ .Values.serviceAccountName }}'
