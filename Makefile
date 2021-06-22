@@ -21,7 +21,7 @@ build-and-push-images:
 
 ## Install Tekton pipelines in kind cluster.
 install-tekton-pipelines:
-	cd scripts && ./install-tekton-pipelines.sh
+	cd scripts && ./install-tekton-pipelines.sh --tekton-dashboard
 .PHONY: install-tekton-pipelines
 
 ## Run Bitbucket server (using timebomb license, in "kind" network).
