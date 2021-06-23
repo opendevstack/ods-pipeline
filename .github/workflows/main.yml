@@ -143,7 +143,7 @@ jobs:
         run: |
           go test -v ./internal/...
           go test -v ./pkg/...
-          go test -v ./test/tasks/... -always-keep-tmp-workspaces
+          go test -timeout 20m -v ./test/tasks/... -always-keep-tmp-workspaces
       -
         name: Docker logs nexustest
         if: ${{ failure() }}
