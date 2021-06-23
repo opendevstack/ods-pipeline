@@ -55,17 +55,37 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
 
 	time.Sleep(3 * time.Second) //TODO: How to wait until Pod is actually created?
 
-	events, err := c.CoreV1().Events(namespace).List(context.TODO(),
+	ew, err := c.CoreV1().Events(namespace).Watch(context.Background(),
 		metav1.ListOptions{
 			FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s", podName, namespace),
 		})
 	if err != nil {
-		log.Fatalf("Failed to display events from pod %s in namespace %s\n", podName, namespace)
+		log.Fatalf("Failed to watch events from pod %s in namespace %s\n", podName, namespace)
 	}
 
-	log.Println("------------- Events ------------------")
-	for _, e := range events.Items {
-		log.Printf("Type: %s, Message: %s", e.Type, e.Message)
+	// Setup a timeout channel
+	timeout := 10 * time.Second
+	timeoutChan := make(chan struct{})
+	go func() {
+		time.Sleep(timeout)
+		timeoutChan <- struct{}{}
+	}()
+
+	// Wait for any failure or a timeout
+	for {
+		select {
+		case wev := <-ew.ResultChan():
+			if wev.Object != nil {
+				ev := wev.Object.(*v1.Event)
+				log.Printf("Type: %s, Message: %s", ev.Type, ev.Message)
+				if ev.Type == "Warning" && strings.Contains(ev.Message, "Error") {
+					log.Fatalf("The following error has been detected in the events output: %s\n", ev.Message)
+					// return
+				}
+			}
+		case <-timeoutChan:
+			log.Fatal("time out")
+		}
 	}
-	log.Println("-------------------------------------------------")
+
 }
