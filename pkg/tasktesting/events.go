@@ -84,7 +84,7 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
 				}
 			}
 		case <-timeoutChan:
-			log.Fatal("time out")
+			log.Printf("No failures detected in the events output of pod %s after %v seconds\n", podName, timeout.Seconds())
 		}
 	}
 
