@@ -84,6 +84,9 @@ func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, nam
 type conditionFn func(*tekton.TaskRun) bool
 
 func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration) *tekton.TaskRun {
+
+	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Seconds(), name, ns)
+
 	t.Helper()
 
 	// Do a first quick check before setting the watch

@@ -87,7 +87,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	WatchTaskRunEvents(testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace)
+	WatchTaskRunEvents(testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, 30*time.Second)
 
 	// Wait X minutes for task to complete.
 	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout)

@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string) {
+func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, timeout time.Duration) {
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(c, time.Second*30)
 	podsInformer := kubeInformerFactory.Core().V1().Pods().Informer()
@@ -33,8 +33,19 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string) 
 	stop := make(chan struct{})
 	defer close(stop)
 	kubeInformerFactory.Start(stop)
+
+	// Setup a timeout channel
+	go func() {
+		time.Sleep(timeout)
+		stop <- struct{}{}
+	}()
+
 	for {
-		time.Sleep(time.Second)
+		select {
+		case <-stop:
+			log.Printf("Stopping displaying events after %v seconds...\n", timeout.Seconds())
+			return
+		}
 	}
 }
 
@@ -42,7 +53,7 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(3 * time.Second) //TODO: How to wait until Pod is actually created?
 
 	events, err := c.CoreV1().Events(namespace).List(context.TODO(),
 		metav1.ListOptions{
