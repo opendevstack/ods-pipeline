@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 # To carry out normal operations like running ODS Tekton Tasks,
 # we need the ODS tasks images available in the KinD cluster.
@@ -29,8 +30,8 @@ esac; shift; done
 cd $ODS_PIPELINE_DIR
 
 for image in $IMAGES; do
+    odsImage="ods-$image"
     if [ "${SKIP_BUILD}" != "true" ]; then
-        odsImage="ods-$image" 
         echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
         docker build \
             --build-arg http_proxy=$http_proxy \
