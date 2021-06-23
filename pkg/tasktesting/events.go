@@ -16,6 +16,8 @@ import (
 
 func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, timeout time.Duration) {
 
+	stop := make(chan struct{})
+
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(c, time.Second*30)
 	podsInformer := kubeInformerFactory.Core().V1().Pods().Informer()
 
@@ -25,31 +27,25 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, 
 				// when a new task is created, watch its events
 				pod := obj.(*v1.Pod)
 				if strings.HasPrefix(pod.Name, taskRunName) {
-					WatchPodEvents(c, pod.Name, namespace)
+					WatchPodEvents(c, pod.Name, namespace, timeout)
+					stop <- struct{}{}
 				}
+
 			},
 		})
 
-	stop := make(chan struct{})
 	defer close(stop)
 	kubeInformerFactory.Start(stop)
-
-	// Setup a timeout channel
-	go func() {
-		time.Sleep(timeout)
-		stop <- struct{}{}
-	}()
 
 	for {
 		select {
 		case <-stop:
-			log.Printf("Stopping displaying events after %v seconds...\n", timeout.Seconds())
 			return
 		}
 	}
 }
 
-func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
+func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, timeout time.Duration) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
@@ -64,12 +60,13 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
 	}
 
 	// Setup a timeout channel
-	timeout := 10 * time.Second
 	timeoutChan := make(chan struct{})
 	go func() {
 		time.Sleep(timeout)
 		timeoutChan <- struct{}{}
 	}()
+
+	log.Println("---------------------- Events -------------------------")
 
 	// Wait for any failure or a timeout
 	for {
@@ -80,12 +77,16 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string) {
 				log.Printf("Type: %s, Message: %s", ev.Type, ev.Message)
 				if ev.Type == "Warning" && strings.Contains(ev.Message, "Error") {
 					log.Fatalf("The following error has been detected in the events output: %s\n", ev.Message)
-					// return
+					//TODO: When it fails we have to clean up the namespace, pvc, etc...
+					break
 				}
 			}
 		case <-timeoutChan:
+			log.Println("-----------------------------------------------")
 			log.Printf("No failures detected in the events output of pod %s after %v seconds\n", podName, timeout.Seconds())
+			return
 		}
+
 	}
 
 }
