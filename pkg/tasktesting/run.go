@@ -36,6 +36,8 @@ type TestCase struct {
 }
 
 type TaskRunContext struct {
+	Namespace  string
+	Clients    *kubernetes.Clients
 	Workspaces map[string]string
 	Params     map[string]string
 	ODS        *pipelinectxt.ODSContext
@@ -68,6 +70,8 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	testCaseContext := &TaskRunContext{
+		Namespace:  testOpts.Namespace,
+		Clients:    testOpts.Clients,
 		Workspaces: taskWorkspaces,
 	}
 
