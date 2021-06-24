@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -ue
 
-reg_network='kind'
-
 kind_registry='kind-registry'
 kind_control_plane='kind-control-plane'
 BITBUCKET_POSTGRES_CONTAINER_NAME="bitbucket-postgres-test"
@@ -16,5 +14,3 @@ for cn in "${container_names_in_stop_order[@]}"; do
     echo docker stop "$cn"
     docker stop "$cn"
 done
-
-# echo docker stop "$(docker ps -qf "network=$reg_network")"

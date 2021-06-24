@@ -32,12 +32,10 @@ docker build -t nexustest .
 cd -
 docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
 
-set +e
 if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
     docker logs ${CONTAINER_NAME}
     exit 1
 fi 
-set -e
 
 NEXUS_URL="http://localhost:${HOST_PORT}"
 

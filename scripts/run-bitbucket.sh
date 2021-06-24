@@ -44,12 +44,10 @@ docker run --name ${BITBUCKET_SERVER_CONTAINER_NAME} \
   -d --net kind -p "${BITBUCKET_SERVER_HOST_PORT}:7990" -p 7999:7999 \
   "${BITBUCKET_SERVER_IMAGE_NAME}:${BITBUCKET_SERVER_IMAGE_TAG}"
 
-set +e
 if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
     docker logs ${BITBUCKET_SERVER_CONTAINER_NAME}
     exit 1
 fi 
-set -e
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
 echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> ${HELM_VALUES_FILE}

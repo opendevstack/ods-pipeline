@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -ue
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
-
 INSECURE=""
 HOST_PORT="9000"
 SONAR_USERNAME="admin"

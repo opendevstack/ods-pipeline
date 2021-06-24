@@ -39,12 +39,10 @@ docker rm -f ${CONTAINER_NAME} || true
 docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" sonarqube:${SONAR_IMAGE_TAG}
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
-set +e
 if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
     docker logs ${CONTAINER_NAME}
     exit 1
 fi 
-set -e
 
 echo "Creating token for '${SONAR_USERNAME}' ..."
 tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
