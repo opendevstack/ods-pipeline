@@ -79,6 +79,13 @@ func serve() error {
 	log.Println("Ready to accept requests")
 
 	mux := http.NewServeMux()
+	mux.Handle("/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err = w.Write([]byte(`{"health":"ok"}`))
+		if err != nil {
+			http.Error(w, `{"health":"error"}`, http.StatusInternalServerError)
+			return
+		}
+	}))
 	mux.Handle("/", http.HandlerFunc(server.HandleRoot))
 	return http.ListenAndServe(":8080", mux)
 }
