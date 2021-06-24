@@ -53,6 +53,16 @@ run-sonarqube:
 prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube deploy-ods-tasks
 .PHONY: prepare-local-env
 
+## Stop local environment
+stop-local-env:
+	cd scripts && ./stop-local-env.sh
+.PHONY: stop-local-env
+
+## Restart stopped local environment
+start-local-env:
+	cd scripts && ./start-local-env.sh
+.PHONY: start-local-env
+
 ## Run testsuite.
 test: test-internal test-pkg test-tasks
 .PHONY: test

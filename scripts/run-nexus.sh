@@ -32,31 +32,14 @@ docker build -t nexustest .
 cd -
 docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
 
-NEXUS_URL="http://localhost:${HOST_PORT}"
-function waitForReady {
-    echo "Waiting up to 4 minutes for Nexus to start ..."
-    local n=0
-    local http_code=
-    set +e
-    until [ $n -ge 24 ]; do
-        http_code=$(curl ${INSECURE} -s -o /dev/null -w "%{http_code}" "${NEXUS_URL}/service/rest/v1/status/writable")
-        if [ "${http_code}" == "200" ]; then
-            echo " success"
-            break
-        else
-            echo -n "."
-            sleep 10s
-            n=$((n+1))
-        fi
-    done
-    set -e
+set +e
+if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
+    docker logs ${CONTAINER_NAME}
+    exit 1
+fi 
+set -e
 
-    if [ "${http_code}" != "200" ]; then
-        echo "Nexus did not start, got http_code=${http_code}."
-        docker logs ${CONTAINER_NAME}
-        exit 1
-    fi
-}
+NEXUS_URL="http://localhost:${HOST_PORT}"
 
 function runJsonScript {
     local jsonScriptName=$1
@@ -78,8 +61,6 @@ function runJsonScript {
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
         "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}"
 }
-
-waitForReady
 
 echo "Retrieving admin password"
 DEFAULT_ADMIN_PASSWORD_FILE="/nexus-data/admin.password"
