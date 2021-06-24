@@ -44,30 +44,10 @@ docker run --name ${BITBUCKET_SERVER_CONTAINER_NAME} \
   -d --net kind -p "${BITBUCKET_SERVER_HOST_PORT}:7990" -p 7999:7999 \
   "${BITBUCKET_SERVER_IMAGE_NAME}:${BITBUCKET_SERVER_IMAGE_TAG}"
 
-BITBUCKET_URL="http://localhost:${BITBUCKET_SERVER_HOST_PORT}"
-echo "Waiting up to 4 minutes for Bitbucket to start ..."
-# https://confluence.atlassian.com/bitbucketserverkb/how-to-monitor-if-bitbucket-server-is-up-and-running-975014635.html
-n=0
-status="STARTING"
-set +e
-until [ $n -ge 24 ]; do
-    status=$(curl -s ${INSECURE} "${BITBUCKET_URL}/status" | jq -r .state)
-    if [ "${status}" == "RUNNING" ]; then
-        echo " success"
-        break
-    else
-        echo -n "."
-        sleep 10s
-        n=$((n+1))
-    fi
-done
-set -e
-if [ "${status}" != "RUNNING" ]; then
-    echo "Bitbucket did not start, got status=${status}."
+if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
     docker logs ${BITBUCKET_SERVER_CONTAINER_NAME}
     exit 1
-fi
-
+fi 
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
 echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> ${HELM_VALUES_FILE}
