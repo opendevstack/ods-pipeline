@@ -36,6 +36,18 @@ spec:
                   name: ods-bitbucket-auth
             - name: API_HOST
               value: '{{ .Values.interceptor.apiHost }}'
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 1
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 20
+            periodSeconds: 3
           resources:
             {{- toYaml .Values.interceptor.resources | nindent 12 }}
       serviceAccountName: '{{ .Values.serviceAccountName }}'

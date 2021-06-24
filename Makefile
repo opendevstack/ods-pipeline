@@ -4,6 +4,9 @@ SHELL = /bin/bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
+# Namespace to use (applied for some targets)
+namespace =
+
 ## Check if system meets prerequisites.
 check-system:
 	cd scripts && ./check-system.sh
@@ -26,7 +29,11 @@ install-tekton-pipelines:
 
 ## Install resources in CD namespace via Helm.
 install-cd-namespace:
-	cd scripts && ./install-cd-namespace-resources.sh
+ifeq ($(strip $(namespace)),)
+	@echo "Argument 'namespace' is required, e.g. make install-cd-namespace namespace=foo-cd"
+	@exit 1
+endif
+	cd scripts && ./install-cd-namespace-resources.sh -n $(namespace)
 .PHONY: install-cd-namespace
 
 ## Run Bitbucket server (using timebomb license, in "kind" network).
