@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, timeout time.Duration) {
+func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, podEventsDone chan bool) {
 
 	stop := make(chan struct{})
 
@@ -27,7 +27,7 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, 
 				// when a new task is created, watch its events
 				pod := obj.(*v1.Pod)
 				if strings.HasPrefix(pod.Name, taskRunName) {
-					WatchPodEvents(c, pod.Name, namespace, timeout)
+					WatchPodEvents(c, pod.Name, namespace, podEventsDone)
 					stop <- struct{}{}
 				}
 
@@ -45,7 +45,7 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, 
 	}
 }
 
-func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, timeout time.Duration) {
+func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, podEventsDone chan bool) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
@@ -59,16 +59,9 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, timeout 
 		log.Fatalf("Failed to watch events from pod %s in namespace %s\n", podName, namespace)
 	}
 
-	// Setup a timeout channel
-	timeoutChan := make(chan struct{})
-	go func() {
-		time.Sleep(timeout)
-		timeoutChan <- struct{}{}
-	}()
-
 	log.Println("---------------------- Events -------------------------")
 
-	// Wait for any failure or a timeout
+	// Wait for any event failure or a all its containers to be running
 	for {
 		select {
 		case wev := <-ew.ResultChan():
@@ -81,12 +74,13 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, timeout 
 					break
 				}
 			}
-		case <-timeoutChan:
-			log.Println("-----------------------------------------------")
-			log.Printf("No failures detected in the events output of pod %s after %v seconds\n", podName, timeout.Seconds())
-			return
+		case done := <-podEventsDone:
+			if done {
+				log.Println("-----------------------------------------------")
+				log.Printf("Won't display more pod events as all pod's containers are now ready.")
+				return
+			}
 		}
-
 	}
 
 }

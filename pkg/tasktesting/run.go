@@ -87,13 +87,16 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	WatchTaskRunEvents(testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, 30*time.Second)
+	podEventsDone := make(chan bool)
+	go func() {
+		WatchTaskRunEvents(testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, podEventsDone)
+	}()
 
 	// Wait X minutes for task to complete.
 	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout)
 
 	// Show logs
-	CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf)
+	CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf, podEventsDone)
 
 	// Show info from Task result
 	CollectTaskResultInfo(tr, t.Logf)
