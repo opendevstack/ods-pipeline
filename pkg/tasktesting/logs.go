@@ -65,7 +65,7 @@ func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string, podE
 		sb.Write(bs)
 	}
 
-	podEventsDone <- true // signal the channel to stop displaying pod events
+	podEventsDone <- true // notify the channel to stop watching pod events
 
 	return sb.String(), nil // display containers' logs
 }

@@ -83,7 +83,7 @@ func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, nam
 
 type conditionFn func(*tekton.TaskRun) bool
 
-func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration) *tekton.TaskRun {
+func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration, podEventsDone <-chan bool) *tekton.TaskRun {
 
 	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Seconds(), name, ns)
 
@@ -110,7 +110,9 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 		timeoutChan <- struct{}{}
 	}()
 
-	// Wait for the condition to be true or a timeout
+	// Wait for the TaskRun to be done or time out,
+	// or a failure in the pod's events,
+	// or the pod's containers to be ready
 	for {
 		select {
 		case ev := <-w.ResultChan():
@@ -120,6 +122,15 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 					return tr
 				}
 			}
+
+		case done := <-podEventsDone:
+			if done {
+				log.Println("-----------------------------------------------")
+				log.Printf("Won't display more pod events as all pod's containers are now ready.")
+			} else {
+				t.Fatal("Stopping test execution due to a failure in the pod's events")
+			}
+
 		case <-timeoutChan:
 			t.Fatal("time out")
 		}

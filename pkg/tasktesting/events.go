@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"testing"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -14,7 +15,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, podEventsDone chan bool) {
+func WatchTaskRunEvents(t *testing.T, c *kubernetes.Clientset, taskRunName, namespace string, podEventsDone chan bool) {
 
 	stop := make(chan struct{})
 
@@ -27,8 +28,8 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, 
 				// when a new task is created, watch its events
 				pod := obj.(*v1.Pod)
 				if strings.HasPrefix(pod.Name, taskRunName) {
-					WatchPodEvents(c, pod.Name, namespace, podEventsDone)
 					stop <- struct{}{}
+					WatchPodEvents(t, c, pod.Name, namespace, podEventsDone)
 				}
 
 			},
@@ -45,7 +46,7 @@ func WatchTaskRunEvents(c *kubernetes.Clientset, taskRunName, namespace string, 
 	}
 }
 
-func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, podEventsDone chan bool) {
+func WatchPodEvents(t *testing.T, c *kubernetes.Clientset, podName, namespace string, podEventsDone chan bool) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
@@ -56,7 +57,7 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, podEvent
 			FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s", podName, namespace),
 		})
 	if err != nil {
-		log.Fatalf("Failed to watch events from pod %s in namespace %s\n", podName, namespace)
+		t.Fatalf("Failed to watch events from pod %s in namespace %s\n", podName, namespace)
 	}
 
 	log.Println("---------------------- Events -------------------------")
@@ -69,16 +70,9 @@ func WatchPodEvents(c *kubernetes.Clientset, podName, namespace string, podEvent
 				ev := wev.Object.(*v1.Event)
 				log.Printf("Type: %s, Message: %s", ev.Type, ev.Message)
 				if ev.Type == "Warning" && strings.Contains(ev.Message, "Error") {
-					log.Fatalf("The following error has been detected in the events output: %s\n", ev.Message)
-					//TODO: When it fails we have to clean up the namespace, pvc, etc...
-					break
+					log.Printf("The following error has been detected in the events output: %s\n", ev.Message)
+					podEventsDone <- false
 				}
-			}
-		case done := <-podEventsDone:
-			if done {
-				log.Println("-----------------------------------------------")
-				log.Printf("Won't display more pod events as all pod's containers are now ready.")
-				return
 			}
 		}
 	}
