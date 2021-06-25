@@ -31,7 +31,6 @@ func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string, podE
 	}
 
 	sb := strings.Builder{}
-
 	for _, container := range p.Spec.Containers {
 		log.Printf("Waiting for container %s from pod %s to be Ready...\n", container.Name, pod)
 
