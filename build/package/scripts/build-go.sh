@@ -53,14 +53,12 @@ if [ "${makeErrorCode}" -eq 2 ]; then
   set +e
   golangci-lint run > go-lint-report.txt
   exitcode=$?
-  cat go-lint-report.txt
   set -e
-  if [ -f go-lint-report.txt ]; then
+  if [ -s go-lint-report.txt ]; then
+    cat go-lint-report.txt
     mkdir -p .ods/artifacts/lint-report
     cp go-lint-report.txt .ods/artifacts/lint-report/report.txt
     exit $exitcode
-  else
-    echo "no lint report found"
   fi
 else
   make ci-lint
