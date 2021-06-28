@@ -67,6 +67,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 	for name, tc := range tests {
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef:             "ClusterTask",            // could be read from task definition
