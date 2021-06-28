@@ -67,6 +67,37 @@ func TestTaskODSBuildGo(t *testing.T) {
 				}
 			},
 		},
+		"task should fail linting go app and generate lint report": {
+			WorkspaceDirMapping: map[string]string{"source": "go-sample-app-lint-error"},
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupGitRepo(t, ns, wsDir)
+				ctxt.Params = map[string]string{
+					"go-image":    "localhost:5000/ods/ods-go-toolset:latest",
+					"sonar-image": "localhost:5000/ods/ods-sonar:latest",
+					"go-os":       runtime.GOOS,
+					"go-arch":     runtime.GOARCH,
+				}
+			},
+			WantRunSuccess: false,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+
+				wantFiles := []string{
+					".ods/artifacts/lint-report/report.txt",
+				}
+
+				for _, wf := range wantFiles {
+					if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
+						t.Fatalf("Want %s, but got nothing", wf)
+					}
+				}
+
+				wantLintReportContent := "main.go:6:2: printf: Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
+
+				checkFileContent(t, wsDir, ".ods/artifacts/lint-report/report.txt", wantLintReportContent)
+			},
+		},
 	}
 
 	for name, tc := range tests {

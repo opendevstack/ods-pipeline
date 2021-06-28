@@ -50,7 +50,18 @@ echo "Lint"
 make -q ci-lint &> /dev/null || makeErrorCode=$?
 if [ "${makeErrorCode}" -eq 2 ]; then
   golangci-lint version
-  golangci-lint run
+  set +e
+  golangci-lint run > go-lint-report.txt
+  exitcode=$?
+  cat go-lint-report.txt
+  set -e
+  if [ -f go-lint-report.txt ]; then
+    mkdir -p .ods/artifacts/lint-report
+    cp go-lint-report.txt .ods/artifacts/lint-report/report.txt
+    exit $exitcode
+  else
+    echo "no lint report found"
+  fi
 else
   make ci-lint
 fi
