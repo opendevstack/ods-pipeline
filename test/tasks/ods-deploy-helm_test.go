@@ -13,6 +13,8 @@ import (
 
 func TestTaskODSDeployHelm(t *testing.T) {
 
+	t.Parallel()
+
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{
 			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
@@ -67,7 +69,6 @@ func TestTaskODSDeployHelm(t *testing.T) {
 	for name, tc := range tests {
 
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef:             "ClusterTask",            // could be read from task definition
