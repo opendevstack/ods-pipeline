@@ -2,6 +2,7 @@ package tasktesting
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -124,7 +124,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	ps, err := cs.TektonClientSet.TektonV1beta1().Pipelines(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get pipeline: %w", err)
+		return nil, fmt.Errorf("could not get pipeline: %w", err)
 	}
 	for _, i := range ps.Items {
 		printOrAdd("Pipeline", i.Name, i)
@@ -132,7 +132,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	prrs, err := cs.TektonClientSet.TektonV1beta1().PipelineRuns(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get pipelinerun: %w", err)
+		return nil, fmt.Errorf("could not get pipelinerun: %w", err)
 	}
 	for _, i := range prrs.Items {
 		printOrAdd("PipelineRun", i.Name, i)
@@ -140,7 +140,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	cts, err := cs.TektonClientSet.TektonV1beta1().ClusterTasks().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get cluster tasks: %w", err)
+		return nil, fmt.Errorf("could not get cluster tasks: %w", err)
 	}
 	for _, i := range cts.Items {
 		printOrAdd("Task", i.Name, i)
@@ -148,7 +148,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	ts, err := cs.TektonClientSet.TektonV1beta1().Tasks(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get tasks: %w", err)
+		return nil, fmt.Errorf("could not get tasks: %w", err)
 	}
 	for _, i := range ts.Items {
 		printOrAdd("Task", i.Name, i)
@@ -156,7 +156,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	trs, err := cs.TektonClientSet.TektonV1beta1().TaskRuns(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get taskrun: %w", err)
+		return nil, fmt.Errorf("could not get taskrun: %w", err)
 	}
 	for _, i := range trs.Items {
 		printOrAdd("TaskRun", i.Name, i)
@@ -164,7 +164,7 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 
 	pods, err := cs.KubernetesClientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, xerrors.Errorf("could not get pods: %w", err)
+		return nil, fmt.Errorf("could not get pods: %w", err)
 	}
 	for _, i := range pods.Items {
 		printOrAdd("Pod", i.Name, i)
