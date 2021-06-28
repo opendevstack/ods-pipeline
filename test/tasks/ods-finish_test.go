@@ -61,7 +61,46 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 			},
 		},
+<<<<<<< HEAD
 	)
+=======
+		"set bitbucket build status to successful and artifacts are in Nexus": {
+			WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
+			PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				wsDir := ctxt.Workspaces["source"]
+				ctxt.ODS = tasktesting.SetupBitbucketRepo(t, c.KubernetesClientSet, ns, wsDir, bitbucketProjectKey)
+				ctxt.Params = map[string]string{
+					"image":                  "localhost:5000/ods/ods-finish:latest",
+					"console-url":            "http://example.com",
+					"pipeline-run-name":      "foo",
+					"aggregate-tasks-status": "Succeeded",
+				}
+			},
+			WantRunSuccess: true,
+			PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+				checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "SUCCESSFUL")
+				checkArtifactsAreInNexus(t, ctxt)
+			},
+		},
+	}
+
+	for name, tc := range tests {
+
+		t.Run(name, func(t *testing.T) {
+
+			tasktesting.Run(t, tc, tasktesting.TestOpts{
+				TaskKindRef:             "ClusterTask",       // could be read from task definition
+				TaskName:                "ods-finish-v0-1-0", // could be read from task definition
+				Clients:                 c,
+				Namespace:               ns,
+				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
+				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
+			})
+
+		})
+
+	}
+>>>>>>> Use pipefail to not lose the exit code for go test
 }
 
 func checkBuildStatus(t *testing.T, gitCommit, wantBuildStatus string) {
