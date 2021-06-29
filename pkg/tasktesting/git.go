@@ -140,6 +140,22 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 	}
 }
 
+func BitbucketTestClient(t *testing.T, c *kclient.Clientset, ns string) *bitbucket.Client {
+	bbURL := "http://localhost:7990"
+	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")
+	if err != nil {
+		t.Fatalf("could not get Bitbucket token: %s", err)
+	}
+
+	return bitbucket.NewClient(&bitbucket.ClientConfig{
+		Timeout:    10 * time.Second,
+		APIToken:   bbToken,
+		MaxRetries: 2,
+		BaseURL:    bbURL,
+		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
+	})
+}
+
 func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
 	cwd, err := os.Getwd()
 	if err != nil {
