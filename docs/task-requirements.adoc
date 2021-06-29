@@ -5,7 +5,7 @@
 [cols="1,1"]
 |===
 | REQ-TASK-START-1
-| Clone repository for given refspec
+| Clone repository for given refspec and, if `ods.yml` is present, only first-level of child repositories.
 
 | REQ-TASK-START-2
 | Read ODS config and clone any child repositories

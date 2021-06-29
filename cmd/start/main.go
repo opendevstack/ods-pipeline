@@ -66,6 +66,72 @@ func main() {
 		}
 	}
 
+	ctxt := prepareODSContextForRepo(checkoutDir, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag)
+
+	// Set Bitbucket build status to "in progress"
+	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+		Timeout:    10 * time.Second,
+		APIToken:   *bitbucketAccessTokenFlag,
+		MaxRetries: 2,
+		BaseURL:    *bitbucketURLFlag,
+	})
+	pipelineRunURL := fmt.Sprintf(
+		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
+		*consoleURLFlag,
+		ctxt.Namespace,
+		*pipelineRunNameFlag,
+	)
+	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
+		State:       "INPROGRESS",
+		Key:         ctxt.GitCommitSHA,
+		Name:        ctxt.GitCommitSHA,
+		URL:         pipelineRunURL,
+		Description: "ODS Pipeline Build",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//TODO: If ods.yml is present, clone only first-level of child repositories
+	repos := []string{"r1", "r2"}
+
+	for _, repo := range repos {
+		checkoutDir = fmt.Sprintf(".ods/repos/%s", repo)
+		prepareODSContextForRepo(checkoutDir, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag)
+	}
+}
+
+func deleteDirectoryContents(directory string) error {
+	// Open the directory and read all its files.
+	dirRead, err := os.Open(directory)
+	if err != nil {
+		return fmt.Errorf("could not open %s: %w", directory, err)
+	}
+	dirFiles, err := dirRead.Readdir(0)
+	if err != nil {
+		return fmt.Errorf("could not read files in %s: %w", directory, err)
+	}
+
+	// Loop over the directory's files and remove them.
+	for _, f := range dirFiles {
+		filename := filepath.Join(directory, f.Name())
+		err := os.RemoveAll(filename)
+		if err != nil {
+			return fmt.Errorf("could not remove file %s: %w", filename, err)
+		}
+	}
+	return nil
+}
+
+func getCommitSHA() (string, error) {
+	content, err := ioutil.ReadFile(".git/HEAD")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(content)), nil
+}
+
+func prepareODSContextForRepo(checkoutDir string, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag *string) *pipelinectxt.ODSContext {
 	// git-init
 	stdout, stderr, err := command.Run("/ko-app/git-init", []string{
 		"-url", *urlFlag,
@@ -106,57 +172,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Set Bitbucket build status to "in progress"
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *bitbucketAccessTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *bitbucketURLFlag,
-	})
-	pipelineRunURL := fmt.Sprintf(
-		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		*consoleURLFlag,
-		ctxt.Namespace,
-		*pipelineRunNameFlag,
-	)
-	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
-		State:       "INPROGRESS",
-		Key:         ctxt.GitCommitSHA,
-		Name:        ctxt.GitCommitSHA,
-		URL:         pipelineRunURL,
-		Description: "ODS Pipeline Build",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func deleteDirectoryContents(directory string) error {
-	// Open the directory and read all its files.
-	dirRead, err := os.Open(directory)
-	if err != nil {
-		return fmt.Errorf("could not open %s: %w", directory, err)
-	}
-	dirFiles, err := dirRead.Readdir(0)
-	if err != nil {
-		return fmt.Errorf("could not read files in %s: %w", directory, err)
-	}
-
-	// Loop over the directory's files and remove them.
-	for _, f := range dirFiles {
-		filename := filepath.Join(directory, f.Name())
-		err := os.RemoveAll(filename)
-		if err != nil {
-			return fmt.Errorf("could not remove file %s: %w", filename, err)
-		}
-	}
-	return nil
-}
-
-func getCommitSHA() (string, error) {
-	content, err := ioutil.ReadFile(".git/HEAD")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
+	return ctxt
 }

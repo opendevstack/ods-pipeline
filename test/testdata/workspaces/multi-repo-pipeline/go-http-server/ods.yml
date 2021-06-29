@@ -1,0 +1,36 @@
+phases:
+  build:
+    - name: backend-build-go
+      taskRef:
+        kind: ClusterTask
+        name: ods-build-go-v0-1-0
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: backend-build-image
+      taskRef:
+        kind: ClusterTask
+        name: ods-build-image-v0-1-0
+      runAfter:
+        - backend-build-go
+      params:
+        - name: builder-image
+          value: localhost:5000/ods/ods-buildah:latest
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+  deploy:
+    - name: backend-deploy
+      taskRef:
+        kind: ClusterTask
+        name: ods-deploy-helm-v0-1-0
+      params:
+        - name: release-name
+          value: backend
+        - name: image
+          value: localhost:5000/ods/ods-helm:latest
+      workspaces:
+        - name: source
+          workspace: shared-workspace
