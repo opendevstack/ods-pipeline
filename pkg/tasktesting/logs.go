@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 	"time"
 
@@ -15,15 +16,15 @@ import (
 )
 
 // CollectPodLogs will get the logs for all containers in a Pod
-func CollectPodLogs(c *kubernetes.Clientset, podName, namespace string, logf logging.FormatLogger) {
-	logs, err := getContainerLogsFromPod(c, podName, namespace)
+func CollectPodLogs(c *kubernetes.Clientset, podName, namespace string, logf logging.FormatLogger, podEventsDone chan<- bool) {
+	logs, err := getContainerLogsFromPod(c, podName, namespace, podEventsDone)
 	if err != nil {
 		logf("Could not get logs for pod %s: %s", podName, err)
 	}
 	logf("pod logs %s", logs)
 }
 
-func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string) (string, error) {
+func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string, podEventsDone chan<- bool) (string, error) {
 	p, err := c.CoreV1().Pods(namespace).Get(context.Background(), pod, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("could not get pod %s in namespace %s: %w", pod, namespace, err)
@@ -31,6 +32,8 @@ func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string) (str
 
 	sb := strings.Builder{}
 	for _, container := range p.Spec.Containers {
+		log.Printf("Waiting for container %s from pod %s to be Ready...\n", container.Name, pod)
+
 		deadline := time.Now().Add(30 * time.Second)
 		for {
 			containerIsReady := false
@@ -60,5 +63,8 @@ func getContainerLogsFromPod(c kubernetes.Interface, pod, namespace string) (str
 		}
 		sb.Write(bs)
 	}
-	return sb.String(), nil
+
+	podEventsDone <- true // notify the channel to stop watching pod events
+
+	return sb.String(), nil // display containers' logs
 }
