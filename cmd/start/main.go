@@ -101,11 +101,17 @@ func main() {
 
 	log.Printf("%d child repositories found\n", len(odsConfig.Repositories))
 
+	// use the following values by default as they're not present in the ods.yml file
+	repoGitFullRef := "refs/heads/master"
+	repoGitRefSpec := ""
+	namespace := ""
+	component := "?"
+
 	for _, repo := range odsConfig.Repositories {
 		log.Printf("Repository name: %s, url: %s\n", repo.Name, repo.URL)
-		checkoutDir = fmt.Sprintf(".ods/repos/%s", repo)
-		prepareODSContextForRepo(checkoutDir, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag)
 
+		checkoutDir = fmt.Sprintf(".ods/repos/%s", repo)
+		prepareODSContextForRepo(checkoutDir, &repo.URL, &repoGitFullRef, &repoGitRefSpec, sslVerifyFlag, submodulesFlag, depthFlag, &namespace, projectFlag, &repo.Name, &component, prBaseFlag, prKeyFlag)
 	}
 
 }
