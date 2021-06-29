@@ -9,10 +9,7 @@ import (
 
 func TestGetODSConfig(t *testing.T) {
 	type args struct {
-		project    string
-		repository string
-		gitFullRef string
-		filename   string
+		filename string
 	}
 	tests := []struct {
 		name    string
@@ -23,10 +20,7 @@ func TestGetODSConfig(t *testing.T) {
 		{
 			name: "read config from ods.yml",
 			args: args{
-				project:    "project",
-				repository: "repo",
-				gitFullRef: "refs/heads/main",
-				filename:   "testdata/ods.yml",
+				filename: "testdata/ods.yml",
 			},
 			want: &ODS{
 				Phases: Phases{
@@ -65,7 +59,7 @@ func TestGetODSConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetODSConfig(tt.args.project, tt.args.repository, tt.args.gitFullRef, tt.args.filename)
+			got, err := GetODSConfig(tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetODSConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -94,7 +94,7 @@ func main() {
 	}
 
 	// If ods.yml is present, clone only first-level of child repositories
-	odsConfig, err := config.GetODSConfig(ctxt.Project, ctxt.Repository, ctxt.GitFullRef, "ods.yml")
+	odsConfig, err := config.GetODSConfig("ods.yml")
 	if err != nil {
 		log.Fatal(err)
 	}

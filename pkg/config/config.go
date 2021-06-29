@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetODSConfig(project, repository, gitFullRef, filename string) (*ODS, error) {
+func GetODSConfig(filename string) (*ODS, error) {
 
 	odsFile, err := ioutil.ReadFile(filename)
 	if err != nil {
