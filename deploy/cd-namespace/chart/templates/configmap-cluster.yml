@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ods-cluster
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+data:
+  consoleUrl: '{{ .Values.consoleUrl }}'

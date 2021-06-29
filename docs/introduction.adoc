@@ -16,7 +16,7 @@ https://tekton.dev[Tekton] provides a framework to create cloud-native CI/CD pip
 
 We'll look at *Tekton Pipelines* in detail now, and will look at *Tekton Triggers* later on in this introduction.
 
-A Tekton pipeline (a Kubernetes resource named `Pipeline`) references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artefacts, deploying, etc. Tekton distinguishes between the definition (`Pipeline` and `Task` resources) and the actual execution (also modelled as resources, namely `PipelineRun` and `TaskRun`). The `PipelineRun` provides a workspace to the pipeline, which is a Kubernetes volume mounted in the task pods. If the volume is a PVC, it can be shared between tasks, allowing the tasks to work e.g. on the same repository checkout. The following illustrates the basic Tekton architecture:
+A Tekton pipeline (a Kubernetes resource named `Pipeline`) references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artifacts, deploying, etc. Tekton distinguishes between the definition (`Pipeline` and `Task` resources) and the actual execution (also modelled as resources, namely `PipelineRun` and `TaskRun`). The `PipelineRun` provides a workspace to the pipeline, which is a Kubernetes volume mounted in the task pods. If the volume is a PVC, it can be shared between tasks, allowing the tasks to work e.g. on the same repository checkout. The following illustrates the basic Tekton architecture:
 
 image::https://raw.githubusercontent.com/openshift/pipelines-tutorial/master/docs/images/tekton-architecture.svg[Tekton Architecture]
 
@@ -82,8 +82,8 @@ To solve these problems (and a few more that will become apparent later), ODS sh
 To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yml` file in the root of your repository. The `ods.yml` file defines the tasks you want to run in the pipeline. However, the tasks are not defined as one list, but rather associated with so called phases. ODS views pipelines as a sequence of six phases:
 
 1. **Init** (e.g. checking out code, notifying systems of pipeline start)
-2. **Build** (e.g. build artefact such as container image)
-3. **Deploy** (e.g. deploy artefact)
+2. **Build** (e.g. build artifact such as container image)
+3. **Deploy** (e.g. deploy artifact)
 4. **Test** (e.g. run tests against new deployment)
 5. **Release** (e.g. release staged deployment and make it accessible to the public)
 6. **Finalize** (e.g. creating reports, notifying systems of pipeline finish)

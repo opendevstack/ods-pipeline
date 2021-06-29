@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 VERBOSE="false"
+DIFF="true"
 NAMESPACE=""
 RELEASE_NAME="ods-pipeline"
 SERVICEACCOUNT="pipeline"
@@ -25,6 +26,8 @@ while [[ "$#" -gt 0 ]]; do
     -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
     -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
 
+    --no-diff) DIFF="false"; shift;;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
@@ -40,20 +43,53 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-# Install Helm resources
-helm -n ${NAMESPACE} \
-    upgrade --install \
-    ${VALUES_ARGS} \
-    ${RELEASE_NAME} ${CHART_DIR}
+if kubectl -n ${NAMESPACE} get serviceaccount/${SERVICEACCOUNT} &> /dev/null; then
+    echo "Serviceaccount exists already ..."
+else
+    echo "Creating serviceaccount ..."
+    kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
 
-# Add ods-bitbucket-auth secret to serviceaccount.
+    kubectl -n ${NAMESPACE} \
+        create rolebinding "${SERVICEACCOUNT}-edit" \
+        --clusterrole edit \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+
+    kubectl -n ${NAMESPACE} \
+        create rolebinding "${SERVICEACCOUNT}-cluster-admin" \
+        --clusterrole cluster-admin \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+
+    kubectl -n ${NAMESPACE} \
+        create rolebinding "${SERVICEACCOUNT}-tekton-triggers-admin" \
+        --clusterrole tekton-triggers-admin \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+fi
+
+echo "Installing Helm release ..."
+if [ "${DIFF}" == "true" ]; then
+    if helm -n ${NAMESPACE} \
+            diff upgrade --install --detailed-exitcode \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}; then
+        echo "Helm release already up-to-date."
+    else
+        helm -n ${NAMESPACE} \
+            upgrade --install \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}
+    fi
+else
+    helm -n ${NAMESPACE} \
+            upgrade --install \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}
+fi
+
+echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
 kubectl -n ${NAMESPACE} \
     patch sa ${SERVICEACCOUNT} \
     --type json \
     -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
 
-# Ensure serviceaccount has edit permissions.
-kubectl -n ${NAMESPACE} \
-    create rolebinding edit \
-    --clusterrole edit \
-    --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}" || true # might exist already
+# echo "Exposing event listener ..."
+# oc -n ${NAMESPACE} expose svc el-ods-pipeline

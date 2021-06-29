@@ -65,6 +65,11 @@ func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []b
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+	return c.doRequest(req)
+}
+
+func (c *Client) doRequest(req *http.Request) (int, []byte, error) {
 	res, err := c.do(req)
 	if err != nil {
 		return 500, nil, fmt.Errorf("got error %s", err)
@@ -76,7 +81,6 @@ func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []b
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.clientConfig.APIToken)
 	return c.httpClient.Do(req)
 }

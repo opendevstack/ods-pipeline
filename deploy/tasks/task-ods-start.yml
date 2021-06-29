@@ -76,9 +76,6 @@ spec:
       description: pull request base
       name: pr-base
       type: string
-    - description: Web console URL
-      name: console-url
-      type: string
     - description: name of pipeline run
       name: pipeline-run-name
       type: string
@@ -102,6 +99,11 @@ spec:
             secretKeyRef:
               key: password
               name: ods-bitbucket-auth
+        - name: CONSOLE_URL
+          valueFrom:
+            configMapKeyRef:
+              key: consoleUrl
+              name: ods-cluster
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |
@@ -120,7 +122,6 @@ spec:
           -ssl-verify=$(params.ssl-verify) \
           -submodules=$(params.submodules) \
           -depth=$(params.depth) \
-          -console-url=$(params.console-url) \
           -pipeline-run-name=$(params.pipeline-run-name)
 
         cp .ods/git-commit-sha $(results.commit.path)

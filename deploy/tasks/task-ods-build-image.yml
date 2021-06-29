@@ -13,7 +13,7 @@ spec:
       description: The location of the buildah builder image.
       name: builder-image
       type: string
-    - default: overlay
+    - default: vfs
       description: Set buildah storage driver
       name: storage-driver
       type: string
@@ -82,8 +82,6 @@ spec:
             --tls-verify=$(params.tls-verify) --no-cache \
             -f $(params.dockerfile) -t $image $(params.context-dir)
         fi
-      securityContext:
-        privileged: true
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
@@ -113,10 +111,9 @@ spec:
           mkdir -p /tekton/results
           cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
         fi
+
         mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
-        cp /tekton/results/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream
-      securityContext:
-        privileged: true
+        echo "{\"image\":\"${image}\", \"registry\":\"$(params.registry)\", \"repository\":\"${odsNamespace}\", \"name\":\"${imageStream}\", \"tag\":\"${odsGitCommit}\", \"digest\":\"$(cat /tekton/results/image-digest)\"}" > $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers

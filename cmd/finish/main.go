@@ -15,7 +15,7 @@ import (
 func main() {
 	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	consoleURLFlag := flag.String("console-url", "", "web console URL")
+	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
 	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
