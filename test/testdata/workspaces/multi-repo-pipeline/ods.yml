@@ -1,0 +1,3 @@
+repositories:
+  - name: go-http-server
+  - url: http://bitbucket-server-test.kind:7990/scm/odspipelinetest/workspace-122030114.git

@@ -47,3 +47,9 @@ phases:
       workspaces:
         - name: source
           workspace: shared-workspace
+
+repositories:
+  - name: foo
+    url: "http://foo"
+  - name: bar
+    url: "http://bar"

@@ -12,6 +12,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -92,13 +93,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//TODO: If ods.yml is present, clone only first-level of child repositories
-	repos := []string{"r1", "r2"}
+	// If ods.yml is present, clone only first-level of child repositories
+	odsConfig, err := config.GetODSConfig(ctxt.Project, ctxt.Repository, ctxt.GitFullRef, "ods.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	for _, repo := range repos {
+	log.Printf("%d child repositories found\n", len(odsConfig.Repositories))
+
+	for _, repo := range odsConfig.Repositories {
+		log.Printf("Repository name: %s, url: %s\n", repo.Name, repo.URL)
 		checkoutDir = fmt.Sprintf(".ods/repos/%s", repo)
 		prepareODSContextForRepo(checkoutDir, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag)
+
 	}
+
 }
 
 func deleteDirectoryContents(directory string) error {

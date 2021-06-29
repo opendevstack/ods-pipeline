@@ -43,6 +43,38 @@ func TestTaskODSStart(t *testing.T) {
 
 				},
 			},
+			"clones child repositories": {
+				WorkspaceDirMapping: map[string]string{"source": "multi-repo-pipeline"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.Params = map[string]string{
+						"image":             "localhost:5000/ods/ods-start:latest",
+						"url":               ctxt.ODS.GitURL,
+						"git-full-ref":      "refs/heads/master",
+						"project":           ctxt.ODS.Project,
+						"component":         ctxt.ODS.Component,
+						"repository":        ctxt.ODS.Repository,
+						"console-url":       "http://example.com",
+						"pipeline-run-name": "foo",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/component", ctxt.ODS.Component)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/git-commit-sha", ctxt.ODS.GitCommitSHA)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/git-full-ref", ctxt.ODS.GitFullRef)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/git-ref", ctxt.ODS.GitRef)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/git-url", ctxt.ODS.GitURL)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/namespace", ctxt.Namespace)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/pr-base", "")
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/pr-key", "")
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/project", ctxt.ODS.Project)
+					checkFileContent(t, wsDir, ".ods/repos/go-http-server/repository", ctxt.ODS.Repository)
+				},
+			},
 		},
 	)
 }
