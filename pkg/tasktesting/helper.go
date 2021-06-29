@@ -14,7 +14,7 @@ import (
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/test/logging"
