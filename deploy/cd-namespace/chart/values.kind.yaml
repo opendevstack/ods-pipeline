@@ -4,6 +4,7 @@ serviceAccountName: 'pipeline'
 # Webhook Interceptor
 interceptor:
   apiHost: 'kubernetes.default.svc.cluster.local'
+  consoleUrl: 'http://example.com'
   replicaCount: 1
   image:
     registry: localhost:5000

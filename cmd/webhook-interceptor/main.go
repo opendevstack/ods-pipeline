@@ -23,6 +23,7 @@ const (
 	namespaceSuffix   = "-cd"
 	apiHostEnvVar     = "API_HOST"
 	apiHostDefault    = "openshift.default.svc.cluster.local"
+	consoleURLEnvVar  = "CONSOLE_URL"
 	repoBaseEnvVar    = "REPO_BASE"
 	tokenEnvVar       = "ACCESS_TOKEN"
 )
@@ -51,6 +52,11 @@ func serve() error {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
 	}
 
+	consoleURL := os.Getenv(consoleURLEnvVar)
+	if len(consoleURL) == 0 {
+		return fmt.Errorf("%s must be set", consoleURLEnvVar)
+	}
+
 	apiHost := os.Getenv(apiHostEnvVar)
 	if len(apiHost) == 0 {
 		apiHost = apiHostDefault
@@ -74,7 +80,7 @@ func serve() error {
 		return fmt.Errorf("%w", err)
 	}
 
-	server := interceptor.NewServer(client, namespace, project, repoBase, token)
+	server := interceptor.NewServer(client, namespace, project, repoBase, token, consoleURL)
 
 	log.Println("Ready to accept requests")
 

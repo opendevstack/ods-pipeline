@@ -28,6 +28,7 @@ storageClassName: 'gp2'
 # Webhook Interceptor
 interceptor:
   apiHost: 'openshift.default.svc.cluster.local'
+  consoleUrl: 'http://example.com'
   replicaCount: 1
   image:
     registry: image-registry.openshift-image-registry.svc:5000
