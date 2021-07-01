@@ -52,13 +52,13 @@ else
         --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 
     kubectl -n ${NAMESPACE} \
-        create rolebinding pipeline-cluster-admin \
-        --clusterrole "${SERVICEACCOUNT}-cluster-admin" \
+        create rolebinding "${SERVICEACCOUNT}-cluster-admin" \
+        --clusterrole cluster-admin \
         --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 
     kubectl -n ${NAMESPACE} \
-        create rolebinding pipeline-tekton-triggers-admin \
-        --clusterrole "${SERVICEACCOUNT}-tekton-triggers-admin" \
+        create rolebinding "${SERVICEACCOUNT}-tekton-triggers-admin" \
+        --clusterrole tekton-triggers-admin \
         --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 fi
 

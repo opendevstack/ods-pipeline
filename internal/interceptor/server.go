@@ -423,13 +423,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 				},
 			},
 			{
-				Name: "git-ref",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.git-ref)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
 				Name: "git-full-ref",
 				Value: tekton.ArrayOrString{
 					StringVal: "$(params.git-full-ref)",
@@ -587,7 +580,7 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					},
 				},
 				{
-					Name: "url",
+					Name: "git-repo-url",
 					Type: "string",
 					Default: &tekton.ArrayOrString{
 						StringVal: data.GitURI,
