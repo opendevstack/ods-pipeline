@@ -587,26 +587,10 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					},
 				},
 				{
-					Name: "namespace",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Namespace,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-repo-url",
+					Name: "url",
 					Type: "string",
 					Default: &tekton.ArrayOrString{
 						StringVal: data.GitURI,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-ref",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitRef,
 						Type:      tekton.ParamTypeString,
 					},
 				},
@@ -615,30 +599,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					Type: "string",
 					Default: &tekton.ArrayOrString{
 						StringVal: data.GitFullRef,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-sha",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitSHA,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "trigger-event",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.TriggerEvent,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "comment",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Comment,
 						Type:      tekton.ParamTypeString,
 					},
 				},
