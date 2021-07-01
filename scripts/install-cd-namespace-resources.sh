@@ -40,7 +40,7 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-# Ensure serviceaccount has enough permissions.
+# echo "Ensuring serviceaccount has enough permissions ..."
 # kubectl -n ${NAMESPACE} \
 #     create rolebinding edit \
 #     --clusterrole edit \
@@ -56,12 +56,12 @@ fi
 #     --clusterrole tekton-triggers-admin \
 #     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 
-# Install Helm resources
+echo "Installing Helm release ..."
 if helm -n ${NAMESPACE} \
         diff upgrade --install --detailed-exitcode \
         ${VALUES_ARGS} \
         ${RELEASE_NAME} ${CHART_DIR}; then
-    echo "Helm release up-to-date."
+    echo "Helm release already up-to-date."
 else
     helm -n ${NAMESPACE} \
         upgrade --install --atomic \
@@ -69,11 +69,11 @@ else
         ${RELEASE_NAME} ${CHART_DIR}
 fi
 
-# Add ods-bitbucket-auth secret to serviceaccount.
+echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
 kubectl -n ${NAMESPACE} \
     patch sa ${SERVICEACCOUNT} \
     --type json \
     -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
 
-# Expose event listener
+# echo "Exposing event listener ..."
 # oc -n ${NAMESPACE} expose svc el-ods-pipeline

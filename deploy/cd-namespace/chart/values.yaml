@@ -34,7 +34,7 @@ interceptor:
     namespace: ods
     # Overrides the image repository whose default is the chart name.
     repository: ods-webhook-interceptor
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     # tag: "0.1.0"
   resources:
