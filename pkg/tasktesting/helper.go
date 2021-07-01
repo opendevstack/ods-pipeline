@@ -14,10 +14,10 @@ import (
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"sigs.k8s.io/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/test/logging"
+	"sigs.k8s.io/yaml"
 )
 
 type SetupOpts struct {
@@ -44,7 +44,7 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "default", "values.kind.yaml,values.generated.yaml")
+	installCDNamespaceResources(t, namespace, "pipeline", "values.kind.yaml,values.generated.yaml")
 
 	return clients, namespace
 }

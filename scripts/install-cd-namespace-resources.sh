@@ -40,21 +40,27 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-# echo "Ensuring serviceaccount has enough permissions ..."
-# kubectl -n ${NAMESPACE} \
-#     create rolebinding edit \
-#     --clusterrole edit \
-#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}" || true # might exist already
+if kubectl -n ${NAMESPACE} get serviceaccount/${SERVICEACCOUNT} &> /dev/null; then
+    echo "Serviceaccount exists already ..."
+else
+    echo "Creating serviceaccount ..."
+    kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
 
-# kubectl -n ${NAMESPACE} \
-#     create rolebinding pipeline-cluster-admin \
-#     --clusterrole cluster-admin \
-#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+    kubectl -n ${NAMESPACE} \
+        create rolebinding "${SERVICEACCOUNT}-edit" \
+        --clusterrole edit \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 
-# kubectl -n ${NAMESPACE} \
-#     create rolebinding pipeline-tekton-triggers-admin \
-#     --clusterrole tekton-triggers-admin \
-#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+    kubectl -n ${NAMESPACE} \
+        create rolebinding pipeline-cluster-admin \
+        --clusterrole "${SERVICEACCOUNT}-cluster-admin" \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+
+    kubectl -n ${NAMESPACE} \
+        create rolebinding pipeline-tekton-triggers-admin \
+        --clusterrole "${SERVICEACCOUNT}-tekton-triggers-admin" \
+        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+fi
 
 echo "Installing Helm release ..."
 if helm -n ${NAMESPACE} \
@@ -64,7 +70,7 @@ if helm -n ${NAMESPACE} \
     echo "Helm release already up-to-date."
 else
     helm -n ${NAMESPACE} \
-        upgrade --install --atomic \
+        upgrade --install \
         ${VALUES_ARGS} \
         ${RELEASE_NAME} ${CHART_DIR}
 fi

@@ -1,5 +1,5 @@
 # General
-serviceAccountName: 'default'
+serviceAccountName: 'pipeline'
 
 # Webhook Interceptor
 interceptor:

@@ -3,12 +3,13 @@
 # Declare variables to be passed into your templates.
 
 # General
-serviceAccountName: 'default'
+serviceAccountName: 'pipeline'
 
 # Bitbucket
 bitbucketUrl: ''
 bitbucketUsername: ''
 bitbucketAccessToken: ''
+bitbucketWebhookSecret: ''
 
 # Nexus
 nexusUrl: ''

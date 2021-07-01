@@ -15,7 +15,7 @@ spec:
         - bitbucket:
             secretRef:
               secretKey: password
-              secretName: bitbucket
+              secretName: ods-bitbucket-webhook
         - webhook:
             objectRef:
               apiVersion: v1
