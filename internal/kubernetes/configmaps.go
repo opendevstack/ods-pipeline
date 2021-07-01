@@ -40,3 +40,23 @@ func GetConfigMapKey(clientset *kubernetes.Clientset, namespace, cmName, key str
 
 	return v, err
 }
+
+// func GetRouteURL(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
+
+// 	log.Printf("Get route %s", name)
+
+// 	cm, err := clientset.CoreV1().
+// 		Rou(namespace).
+// 		Get(context.TODO(), name, metav1.GetOptions{})
+
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	v, ok := cm.Data[key]
+// 	if !ok {
+// 		return "", fmt.Errorf("key %s not found", key)
+// 	}
+
+// 	return v, err
+// }

@@ -38,7 +38,7 @@ func (c *Client) WebhookCreate(projectKey, repositorySlug string, payload Webhoo
 	if err != nil {
 		return nil, fmt.Errorf("request returned error: %w", err)
 	}
-	if statusCode != 200 {
+	if statusCode != 201 {
 		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
 	}
 	var webhook Webhook

@@ -13,7 +13,7 @@ func TestWebhookCreate(t *testing.T) {
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/PRJ/repos/my-repo/webhooks",
-		200, "bitbucket/webhook-create.json",
+		201, "bitbucket/webhook-create.json",
 	)
 
 	w, err := bitbucketClient.WebhookCreate(

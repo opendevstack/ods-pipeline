@@ -57,3 +57,6 @@ kubectl -n ${NAMESPACE} \
     create rolebinding edit \
     --clusterrole edit \
     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}" || true # might exist already
+
+# Expose event listener
+# oc -n ${NAMESPACE} expose svc el-ods-pipeline
