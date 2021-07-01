@@ -219,67 +219,19 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	return originURLWithKind
 }
 
-func pushFileToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
-	cwd, err := os.Getwd()
+func PushFileToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, branch, filename string) {
+	stdout, stderr, err := command.RunInDir("git", []string{"add", filename}, wsDir)
 	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
+		t.Fatalf("failed to add file=%s: %s, stdout: %s, stderr: %s", filename, err, stdout, stderr)
 	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
-	repoName := filepath.Base(wsDir)
-	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "ods-bitbucket", "url")
+	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "update " + filename}, wsDir)
 	if err != nil {
-		t.Fatalf("could not get Bitbucket URL: %s", err)
+		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	bbURL = "http://localhost:7990"
-	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")
+	stdout, stderr, err = command.RunInDir("git", []string{"push", "origin", branch}, wsDir)
 	if err != nil {
-		t.Fatalf("could not get Bitbucket token: %s", err)
+		t.Fatalf("failed to push to remote: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   bbToken,
-		MaxRetries: 2,
-		BaseURL:    bbURL,
-		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
-	})
-
-	proj := bitbucket.Project{Key: projectKey}
-	repo, err := bitbucketClient.RepoCreate(proj.Key, bitbucket.RepoCreatePayload{
-		Name:          repoName,
-		SCMID:         "git",
-		Forkable:      true,
-		DefaultBranch: "master",
-	})
-	if err != nil {
-		t.Fatalf("could not create Bitbucket repository: %s", err)
-	}
-
-	originURL := fmt.Sprintf("%s/scm/%s/%s.git", bbURL, proj.Key, repo.Slug)
-
-	originURLWithCredentials := strings.Replace(
-		originURL,
-		"http://",
-		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
-		-1,
-	)
-	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", originURLWithCredentials})
-	if err != nil {
-		t.Fatalf("failed to add remote origin=%s: %s, stderr: %s", originURL, err, stderr)
-	}
-	_, stderr, err = command.Run("git", []string{"push", "-u", "origin", "master"})
-	if err != nil {
-		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
-	}
-
-	originURLWithKind := strings.Replace(
-		originURL,
-		"http://localhost",
-		"http://bitbucket-server-test.kind",
-		-1,
-	)
-	return originURLWithKind
 }
 
 func writeFile(filename, content string) error {

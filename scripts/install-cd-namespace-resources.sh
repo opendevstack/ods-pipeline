@@ -40,23 +40,40 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
+# Ensure serviceaccount has enough permissions.
+# kubectl -n ${NAMESPACE} \
+#     create rolebinding edit \
+#     --clusterrole edit \
+#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}" || true # might exist already
+
+# kubectl -n ${NAMESPACE} \
+#     create rolebinding pipeline-cluster-admin \
+#     --clusterrole cluster-admin \
+#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+
+# kubectl -n ${NAMESPACE} \
+#     create rolebinding pipeline-tekton-triggers-admin \
+#     --clusterrole tekton-triggers-admin \
+#     --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+
 # Install Helm resources
-helm -n ${NAMESPACE} \
-    upgrade --install \
-    ${VALUES_ARGS} \
-    ${RELEASE_NAME} ${CHART_DIR}
+if helm -n ${NAMESPACE} \
+        diff upgrade --install --detailed-exitcode \
+        ${VALUES_ARGS} \
+        ${RELEASE_NAME} ${CHART_DIR}; then
+    echo "Helm release up-to-date."
+else
+    helm -n ${NAMESPACE} \
+        upgrade --install --atomic \
+        ${VALUES_ARGS} \
+        ${RELEASE_NAME} ${CHART_DIR}
+fi
 
 # Add ods-bitbucket-auth secret to serviceaccount.
 kubectl -n ${NAMESPACE} \
     patch sa ${SERVICEACCOUNT} \
     --type json \
     -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
-
-# Ensure serviceaccount has edit permissions.
-kubectl -n ${NAMESPACE} \
-    create rolebinding edit \
-    --clusterrole edit \
-    --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}" || true # might exist already
 
 # Expose event listener
 # oc -n ${NAMESPACE} expose svc el-ods-pipeline
