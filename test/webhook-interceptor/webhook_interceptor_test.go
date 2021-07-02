@@ -53,6 +53,10 @@ func TestWebhookInterceptor(t *testing.T) {
 	webhookURL := "http://172.18.0.3:30950"
 
 	// create webhook setting
+	webhookSecret, err := kubernetes.GetSecretKey(c.KubernetesClientSet, ns, "ods-bitbucket-webhook", "password")
+	if err != nil {
+		t.Fatalf("could not get Bitbucket webhook secret: %s", err)
+	}
 	bitbucketClient := tasktesting.BitbucketTestClient(t, c.KubernetesClientSet, ns)
 	_, err = bitbucketClient.WebhookCreate(
 		odsContext.Project,
@@ -62,7 +66,7 @@ func TestWebhookInterceptor(t *testing.T) {
 			URL:           webhookURL,
 			Active:        true,
 			Events:        []string{"repo:refs_changed"},
-			Configuration: bitbucket.WebhookConfiguration{Secret: "test"}, // secret for Bitbucket
+			Configuration: bitbucket.WebhookConfiguration{Secret: webhookSecret},
 		})
 	if err != nil {
 		t.Fatalf("could not create Bitbucket webhook: %s", err)
@@ -78,20 +82,6 @@ func TestWebhookInterceptor(t *testing.T) {
     workspaces:
     - name: source
       workspace: shared-workspace`
-	// 	_, err = bitbucketClient.BrowseUpdate(
-	// 		odsContext.Project,
-	// 		odsContext.Repository,
-	// 		filename,
-	// 		bitbucket.BrowseUpdateParams{
-	// 			Branch:         "master",
-	// 			Message:        "initial commit",
-	// 			SourceCommitId: "",
-	// 			Content: strings.NewReader(fileContent),
-	// 		},
-	// 	)
-	// 	if err != nil {
-	// 		t.Fatalf("could not upload file to Bitbucket: %s", err)
-	// 	}
 
 	err = ioutil.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {

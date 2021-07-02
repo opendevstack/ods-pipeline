@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	"sigs.k8s.io/yaml"
@@ -23,13 +25,17 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						"image": "localhost:5000/ods/ods-helm:latest",
 					}
 
+					// TODO: defer cleanup
+					releaseNamespace := random.PseudoString()
+					kubernetes.CreateNamespace(ctxt.Clients.KubernetesClientSet, releaseNamespace)
+
 					o := &config.ODS{
 						Environments: config.Environments{
 							DEV: config.Environment{
 								Targets: []config.Target{
 									{
 										Name:      "default",
-										Namespace: ctxt.Namespace, // other ns should be used
+										Namespace: releaseNamespace,
 									},
 								},
 							},

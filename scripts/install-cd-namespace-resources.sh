@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 VERBOSE="false"
+DIFF="true"
 NAMESPACE=""
 RELEASE_NAME="ods-pipeline"
 SERVICEACCOUNT="pipeline"
@@ -24,6 +25,8 @@ while [[ "$#" -gt 0 ]]; do
 
     -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
     -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
+
+    --no-diff) DIFF="false"; shift;;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -63,16 +66,23 @@ else
 fi
 
 echo "Installing Helm release ..."
-if helm -n ${NAMESPACE} \
-        diff upgrade --install --detailed-exitcode \
-        ${VALUES_ARGS} \
-        ${RELEASE_NAME} ${CHART_DIR}; then
-    echo "Helm release already up-to-date."
+if [ "${DIFF}" == "true" ]; then
+    if helm -n ${NAMESPACE} \
+            diff upgrade --install --detailed-exitcode \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}; then
+        echo "Helm release already up-to-date."
+    else
+        helm -n ${NAMESPACE} \
+            upgrade --install \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}
+    fi
 else
     helm -n ${NAMESPACE} \
-        upgrade --install \
-        ${VALUES_ARGS} \
-        ${RELEASE_NAME} ${CHART_DIR}
+            upgrade --install \
+            ${VALUES_ARGS} \
+            ${RELEASE_NAME} ${CHART_DIR}
 fi
 
 echo "Adding ods-bitbucket-auth secret to serviceaccount ..."

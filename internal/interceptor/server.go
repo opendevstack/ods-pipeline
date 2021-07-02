@@ -472,37 +472,37 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 
 	var initTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		initTasks = append(initTasks, phases.Init.Tasks...)
+		initTasks = append(initTasks, phases.Init...)
 	}
 	tasks = appendTasks(tasks, initTasks)
 
 	var buildTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		buildTasks = append(buildTasks, phases.Build.Tasks...)
+		buildTasks = append(buildTasks, phases.Build...)
 	}
 	tasks = appendTasks(tasks, buildTasks)
 
 	var deployTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		deployTasks = append(deployTasks, phases.Deploy.Tasks...)
+		deployTasks = append(deployTasks, phases.Deploy...)
 	}
 	tasks = appendTasks(tasks, deployTasks)
 
 	var testTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		testTasks = append(testTasks, phases.Test.Tasks...)
+		testTasks = append(testTasks, phases.Test...)
 	}
 	tasks = appendTasks(tasks, testTasks)
 
 	var releaseTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		releaseTasks = append(releaseTasks, phases.Release.Tasks...)
+		releaseTasks = append(releaseTasks, phases.Release...)
 	}
 	tasks = appendTasks(tasks, releaseTasks)
 
 	var finalizeTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		finalizeTasks = append(finalizeTasks, phases.Finalize.Tasks...)
+		finalizeTasks = append(finalizeTasks, phases.Finalize...)
 	}
 	tasks = appendTasks(tasks, finalizeTasks)
 

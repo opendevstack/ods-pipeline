@@ -51,7 +51,7 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 
 func installCDNamespaceResources(t *testing.T, ns, serviceaccount, valuesFile string) {
 
-	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile}
+	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile, "--no-diff"}
 	if testing.Verbose() {
 		scriptArgs = append(scriptArgs, "-v")
 	}

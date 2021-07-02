@@ -356,38 +356,6 @@ func k8sClient() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(config)
 }
 
-// type dockerConfig struct {
-// 	Auth     string `json:"auth"`
-// 	Email    string `json:"email"`
-// 	Username string `json:"username"`
-// 	Password string `json:"password"`
-// }
-
-// func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount string) (map[string]dockerConfig, error) {
-// 	cfg := map[string]dockerConfig{}
-// 	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), serviceaccount, metav1.GetOptions{})
-// 	if err != nil {
-// 		return cfg, err
-// 	}
-// 	dockercfgSecretPrefix := serviceaccount + "-dockercfg-"
-// 	for _, s := range builderServiceAccount.Secrets {
-// 		if strings.HasPrefix(s.Name, dockercfgSecretPrefix) {
-// 			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
-// 			if err != nil {
-// 				return cfg, err
-// 			}
-
-// 			err = json.Unmarshal(builderDockercfgSecret.Data[".dockercfg"], &cfg)
-// 			if err != nil {
-// 				return cfg, err
-// 			}
-
-// 			return cfg, nil
-// 		}
-// 	}
-// 	return cfg, fmt.Errorf("did not find secrets prefixed with %s", dockercfgSecretPrefix)
-// }
-
 func secretToken(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
