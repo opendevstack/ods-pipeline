@@ -87,23 +87,23 @@ func main() {
 		}
 		imageStream := id.Name
 		fmt.Println("copying image", imageStream)
-		srcImageStreamUrl := id.Image
+		srcImageURL := id.Image
 		srcRegistryTLSVerify := false
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
-		var destImageStreamUrl string
+		var destImageURL string
 		destRegistryTLSVerify := true
 		if len(targetConfig.RegistryHost) > 0 {
-			destImageStreamUrl = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
+			destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
 			if targetConfig.RegistryTLSVerify != nil {
 				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
 		} else {
-			destImageStreamUrl = strings.Replace(id.Image, "/"+id.Repository+"/", "/"+releaseNamespace+"/", -1)
+			destImageURL = strings.Replace(id.Image, "/"+id.Repository+"/", "/"+releaseNamespace+"/", -1)
 			destRegistryTLSVerify = false
 		}
-		fmt.Printf("srcRegistry=%s\n", srcImageStreamUrl)
-		fmt.Printf("destRegistry=%s\n", destImageStreamUrl)
+		fmt.Printf("srcRegistry=%s\n", srcImageURL)
+		fmt.Printf("destRegistry=%s\n", destImageURL)
 		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
 		// matches the SHA referenced by the Git commit tag.
 		stdout, stderr, err := command.Run(
@@ -112,8 +112,8 @@ func main() {
 				"copy",
 				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, ctxt.GitCommitSHA),
-				fmt.Sprintf("docker://%s:%s", destImageStreamUrl, ctxt.GitCommitSHA),
+				fmt.Sprintf("docker://%s", srcImageURL),
+				fmt.Sprintf("docker://%s", destImageURL),
 			},
 		)
 		if err != nil {
