@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -368,14 +367,8 @@ func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount str
 			if err != nil {
 				return cfg, err
 			}
-			var decoded []byte
-			fmt.Println(string(builderDockercfgSecret.Data[".dockercfg"]))
-			_, err = base64.StdEncoding.Decode(decoded, builderDockercfgSecret.Data[".dockercfg"])
-			if err != nil {
-				return cfg, err
-			}
 
-			err = json.Unmarshal(decoded, &cfg)
+			err = json.Unmarshal(builderDockercfgSecret.Data[".dockercfg"], &cfg)
 			if err != nil {
 				return cfg, err
 			}
