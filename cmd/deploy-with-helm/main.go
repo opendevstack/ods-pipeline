@@ -21,6 +21,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+)
+
 type ImageDigest struct {
 	Image      string `json:"image"`
 	Registry   string `json:"registry"`
@@ -79,17 +83,25 @@ func main() {
 		files = f
 	}
 
-	destCreds := map[string]dockerConfig{}
+	var destRegistryToken string
 	if len(files) > 0 {
 		clientset, err := k8sClient()
 		if err != nil {
 			log.Fatal(err)
 		}
-		dc, err := saDockercfgs(clientset, releaseNamespace, "builder")
-		if err != nil {
-			log.Fatal(err)
+		if len(targetConfig.SecretRef) > 0 {
+			token, err := secretToken(clientset, releaseNamespace, targetConfig.SecretRef)
+			if err != nil {
+				log.Fatal(err)
+			}
+			destRegistryToken = token
+		} else {
+			token, err := serviceaccountToken(tokenFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			destRegistryToken = token
 		}
-		destCreds = dc
 	}
 
 	for _, f := range files {
@@ -109,16 +121,13 @@ func main() {
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
 		var destImageURL string
-		var destRegistry string
 		destRegistryTLSVerify := true
 		if len(targetConfig.RegistryHost) > 0 {
-			destRegistry = targetConfig.RegistryHost
-			destImageURL = fmt.Sprintf("%s/%s/%s", destRegistry, releaseNamespace, imageStream)
+			destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
 			if targetConfig.RegistryTLSVerify != nil {
 				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
 		} else {
-			destRegistry = id.Registry
 			destImageURL = strings.Replace(id.Image, "/"+id.Repository+"/", "/"+releaseNamespace+"/", -1)
 			destRegistryTLSVerify = false
 		}
@@ -133,8 +142,8 @@ func main() {
 			fmt.Sprintf("docker://%s", srcImageURL),
 			fmt.Sprintf("docker://%s", destImageURL),
 		}
-		if v, ok := destCreds[destRegistry]; ok {
-			skopeoCopyArgs = append(skopeoCopyArgs, "--dest-creds", "builder:"+v.Password)
+		if len(destRegistryToken) > 0 {
+			skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
 		}
 		stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
 		if err != nil {
@@ -347,34 +356,50 @@ func k8sClient() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(config)
 }
 
-type dockerConfig struct {
-	Auth     string `json:"auth"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+// type dockerConfig struct {
+// 	Auth     string `json:"auth"`
+// 	Email    string `json:"email"`
+// 	Username string `json:"username"`
+// 	Password string `json:"password"`
+// }
+
+// func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount string) (map[string]dockerConfig, error) {
+// 	cfg := map[string]dockerConfig{}
+// 	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), serviceaccount, metav1.GetOptions{})
+// 	if err != nil {
+// 		return cfg, err
+// 	}
+// 	dockercfgSecretPrefix := serviceaccount + "-dockercfg-"
+// 	for _, s := range builderServiceAccount.Secrets {
+// 		if strings.HasPrefix(s.Name, dockercfgSecretPrefix) {
+// 			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
+// 			if err != nil {
+// 				return cfg, err
+// 			}
+
+// 			err = json.Unmarshal(builderDockercfgSecret.Data[".dockercfg"], &cfg)
+// 			if err != nil {
+// 				return cfg, err
+// 			}
+
+// 			return cfg, nil
+// 		}
+// 	}
+// 	return cfg, fmt.Errorf("did not find secrets prefixed with %s", dockercfgSecretPrefix)
+// }
+
+func secretToken(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return string(secret.Data["token"]), nil
 }
 
-func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount string) (map[string]dockerConfig, error) {
-	cfg := map[string]dockerConfig{}
-	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), serviceaccount, metav1.GetOptions{})
+func serviceaccountToken(filename string) (string, error) {
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return cfg, err
+		return "", err
 	}
-	dockercfgSecretPrefix := serviceaccount + "-dockercfg-"
-	for _, s := range builderServiceAccount.Secrets {
-		if strings.HasPrefix(s.Name, dockercfgSecretPrefix) {
-			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
-			if err != nil {
-				return cfg, err
-			}
-
-			err = json.Unmarshal(builderDockercfgSecret.Data[".dockercfg"], &cfg)
-			if err != nil {
-				return cfg, err
-			}
-
-			return cfg, nil
-		}
-	}
-	return cfg, fmt.Errorf("did not find secrets prefixed with %s", dockercfgSecretPrefix)
+	return strings.TrimSpace(string(content)), nil
 }

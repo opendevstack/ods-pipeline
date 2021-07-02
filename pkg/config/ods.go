@@ -26,13 +26,22 @@ type Environment struct {
 }
 
 type Target struct {
-	Name              string                 `json:"name"`
-	URL               string                 `json:"url"`
-	RegistryHost      string                 `json:"registryHost"`
-	RegistryTLSVerify *bool                  `json:"registryVerify"`
-	Namespace         string                 `json:"namespace"`
-	SecretRef         string                 `json:"secretRef"`
-	Config            map[string]interface{} `json:"config"`
+	// Name of the environment to deploy to. This is an arbitary name.
+	Name string `json:"name"`
+	// API URL of the target cluster.
+	URL string `json:"url"`
+	// Hostname of the target registry. If not given, the registy of the source
+	// image is used.
+	RegistryHost string `json:"registryHost"`
+	// Whether to verify TLS for the target registry.
+	RegistryTLSVerify *bool `json:"registryVerify"`
+	// Target K8s namespace (OpenShift project) on the target cluster to deploy into.
+	Namespace string `json:"namespace"`
+	// Name of the Secret resource holding the API user credentials.
+	SecretRef string `json:"secretRef"`
+	// Additional configuration of the target. This may be used by tasks outside
+	// the ODS catalog.
+	Config map[string]interface{} `json:"config"`
 }
 
 type Phases struct {
