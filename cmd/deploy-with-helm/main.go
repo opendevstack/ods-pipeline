@@ -361,8 +361,9 @@ func builderCreds(clientset *kubernetes.Clientset, namespace string) (map[string
 	if err != nil {
 		return cfg, err
 	}
+	dockercfgSecretPrefix := "builder-dockercfg-"
 	for _, s := range builderServiceAccount.Secrets {
-		if strings.HasPrefix(s.Name, "builder-dockercfg-") {
+		if strings.HasPrefix(s.Name, dockercfgSecretPrefix) {
 			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
 			if err != nil {
 				return cfg, err
@@ -381,4 +382,5 @@ func builderCreds(clientset *kubernetes.Clientset, namespace string) (map[string
 			return cfg, nil
 		}
 	}
+	return cfg, fmt.Errorf("did not find secrets prefixed with %s", dockercfgSecretPrefix)
 }
