@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,6 +16,9 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/yaml"
 )
 
@@ -75,6 +80,19 @@ func main() {
 		files = f
 	}
 
+	destCreds := map[string]dockerConfig{}
+	if len(files) > 0 {
+		clientset, err := k8sClient()
+		if err != nil {
+			log.Fatal(err)
+		}
+		dc, err := builderCreds(clientset, releaseNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		destCreds = dc
+	}
+
 	for _, f := range files {
 		var id ImageDigest
 		idContent, err := ioutil.ReadFile(filepath.Join(imageDigestsDir, f.Name()))
@@ -92,30 +110,34 @@ func main() {
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
 		var destImageURL string
+		var destRegistry string
 		destRegistryTLSVerify := true
 		if len(targetConfig.RegistryHost) > 0 {
-			destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
+			destRegistry = targetConfig.RegistryHost
+			destImageURL = fmt.Sprintf("%s/%s/%s", destRegistry, releaseNamespace, imageStream)
 			if targetConfig.RegistryTLSVerify != nil {
 				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
 		} else {
+			destRegistry = id.Registry
 			destImageURL = strings.Replace(id.Image, "/"+id.Repository+"/", "/"+releaseNamespace+"/", -1)
 			destRegistryTLSVerify = false
 		}
-		fmt.Printf("srcRegistry=%s\n", srcImageURL)
-		fmt.Printf("destRegistry=%s\n", destImageURL)
+		fmt.Printf("src=%s\n", srcImageURL)
+		fmt.Printf("dest=%s\n", destImageURL)
 		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
 		// matches the SHA referenced by the Git commit tag.
-		stdout, stderr, err := command.Run(
-			"skopeo",
-			[]string{
-				"copy",
-				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
-				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				fmt.Sprintf("docker://%s", srcImageURL),
-				fmt.Sprintf("docker://%s", destImageURL),
-			},
-		)
+		skopeoCopyArgs := []string{
+			"copy",
+			fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
+			fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
+			fmt.Sprintf("docker://%s", srcImageURL),
+			fmt.Sprintf("docker://%s", destImageURL),
+		}
+		if v, ok := destCreds[destRegistry]; ok {
+			skopeoCopyArgs = append(skopeoCopyArgs, "--dest-creds", "builder:"+v.Password)
+		}
+		stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
 		if err != nil {
 			fmt.Println(string(stderr))
 			log.Fatal(err)
@@ -314,4 +336,49 @@ func getHelmArchive(name string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("did not find archive for %s", name)
+}
+
+func k8sClient() (*kubernetes.Clientset, error) {
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	// creates the clientset
+	return kubernetes.NewForConfig(config)
+}
+
+type dockerConfig struct {
+	Auth     string `json:"auth"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func builderCreds(clientset *kubernetes.Clientset, namespace string) (map[string]dockerConfig, error) {
+	cfg := map[string]dockerConfig{}
+	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "builder", metav1.GetOptions{})
+	if err != nil {
+		return cfg, err
+	}
+	for _, s := range builderServiceAccount.Secrets {
+		if strings.HasPrefix(s.Name, "builder-dockercfg-") {
+			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
+			if err != nil {
+				return cfg, err
+			}
+			var decoded []byte
+			_, err = base64.StdEncoding.Decode(decoded, builderDockercfgSecret.Data[".dockercfg"])
+			if err != nil {
+				return cfg, err
+			}
+
+			err = json.Unmarshal(decoded, &cfg)
+			if err != nil {
+				return cfg, err
+			}
+
+			return cfg, nil
+		}
+	}
 }
