@@ -24,34 +24,28 @@ func TestGetODSConfig(t *testing.T) {
 			},
 			want: &ODS{
 				Phases: Phases{
-					Build: Phase{
-						RunPolicy: "Serial",
-						Tasks: []v1beta1.PipelineTask{
-							{
-								Name: "ods-build-go-v0-1-0",
-								Params: []v1beta1.Param{
-									{
-										Name: "go-image",
-										Value: v1beta1.ArrayOrString{
-											StringVal: "localhost:5000/ods/ods-go-toolset:latest",
-										},
+					Build: []v1beta1.PipelineTask{
+						{
+							Name: "ods-build-go-v0-1-0",
+							Params: []v1beta1.Param{
+								{
+									Name: "go-image",
+									Value: v1beta1.ArrayOrString{
+										StringVal: "localhost:5000/ods/ods-go-toolset:latest",
 									},
 								},
 							},
 						},
 					},
-					Deploy: Phase{
-						RunPolicy: "Serial",
-						Tasks: []v1beta1.PipelineTask{
-							{
-								Name: "ods-build-image-v0-1-0",
-							},
+					Deploy: []v1beta1.PipelineTask{
+						{
+							Name: "ods-build-image-v0-1-0",
 						},
 					},
 				},
 				Repositories: []Repository{
-					{Name: "foo", URL: "http://foo"},
-					{Name: "bar", URL: "http://bar"},
+					{Name: "foo"},
+					{Name: "bar"},
 				},
 			},
 		},

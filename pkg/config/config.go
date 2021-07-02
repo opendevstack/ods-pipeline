@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 func GetODSConfig(filename string) (*ODS, error) {

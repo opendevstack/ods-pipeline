@@ -19,10 +19,6 @@ import (
 func main() {
 	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	namespaceFlag := flag.String("namespace", "", "namespace")
-	projectFlag := flag.String("project", "", "project")
-	repositoryFlag := flag.String("repository", "", "repository")
-	componentFlag := flag.String("component", "", "component")
 	gitRefSpecFlag := flag.String("git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
 	//gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
 	prKeyFlag := flag.String("pr-key", "", "pull request key")
@@ -67,7 +63,7 @@ func main() {
 		}
 	}
 
-	ctxt := prepareODSContextForRepo(checkoutDir, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag)
+	ctxt := prepareODSContextForRepo(checkoutDir, *urlFlag, *gitFullRefFlag, *gitRefSpecFlag, *sslVerifyFlag, *submodulesFlag, *depthFlag, *prBaseFlag, *prKeyFlag)
 
 	// Set Bitbucket build status to "in progress"
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
@@ -102,16 +98,13 @@ func main() {
 	log.Printf("%d child repositories found\n", len(odsConfig.Repositories))
 
 	// use the following values by default as they're not present in the ods.yml file
-	repoGitFullRef := "refs/heads/master"
-	repoGitRefSpec := ""
-	namespace := ""
-	component := "?"
+	repoGitFullRef := "refs/heads/master" //TODO: Read branch from ods.yml, if not specified, use master
 
 	for _, repo := range odsConfig.Repositories {
 		log.Printf("Repository name: %s, url: %s\n", repo.Name, repo.URL)
 
 		checkoutDir = fmt.Sprintf(".ods/repos/%s", repo)
-		prepareODSContextForRepo(checkoutDir, &repo.URL, &repoGitFullRef, &repoGitRefSpec, sslVerifyFlag, submodulesFlag, depthFlag, &namespace, projectFlag, &repo.Name, &component, prBaseFlag, prKeyFlag)
+		prepareODSContextForRepo(checkoutDir, repo.URL, repoGitFullRef, *gitRefSpecFlag, *sslVerifyFlag, *submodulesFlag, *depthFlag, *prBaseFlag, *prKeyFlag)
 	}
 
 }
@@ -146,16 +139,16 @@ func getCommitSHA() (string, error) {
 	return strings.TrimSpace(string(content)), nil
 }
 
-func prepareODSContextForRepo(checkoutDir string, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, namespaceFlag, projectFlag, repositoryFlag, componentFlag, prBaseFlag, prKeyFlag *string) *pipelinectxt.ODSContext {
+func prepareODSContextForRepo(checkoutDir string, urlFlag, gitFullRefFlag, gitRefSpecFlag, sslVerifyFlag, submodulesFlag, depthFlag, prBaseFlag, prKeyFlag string) *pipelinectxt.ODSContext {
 	// git-init
 	stdout, stderr, err := command.Run("/ko-app/git-init", []string{
-		"-url", *urlFlag,
-		"-revision", *gitFullRefFlag,
-		"-refspec", *gitRefSpecFlag,
+		"-url", urlFlag,
+		"-revision", gitFullRefFlag,
+		"-refspec", gitRefSpecFlag,
 		"-path", checkoutDir,
-		"-sslVerify", *sslVerifyFlag,
-		"-submodules", *submodulesFlag,
-		"-depth", *depthFlag,
+		"-sslVerify", sslVerifyFlag,
+		"-submodules", submodulesFlag,
+		"-depth", depthFlag,
 	})
 	if err != nil {
 		log.Println(string(stderr))
@@ -169,14 +162,10 @@ func prepareODSContextForRepo(checkoutDir string, urlFlag, gitFullRefFlag, gitRe
 		log.Fatal(err)
 	}
 	ctxt := &pipelinectxt.ODSContext{
-		Namespace:       *namespaceFlag,
-		Project:         *projectFlag,
-		Repository:      *repositoryFlag,
-		Component:       *componentFlag,
-		GitFullRef:      *gitFullRefFlag,
+		GitFullRef:      gitFullRefFlag,
 		GitCommitSHA:    sha,
-		PullRequestBase: *prBaseFlag,
-		PullRequestKey:  *prKeyFlag,
+		PullRequestBase: prBaseFlag,
+		PullRequestKey:  prKeyFlag,
 	}
 	err = ctxt.Assemble(checkoutDir)
 	if err != nil {

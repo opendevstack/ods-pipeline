@@ -1,3 +1,4 @@
 repositories:
   - name: go-http-server
+  - branch: feature/xyz
   - url: http://bitbucket-server-test.kind:7990/scm/odspipelinetest/workspace-122030114.git

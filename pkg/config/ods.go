@@ -36,15 +36,10 @@ type Target struct {
 }
 
 type Phases struct {
-	Init     Phase `json:"init"`
-	Build    Phase `json:"build"`
-	Deploy   Phase `json:"deploy"`
-	Test     Phase `json:"test"`
-	Release  Phase `json:"release"`
-	Finalize Phase `json:"finalize"`
-}
-
-type Phase struct {
-	RunPolicy string                `json:"runPolicy"`
-	Tasks     []tekton.PipelineTask `json:"tasks"`
+	Init     []tekton.PipelineTask `json:"init"`
+	Build    []tekton.PipelineTask `json:"build"`
+	Deploy   []tekton.PipelineTask `json:"deploy"`
+	Test     []tekton.PipelineTask `json:"test"`
+	Release  []tekton.PipelineTask `json:"release"`
+	Finalize []tekton.PipelineTask `json:"finalize"`
 }

@@ -50,6 +50,6 @@ phases:
 
 repositories:
   - name: foo
-    url: "http://foo"
+    branch: master
   - name: bar
-    url: "http://bar"
+    branch: master
