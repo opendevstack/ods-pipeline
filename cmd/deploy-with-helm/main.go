@@ -86,7 +86,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dc, err := builderCreds(clientset, releaseNamespace)
+		dc, err := saDockercfgs(clientset, releaseNamespace, "builder")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -355,13 +355,13 @@ type dockerConfig struct {
 	Password string `json:"password"`
 }
 
-func builderCreds(clientset *kubernetes.Clientset, namespace string) (map[string]dockerConfig, error) {
+func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount string) (map[string]dockerConfig, error) {
 	cfg := map[string]dockerConfig{}
-	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "builder", metav1.GetOptions{})
+	builderServiceAccount, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), serviceaccount, metav1.GetOptions{})
 	if err != nil {
 		return cfg, err
 	}
-	dockercfgSecretPrefix := "builder-dockercfg-"
+	dockercfgSecretPrefix := serviceaccount + "-dockercfg-"
 	for _, s := range builderServiceAccount.Secrets {
 		if strings.HasPrefix(s.Name, dockercfgSecretPrefix) {
 			builderDockercfgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
@@ -369,6 +369,8 @@ func builderCreds(clientset *kubernetes.Clientset, namespace string) (map[string
 				return cfg, err
 			}
 			var decoded []byte
+			fmt.Println(builderDockercfgSecret.Data)
+			fmt.Println(builderDockercfgSecret.Data[".dockercfg"])
 			_, err = base64.StdEncoding.Decode(decoded, builderDockercfgSecret.Data[".dockercfg"])
 			if err != nil {
 				return cfg, err
