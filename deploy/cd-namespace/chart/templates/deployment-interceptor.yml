@@ -36,8 +36,6 @@ spec:
                   name: ods-bitbucket-auth
             - name: API_HOST
               value: '{{ .Values.interceptor.apiHost }}'
-            - name: CONSOLE_URL
-              value: '{{ .Values.interceptor.consoleUrl }}'
           readinessProbe:
             httpGet:
               path: /health

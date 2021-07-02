@@ -77,7 +77,7 @@ func main() {
 
 	for _, f := range files {
 		var id ImageDigest
-		idContent, err := ioutil.ReadFile(f.Name())
+		idContent, err := ioutil.ReadFile(filepath.Join(imageDigestsDir, f.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -9,9 +9,6 @@ spec:
       description: The location of the image.
       name: image
       type: string
-    - description: Web console URL
-      name: console-url
-      type: string
     - description: name of pipeline run
       name: pipeline-run-name
       type: string

@@ -84,10 +84,11 @@ if [ "${makeErrorCode}" -eq 2 ]; then
     GOPKGS=$(go list ./... | grep -v /vendor)
     set +e
     echo "running tests ..."
-    go test -v -coverprofile=coverage.out $GOPKGS 2>&1 | tee test-results.txt
+    go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
     exitcode=$?
     set -e
     if [ -f test-results.txt ]; then
+        cat test-results.txt
         go-junit-report < test-results.txt > build/test-results/test/report.xml
         mkdir -p .ods/artifacts/xunit-reports
         cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
