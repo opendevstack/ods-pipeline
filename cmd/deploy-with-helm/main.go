@@ -109,6 +109,7 @@ func main() {
 		stdout, stderr, err := command.Run(
 			"skopeo",
 			[]string{
+				"copy",
 				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
 				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, ctxt.GitCommitSHA),

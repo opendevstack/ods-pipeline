@@ -113,7 +113,7 @@ spec:
         fi
 
         mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
-        echo "{\n  \"image\":\"${image}\",\n  \"registry\":\"$(params.registry)\",\n  \"repository\":\"${odsNamespace}\",\n  \"name\":\"${imageStream}\",\n  \"tag\":\"${odsGitCommit}\",\n  \"digest\":\"$(cat /tekton/results/image-digest)\"\n}" > $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
+        echo "{\"image\":\"${image}\", \"registry\":\"$(params.registry)\", \"repository\":\"${odsNamespace}\", \"name\":\"${imageStream}\", \"tag\":\"${odsGitCommit}\", \"digest\":\"$(cat /tekton/results/image-digest)\"}" > $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
