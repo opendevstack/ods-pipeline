@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -15,6 +16,15 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"sigs.k8s.io/yaml"
 )
+
+type ImageDigest struct {
+	Image      string `json:"image"`
+	Registry   string `json:"registry"`
+	Repository string `json:"repository"`
+	Name       string `json:"name"`
+	Tag        string `json:"tag"`
+	Digest     string `json:"digest"`
+}
 
 func main() {
 	chartDir := flag.String("chart-dir", "", "Chart dir")
@@ -66,15 +76,19 @@ func main() {
 	}
 
 	for _, f := range files {
-		filename := f.Name()
-		imageStream := strings.TrimSuffix(filepath.Base(filename), ".json")
-		fmt.Println("copying image", imageStream)
-		// TODO: should we also allow external registries? maybe not ...
-		srcImageStreamUrl, err := getImageStreamUrl(ctxt.Namespace, imageStream)
-		srcRegistryTLSVerify := false
+		var id ImageDigest
+		idContent, err := ioutil.ReadFile(f.Name())
 		if err != nil {
 			log.Fatal(err)
 		}
+		err = json.Unmarshal(idContent, &id)
+		if err != nil {
+			log.Fatal(err)
+		}
+		imageStream := id.Name
+		fmt.Println("copying image", imageStream)
+		srcImageStreamUrl := id.Image
+		srcRegistryTLSVerify := false
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
 		var destImageStreamUrl string
@@ -85,11 +99,7 @@ func main() {
 				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
 		} else {
-			disu, err := getImageStreamUrl(releaseNamespace, imageStream)
-			if err != nil {
-				log.Fatal(err)
-			}
-			destImageStreamUrl = disu
+			destImageStreamUrl = strings.Replace(id.Image, "/"+id.Repository+"/", "/"+releaseNamespace+"/", -1)
 			destRegistryTLSVerify = false
 		}
 		fmt.Printf("srcRegistry=%s\n", srcImageStreamUrl)
@@ -303,21 +313,4 @@ func getHelmArchive(name string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("did not find archive for %s", name)
-}
-
-func getImageStreamUrl(namespace, imageStream string) (string, error) {
-	stdout, _, err := command.Run(
-		"oc",
-		[]string{
-			"--namespace=" + namespace,
-			"get",
-			"is/" + imageStream,
-			"-ojsonpath='{.status.dockerImageRepository}'",
-		},
-	)
-	if err != nil {
-		return "", err
-	}
-	return string(stdout), nil
-
 }

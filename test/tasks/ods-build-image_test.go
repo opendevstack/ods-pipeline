@@ -80,7 +80,7 @@ func buildAndPushImage(t *testing.T, ns, wsDir string) {
 
 func checkResultingFiles(t *testing.T, wsDir string) {
 	wantFiles := []string{
-		fmt.Sprintf(".ods/artifacts/image-digests/%s", filepath.Base(wsDir)),
+		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", filepath.Base(wsDir)),
 	}
 	for _, wf := range wantFiles {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

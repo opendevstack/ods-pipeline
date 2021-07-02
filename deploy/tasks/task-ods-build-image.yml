@@ -111,8 +111,9 @@ spec:
           mkdir -p /tekton/results
           cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
         fi
+
         mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
-        cp /tekton/results/image-digest $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream
+        echo "{\n  \"image\":\"${image}\",\n  \"registry\":\"$(params.registry)\",\n  \"repository\":\"${odsNamespace}\",\n  \"name\":\"${imageStream}\",\n  \"tag\":\"${odsGitCommit}\",\n  \"digest\":\"$(cat /tekton/results/image-digest)\"\n}" > $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
