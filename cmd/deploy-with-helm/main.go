@@ -369,8 +369,7 @@ func saDockercfgs(clientset *kubernetes.Clientset, namespace, serviceaccount str
 				return cfg, err
 			}
 			var decoded []byte
-			fmt.Println(builderDockercfgSecret.Data)
-			fmt.Println(builderDockercfgSecret.Data[".dockercfg"])
+			fmt.Println(string(builderDockercfgSecret.Data[".dockercfg"]))
 			_, err = base64.StdEncoding.Decode(decoded, builderDockercfgSecret.Data[".dockercfg"])
 			if err != nil {
 				return cfg, err
