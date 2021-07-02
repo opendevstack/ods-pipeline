@@ -7,6 +7,7 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/webhook-interceptor && CGO_ENABLED=0 go build -o /usr/local/bin/webhook-interceptor
 
+# ubi-micro cannot be used as it misses the ca-certificates package.
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 COPY --from=builder /usr/local/bin/webhook-interceptor /usr/local/bin/webhook-interceptor
 EXPOSE 8080

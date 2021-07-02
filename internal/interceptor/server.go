@@ -32,7 +32,6 @@ type Server struct {
 	Project         string
 	RepoBase        string
 	Token           string
-	ConsoleURL      string
 	BitbucketClient *bitbucket.Client
 }
 
@@ -53,7 +52,6 @@ type PipelineData struct {
 	Comment         string `json:"comment"`
 	PullRequestKey  int    `json:"prKey"`
 	PullRequestBase string `json:"prBase"`
-	ConsoleURL      string `json:"consoleURL"`
 }
 
 func init() {
@@ -61,7 +59,7 @@ func init() {
 }
 
 // NewServer returns a new server.
-func NewServer(client Client, namespace, project, repoBase, token, consoleURL string) *Server {
+func NewServer(client Client, namespace, project, repoBase, token string) *Server {
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		Timeout:    10 * time.Second,
 		APIToken:   token,
@@ -74,7 +72,6 @@ func NewServer(client Client, namespace, project, repoBase, token, consoleURL st
 		Project:         project,
 		RepoBase:        repoBase,
 		Token:           token,
-		ConsoleURL:      consoleURL,
 		BitbucketClient: bitbucketClient,
 	}
 }
@@ -208,7 +205,6 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		PVC:             fmt.Sprintf("pipeline-%s", component),
 		TriggerEvent:    req.EventKey,
 		Comment:         commentText,
-		ConsoleURL:      s.ConsoleURL,
 	}
 
 	if len(commitSHA) == 0 {
@@ -465,13 +461,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 				},
 			},
 			{
-				Name: "console-url",
-				Value: tekton.ArrayOrString{
-					StringVal: data.ConsoleURL,
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
 				Name: "pipeline-run-name",
 				Value: tekton.ArrayOrString{
 					StringVal: "$(context.pipelineRun.name)",
@@ -525,13 +514,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 				{Name: "source", Workspace: "shared-workspace"},
 			},
 			Params: []tekton.Param{
-				{
-					Name: "console-url",
-					Value: tekton.ArrayOrString{
-						StringVal: data.ConsoleURL,
-						Type:      tekton.ParamTypeString,
-					},
-				},
 				{
 					Name: "pipeline-run-name",
 					Value: tekton.ArrayOrString{

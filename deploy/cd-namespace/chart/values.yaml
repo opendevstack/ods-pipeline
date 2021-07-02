@@ -25,10 +25,12 @@ sonarAuthToken: ''
 storageProvisioner: 'kubernetes.io/aws-ebs'
 storageClassName: 'gp2'
 
+# Cluster
+consoleUrl: 'http://example.com'
+
 # Webhook Interceptor
 interceptor:
   apiHost: 'openshift.default.svc.cluster.local'
-  consoleUrl: 'http://example.com'
   replicaCount: 1
   image:
     registry: image-registry.openshift-image-registry.svc:5000
