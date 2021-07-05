@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/file"
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -90,7 +91,7 @@ func main() {
 			}
 			destRegistryToken = token
 		} else {
-			token, err := tokenFromFile(tokenFile)
+			token, err := getTrimmedFileContent(tokenFile)
 			if err != nil {
 				log.Fatalf("could not get token from file %s: %s", tokenFile, err)
 			}
@@ -98,7 +99,7 @@ func main() {
 		}
 	}
 
-	// Copy images into release namespace.
+	fmt.Println("copying images into release namespace ...")
 	for _, f := range files {
 		var imageArtifact artifact.Image
 		artifactFile := filepath.Join(imageDigestsDir, f.Name())
@@ -167,74 +168,45 @@ func main() {
 	}
 	fmt.Println(string(stdout))
 
-	// if child repos exist, collect helm charts for them and place into charts/
-	// if len(odsConfig.Repositories) > 0 {
-	// 	cwd, err := os.Getwd()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Println("pulling in helm chart packages from child repositories ...")
-	// 	for _, childRepo := range odsConfig.Repositories {
-	// 		childCommitSHA, err := getGitCommitSHAInDir(".ods/repositories/" + childRepo.Name)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		// TODO: This should only return one URL - should we enforce this?
-	// 		helmChartURLs, err := nexusClient.URLs(
-	// 			fmt.Sprintf("/%s/%s/helm-charts", childRepo.Name, childCommitSHA),
-	// 		)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		// helm pull
-	// 		chartsPath := filepath.Join(*chartDir, "charts")
-	// 		err = os.Mkdir(chartsPath, 0644)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		err = os.Chdir(chartsPath)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		for _, helmChartURL := range helmChartURLs {
-	// 			nexusClient.Download(helmChartURL)
-	// 		}
-	// 		err = os.Chdir(cwd)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 	}
-	// }
+	fmt.Println("adding dependencies from subrepos into the charts/ directory ...")
+	// Find subcharts
+	var subrepos []fs.FileInfo
+	subreposDir := ".ods/repos"
+	if _, err := os.Stat(subreposDir); os.IsNotExist(err) {
+		fmt.Printf("no subrepos in %s\n", subreposDir)
+	} else {
+		f, err := ioutil.ReadDir(subreposDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		subrepos = f
+	}
+	chartsDir := filepath.Join(*chartDir, "charts")
+	for _, r := range subrepos {
+		subrepo := filepath.Join(subreposDir, r.Name())
+		subchart := filepath.Join(subrepo, *chartDir)
+		if _, err := os.Stat(subchart); os.IsNotExist(err) {
+			fmt.Printf("no chart in %s\n", r.Name())
+			continue
+		}
+		gitCommitSHA, err := getTrimmedFileContent(filepath.Join(subrepo, ".ods", "git-commit-sha"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		helmArchive, err := packageHelmChart(subchart, ctxt.Version, gitCommitSHA)
+		if err != nil {
+			log.Fatal(err)
+		}
+		helmArchiveName := filepath.Base(helmArchive)
+		fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
+		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
+	}
 
 	fmt.Println("packaging helm chart ...")
-	chartVersion, err := getChartVersion(filepath.Join(*chartDir, "Chart.yaml"))
+	helmArchive, err := packageHelmChart(*chartDir, ctxt.Version, ctxt.GitCommitSHA)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _, err = command.Run(
-		"helm",
-		[]string{
-			"package",
-			fmt.Sprintf("--app-version=%s", ctxt.GitCommitSHA),
-			fmt.Sprintf("--version=%s+%s", chartVersion, ctxt.GitCommitSHA),
-			*chartDir,
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	helmArchive, err := getHelmArchive(ctxt.Component)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// fmt.Println("uploading helm chart package ...")
-	// // TODO: check err
-	// err = nexusClient.Upload(fmt.Sprintf("%s/helm-charts", nexusGroupPrefix), helmArchive)
-	// if err != nil {
-	// 	fmt.Printf("got err: %s", err)
-	// }
 
 	fmt.Printf("diffing helm release against %s...\n", helmArchive)
 	stdout, stderr, err = command.Run(
@@ -314,10 +286,14 @@ func getTarget(odsConfig config.ODS, environment string, target string) (config.
 }
 
 type helmChart struct {
+	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-func getChartVersion(filename string) (string, error) {
+func getChartVersion(contextVersion, filename string) (string, error) {
+	if len(contextVersion) > 0 {
+		return contextVersion, nil
+	}
 	y, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", fmt.Errorf("could not read chart: %w", err)
@@ -331,8 +307,8 @@ func getChartVersion(filename string) (string, error) {
 	return hc.Version, nil
 }
 
-func getHelmArchive(name string) (string, error) {
-	files, err := ioutil.ReadDir(".")
+func getHelmArchive(dir string) (string, error) {
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return "", fmt.Errorf("%w", err)
 	}
@@ -342,7 +318,7 @@ func getHelmArchive(name string) (string, error) {
 			return file.Name(), nil
 		}
 	}
-	return "", fmt.Errorf("did not find archive for %s", name)
+	return "", fmt.Errorf("did not find archive in %s", dir)
 }
 
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
@@ -353,10 +329,41 @@ func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (s
 	return string(secret.Data["token"]), nil
 }
 
-func tokenFromFile(filename string) (string, error) {
+func getTrimmedFileContent(filename string) (string, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
+}
+
+func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error) {
+	chartVersion, err := getChartVersion(ctxtVersion, filepath.Join(chartDir, "Chart.yaml"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	stdout, stderr, err := command.RunInDir(
+		"helm",
+		[]string{
+			"package",
+			fmt.Sprintf("--app-version=%s", gitCommitSHA),
+			fmt.Sprintf("--version=%s+%s", chartVersion, gitCommitSHA),
+			".",
+		},
+		chartDir,
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"could not package chart %s. stderr: %s, err: %s", chartDir, string(stderr), err,
+		)
+	}
+	fmt.Println(string(stdout))
+
+	helmArchive, err := getHelmArchive(chartDir)
+	if err != nil {
+		return "", fmt.Errorf(
+			"could not get Helm archive name for %s. stderr: %s, err: %s", chartDir, string(stderr), err,
+		)
+	}
+	return filepath.Join(chartDir, helmArchive), nil
 }

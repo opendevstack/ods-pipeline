@@ -1,12 +1,18 @@
 package tasks
 
 import (
+	"context"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -30,7 +36,55 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					//wsDir := ctxt.Workspaces["source"]
+					wsDir := ctxt.Workspaces["source"]
+					resourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-sample-app")
+					_, err := checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, resourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
+					_, err = checkDeployment(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, resourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+			},
+			"should upgrade Helm chart with dependencies": {
+				WorkspaceDirMapping: map[string]string{"source": "helm-app-with-dependencies"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"image": "localhost:5000/ods/ods-helm:latest",
+					}
+
+					err := createODSYML(wsDir, ctxt.Namespace)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					parentChartResourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-app-with-dependencies")
+					// Parent chart
+					_, err := checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, parentChartResourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
+					_, err = checkDeployment(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, parentChartResourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
+					// Subchart
+					subChartResourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-sample-database")
+					_, err = checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
+					_, err = checkDeployment(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 			},
 		},
@@ -84,4 +138,16 @@ func createODSYML(wsDir, releaseNamespace string) error {
 	}
 	filename := filepath.Join(wsDir, "ods.yml")
 	return ioutil.WriteFile(filename, y, 0644)
+}
+
+func checkDeployment(clientset *kubernetes.Clientset, namespace, name string) (*appsv1.Deployment, error) {
+	return clientset.AppsV1().
+		Deployments(namespace).
+		Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+func checkService(clientset *kubernetes.Clientset, namespace, name string) (*corev1.Service, error) {
+	return clientset.CoreV1().
+		Services(namespace).
+		Get(context.TODO(), name, metav1.GetOptions{})
 }

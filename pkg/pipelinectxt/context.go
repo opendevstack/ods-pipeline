@@ -24,6 +24,8 @@ type ODSContext struct {
 	GitFullRef      string
 	GitRef          string
 	GitURL          string
+	Version         string
+	Target          string
 	PullRequestBase string
 	PullRequestKey  string
 }
