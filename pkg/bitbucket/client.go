@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -54,14 +53,6 @@ func (c *Client) put(urlPath string, payload []byte) (int, []byte, error) {
 	return c.createRequest("PUT", urlPath, payload)
 }
 
-func (c *Client) upload(urlPath string, params map[string]string, path string, src io.Reader) (int, []byte, error) {
-	req, err := c.createFileUploadRequest("PUT", urlPath, params, "content", path, src)
-	if err != nil {
-		return 500, nil, err
-	}
-	return c.doRequest(req)
-}
-
 func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []byte, error) {
 	u := c.clientConfig.BaseURL + urlPath
 	c.clientConfig.Logger.Debugf("%s %s", method, u)
@@ -87,33 +78,6 @@ func (c *Client) doRequest(req *http.Request) (int, []byte, error) {
 
 	responseBody, err := ioutil.ReadAll(res.Body)
 	return res.StatusCode, responseBody, err
-}
-
-func (c *Client) createFileUploadRequest(method string, urlPath string, params map[string]string, paramName, path string, src io.Reader) (*http.Request, error) {
-	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("%s %s", method, u)
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(paramName, path)
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(part, src)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(method, u, body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	return req, err
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
