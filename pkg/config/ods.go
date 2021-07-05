@@ -12,8 +12,9 @@ type ODS struct {
 }
 
 type Repository struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	Branch string `json:"branch"`
 }
 
 type Environments struct {
