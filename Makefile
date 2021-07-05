@@ -24,7 +24,7 @@ build-and-push-images:
 
 ## Install Tekton pipelines in kind cluster.
 install-tekton-pipelines:
-	cd scripts && ./install-tekton-pipelines.sh --tekton-dashboard
+	cd scripts && ./install-tekton-pipelines.sh
 .PHONY: install-tekton-pipelines
 
 ## Install resources in CD namespace via Helm.
