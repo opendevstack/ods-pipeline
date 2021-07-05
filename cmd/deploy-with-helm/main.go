@@ -99,7 +99,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("copying images into release namespace ...")
+	fmt.Println("Copying images into release namespace ...")
 	for _, f := range files {
 		var imageArtifact artifact.Image
 		artifactFile := filepath.Join(imageDigestsDir, f.Name())
@@ -153,7 +153,7 @@ func main() {
 		fmt.Println(string(stdout))
 	}
 
-	fmt.Println("list helm plugins...")
+	fmt.Println("List Helm plugins...")
 
 	stdout, stderr, err := command.Run(
 		"helm",
@@ -168,7 +168,7 @@ func main() {
 	}
 	fmt.Println(string(stdout))
 
-	fmt.Println("adding dependencies from subrepos into the charts/ directory ...")
+	fmt.Println("Adding dependencies from subrepos into the charts/ directory ...")
 	// Find subcharts
 	var subrepos []fs.FileInfo
 	subreposDir := ".ods/repos"
@@ -202,13 +202,13 @@ func main() {
 		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
 	}
 
-	fmt.Println("packaging helm chart ...")
+	fmt.Println("Packaging Helm chart ...")
 	helmArchive, err := packageHelmChart(*chartDir, ctxt.Version, ctxt.GitCommitSHA)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("diffing helm release against %s...\n", helmArchive)
+	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
 	stdout, stderr, err = command.Run(
 		"helm",
 		[]string{
@@ -230,7 +230,7 @@ func main() {
 	fmt.Println(string(stdout))
 	fmt.Println(string(stderr))
 
-	fmt.Printf("upgrading helm release to %s...\n", helmArchive)
+	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
 	stdout, stderr, err = command.Run(
 		"helm",
 		[]string{
@@ -290,35 +290,25 @@ type helmChart struct {
 	Version string `json:"version"`
 }
 
-func getChartVersion(contextVersion, filename string) (string, error) {
-	if len(contextVersion) > 0 {
-		return contextVersion, nil
-	}
+func getHelmChart(filename string) (*helmChart, error) {
 	y, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", fmt.Errorf("could not read chart: %w", err)
+		return nil, fmt.Errorf("could not read chart: %w", err)
 	}
 
-	var hc helmChart
+	var hc *helmChart
 	err = yaml.Unmarshal(y, &hc)
 	if err != nil {
-		return "", fmt.Errorf("could not unmarshal: %w", err)
+		return nil, fmt.Errorf("could not unmarshal: %w", err)
 	}
-	return hc.Version, nil
+	return hc, nil
 }
 
-func getHelmArchive(dir string) (string, error) {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return "", fmt.Errorf("%w", err)
+func getChartVersion(contextVersion string, hc *helmChart) string {
+	if len(contextVersion) > 0 {
+		return contextVersion
 	}
-
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".tgz") {
-			return file.Name(), nil
-		}
-	}
-	return "", fmt.Errorf("did not find archive in %s", dir)
+	return hc.Version
 }
 
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
@@ -338,19 +328,20 @@ func getTrimmedFileContent(filename string) (string, error) {
 }
 
 func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error) {
-	chartVersion, err := getChartVersion(ctxtVersion, filepath.Join(chartDir, "Chart.yaml"))
+	hc, err := getHelmChart(filepath.Join(chartDir, "Chart.yaml"))
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("could not read chart: %w", err)
 	}
-	stdout, stderr, err := command.RunInDir(
+	chartVersion := getChartVersion(ctxtVersion, hc)
+	packageVersion := fmt.Sprintf("%s+%s", chartVersion, gitCommitSHA)
+	stdout, stderr, err := command.Run(
 		"helm",
 		[]string{
 			"package",
 			fmt.Sprintf("--app-version=%s", gitCommitSHA),
-			fmt.Sprintf("--version=%s+%s", chartVersion, gitCommitSHA),
-			".",
+			fmt.Sprintf("--version=%s", packageVersion),
+			chartDir,
 		},
-		chartDir,
 	)
 	if err != nil {
 		return "", fmt.Errorf(
@@ -359,11 +350,6 @@ func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error
 	}
 	fmt.Println(string(stdout))
 
-	helmArchive, err := getHelmArchive(chartDir)
-	if err != nil {
-		return "", fmt.Errorf(
-			"could not get Helm archive name for %s. stderr: %s, err: %s", chartDir, string(stderr), err,
-		)
-	}
-	return filepath.Join(chartDir, helmArchive), nil
+	helmArchive := fmt.Sprintf("%s-%s.tgz", hc.Name, packageVersion)
+	return helmArchive, nil
 }
