@@ -53,16 +53,6 @@ else
         create rolebinding "${SERVICEACCOUNT}-edit" \
         --clusterrole edit \
         --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
-
-    kubectl -n ${NAMESPACE} \
-        create rolebinding "${SERVICEACCOUNT}-cluster-admin" \
-        --clusterrole cluster-admin \
-        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
-
-    kubectl -n ${NAMESPACE} \
-        create rolebinding "${SERVICEACCOUNT}-tekton-triggers-admin" \
-        --clusterrole tekton-triggers-admin \
-        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
 fi
 
 echo "Installing Helm release ..."
