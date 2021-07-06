@@ -46,11 +46,11 @@ func WatchTaskRunEvents(t *testing.T, c *kubernetes.Clientset, taskRunName, name
 	}
 }
 
-func WatchPodEvents(t *testing.T, c *kubernetes.Clientset, podName, namespace string, podEventsDone chan bool) {
+func WatchPodEvents(t *testing.T, c *kubernetes.Clientset, podName, namespace string, quit chan bool) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
-	time.Sleep(3 * time.Second) //TODO: How to wait until Pod is actually created?
+	// time.Sleep(3 * time.Second) //TODO: How to wait until Pod is actually created?
 
 	ew, err := c.CoreV1().Events(namespace).Watch(context.Background(),
 		metav1.ListOptions{
@@ -71,10 +71,12 @@ func WatchPodEvents(t *testing.T, c *kubernetes.Clientset, podName, namespace st
 				log.Printf("Type: %s, Message: %s", ev.Type, ev.Message)
 				if ev.Type == "Warning" && strings.Contains(ev.Message, "Error") {
 					log.Printf("The following error has been detected in the events output: %s\n", ev.Message)
-					podEventsDone <- false
+					quit <- true
 				}
 			}
+		case <-quit:
+			fmt.Println("quit watching")
+			return
 		}
 	}
-
 }

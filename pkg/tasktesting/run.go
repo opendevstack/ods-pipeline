@@ -82,17 +82,29 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	podEventsDone := make(chan bool, 1)
-	go WatchTaskRunEvents(t, testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, podEventsDone)
+	// Wait for pod to exist.
+	// Listen for events, and while waiting, check that pod is running.
+	// Once the pod is running,stop listening for events and collect logs.
+	pod := WaitForTaskRunPod(t, testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace)
+
+	//podEventsDone := make(chan bool, 1)
+	//go WatchTaskRunEvents(t, testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, podEventsDone)
+	quitEvents := make(chan bool, 1)
+	go WatchPodEvents(t, testOpts.Clients.KubernetesClientSet, pod.Name, testOpts.Namespace, quitEvents)
+
+	err = getLogs(testOpts.Clients.KubernetesClientSet, pod, quitEvents)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Wait X minutes for task to complete or be notified of a failure from an pods' event
-	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout, podEventsDone)
+	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout, quitEvents)
 
 	// Show logs
-	go CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf, podEventsDone)
+	// go CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf, podEventsDone)
 
 	// Block until we receive a notification from CollectPodLogs on the channel
-	<-podEventsDone
+	//<-podEventsDone
 
 	// Show info from Task result
 	CollectTaskResultInfo(tr, t.Logf)

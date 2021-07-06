@@ -15,6 +15,56 @@ import (
 	"knative.dev/pkg/test/logging"
 )
 
+func getLogs(c kubernetes.Interface, pod *corev1.Pod, quitEvents chan bool) error {
+	podName := pod.Name
+	podNamespace := pod.Namespace
+	for _, container := range pod.Spec.Containers {
+		log.Printf("Waiting for container %s from pod %s to be ready...\n", container.Name, pod)
+
+		deadline := time.Now().Add(30 * time.Second)
+		for {
+			p, err := c.CoreV1().Pods(pod.Namespace).Get(context.Background(), podName, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("could not get pod %s in namespace %s: %w", podName, podNamespace, err)
+			}
+			containerIsReady := false
+			for _, cs := range p.Status.ContainerStatuses {
+				if cs.Name == container.Name && cs.Ready {
+					containerIsReady = true
+					log.Println("is ready")
+				}
+			}
+			if containerIsReady || time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(2 * time.Second)
+		}
+
+		log.Printf("\n>>> Container %s:\n", container.Name)
+		req := c.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+			Follow:    true,
+			Container: container.Name,
+		})
+		rc, err := req.Stream(context.Background())
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		if err != nil {
+			return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", pod.Name, pod.Namespace, err)
+		}
+		bs, err := ioutil.ReadAll(rc)
+		if err != nil {
+			return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", pod.Name, pod.Namespace, err)
+		}
+		fmt.Print(string(bs))
+	}
+	fmt.Println("done with the logs, quitting events")
+	quitEvents <- true
+	return nil
+}
+
 // CollectPodLogs will get the logs for all containers in a Pod
 func CollectPodLogs(c *kubernetes.Clientset, podName, namespace string, logf logging.FormatLogger, podEventsDone chan<- bool) {
 	logs, err := getContainerLogsFromPod(c, podName, namespace, podEventsDone)
