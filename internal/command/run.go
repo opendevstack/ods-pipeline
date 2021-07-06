@@ -27,15 +27,3 @@ func RunInDir(executable string, args []string, wsDir string) (outBytes, errByte
 	errBytes = stderr.Bytes()
 	return outBytes, errBytes, err
 }
-
-func RunInDir(executable string, args []string, wsDir string) (outBytes, errBytes []byte, err error) {
-	cmd := exec.Command(executable, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	cmd.Dir = wsDir
-	err = cmd.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
-}
