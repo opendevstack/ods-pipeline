@@ -212,13 +212,16 @@ func main() {
 		fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
 		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
 	}
-	fmt.Printf("Contents of %s:\n", chartsDir)
+
 	subcharts, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, sc := range subcharts {
-		fmt.Println(sc.Name())
+	if len(subcharts) > 0 {
+		fmt.Printf("Contents of %s:\n", chartsDir)
+		for _, sc := range subcharts {
+			fmt.Println(sc.Name())
+		}
 	}
 
 	fmt.Println("Packaging Helm chart ...")
