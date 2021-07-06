@@ -77,13 +77,14 @@ func main() {
 		files = f
 	}
 
-	// Get destination registry token if there are any image artifacts.
-	var destRegistryToken string
+	// Copy images into release namespace if there are any image artifacts.
 	if len(files) > 0 {
 		clientset, err := k.NewInClusterClientset()
 		if err != nil {
 			log.Fatalf("could not create Kubernetes client: %s", err)
 		}
+		// Get destination registry token from secret or file in pod.
+		var destRegistryToken string
 		if len(targetConfig.SecretRef) > 0 {
 			token, err := tokenFromSecret(clientset, releaseNamespace, targetConfig.SecretRef)
 			if err != nil {
@@ -97,60 +98,60 @@ func main() {
 			}
 			destRegistryToken = token
 		}
-	}
 
-	fmt.Println("Copying images into release namespace ...")
-	for _, f := range files {
-		var imageArtifact artifact.Image
-		artifactFile := filepath.Join(imageDigestsDir, f.Name())
-		artifactContent, err := ioutil.ReadFile(artifactFile)
-		if err != nil {
-			log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
-		}
-		err = json.Unmarshal(artifactContent, &imageArtifact)
-		if err != nil {
-			log.Fatalf(
-				"could not unmarshal image artifact file %s: %s.\nFile content:\n%s",
-				artifactFile, err, string(artifactContent),
-			)
-		}
-		imageStream := imageArtifact.Name
-		fmt.Println("copying image", imageStream)
-		srcImageURL := imageArtifact.Image
-		srcRegistryTLSVerify := false
-		// TODO: At least for OpenShift image streams, we want to autocreate
-		// the destination if it does not exist yet.
-		var destImageURL string
-		destRegistryTLSVerify := true
-		if len(targetConfig.RegistryHost) > 0 {
-			destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
-			if targetConfig.RegistryTLSVerify != nil {
-				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
+		fmt.Println("Copying images into release namespace ...")
+		for _, f := range files {
+			var imageArtifact artifact.Image
+			artifactFile := filepath.Join(imageDigestsDir, f.Name())
+			artifactContent, err := ioutil.ReadFile(artifactFile)
+			if err != nil {
+				log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
 			}
-		} else {
-			destImageURL = strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
-			destRegistryTLSVerify = false
+			err = json.Unmarshal(artifactContent, &imageArtifact)
+			if err != nil {
+				log.Fatalf(
+					"could not unmarshal image artifact file %s: %s.\nFile content:\n%s",
+					artifactFile, err, string(artifactContent),
+				)
+			}
+			imageStream := imageArtifact.Name
+			fmt.Println("copying image", imageStream)
+			srcImageURL := imageArtifact.Image
+			srcRegistryTLSVerify := false
+			// TODO: At least for OpenShift image streams, we want to autocreate
+			// the destination if it does not exist yet.
+			var destImageURL string
+			destRegistryTLSVerify := true
+			if len(targetConfig.RegistryHost) > 0 {
+				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
+				if targetConfig.RegistryTLSVerify != nil {
+					destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
+				}
+			} else {
+				destImageURL = strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
+				destRegistryTLSVerify = false
+			}
+			fmt.Printf("src=%s\n", srcImageURL)
+			fmt.Printf("dest=%s\n", destImageURL)
+			// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
+			// matches the SHA referenced by the Git commit tag.
+			skopeoCopyArgs := []string{
+				"copy",
+				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
+				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
+				fmt.Sprintf("docker://%s", srcImageURL),
+				fmt.Sprintf("docker://%s", destImageURL),
+			}
+			if len(destRegistryToken) > 0 {
+				skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
+			}
+			stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
+			if err != nil {
+				fmt.Println(string(stderr))
+				log.Fatal(err)
+			}
+			fmt.Println(string(stdout))
 		}
-		fmt.Printf("src=%s\n", srcImageURL)
-		fmt.Printf("dest=%s\n", destImageURL)
-		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
-		// matches the SHA referenced by the Git commit tag.
-		skopeoCopyArgs := []string{
-			"copy",
-			fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
-			fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-			fmt.Sprintf("docker://%s", srcImageURL),
-			fmt.Sprintf("docker://%s", destImageURL),
-		}
-		if len(destRegistryToken) > 0 {
-			skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
-		}
-		stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
-		if err != nil {
-			fmt.Println(string(stderr))
-			log.Fatal(err)
-		}
-		fmt.Println(string(stdout))
 	}
 
 	fmt.Println("List Helm plugins...")
@@ -229,16 +230,16 @@ func main() {
 		log.Fatal(err)
 	}
 	valuesFiles := []string{}
-	valuesFilesCandidates := []string{
-		fmt.Sprintf("values.%s.yaml", targetConfig.Kind),
-		fmt.Sprintf("values.%s.yaml", targetConfig.Name),
-		generatedValuesFilename,
+	valuesFilesCandidates := []string{fmt.Sprintf("values.%s.yaml", targetConfig.Kind)}
+	if targetConfig.Kind != targetConfig.Name {
+		valuesFilesCandidates = append(valuesFilesCandidates, fmt.Sprintf("values.%s.yaml", targetConfig.Name))
 	}
+	valuesFilesCandidates = append(valuesFilesCandidates, generatedValuesFilename)
 	for _, vfc := range valuesFilesCandidates {
 		if _, err := os.Stat(vfc); os.IsNotExist(err) {
-			fmt.Printf("%s is not present, skipping.", vfc)
+			fmt.Printf("%s is not present, skipping.\n", vfc)
 		} else {
-			fmt.Printf("%s is present, adding.", vfc)
+			fmt.Printf("%s is present, adding.\n", vfc)
 			valuesFiles = append(valuesFiles, vfc)
 		}
 	}

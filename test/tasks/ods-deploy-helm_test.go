@@ -127,6 +127,7 @@ func createODSYML(wsDir, releaseNamespace string) error {
 					{
 						Name:      "default",
 						Namespace: releaseNamespace,
+						Kind:      "dev",
 					},
 				},
 			},
