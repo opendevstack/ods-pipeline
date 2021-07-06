@@ -182,6 +182,9 @@ func main() {
 		subrepos = f
 	}
 	chartsDir := filepath.Join(*chartDir, "charts")
+	gitCommitSHAs := map[string]interface{}{
+		"gitCommitSha": ctxt.GitCommitSHA,
+	}
 	for _, r := range subrepos {
 		subrepo := filepath.Join(subreposDir, r.Name())
 		subchart := filepath.Join(subrepo, *chartDir)
@@ -192,6 +195,13 @@ func main() {
 		gitCommitSHA, err := getTrimmedFileContent(filepath.Join(subrepo, ".ods", "git-commit-sha"))
 		if err != nil {
 			log.Fatal(err)
+		}
+		hc, err := getHelmChart(filepath.Join(subchart, "Chart.yaml"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		gitCommitSHAs[hc.Name] = map[string]string{
+			"gitCommitSha": gitCommitSHA,
 		}
 		helmArchive, err := packageHelmChart(subchart, ctxt.Version, gitCommitSHA)
 		if err != nil {
@@ -208,19 +218,45 @@ func main() {
 		log.Fatal(err)
 	}
 
+	fmt.Println("Collecting Helm values files ...")
+	generatedValuesFilename := "values.generated.yaml"
+	out, err := yaml.Marshal(gitCommitSHAs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile(generatedValuesFilename, out, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	valuesFiles := []string{}
+	valuesFilesCandidates := []string{
+		fmt.Sprintf("values.%s.yaml", targetConfig.Kind),
+		fmt.Sprintf("values.%s.yaml", targetConfig.Name),
+		generatedValuesFilename,
+	}
+	for _, vfc := range valuesFilesCandidates {
+		if _, err := os.Stat(vfc); os.IsNotExist(err) {
+			fmt.Printf("%s is not present, skipping.", vfc)
+		} else {
+			fmt.Printf("%s is present, adding.", vfc)
+			valuesFiles = append(valuesFiles, vfc)
+		}
+	}
+
 	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
+	helmDiffArgs := []string{
+		"--namespace=" + releaseNamespace,
+		"diff",
+		"upgrade",
+		"--install",
+		"--detailed-exitcode",
+		"--no-color",
+	}
+	for _, vf := range valuesFiles {
+		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
+	}
 	stdout, stderr, err = command.Run(
-		"helm",
-		[]string{
-			"--namespace=" + releaseNamespace,
-			"diff",
-			"upgrade",
-			"--install",
-			"--detailed-exitcode",
-			"--no-color",
-			releaseName,
-			helmArchive,
-		},
+		"helm", append(helmDiffArgs, releaseName, helmArchive),
 	)
 
 	if err == nil {
@@ -231,16 +267,17 @@ func main() {
 	fmt.Println(string(stderr))
 
 	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
+	helmUpgradeArgs := []string{
+		"--namespace=" + releaseNamespace,
+		"upgrade",
+		"--wait",
+		"--install",
+	}
+	for _, vf := range valuesFiles {
+		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
+	}
 	stdout, stderr, err = command.Run(
-		"helm",
-		[]string{
-			"--namespace=" + releaseNamespace,
-			"upgrade",
-			"--wait",
-			"--install",
-			releaseName,
-			helmArchive,
-		},
+		"helm", append(helmUpgradeArgs, releaseName, helmArchive),
 	)
 	if err != nil {
 		fmt.Println(string(stderr))
