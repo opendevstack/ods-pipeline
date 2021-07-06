@@ -25,6 +25,7 @@ import (
 
 const (
 	tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	helmBin   = "helm"
 )
 
 func main() {
@@ -155,14 +156,7 @@ func main() {
 	}
 
 	fmt.Println("List Helm plugins...")
-
-	stdout, stderr, err := command.Run(
-		"helm",
-		[]string{
-			"plugin",
-			"list",
-		},
-	)
+	stdout, stderr, err := command.Run(helmBin, []string{"plugin", "list"})
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
@@ -183,6 +177,12 @@ func main() {
 		subrepos = f
 	}
 	chartsDir := filepath.Join(*chartDir, "charts")
+	if _, err := os.Stat(chartsDir); os.IsNotExist(err) {
+		err = os.Mkdir(chartsDir, 0755)
+		if err != nil {
+			log.Fatalf("could not create %s: %s", chartsDir, err)
+		}
+	}
 	gitCommitSHAs := map[string]interface{}{
 		"gitCommitSha": ctxt.GitCommitSHA,
 	}
@@ -211,6 +211,14 @@ func main() {
 		helmArchiveName := filepath.Base(helmArchive)
 		fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
 		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
+	}
+	fmt.Printf("Contents of %s:\n", chartsDir)
+	subcharts, err := ioutil.ReadDir(chartsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, sc := range subcharts {
+		fmt.Println(sc.Name())
 	}
 
 	fmt.Println("Packaging Helm chart ...")
@@ -256,9 +264,9 @@ func main() {
 	for _, vf := range valuesFiles {
 		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
 	}
-	stdout, stderr, err = command.Run(
-		"helm", append(helmDiffArgs, releaseName, helmArchive),
-	)
+	helmDiffArgs = append(helmDiffArgs, releaseName, helmArchive)
+	fmt.Println(helmBin, strings.Join(helmDiffArgs, " "))
+	stdout, stderr, err = command.Run(helmBin, helmDiffArgs)
 
 	if err == nil {
 		fmt.Println("no diff ...")
@@ -277,9 +285,9 @@ func main() {
 	for _, vf := range valuesFiles {
 		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
 	}
-	stdout, stderr, err = command.Run(
-		"helm", append(helmUpgradeArgs, releaseName, helmArchive),
-	)
+	helmUpgradeArgs = append(helmUpgradeArgs, releaseName, helmArchive)
+	fmt.Println(helmBin, strings.Join(helmUpgradeArgs, " "))
+	stdout, stderr, err = command.Run(helmBin, helmUpgradeArgs)
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
@@ -373,7 +381,7 @@ func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error
 	chartVersion := getChartVersion(ctxtVersion, hc)
 	packageVersion := fmt.Sprintf("%s+%s", chartVersion, gitCommitSHA)
 	stdout, stderr, err := command.Run(
-		"helm",
+		helmBin,
 		[]string{
 			"package",
 			fmt.Sprintf("--app-version=%s", gitCommitSHA),
