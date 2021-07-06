@@ -52,21 +52,12 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	taskWorkspaces := map[string]string{}
 	for wn, wd := range tc.WorkspaceDirMapping {
-		workspaceSourceDirectory := filepath.Join(
-			projectpath.Root, "test", testdataWorkspacePath, wd,
-		)
-
-		workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-
-		tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+		tempDir, err := InitWorkspace(wn, wd)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("Workspace is in %s", tempDir)
 		taskWorkspaces[wn] = tempDir
-
-		directory.Copy(workspaceSourceDirectory, tempDir)
-
 	}
 
 	testCaseContext := &TaskRunContext{
@@ -125,4 +116,21 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 			}
 		}
 	}
+}
+
+func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
+	workspaceSourceDirectory := filepath.Join(
+		projectpath.Root, "test", testdataWorkspacePath, workspaceDir,
+	)
+
+	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
+
+	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+	if err != nil {
+		return "", err
+	}
+
+	directory.Copy(workspaceSourceDirectory, tempDir)
+
+	return tempDir, nil
 }

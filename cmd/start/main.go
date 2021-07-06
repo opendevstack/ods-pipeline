@@ -34,7 +34,7 @@ func main() {
 	sslVerifyFlag := flag.String("ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
 	submodulesFlag := flag.String("submodules", "true", "defines if the resource should initialize and fetch the submodules")
 	depthFlag := flag.String("depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
-	consoleURLFlag := flag.String("console-url", "", "web console URL")
+	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	flag.Parse()
 
@@ -101,6 +101,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Assembled context: %+v\n", ctxt)
 	err = ctxt.WriteCache(checkoutDir)
 	if err != nil {
 		log.Fatal(err)

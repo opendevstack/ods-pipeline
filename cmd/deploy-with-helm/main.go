@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -11,9 +13,17 @@ import (
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	k "github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
+)
+
+const (
+	tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 )
 
 func main() {
@@ -53,6 +63,7 @@ func main() {
 	}
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 
+	// Find image artifacts.
 	var files []fs.FileInfo
 	imageDigestsDir := ".ods/artifacts/image-digests"
 	if _, err := os.Stat(imageDigestsDir); os.IsNotExist(err) {
@@ -65,46 +76,75 @@ func main() {
 		files = f
 	}
 
-	for _, f := range files {
-		filename := f.Name()
-		imageStream := strings.TrimSuffix(filepath.Base(filename), ".json")
-		fmt.Println("copying image", imageStream)
-		// TODO: should we also allow external registries? maybe not ...
-		srcImageStreamUrl, err := getImageStreamUrl(ctxt.Namespace, imageStream)
-		srcRegistryTLSVerify := false
+	// Get destination registry token if there are any image artifacts.
+	var destRegistryToken string
+	if len(files) > 0 {
+		clientset, err := k.NewInClusterClientset()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not create Kubernetes client: %s", err)
 		}
+		if len(targetConfig.SecretRef) > 0 {
+			token, err := tokenFromSecret(clientset, releaseNamespace, targetConfig.SecretRef)
+			if err != nil {
+				log.Fatalf("could not get token from secret %s: %s", targetConfig.SecretRef, err)
+			}
+			destRegistryToken = token
+		} else {
+			token, err := tokenFromFile(tokenFile)
+			if err != nil {
+				log.Fatalf("could not get token from file %s: %s", tokenFile, err)
+			}
+			destRegistryToken = token
+		}
+	}
+
+	// Copy images into release namespace.
+	for _, f := range files {
+		var imageArtifact artifact.Image
+		artifactFile := filepath.Join(imageDigestsDir, f.Name())
+		artifactContent, err := ioutil.ReadFile(artifactFile)
+		if err != nil {
+			log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
+		}
+		err = json.Unmarshal(artifactContent, &imageArtifact)
+		if err != nil {
+			log.Fatalf(
+				"could not unmarshal image artifact file %s: %s.\nFile content:\n%s",
+				artifactFile, err, string(artifactContent),
+			)
+		}
+		imageStream := imageArtifact.Name
+		fmt.Println("copying image", imageStream)
+		srcImageURL := imageArtifact.Image
+		srcRegistryTLSVerify := false
 		// TODO: At least for OpenShift image streams, we want to autocreate
 		// the destination if it does not exist yet.
-		var destImageStreamUrl string
+		var destImageURL string
 		destRegistryTLSVerify := true
 		if len(targetConfig.RegistryHost) > 0 {
-			destImageStreamUrl = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
+			destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
 			if targetConfig.RegistryTLSVerify != nil {
 				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
 		} else {
-			disu, err := getImageStreamUrl(releaseNamespace, imageStream)
-			if err != nil {
-				log.Fatal(err)
-			}
-			destImageStreamUrl = disu
+			destImageURL = strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
 			destRegistryTLSVerify = false
 		}
-		fmt.Printf("srcRegistry=%s\n", srcImageStreamUrl)
-		fmt.Printf("destRegistry=%s\n", destImageStreamUrl)
+		fmt.Printf("src=%s\n", srcImageURL)
+		fmt.Printf("dest=%s\n", destImageURL)
 		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
 		// matches the SHA referenced by the Git commit tag.
-		stdout, stderr, err := command.Run(
-			"skopeo",
-			[]string{
-				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
-				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, ctxt.GitCommitSHA),
-				fmt.Sprintf("docker://%s:%s", destImageStreamUrl, ctxt.GitCommitSHA),
-			},
-		)
+		skopeoCopyArgs := []string{
+			"copy",
+			fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
+			fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
+			fmt.Sprintf("docker://%s", srcImageURL),
+			fmt.Sprintf("docker://%s", destImageURL),
+		}
+		if len(destRegistryToken) > 0 {
+			skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
+		}
+		stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
 		if err != nil {
 			fmt.Println(string(stderr))
 			log.Fatal(err)
@@ -305,19 +345,18 @@ func getHelmArchive(name string) (string, error) {
 	return "", fmt.Errorf("did not find archive for %s", name)
 }
 
-func getImageStreamUrl(namespace, imageStream string) (string, error) {
-	stdout, _, err := command.Run(
-		"oc",
-		[]string{
-			"--namespace=" + namespace,
-			"get",
-			"is/" + imageStream,
-			"-ojsonpath='{.status.dockerImageRepository}'",
-		},
-	)
+func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	return string(stdout), nil
+	return string(secret.Data["token"]), nil
+}
 
+func tokenFromFile(filename string) (string, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(content)), nil
 }

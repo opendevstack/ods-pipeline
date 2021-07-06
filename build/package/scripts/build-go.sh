@@ -88,6 +88,7 @@ if [ "${makeErrorCode}" -eq 2 ]; then
     exitcode=$?
     set -e
     if [ -f test-results.txt ]; then
+        cat test-results.txt
         go-junit-report < test-results.txt > build/test-results/test/report.xml
         mkdir -p .ods/artifacts/xunit-reports
         cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml

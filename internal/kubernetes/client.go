@@ -5,6 +5,7 @@ import (
 
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -41,4 +42,14 @@ func NewClients() *Clients {
 		KubernetesClientSet: kubernetesClientset,
 		TektonClientSet:     tektonClientSet,
 	}
+}
+
+func NewInClusterClientset() (*kubernetes.Clientset, error) {
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	// creates the clientset
+	return kubernetes.NewForConfig(config)
 }

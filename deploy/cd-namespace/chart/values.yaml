@@ -3,12 +3,13 @@
 # Declare variables to be passed into your templates.
 
 # General
-serviceAccountName: 'default'
+serviceAccountName: 'pipeline'
 
 # Bitbucket
 bitbucketUrl: ''
 bitbucketUsername: ''
 bitbucketAccessToken: ''
+bitbucketWebhookSecret: ''
 
 # Nexus
 nexusUrl: ''
@@ -24,6 +25,9 @@ sonarAuthToken: ''
 storageProvisioner: 'kubernetes.io/aws-ebs'
 storageClassName: 'gp2'
 
+# Cluster
+consoleUrl: 'http://example.com'
+
 # Webhook Interceptor
 interceptor:
   apiHost: 'openshift.default.svc.cluster.local'
@@ -34,7 +38,7 @@ interceptor:
     namespace: ods
     # Overrides the image repository whose default is the chart name.
     repository: ods-webhook-interceptor
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     # tag: "0.1.0"
   resources:

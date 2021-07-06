@@ -62,9 +62,10 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 				Name: fmt.Sprintf("%s-taskrun-%s", taskName, random.PseudoString()),
 			},
 			Spec: tekton.TaskRunSpec{
-				TaskRef:    &tekton.TaskRef{Kind: tk, Name: taskName},
-				Params:     tektonParams,
-				Workspaces: taskWorkspaces,
+				TaskRef:            &tekton.TaskRef{Kind: tk, Name: taskName},
+				Params:             tektonParams,
+				Workspaces:         taskWorkspaces,
+				ServiceAccountName: "pipeline",
 			},
 		},
 		metav1.CreateOptions{})

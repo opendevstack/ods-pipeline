@@ -21,7 +21,7 @@ A pipeline that fulfills the needs for BI X but has EDP in mind (meaning it is c
 * Do not commit into the repo for which the pipeline runs
 * Testing of tasks in isolation (e.g. in GitHub Actions)
 * Easy to develop (e.g. images can be build locally, etc.)
-* Have the "RM" only collect artefacts that have been built already (gain speed, simplicity)
+* Have the "RM" only collect artifacts that have been built already (gain speed, simplicity)
 
 == Non-Goals
 

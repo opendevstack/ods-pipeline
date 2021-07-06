@@ -23,28 +23,10 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						"image": "localhost:5000/ods/ods-helm:latest",
 					}
 
-					o := &config.ODS{
-						Environments: config.Environments{
-							DEV: config.Environment{
-								Targets: []config.Target{
-									{
-										Name:      "default",
-										Namespace: ctxt.Namespace, // other ns should be used
-									},
-								},
-							},
-						},
-					}
-					y, err := yaml.Marshal(o)
+					err := createODSYML(wsDir, ctxt.Namespace)
 					if err != nil {
 						t.Fatal(err)
 					}
-					filename := filepath.Join(wsDir, "ods.yml")
-					err = ioutil.WriteFile(filename, y, 0644)
-					if err != nil {
-						t.Fatal(err)
-					}
-					//k.CreateNamespace(c.KubernetesClientSet, "michael-dev")
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -53,4 +35,53 @@ func TestTaskODSDeployHelm(t *testing.T) {
 			},
 		},
 	)
+}
+
+// func createReleaseNamespace(clientset *kubernetes.Clientset, ctxtNamespace string) (string, error) {
+// 	releaseNamespace := random.PseudoString()
+// 	k.CreateNamespace(clientset, releaseNamespace)
+// 	_, err := clientset.RbacV1().RoleBindings(releaseNamespace).Create(
+// 		context.Background(),
+// 		&v1.RoleBinding{
+// 			ObjectMeta: metav1.ObjectMeta{
+// 				Name:      "pipeline-deployer",
+// 				Namespace: releaseNamespace,
+// 			},
+// 			Subjects: []v1.Subject{
+// 				{
+// 					Kind:      "ServiceAccount",
+// 					Name:      "pipeline",
+// 					Namespace: ctxtNamespace,
+// 				},
+// 			},
+// 			RoleRef: v1.RoleRef{
+// 				APIGroup: "rbac.authorization.k8s.io",
+// 				Kind:     "ClusterRole",
+// 				Name:     "edit",
+// 			},
+// 		},
+// 		metav1.CreateOptions{})
+
+// 	return releaseNamespace, err
+// }
+
+func createODSYML(wsDir, releaseNamespace string) error {
+	o := &config.ODS{
+		Environments: config.Environments{
+			DEV: config.Environment{
+				Targets: []config.Target{
+					{
+						Name:      "default",
+						Namespace: releaseNamespace,
+					},
+				},
+			},
+		},
+	}
+	y, err := yaml.Marshal(o)
+	if err != nil {
+		return err
+	}
+	filename := filepath.Join(wsDir, "ods.yml")
+	return ioutil.WriteFile(filename, y, 0644)
 }
