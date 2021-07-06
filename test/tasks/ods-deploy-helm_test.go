@@ -23,7 +23,6 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						"image": "localhost:5000/ods/ods-helm:latest",
 					}
 
-<<<<<<< HEAD
 					err := createODSYML(wsDir, ctxt.Namespace)
 					if err != nil {
 						t.Fatal(err)
@@ -34,15 +33,6 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					//wsDir := ctxt.Workspaces["source"]
 				},
 			},
-=======
-	t.Parallel()
-
-	c, ns := tasktesting.Setup(t,
-		tasktesting.SetupOpts{
-			SourceDir:        "/files", // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
-			StorageCapacity:  "1Gi",
-			StorageClassName: "standard", // if using KinD, set it to "standard"
->>>>>>> Use pipefail to not lose the exit code for go test
 		},
 	)
 }
