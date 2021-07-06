@@ -40,6 +40,8 @@ func getTrimmedFileContent(filename string) (string, error) {
 }
 
 func runTaskTestCases(t *testing.T, taskName string, testCases map[string]tasktesting.TestCase) {
+	t.Parallel()
+
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{
 			SourceDir:        storageSourceDir,
