@@ -14,8 +14,6 @@ spec:
           value: "true"
         - name: git-full-ref
           value: refs/heads/tekton
-        - name: console-url
-          value: https://console-openshift-console.apps.example.openshiftapps.com
         - name: pipeline-run-name
           value: $(context.pipelineRun.name)
         - name: repository
@@ -64,8 +62,6 @@ spec:
       params:
         - name: aggregate-tasks-status
           value: Succeeded
-        - name: console-url
-          value: https://console-openshift-console.apps.example.openshiftapps.com
         - name: pipeline-run-name
           value: $(context.pipelineRun.name)
       taskRef:

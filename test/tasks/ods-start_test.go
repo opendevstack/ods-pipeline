@@ -22,7 +22,6 @@ func TestTaskODSStart(t *testing.T) {
 						"project":           ctxt.ODS.Project,
 						"component":         ctxt.ODS.Component,
 						"repository":        ctxt.ODS.Repository,
-						"console-url":       "http://example.com",
 						"pipeline-run-name": "foo",
 					}
 				},
