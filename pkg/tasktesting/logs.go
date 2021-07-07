@@ -3,7 +3,7 @@ package tasktesting
 import (
 	"context"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -100,22 +100,30 @@ func streamContainerLogs(
 		return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 	}
 	defer rc.Close()
-	for {
-		buf := make([]byte, 100)
 
-		numBytes, err := rc.Read(buf)
-		if numBytes == 0 {
-			continue
-		}
-		if err == io.EOF {
-			fmt.Printf("logs for %s ended\n", containerName)
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("error in copy information from podLogs to buf: %w", err)
-		}
-
-		fmt.Print(string(buf[:numBytes]))
+	logs, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 	}
+	fmt.Print(string(logs))
+	// TODO: stream the logs as they come. For this we need to figure out when to
+	// start and when to stop streaming.
+	// for {
+	// 	buf := make([]byte, 100)
+
+	// 	numBytes, err := rc.Read(buf)
+	// 	if numBytes == 0 {
+	// 		continue
+	// 	}
+	// 	if err == io.EOF {
+	// 		fmt.Printf("logs for %s ended\n", containerName)
+	// 		break
+	// 	}
+	// 	if err != nil {
+	// 		return fmt.Errorf("error in copy information from podLogs to buf: %w", err)
+	// 	}
+
+	// 	fmt.Print(string(buf[:numBytes]))
+	// }
 	return nil
 }

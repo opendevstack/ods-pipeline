@@ -135,7 +135,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
 
-	go WaitForTaskRunDone(
+	go waitForTaskRunDone(
 		context.TODO(),
 		t,
 		testOpts.Clients.TektonClientSet,
