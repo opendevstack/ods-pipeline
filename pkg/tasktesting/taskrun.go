@@ -136,6 +136,7 @@ func waitForTaskRunDone(
 				if tr.IsDone() {
 					done <- true
 					close(done)
+					return
 				}
 			}
 
