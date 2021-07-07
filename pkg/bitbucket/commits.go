@@ -115,8 +115,8 @@ type CommitListParams struct {
 func (c *Client) CommitList(projectKey string, repositorySlug string, params CommitListParams) (*CommitPage, error) {
 
 	q := url.Values{}
-	q.Add("api_key", "key_from_environment_or_flag")
-	q.Add("another_thing", "foo & bar")
+	q.Add("since", params.Since)
+	q.Add("until", params.Until)
 
 	urlPath := fmt.Sprintf(
 		"/rest/api/1.0/projects/%s/repos/%s/commits?%s",
