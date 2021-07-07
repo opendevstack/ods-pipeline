@@ -2,6 +2,7 @@ package tasktesting
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -84,24 +85,32 @@ func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, nam
 
 type conditionFn func(*tekton.TaskRun) bool
 
-func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration, podEventsDone <-chan bool) *tekton.TaskRun {
+func WaitForTaskRunDone(
+	ctx context.Context,
+	t *testing.T,
+	c pipelineclientset.Interface,
+	name, ns string,
+	timeout time.Duration,
+	errs chan error,
+	done chan bool) {
 
 	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Seconds(), name, ns)
 
 	t.Helper()
 
 	// Do a first quick check before setting the watch
-	tr := getTr(ctx, t, c, name, ns)
-	if cond(tr) {
-		return tr
-	}
+	// tr := getTr(ctx, t, c, name, ns)
+	// if tr.IsDone() {
+	// 	return tr, nil
+	// }
 
 	w, err := c.TektonV1beta1().TaskRuns(ns).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      name,
 		Namespace: ns,
 	}))
 	if err != nil {
-		t.Errorf("error watching taskrun: %s", err)
+		errs <- fmt.Errorf("error watching taskrun: %s", err)
+		return
 	}
 
 	// Setup a timeout channel
@@ -119,21 +128,21 @@ func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Int
 		case ev := <-w.ResultChan():
 			if ev.Object != nil {
 				tr := ev.Object.(*tekton.TaskRun)
-				if cond(tr) {
-					return tr
+				if tr.IsDone() {
+					done <- true
+					close(done)
 				}
 			}
 
-		case done := <-podEventsDone:
-			if done {
-				log.Println("-----------------------------------------------")
-				log.Printf("Won't display more pod events as all pod's containers are now ready.")
-			} else {
-				t.Fatal("Stopping test execution due to a failure in the pod's events")
+		case err := <-errs:
+			if err != nil {
+				errs <- fmt.Errorf("Stopping test execution due to a failure in the pod's events: %w", err)
+				return
 			}
 
 		case <-timeoutChan:
-			t.Fatal("time out")
+			errs <- errors.New("time out")
+			return
 		}
 	}
 }

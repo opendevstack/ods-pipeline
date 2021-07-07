@@ -1,7 +1,7 @@
 package tasktesting
 
 import (
-	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -12,8 +12,15 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func WaitForTaskRunPod(t *testing.T, c *kubernetes.Clientset, taskRunName, namespace string) *v1.Pod {
-	fmt.Println("waiting for pod related to taskrun", taskRunName)
+func waitForTaskRunPod(
+	t *testing.T,
+	c *kubernetes.Clientset,
+	taskRunName,
+	namespace string,
+	errs chan error,
+	taskRunDone chan bool,
+	podAdded chan *v1.Pod) {
+	log.Printf("Waiting for pod related to TaskRun %s to be added to the cluster\n", taskRunName)
 	stop := make(chan struct{})
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(c, time.Second*30)
@@ -28,9 +35,8 @@ func WaitForTaskRunPod(t *testing.T, c *kubernetes.Clientset, taskRunName, names
 				pod := obj.(*v1.Pod)
 				if strings.HasPrefix(pod.Name, taskRunName) {
 					taskRunPod = pod
-					fmt.Println("found pod", pod.Name)
+					log.Printf("TaskRun %s added pod %s to the cluster", taskRunName, pod.Name)
 					stop <- struct{}{}
-					//WatchPodEvents(t, c, pod.Name, namespace, podEventsDone)
 				}
 
 			},
@@ -40,7 +46,14 @@ func WaitForTaskRunPod(t *testing.T, c *kubernetes.Clientset, taskRunName, names
 	kubeInformerFactory.Start(stop)
 
 	for {
-		<-stop
-		return taskRunPod
+		select {
+		case err := <-errs:
+			errs <- err
+			return
+		case <-taskRunDone:
+			return
+		case <-stop:
+			podAdded <- taskRunPod
+		}
 	}
 }
