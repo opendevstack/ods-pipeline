@@ -135,19 +135,19 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
 
+	ctx, cancel := context.WithTimeout(context.TODO(), testOpts.Timeout)
 	go waitForTaskRunDone(
-		context.TODO(),
+		ctx,
 		t,
 		testOpts.Clients.TektonClientSet,
 		tr.Name,
 		testOpts.Namespace,
-		testOpts.Timeout,
 		errs,
 		taskRunDone,
 	)
 
 	go waitForTaskRunPod(
-		t,
+		ctx,
 		testOpts.Clients.KubernetesClientSet,
 		tr.Name,
 		testOpts.Namespace,
@@ -160,20 +160,22 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		select {
 		case err := <-errs:
 			if err != nil {
+				cancel()
 				return nil, err
 			}
 
 		case pod := <-podAdded:
 			if pod != nil {
 				go getEventsAndLogsOfPod(
+					ctx,
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					errs,
-					taskRunDone,
 				)
 			}
 
 		case <-taskRunDone:
+			cancel()
 			tr := getTr(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, tr.Namespace)
 			return tr, nil
 		}

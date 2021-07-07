@@ -16,25 +16,25 @@ import (
 // and streams logs for each container once ready. It stops if there are any
 // sends on the errs or taskRunDone channels.
 func getEventsAndLogsOfPod(
+	ctx context.Context,
 	c kubernetes.Interface,
 	pod *corev1.Pod,
-	errs chan error,
-	taskRunDone chan bool) {
+	errs chan error) {
 	quitEvents := make(chan bool)
 	podName := pod.Name
 	podNamespace := pod.Namespace
 
 	go watchPodEvents(
+		ctx,
 		c,
 		podName,
 		podNamespace,
 		quitEvents,
 		errs,
-		taskRunDone,
 	)
 
 	for _, container := range pod.Spec.Containers {
-		err := streamContainerLogs(c, podNamespace, podName, container.Name, errs, taskRunDone)
+		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name)
 		if err != nil {
 			fmt.Println("failure while getting container logs")
 			errs <- err
@@ -46,29 +46,28 @@ func getEventsAndLogsOfPod(
 }
 
 // waitForContainerReady waits until the container is "Ready" for up to 5 minutes.
+// TODO: Make this watch the pod.
+// When the container is not waiting anymore, start logs. when thas has been done
+// once, then in the next loop if the state is terminated, we stop the logs.
+// when logs have been stopped, do not block anymore and go to next container.
 func waitForContainerReady(
+	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string,
-	errs chan error,
-	taskRunDone chan bool) error {
+	podNamespace, podName, containerName string) error {
 	ticker := time.NewTicker(2 * time.Second)
 	deadline := time.Now().Add(5 * time.Minute)
 	for {
-		select {
-		case <-taskRunDone:
-			return nil
-		case err := <-errs:
-			return err
-		case <-ticker.C:
-			if time.Now().After(deadline) {
-				return fmt.Errorf("timed out waiting for container %s to become ready", containerName)
-			}
-			p, err := c.CoreV1().Pods(podNamespace).Get(context.Background(), podName, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("could not get pod %s in namespace %s: %w", podName, podNamespace, err)
-			}
-			for _, cs := range p.Status.ContainerStatuses {
-				if cs.Name == containerName && cs.Ready {
+		<-ticker.C
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out waiting for container %s to become ready", containerName)
+		}
+		p, err := c.CoreV1().Pods(podNamespace).Get(context.Background(), podName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("could not get pod %s in namespace %s: %w", podName, podNamespace, err)
+		}
+		for _, cs := range p.Status.ContainerStatuses {
+			if cs.Name == containerName {
+				if cs.State.Running != nil || cs.State.Terminated != nil {
 					log.Printf("Container %s is ready", containerName)
 					return nil
 				}
@@ -79,13 +78,12 @@ func waitForContainerReady(
 
 // streamContainerLogs waits for container to be ready, then streams the logs.
 func streamContainerLogs(
+	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string,
-	errs chan error,
-	taskRunDone chan bool) error {
+	podNamespace, podName, containerName string) error {
 	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
 
-	err := waitForContainerReady(c, podNamespace, podName, containerName, errs, taskRunDone)
+	err := waitForContainerReady(ctx, c, podNamespace, podName, containerName)
 	if err != nil {
 		return err
 	}
@@ -105,7 +103,7 @@ func streamContainerLogs(
 	if err != nil {
 		return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 	}
-	fmt.Print(string(logs))
+	fmt.Println(string(logs))
 	// TODO: stream the logs as they come. For this we need to figure out when to
 	// start and when to stop streaming.
 	// for {

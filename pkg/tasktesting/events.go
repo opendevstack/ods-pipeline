@@ -12,11 +12,11 @@ import (
 )
 
 func watchPodEvents(
+	ctx context.Context,
 	c kubernetes.Interface,
 	podName, namespace string,
 	stop chan bool,
-	errs chan error,
-	taskRunDone chan bool) {
+	errs chan error) {
 
 	log.Printf("Watching events for pod %s in namespace %s", podName, namespace)
 
@@ -44,11 +44,7 @@ func watchPodEvents(
 				}
 			}
 		case <-stop:
-		case <-taskRunDone:
 			fmt.Println("quit watching events as no more are expected")
-			return
-		case err := <-errs:
-			errs <- err
 			return
 		}
 	}

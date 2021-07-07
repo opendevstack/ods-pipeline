@@ -2,7 +2,6 @@ package tasktesting
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -88,18 +87,17 @@ func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, nam
 	return tr
 }
 
-type conditionFn func(*tekton.TaskRun) bool
-
 func waitForTaskRunDone(
 	ctx context.Context,
 	t *testing.T,
 	c pipelineclientset.Interface,
 	name, ns string,
-	timeout time.Duration,
 	errs chan error,
 	done chan bool) {
 
-	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Seconds(), name, ns)
+	deadline, _ := ctx.Deadline()
+	timeout := time.Until(deadline)
+	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Round(time.Second).Seconds(), name, ns)
 
 	t.Helper()
 
@@ -118,43 +116,22 @@ func waitForTaskRunDone(
 		return
 	}
 
-	// Setup a timeout channel
-	timeoutChan := make(chan struct{})
-	go func() {
-		time.Sleep(timeout)
-		timeoutChan <- struct{}{}
-	}()
-
-	// Wait for the TaskRun to be done or time out,
-	// or a failure in the pod's events,
-	// or the pod's containers to be ready
+	// Wait for the TaskRun to be done
 	for {
-		select {
-		case ev := <-w.ResultChan():
-			if ev.Object != nil {
-				tr := ev.Object.(*tekton.TaskRun)
-				if tr.IsDone() {
-					done <- true
-					close(done)
-					return
-				}
-			}
-
-		case err := <-errs:
-			if err != nil {
-				errs <- fmt.Errorf("stopping test execution due to a failure in the pod's events: %w", err)
+		ev := <-w.ResultChan()
+		if ev.Object != nil {
+			tr := ev.Object.(*tekton.TaskRun)
+			if tr.IsDone() {
+				done <- true
+				close(done)
 				return
 			}
-
-		case <-timeoutChan:
-			errs <- errors.New("time out")
-			return
 		}
 	}
 }
 
 func waitForTaskRunPod(
-	t *testing.T,
+	ctx context.Context,
 	c *kubernetes.Clientset,
 	taskRunName,
 	namespace string,
