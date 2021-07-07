@@ -142,7 +142,7 @@ func waitForTaskRunDone(
 
 		case err := <-errs:
 			if err != nil {
-				errs <- fmt.Errorf("Stopping test execution due to a failure in the pod's events: %w", err)
+				errs <- fmt.Errorf("stopping test execution due to a failure in the pod's events: %w", err)
 				return
 			}
 
@@ -195,6 +195,7 @@ func waitForTaskRunPod(
 			return
 		case <-stop:
 			podAdded <- taskRunPod
+			return
 		}
 	}
 }
