@@ -93,7 +93,7 @@ func waitForTaskRunDone(
 	c pipelineclientset.Interface,
 	name, ns string,
 	errs chan error,
-	done chan bool) {
+	done chan *tekton.TaskRun) {
 
 	deadline, _ := ctx.Deadline()
 	timeout := time.Until(deadline)
@@ -117,7 +117,7 @@ func waitForTaskRunDone(
 			tr, ok := ev.Object.(*tekton.TaskRun)
 			if ok {
 				if tr.IsDone() {
-					done <- true
+					done <- tr
 					close(done)
 					return
 				}
@@ -132,8 +132,6 @@ func waitForTaskRunPod(
 	c *kubernetes.Clientset,
 	taskRunName,
 	namespace string,
-	errs chan error,
-	taskRunDone chan bool,
 	podAdded chan *v1.Pod) {
 	log.Printf("Waiting for pod related to TaskRun %s to be added to the cluster\n", taskRunName)
 	stop := make(chan struct{})
@@ -160,16 +158,6 @@ func waitForTaskRunPod(
 	defer close(stop)
 	kubeInformerFactory.Start(stop)
 
-	for {
-		select {
-		case err := <-errs:
-			errs <- err
-			return
-		case <-taskRunDone:
-			return
-		case <-stop:
-			podAdded <- taskRunPod
-			return
-		}
-	}
+	<-stop
+	podAdded <- taskRunPod
 }

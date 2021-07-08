@@ -131,7 +131,7 @@ func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 }
 
 func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, error) {
-	taskRunDone := make(chan bool)
+	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
 
@@ -151,8 +151,6 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		testOpts.Clients.KubernetesClientSet,
 		tr.Name,
 		testOpts.Namespace,
-		errs,
-		taskRunDone,
 		podAdded,
 	)
 
@@ -174,9 +172,8 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 				)
 			}
 
-		case <-taskRunDone:
+		case tr := <-taskRunDone:
 			cancel()
-			tr := getTr(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, tr.Namespace)
 			return tr, nil
 		}
 	}

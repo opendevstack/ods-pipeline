@@ -16,7 +16,7 @@ import (
 
 // getEventsAndLogsOfPod streams events of the pod until all containers are ready,
 // and streams logs for each container once ready. It stops if there are any
-// sends on the errs or taskRunDone channels.
+// sends on the errs channels or if the passed context is cancelled.
 func getEventsAndLogsOfPod(
 	ctx context.Context,
 	c kubernetes.Interface,
@@ -86,7 +86,7 @@ func streamContainerLogs(
 					}
 				}
 				if containerState != "waiting" && cs.State.Terminated != nil {
-					// read reminder of the logstream
+					// read reminder of the log stream
 					logs, err := ioutil.ReadAll(logStream)
 					if err != nil {
 						return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
