@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
@@ -109,10 +108,8 @@ func main() {
 
 	// Set Bitbucket build status to "in progress"
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *bitbucketAccessTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *bitbucketURLFlag,
+		APIToken: *bitbucketAccessTokenFlag,
+		BaseURL:  *bitbucketURLFlag,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",

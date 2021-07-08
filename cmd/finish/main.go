@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/nexus"
@@ -32,10 +31,8 @@ func main() {
 
 	// Set Bitbucket build status
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *bitbucketAccessTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *bitbucketURLFlag,
+		APIToken: *bitbucketAccessTokenFlag,
+		BaseURL:  *bitbucketURLFlag,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",

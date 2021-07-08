@@ -35,7 +35,7 @@ func NewClient(clientConfig *ClientConfig) *Client {
 	if clientConfig.Timeout > 0 {
 		httpClient.Timeout = clientConfig.Timeout
 	} else {
-		httpClient.Timeout = 5 * time.Second
+		httpClient.Timeout = 20 * time.Second
 	}
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}

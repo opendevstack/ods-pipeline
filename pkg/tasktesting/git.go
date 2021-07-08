@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
@@ -159,11 +158,9 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	}
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    5 * time.Second,
-		APIToken:   bbToken,
-		MaxRetries: 2,
-		BaseURL:    bbURL,
-		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
+		APIToken: bbToken,
+		BaseURL:  bbURL,
+		Logger:   &logging.LeveledLogger{Level: logging.LevelDebug},
 	})
 
 	proj := bitbucket.Project{Key: projectKey}
