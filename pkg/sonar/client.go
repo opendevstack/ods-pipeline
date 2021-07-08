@@ -30,7 +30,12 @@ type ClientConfig struct {
 func NewClient(clientConfig *ClientConfig) *Client {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 10 * time.Second}
+		httpClient = &http.Client{}
+	}
+	if clientConfig.Timeout > 0 {
+		httpClient.Timeout = clientConfig.Timeout
+	} else {
+		httpClient.Timeout = 5 * time.Second
 	}
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}

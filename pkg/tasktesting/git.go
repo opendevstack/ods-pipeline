@@ -159,7 +159,7 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	}
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
+		Timeout:    5 * time.Second,
 		APIToken:   bbToken,
 		MaxRetries: 2,
 		BaseURL:    bbURL,
