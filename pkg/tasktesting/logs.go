@@ -39,7 +39,7 @@ func getEventsAndLogsOfPod(
 	for _, container := range pod.Spec.Containers {
 		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name)
 		if err != nil {
-			fmt.Println("failure while getting container logs")
+			fmt.Printf("failure while getting container logs: %s", err)
 			errs <- err
 			return
 		}
@@ -70,7 +70,7 @@ func streamContainerLogs(
 		select {
 		case ev := <-w.ResultChan():
 			if cs, ok := containerFromEvent(ev, podName, containerName); ok {
-				if cs.State.Running != nil || cs.State.Terminated != nil {
+				if cs.State.Running != nil {
 					if containerState == "waiting" {
 						log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
 						req := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
@@ -84,6 +84,7 @@ func streamContainerLogs(
 						logStream = ls
 						defer logStream.Close()
 					}
+					containerState = "running"
 				}
 				if containerState != "waiting" && cs.State.Terminated != nil {
 					// read reminder of the log stream
@@ -93,11 +94,6 @@ func streamContainerLogs(
 					}
 					fmt.Println(string(logs))
 					return nil
-				}
-				if cs.State.Running != nil {
-					containerState = "running"
-				} else if cs.State.Terminated != nil {
-					containerState = "terminated"
 				}
 			}
 
