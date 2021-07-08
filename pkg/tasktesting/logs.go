@@ -77,7 +77,7 @@ func streamContainerLogs(
 							Follow:    true,
 							Container: containerName,
 						})
-						ls, err := req.Stream(ctx)
+						ls, err := req.Stream(context.Background())
 						if err != nil {
 							return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 						}
