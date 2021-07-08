@@ -44,7 +44,6 @@ func watchPodEvents(
 				}
 			}
 		case <-stop:
-			fmt.Println("quit watching events as no more are expected")
 			return
 		}
 	}

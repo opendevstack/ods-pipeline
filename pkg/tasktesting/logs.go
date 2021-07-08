@@ -3,12 +3,14 @@ package tasktesting
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -33,6 +35,7 @@ func getEventsAndLogsOfPod(
 		errs,
 	)
 
+	watchingEvents := true
 	for _, container := range pod.Spec.Containers {
 		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name)
 		if err != nil {
@@ -40,88 +43,99 @@ func getEventsAndLogsOfPod(
 			errs <- err
 			return
 		}
-	}
-	fmt.Println("done with the logs, quitting events")
-	quitEvents <- true
-}
-
-// waitForContainerReady waits until the container is "Ready" for up to 5 minutes.
-// TODO: Make this watch the pod.
-// When the container is not waiting anymore, start logs. when thas has been done
-// once, then in the next loop if the state is terminated, we stop the logs.
-// when logs have been stopped, do not block anymore and go to next container.
-func waitForContainerReady(
-	ctx context.Context,
-	c kubernetes.Interface,
-	podNamespace, podName, containerName string) error {
-	ticker := time.NewTicker(2 * time.Second)
-	deadline := time.Now().Add(5 * time.Minute)
-	for {
-		<-ticker.C
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timed out waiting for container %s to become ready", containerName)
-		}
-		p, err := c.CoreV1().Pods(podNamespace).Get(context.Background(), podName, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("could not get pod %s in namespace %s: %w", podName, podNamespace, err)
-		}
-		for _, cs := range p.Status.ContainerStatuses {
-			if cs.Name == containerName {
-				if cs.State.Running != nil || cs.State.Terminated != nil {
-					log.Printf("Container %s is ready", containerName)
-					return nil
-				}
-			}
+		if watchingEvents {
+			quitEvents <- true
+			watchingEvents = false
 		}
 	}
 }
 
-// streamContainerLogs waits for container to be ready, then streams the logs.
 func streamContainerLogs(
 	ctx context.Context,
 	c kubernetes.Interface,
 	podNamespace, podName, containerName string) error {
 	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
 
-	err := waitForContainerReady(ctx, c, podNamespace, podName, containerName)
+	w, err := c.CoreV1().Pods(podNamespace).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
+		Name:      podName,
+		Namespace: podNamespace,
+	}))
 	if err != nil {
-		return err
+		return fmt.Errorf("error watching pods: %s", err)
 	}
 
-	log.Printf(">>> Container %s:\n", containerName)
-	req := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
-		Follow:    true,
-		Container: containerName,
-	})
-	rc, err := req.Stream(context.Background())
-	if err != nil {
-		return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
+	containerState := "waiting"
+	var logStream io.ReadCloser
+	for {
+		select {
+		case ev := <-w.ResultChan():
+			if cs, ok := containerFromEvent(ev, podName, containerName); ok {
+				if cs.State.Running != nil || cs.State.Terminated != nil {
+					if containerState == "waiting" {
+						log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
+						req := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
+							Follow:    true,
+							Container: containerName,
+						})
+						ls, err := req.Stream(ctx)
+						if err != nil {
+							return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
+						}
+						logStream = ls
+						defer logStream.Close()
+					}
+				}
+				if containerState != "waiting" && cs.State.Terminated != nil {
+					// read reminder of the logstream
+					logs, err := ioutil.ReadAll(logStream)
+					if err != nil {
+						return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
+					}
+					fmt.Println(string(logs))
+					return nil
+				}
+				if cs.State.Running != nil {
+					containerState = "running"
+				} else if cs.State.Terminated != nil {
+					containerState = "terminated"
+				}
+			}
+
+		default:
+			// if log stream has started, read some bytes
+			if logStream != nil {
+				buf := make([]byte, 100)
+
+				numBytes, err := logStream.Read(buf)
+				if numBytes == 0 {
+					continue
+				}
+				if err == io.EOF {
+					log.Printf("logs for %s ended\n", containerName)
+					return nil
+				}
+				if err != nil {
+					return fmt.Errorf("error in reading log stream: %w", err)
+				}
+
+				fmt.Print(string(buf[:numBytes]))
+			} else {
+				time.Sleep(time.Second)
+			}
+		}
 	}
-	defer rc.Close()
+}
 
-	logs, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
+func containerFromEvent(ev watch.Event, podName, containerName string) (corev1.ContainerStatus, bool) {
+	if ev.Object != nil {
+		p, ok := ev.Object.(*corev1.Pod)
+		if ok && p.Name == podName {
+			for _, cs := range p.Status.ContainerStatuses {
+				if cs.Name == containerName {
+					return cs, true
+				}
+			}
+		}
 	}
-	fmt.Println(string(logs))
-	// TODO: stream the logs as they come. For this we need to figure out when to
-	// start and when to stop streaming.
-	// for {
-	// 	buf := make([]byte, 100)
-
-	// 	numBytes, err := rc.Read(buf)
-	// 	if numBytes == 0 {
-	// 		continue
-	// 	}
-	// 	if err == io.EOF {
-	// 		fmt.Printf("logs for %s ended\n", containerName)
-	// 		break
-	// 	}
-	// 	if err != nil {
-	// 		return fmt.Errorf("error in copy information from podLogs to buf: %w", err)
-	// 	}
-
-	// 	fmt.Print(string(buf[:numBytes]))
-	// }
-	return nil
+	return corev1.ContainerStatus{}, false
 }

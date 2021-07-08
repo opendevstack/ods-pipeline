@@ -101,12 +101,6 @@ func waitForTaskRunDone(
 
 	t.Helper()
 
-	// Do a first quick check before setting the watch
-	// tr := getTr(ctx, t, c, name, ns)
-	// if tr.IsDone() {
-	// 	return tr, nil
-	// }
-
 	w, err := c.TektonV1beta1().TaskRuns(ns).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      name,
 		Namespace: ns,
@@ -120,12 +114,15 @@ func waitForTaskRunDone(
 	for {
 		ev := <-w.ResultChan()
 		if ev.Object != nil {
-			tr := ev.Object.(*tekton.TaskRun)
-			if tr.IsDone() {
-				done <- true
-				close(done)
-				return
+			tr, ok := ev.Object.(*tekton.TaskRun)
+			if ok {
+				if tr.IsDone() {
+					done <- true
+					close(done)
+					return
+				}
 			}
+
 		}
 	}
 }
