@@ -18,8 +18,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"go-image":    "localhost:5000/ods/ods-python:latest",
-						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
+						"python-image": "localhost:5000/ods/ods-python:latest",
+						"sonar-image":  "localhost:5000/ods/ods-sonar:latest",
 					}
 				},
 				WantRunSuccess: true,
