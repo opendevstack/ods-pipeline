@@ -17,7 +17,7 @@ spec:
       dockerfilePath: build/package/Dockerfile.webhook-interceptor
       from:
         kind: DockerImage
-        name: 'registry.redhat.io/ubi8/ubi-micro'
+        name: 'registry.redhat.io/ubi8/ubi-minimal'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
