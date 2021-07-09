@@ -1,0 +1,12 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ods-go-toolset
+spec:
+  output:
+    to:
+      name: 'ods-go-toolset:0.1.0'
+  source:
+    git:
+      uri: https://github.com/opendevstack/ods-pipeline
+      ref: master # v0.1.0

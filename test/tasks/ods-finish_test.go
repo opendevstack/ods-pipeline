@@ -25,7 +25,7 @@ const (
 
 func TestTaskODSFinish(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-finish-v0-1-0",
+		"ods-finish",
 		map[string]tasktesting.TestCase{
 			"set bitbucket build status to failed": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
@@ -33,7 +33,6 @@ func TestTaskODSFinish(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 					ctxt.Params = map[string]string{
-						"image":                  "localhost:5000/ods/ods-finish:latest",
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "None",
 					}
@@ -49,7 +48,6 @@ func TestTaskODSFinish(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 					ctxt.Params = map[string]string{
-						"image":                  "localhost:5000/ods/ods-finish:latest",
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "Succeeded",
 					}

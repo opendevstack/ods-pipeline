@@ -1,14 +1,10 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-finish-v0-1-0
+  name: ods-finish
 spec:
   description: Finishes the pipeline
   params:
-    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-finish:latest"
-      description: The location of the image.
-      name: image
-      type: string
     - description: name of pipeline run
       name: pipeline-run-name
       type: string
@@ -16,9 +12,8 @@ spec:
       description: The aggregate status of all the tasks.
       default: "None"
   steps:
-    - # default image: build/package/Dockerfile.finish
-      image: $(params.image)
-      name: ods-finish
+    - name: ods-finish
+      image: build/package/Dockerfile.finish
       env:
         - name: NEXUS_URL
           valueFrom:

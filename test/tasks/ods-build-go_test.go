@@ -12,7 +12,7 @@ import (
 
 func TestTaskODSBuildGo(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-go-v0-1-0",
+		"ods-build-go",
 		map[string]tasktesting.TestCase{
 			"task should build go app": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
@@ -20,10 +20,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"go-image":    "localhost:5000/ods/ods-go-toolset:latest",
-						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
-						"go-os":       runtime.GOOS,
-						"go-arch":     runtime.GOARCH,
+						"go-os":   runtime.GOOS,
+						"go-arch": runtime.GOARCH,
 					}
 				},
 				WantRunSuccess: true,
@@ -62,10 +60,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"go-image":    "localhost:5000/ods/ods-go-toolset:latest",
-						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
-						"go-os":       runtime.GOOS,
-						"go-arch":     runtime.GOARCH,
+						"go-os":   runtime.GOOS,
+						"go-arch": runtime.GOARCH,
 					}
 				},
 				WantRunSuccess: false,

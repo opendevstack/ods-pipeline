@@ -70,6 +70,9 @@ func RenderTasks(sourceDir, targetDir string) {
 		files = f
 	}
 	for _, f := range files {
+		if f.Name() == "kustomization.yaml" {
+			continue
+		}
 		t := parseTask(filepath.Join(sourceDir, f.Name()))
 		task := Task{
 			Name:        t.Name,
@@ -87,7 +90,7 @@ func RenderTasks(sourceDir, targetDir string) {
 				Description: p.Description,
 			})
 		}
-		targetFilename := strings.Replace(f.Name(), ".yml", ".adoc", -1)
+		targetFilename := strings.Replace(f.Name(), ".yaml", ".adoc", -1)
 		target := filepath.Join(targetDir, targetFilename)
 		renderTemplate(targetDir, target, task)
 	}

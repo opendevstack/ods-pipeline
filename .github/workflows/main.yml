@@ -54,7 +54,7 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0      
+          fetch-depth: 0
       -
         name: Setup KinD cluster with internal registry
         working-directory: scripts
@@ -111,28 +111,25 @@ jobs:
         id: install
       -
         name: Install Tekton Core Components
-        run: ./scripts/install-tekton-pipelines.sh
+        run: make install-tekton-pipelines
       - 
         name: Show disk space
         run: df -h
       -
         name: Spin up Bitbucket container
-        working-directory: scripts
-        run: ./run-bitbucket.sh
+        run: make run-bitbucket
       -
         name: Spin up Nexus container
-        working-directory: scripts
-        run: ./run-nexus.sh
+        run: make run-nexus
       -
         name: Spin up SonarQube container
-        working-directory: scripts
-        run: ./run-sonarqube.sh
+        run: make run-sonarqube
       - 
         name: Show disk space
         run: df -h
       -
         name: Install cluster tasks
-        run: kubectl create -f deploy/tasks
+        run: make deploy-ods-tasks-kind
       -
         name: Setup Go 1.16
         uses: actions/setup-go@v2

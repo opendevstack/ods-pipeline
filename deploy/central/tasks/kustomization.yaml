@@ -1,0 +1,6 @@
+resources:
+- task-ods-build-go.yaml
+- task-ods-build-image.yaml
+- task-ods-deploy-helm.yaml
+- task-ods-finish.yaml
+- task-ods-start.yaml

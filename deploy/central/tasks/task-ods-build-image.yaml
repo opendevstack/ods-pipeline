@@ -1,17 +1,13 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-image-v0-1-0
+  name: ods-build-image
 spec:
   description: Package application into container image.
   params:
     - default: ''
       description: Reference of the image stream buildah will produce.
       name: image-stream
-      type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:latest'
-      description: The location of the buildah builder image.
-      name: builder-image
       type: string
     - default: vfs
       description: Set buildah storage driver
@@ -51,9 +47,8 @@ spec:
     - description: Digest of the image just built.
       name: image-digest
   steps:
-    - # default image: build/package/Dockerfile.buildah
-      image: $(params.builder-image)
-      name: build-image
+    - name: build-image
+      image: build/package/Dockerfile.buildah
       resources: {}
       script: |
 
@@ -86,9 +81,8 @@ spec:
         - mountPath: /var/lib/containers
           name: varlibcontainers
       workingDir: $(workspaces.source.path)
-    - # default image: build/package/Dockerfile.buildah
-      image: $(params.builder-image)
-      name: push-image
+    - name: push-image
+      image: build/package/Dockerfile.buildah
       resources: {}
       script: |
         odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
