@@ -9,4 +9,4 @@ spec:
   source:
     git:
       uri: https://github.com/opendevstack/ods-pipeline
-      ref: v0.1.0
+      ref: master # v0.1.0
