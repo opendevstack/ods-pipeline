@@ -123,6 +123,8 @@ start-bc-ods:
 	oc start-build ods-start
 	oc process -f deploy/build-configs/bc-ods-finish.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
 	oc start-build ods-finish
+	oc process -f deploy/build-configs/bc-ods-build-python.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-finish
 .PHONY: start-bc-ods
 
 ## Apply Tasks ODS manifests

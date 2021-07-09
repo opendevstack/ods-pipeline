@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "finish", "go-toolset", "helm", "sonar", "start", "webhook-interceptor"]
+        image: ["buildah", "finish", "go-toolset", "helm", "sonar", "start", "webhook-interceptor", "python"]
     steps:
       -
         name: Checkout
@@ -101,6 +101,12 @@ jobs:
           docker load --input /tmp/buildx-image-ods-webhook-interceptor/image-ods-webhook-interceptor.tar
           docker push localhost:5000/ods/ods-webhook-interceptor:latest
           docker rmi localhost:5000/ods/ods-webhook-interceptor:latest
+      -
+        name: Push python image
+        run: |
+          docker load --input /tmp/buildx-image-ods-python/image-ods-python.tar
+          docker push localhost:5000/ods/ods-python:latest
+          docker rmi localhost:5000/ods/ods-python:latest          
       -
         name: Delete image tarballs
         run: |
