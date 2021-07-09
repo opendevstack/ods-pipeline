@@ -1,6 +1,6 @@
 To create a technology-specific Task (e.g. python), the following files should be **added**:
 
-- [ ] Dockerfile.python
+- [ ] Dockerfile.python-toolset
 - [ ] build-python.sh - Bash script to carry out the build, linting, testing operations. 
 - [ ] bc-ods-build-python.yml - BuildConfig to generate the ods-build-python image.
 - [ ] is-ods-build-python.yml - Create ImageStream resource in OpenShift.
