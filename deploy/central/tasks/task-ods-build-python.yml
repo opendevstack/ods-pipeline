@@ -5,14 +5,6 @@ metadata:
 spec:
   description: ODS Build Python applications
   params:
-    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-build-python:latest"
-      description: The location of the Python builder image.
-      name: python-image
-      type: string
-    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest"
-      description: The location of the Sonar image.
-      name: sonar-image
-      type: string
     - default: "false"
       description: Whether quality gate needs to pass.
       name: sonar-quality-gate
@@ -22,18 +14,16 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - # default image: build/package/Dockerfile.python-toolset
-      image: $(params.python-image)
-      name: build-python
+    - name: build-python
+      image: build/package/Dockerfile.python-toolset
       resources: {}
       script: |
 
         # build-python is build/package/scripts/build-python.sh.
         build-python
       workingDir: $(workspaces.source.path)
-    - # default image: build/package/Dockerfile.sonar
-      image: $(params.sonar-image)
-      name: scan-with-sonar
+    - name: scan-with-sonar
+      image: build/package/Dockerfile.sonar
       env:
         - name: SONAR_URL
           valueFrom:
