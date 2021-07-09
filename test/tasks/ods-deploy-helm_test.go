@@ -18,16 +18,13 @@ import (
 
 func TestTaskODSDeployHelm(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-deploy-helm-v0-1-0",
+		"ods-deploy-helm",
 		map[string]tasktesting.TestCase{
 			"should upgrade Helm chart": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"image": "localhost:5000/ods/ods-helm:latest",
-					}
 
 					err := createODSYML(wsDir, ctxt.Namespace)
 					if err != nil {

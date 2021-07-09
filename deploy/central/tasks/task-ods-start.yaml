@@ -1,15 +1,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-start-v0-1-0
+  name: ods-start
 spec:
   description: >-
     The task will clone a repo from the provided url into the workspace.
   params:
-    - default: 'image-registry.openshift-image-registry.svc:5000/ods/ods-start:latest'
-      description: The location of the image.
-      name: image
-      type: string
     - description: git url to clone
       name: url
       type: string
@@ -85,9 +81,8 @@ spec:
     - description: The precise URL that was fetched by this Task
       name: url
   steps:
-    - # default image: build/package/Dockerfile.start
-      image: $(params.image)
-      name: clone
+    - name: ods-start
+      image: build/package/Dockerfile.start
       env:
         - name: BITBUCKET_URL
           valueFrom:

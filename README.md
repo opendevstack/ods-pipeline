@@ -18,7 +18,7 @@ The most important pieces are:
 
 * **build/package**: `Dockerfile`s for the various container images in use. These images back Tekton tasks or the webhook interceptor.
 * **cmd**: Main executables. These are installed (in different combinations) into the contaier images.
-* **deploy**: OpenShift resource definitions, such as `BuildConfig`/`ImageStream` or `ClusterTask` resources. The tasks typically make use of the images built via `build/package` and their `script` calls one or more executables built from the `cmd` folder.
+* **deploy**: OpenShift/K8S resource definitions, such as `BuildConfig`/`ImageStream` or `ClusterTask` resources. The tasks typically make use of the images built via `build/package` and their `script` calls one or more executables built from the `cmd` folder.
 * **docs**: Design and user documents
 * **internal/interceptor**: Implementation of Tekton trigger interceptor - it creates and modifies the actual Tekton pipelines on the fly based on the config found in the repository triggering the webhook request.
 * **pkg**: Packages shared by the various main executables and the interceptor. These packages are the public interface and may be used outside this repo (e.g. by custom tasks). Example of packages are `bitbucket` (a Bitbucket Server API v1.0 client), `sonar` (a SonarQube client exposing API endpoints, scanner CLI and report CLI in one unified interface), `nexus` (a Nexus client for uploading, downloading and searching for assets) and `config` (the ODS configuration specification).

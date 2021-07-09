@@ -13,7 +13,7 @@ import (
 
 func TestTaskODSBuildImage(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-image-v0-1-0",
+		"ods-build-image",
 		map[string]tasktesting.TestCase{
 			"task should build image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
@@ -21,9 +21,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"registry":      "kind-registry.kind:5000",
-						"builder-image": "localhost:5000/ods/ods-buildah:latest",
-						"tls-verify":    "false",
+						"registry":   "kind-registry.kind:5000",
+						"tls-verify": "false",
 					}
 				},
 				WantRunSuccess: true,
@@ -40,9 +39,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					buildAndPushImage(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"registry":      "kind-registry.kind:5000",
-						"builder-image": "localhost:5000/ods/ods-buildah:latest",
-						"tls-verify":    "false",
+						"registry":   "kind-registry.kind:5000",
+						"tls-verify": "false",
 					}
 				},
 				WantRunSuccess: true,
