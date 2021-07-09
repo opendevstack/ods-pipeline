@@ -1,14 +1,13 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-go-v0-1-0
+  name: ods-build-go
 spec:
-  description: ODS Build Go applications
+  description: |
+    Builds Go applications.
+    The Go source code is checked against gofmt and linted with golangci-lint before it is built.
+    Tests are executed and xUnit and coverage reports generated.
   params:
-    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-build-go:latest"
-      description: The location of the Go builder image.
-      name: go-image
-      type: string
     - default: "false"
       description: Whether to enable CGO.
       name: enable-cgo
@@ -21,10 +20,6 @@ spec:
       description: GOARCH variable.
       name: go-arch
       type: string
-    - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-sonar:latest"
-      description: The location of the Sonar image.
-      name: sonar-image
-      type: string
     - default: "false"
       description: Whether quality gate needs to pass.
       name: sonar-quality-gate
@@ -34,9 +29,8 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - # default image: build/package/Dockerfile.go-toolset
-      image: $(params.go-image)
-      name: build-go-binary
+    - name: build-go-binary
+      image: build/package/Dockerfile.go-toolset
       resources: {}
       script: |
 
@@ -46,9 +40,8 @@ spec:
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch)
       workingDir: $(workspaces.source.path)
-    - # default image: build/package/Dockerfile.sonar
-      image: $(params.sonar-image)
-      name: scan-with-sonar
+    - name: scan-with-sonar
+      image: build/package/Dockerfile.sonar
       env:
         - name: SONAR_URL
           valueFrom:

@@ -28,6 +28,8 @@ type Environment struct {
 type Target struct {
 	// Name of the environment to deploy to. This is an arbitary name.
 	Name string `json:"name"`
+	// Kind of the environment to deploy to. One of "dev", "qa", "prod".
+	Kind string `json:"kind"`
 	// API URL of the target cluster.
 	URL string `json:"url"`
 	// Hostname of the target registry. If not given, the registy of the source

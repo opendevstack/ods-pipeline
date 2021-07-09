@@ -8,5 +8,5 @@ import (
 )
 
 func main() {
-	docs.RenderTasks(filepath.Join(projectpath.Root, "deploy/tasks"), filepath.Join(projectpath.Root, "docs/tasks"))
+	docs.RenderTasks(filepath.Join(projectpath.Root, "deploy/central/tasks"), filepath.Join(projectpath.Root, "docs/tasks"))
 }
