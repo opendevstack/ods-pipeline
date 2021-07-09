@@ -50,9 +50,6 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"image": "localhost:5000/ods/ods-helm:latest",
-					}
 
 					err := createODSYML(wsDir, ctxt.Namespace)
 					if err != nil {
