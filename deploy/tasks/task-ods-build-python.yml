@@ -22,7 +22,7 @@ spec:
       name: sonar-skip
       type: string
   steps:
-    - # default image: build/package/Dockerfile.python
+    - # default image: build/package/Dockerfile.python-toolset
       image: $(params.python-image)
       name: build-python
       resources: {}

@@ -25,7 +25,7 @@ objects:
       strategy:
         type: Docker
         dockerStrategy:
-          dockerfilePath: build/package/Dockerfile.python
+          dockerfilePath: build/package/Dockerfile.python-toolset
           from:
             kind: DockerImage
             name: "registry.redhat.io/ubi8"
