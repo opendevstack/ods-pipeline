@@ -48,7 +48,7 @@ spec:
   steps:
     - # default image: build/package/Dockerfile.helm
       image: $(params.image)
-      name: upgrade-from-repo
+      name: helm-upgrade-from-repo
       resources: {}
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.

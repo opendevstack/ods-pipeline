@@ -3,7 +3,10 @@ kind: ClusterTask
 metadata:
   name: ods-build-go-v0-1-0
 spec:
-  description: ODS Build Go applications
+  description: |
+    Builds Go applications.
+    The Go source code is checked against gofmt and linted with golangci-lint before it is built.
+    Tests are executed and xUnit and coverage reports generated.
   params:
     - default: "image-registry.openshift-image-registry.svc:5000/ods/ods-build-go:latest"
       description: The location of the Go builder image.
