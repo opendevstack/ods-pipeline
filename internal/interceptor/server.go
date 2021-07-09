@@ -61,10 +61,8 @@ func init() {
 // NewServer returns a new server.
 func NewServer(client Client, namespace, project, repoBase, token string) *Server {
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   token,
-		MaxRetries: 2,
-		BaseURL:    strings.TrimSuffix(repoBase, "/scm"),
+		APIToken: token,
+		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
 	return &Server{
 		OpenShiftClient: client,

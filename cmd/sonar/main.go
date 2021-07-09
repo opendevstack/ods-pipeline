@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
@@ -26,9 +25,7 @@ func main() {
 	}
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
-		Timeout:       10 * time.Second,
 		APIToken:      *sonarAuthTokenFlag,
-		MaxRetries:    2,
 		BaseURL:       *sonarqubeURLFlag,
 		ServerEdition: *sonarqubeEditionFlag,
 	})

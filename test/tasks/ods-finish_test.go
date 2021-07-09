@@ -67,10 +67,8 @@ func TestTaskODSFinish(t *testing.T) {
 func checkBuildStatus(t *testing.T, gitCommit, wantBuildStatus string) {
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   bitbucketAPIToken,
-		MaxRetries: 2,
-		BaseURL:    bitbucketURLFlag,
+		APIToken: bitbucketAPIToken,
+		BaseURL:  bitbucketURLFlag,
 	})
 
 	buildStatus, err := bitbucketClient.BuildStatusGet(gitCommit)

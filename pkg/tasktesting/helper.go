@@ -174,6 +174,10 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 }
 
 func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {
+	if tr == nil {
+		logf("error: no taskrun")
+		return
+	}
 	logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
 	logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
 	logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
