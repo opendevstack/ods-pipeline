@@ -36,6 +36,30 @@ endif
 	cd scripts && ./install-cd-namespace-resources.sh -n $(namespace)
 .PHONY: install-cd-namespace
 
+## Apply ODS BuildConfig, ImageStream and ClusterTask manifests (OpenShift only)
+install-ods-central:
+ifeq ($(strip $(namespace)),)
+	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
+	@exit 1
+endif
+	cd deploy/central && kubectl -n $(namespace) apply -k openshift
+.PHONY: install-ods-central
+
+## Start builds for each ODS BuildConfig (OpenShift only)
+start-ods-central-builds: deploy-ods-central
+	oc start-build ods-build-go
+	oc start-build ods-buildah
+	oc start-build ods-helm
+	oc start-build ods-sonar
+	oc start-build ods-start
+	oc start-build ods-finish
+.PHONY: start-ods-central-builds
+
+## Apply ODS ClusterTask manifests in KinD
+deploy-ods-tasks-kind:
+	cd deploy/central && kubectl apply -k kind
+.PHONY: deploy-ods-tasks-kind
+
 ## Run Bitbucket server (using timebomb license, in "kind" network).
 run-bitbucket:
 	cd scripts && ./run-bitbucket.sh
@@ -89,7 +113,7 @@ test-pkg:
 	go test -v ./pkg/...
 .PHONY: test-pkg
 
-## Run testsuite.
+## Run testsuite of Tekton tasks.
 test-tasks:
 	go test -v -count=1 ./test/tasks/...
 .PHONY: test-tasks
@@ -98,26 +122,6 @@ test-tasks:
 clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
-
-## Apply ODS BuildConfig, ImageStream and ClusterTask manifests (OpenShift only)
-deploy-ods-central:
-	cd deploy/central && kubectl apply -k openshift
-.PHONY: deploy-ods-central
-
-## Start builds for each ODS BuildConfig (OpenShift only)
-start-ods-central-builds: deploy-ods-central
-	oc start-build ods-build-go
-	oc start-build ods-buildah
-	oc start-build ods-helm
-	oc start-build ods-sonar
-	oc start-build ods-start
-	oc start-build ods-finish
-.PHONY: start-ods-central-builds
-
-## Apply ODS ClusterTask manifests in KinD
-deploy-ods-tasks-kind:
-	cd deploy/central && kubectl apply -k kind
-.PHONY: deploy-ods-tasks-kind
 
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
