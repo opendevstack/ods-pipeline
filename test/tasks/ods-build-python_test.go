@@ -10,17 +10,13 @@ import (
 
 func TestTaskODSBuildPython(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-python-v0-1-0",
+		"ods-build-python",
 		map[string]tasktesting.TestCase{
 			"task should build python flask app": {
 				WorkspaceDirMapping: map[string]string{"source": "python-flask-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"python-image": "localhost:5000/ods/ods-python-toolset:latest",
-						"sonar-image":  "localhost:5000/ods/ods-sonar:latest",
-					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
