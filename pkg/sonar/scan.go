@@ -6,20 +6,13 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 )
 
-type BitbucketServer struct {
-	URL        string
-	Token      string
-	Project    string
-	Repository string
-}
-
 type PullRequest struct {
 	Key    string
 	Branch string
 	Base   string
 }
 
-func (c *Client) Scan(project, branch, commit string, bb *BitbucketServer, pr *PullRequest) (string, error) {
+func (c *Client) Scan(project, branch, commit string, pr *PullRequest) (string, error) {
 	scannerParams := []string{
 		fmt.Sprintf("-Dsonar.host.url=%s", c.clientConfig.BaseURL),
 		"-Dsonar.scm.provider=git",
@@ -30,14 +23,9 @@ func (c *Client) Scan(project, branch, commit string, bb *BitbucketServer, pr *P
 	if c.clientConfig.Debug {
 		scannerParams = append(scannerParams, "-X")
 	}
-	if bb != nil && pr != nil {
+	if pr != nil {
 		scannerParams = append(
 			scannerParams,
-			"-Dsonar.pullrequest.provider=Bitbucket Server",
-			fmt.Sprintf("-Dsonar.pullrequest.bitbucketserver.serverUrl=%s", bb.URL),
-			fmt.Sprintf("-Dsonar.pullrequest.bitbucketserver.token.secured=%s", bb.Token),
-			fmt.Sprintf("-Dsonar.pullrequest.bitbucketserver.project=%s", bb.Project),
-			fmt.Sprintf("-Dsonar.pullrequest.bitbucketserver.repository=%s", bb.Repository),
 			fmt.Sprintf("-Dsonar.pullrequest.key=%s", pr.Key),
 			fmt.Sprintf("-Dsonar.pullrequest.branch=%s", pr.Branch),
 			fmt.Sprintf("-Dsonar.pullrequest.base=%s", pr.Base),
