@@ -2,16 +2,20 @@
 
 To create a technology-specific Task (e.g. python), the following files should be **added**:
 
-- [ ] Dockerfile.python-toolset
-- [ ] build-python.sh - Bash script to carry out the build, linting, testing operations. 
-- [ ] bc-ods-build-python.yml - BuildConfig to generate the ods-build-python image.
-- [ ] is-ods-build-python.yml - Create ImageStream resource in OpenShift.
-- [ ] task-ods-build-python.yml - The Tekton Task.
-- [ ] ods-build-python_test.go - A test file to test the behavior of the Tekton Task.
-- [ ] python-flask-sample-app/** - Sample app.
+- [ ] build/package/Dockerfile.python-toolset - The Dockerfile with the dependencies and runtime.
+- [ ] build/package/scripts/build-python.sh - Bash script to carry out the build, linting, testing operations. 
+- [ ] deploy/central/images/bc-ods-build-python.yml - BuildConfig to generate the ods-build-python image.
+- [ ] deploy/central/images/is-ods-build-python.yml - Create ImageStream resource in OpenShift.
+- [ ] deploy/central/images/kustomization.yaml - Add `bc-ods-build-python.yaml` and `is-ods-build-python.yaml` to the resources.
+- [ ] deploy/central/tasks/kustomization.yaml - Add `task-ods-build-python.yaml` to the resources.
+- [ ] deploy/central/tasks/task-ods-build-python.yml - The Tekton Task.
+- [ ] docs/tasks/task-ods-build-python.adoc - To describe the task and its parameters.
+- [ ] test/tasks/ods-build-python_test.go - A test file to test the behavior of the Tekton Task.
+- [ ] test/testdata/workspaces/python-flask-sample-app - Sample application that will be used to test the Task.
 
 The following files should be **updated**:
 
 - [ ] .github/workflows/main.yml - Build ods python image and push it to the internal registry.
-- [ ] `build-and-push-images.sh` - Extend it to include the new ods python image.
-- [ ] Makefile - Extend it to start BuildConfig.
+- [ ] build/package/scripts/build-python.sh` - Extend it to include the new ods python image.
+
+// TODO: Elaborate more on how to test a Task
