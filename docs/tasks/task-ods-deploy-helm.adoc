@@ -2,7 +2,33 @@
 
 = ods-deploy-helm
 
-These tasks will install / upgrade a helm chart into your Kubernetes / OpenShift Cluster using Helm
+Deploy Helm charts.
+
+This tasks will install / upgrade a Helm chart into your Kubernetes /
+OpenShift cluster using Helm.
+
+Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is performed
+before an upgrade is attempted. `helm-secrets` can be used to encrypt sensitive
+values in the underlying Git repository.
+
+Based on the target environment, some values files are added automatically to the
+invocation of the `helm` command if they are present:
+
+- `values.<STAGE>.yaml`: a values file named after the stage (`dev`, `qa` or `prod`) of the target environment.
+- `values.<ENVIRONMENT>.yaml`: a values file named after the name of the target environment.
+
+Further, the task adds a `values.generated.yaml` file. This values file
+contains only one value, `gitCommitSha`, which contains the Git commit SHA being built. It is
+provided by the task as this value cannot be known by value file authors in advance. Use this
+value to set e.g. the image tags in `Deployment` resources, like this: `{{ .Values.gitCommitSha }}`.
+
+Before the Helm chart is applied, it is packaged, setting the `appVersion` to the Git commit SHA
+and the `version` to the externally provided version, if any. If `version` is not given, the value
+in `Chart.yaml` is used as-is.
+
+If the pipeline runs for a repository defining subrepos in its `ods.yml` file, then any charts in
+those subrepos are packaged as well, and added as dependencies to the top-most chart under `charts/`.
+
 
 == Parameters
 
@@ -13,41 +39,26 @@ These tasks will install / upgrade a helm chart into your Kubernetes / OpenShift
 
 | chart-dir
 | ./chart
-| Specify chart dir that will be deployed
+| Helm chart directory that will be deployed
 
 
 | release-name
 | 
-| The helm release name
-
-
-| namespace
-| 
-| The namespace of the pipeline
+| The Helm release name. If empty, the release name is simply the name of the chart.
 
 
 | environment
 | dev
-| The environment to deploy to
+| The name of the environment to deploy to
 
 
 | target
 | default
-| The target to deploy into
-
-
-| project
-| 
-| Project
-
-
-| repository
-| 
-| Repository
+| The name of the target to deploy into
 
 
 | overwrite-values
 | 
-| Specify the values you want to overwrite, comma separated: autoscaling.enabled=true,replicas=1
+| Specify the values you want to overwrite, comma separated. Example: `autoscaling.enabled=true,replicas=1`
 
 |===

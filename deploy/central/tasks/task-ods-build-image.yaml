@@ -3,51 +3,59 @@ kind: ClusterTask
 metadata:
   name: ods-build-image
 spec:
-  description: Package application into container image.
+  description: |
+    Packages applications into container images using buildah.
+
+    buildah builds a container image from the `docker-dir` directory using the
+    provided `dockerfile`.
+
+    By default, the image is named after the component and pushed into the image
+    stream located in the namespace of the pipeline run.
   params:
-    - default: ''
-      description: Reference of the image stream buildah will produce.
-      name: image-stream
+    # Order of parameters matters as the "registry" param is replaced by a kustomization patch.
+    - name: registry
+      description: Image registry to push image to.
       type: string
-    - default: vfs
-      description: Set buildah storage driver
-      name: storage-driver
+      default: 'image-registry.openshift-image-registry.svc:5000'
+    - name: image-stream
+      description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
       type: string
-    - default: ./Dockerfile
-      description: Path to the Dockerfile to build.
-      name: dockerfile
+      default: ''
+    - name: storage-driver
+      description: Set buildah storage driver.
       type: string
-    - default: docker
+      default: vfs
+    - name: dockerfile
+      description: Path to the Dockerfile to build (relative to `docker-dir`).
+      type: string
+      default: ./Dockerfile
+    - name: docker-dir
       description: Path to the directory to use as Docker context.
-      name: context-dir
       type: string
-    - default: 'true'
+      default: docker
+    - name: tls-verify
       description: >-
         Verify the TLS on the registry endpoint (for push/pull to a non-TLS
-        registry)
-      name: tls-verify
+        registry).
       type: string
-    - default: oci
-      description: 'The format of the built container, oci or docker'
-      name: format
+      default: 'true'
+    - name: format
+      description: 'The format of the built container, `oci` or `docker`.'
       type: string
-    - default: ''
+      default: oci
+    - name: buildah-build-extra-args
       description: Extra parameters passed for the build command when building images.
-      name: buildah-build-extra-args
       type: string
-    - default: ''
+      default: ''
+    - name: buildah-push-extra-args
       description: Extra parameters passed for the push command when pushing images.
-      name: buildah-push-extra-args
       type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000'
-      description: Image registry
-      name: registry
-      type: string
+      default: ''
   results:
     - description: Digest of the image just built.
       name: image-digest
   steps:
-    - name: build-image
+    - name: build-and-push-image
       image: build/package/Dockerfile.buildah
       resources: {}
       script: |
@@ -61,7 +69,10 @@ spec:
 
         set +e
 
-        imageDigest=$(skopeo inspect --format '{{.Digest}}' --tls-verify=$(params.tls-verify) docker://kind-registry.kind:5000/$odsNamespace/$imageStream:$odsGitCommit)
+        imageDigest=$(skopeo inspect \
+          --format '{{.Digest}}' \
+          --tls-verify=$(params.tls-verify) \
+          docker://$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit)
 
         if [ "$?" = "0" ]; then
           set -e
@@ -75,28 +86,8 @@ spec:
           buildah --storage-driver=$(params.storage-driver) bud \
             $(params.buildah-build-extra-args) --format=$(params.format) \
             --tls-verify=$(params.tls-verify) --no-cache \
-            -f $(params.dockerfile) -t $image $(params.context-dir)
-        fi
-      volumeMounts:
-        - mountPath: /var/lib/containers
-          name: varlibcontainers
-      workingDir: $(workspaces.source.path)
-    - name: push-image
-      image: build/package/Dockerfile.buildah
-      resources: {}
-      script: |
-        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+            -f $(params.dockerfile) -t $image $(params.docker-dir)
 
-        odsGitCommit=$(cat .ods/git-commit-sha)
-
-        imageStreamParam="$(params.image-stream)"
-        imageStream=${imageStreamParam:-$(cat .ods/component)}
-
-        image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
-
-        if cat /tekton/results/image-digest &> /dev/null; then
-          echo "Image exists already"
-        else
           buildah --storage-driver=$(params.storage-driver) push \
             $(params.buildah-push-extra-args) --tls-verify=$(params.tls-verify) \
             --digestfile $(workspaces.source.path)/image-digest $image \

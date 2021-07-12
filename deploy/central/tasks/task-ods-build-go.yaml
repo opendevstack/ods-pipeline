@@ -4,30 +4,53 @@ metadata:
   name: ods-build-go
 spec:
   description: |
-    Builds Go applications.
-    The Go source code is checked against gofmt and linted with golangci-lint before it is built.
-    Tests are executed and xUnit and coverage reports generated.
+    Builds Go (module) applications.
+
+    The following steps are executed:
+
+    - check proper formatting against gofmt
+    - linting using golangci-lint
+    - build (using `go-os` and `go-arch` parameters)
+    - test execution
+
+    Tests exclude the vendor directory. Test results are converted into xUnit format.
+
+    Both xUnit report and coverage report are placed into .ods/artifacts.
+
+    After tests ran successfully, the application source code is scanned by SonarQube.
+    When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
+    is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
+    The SonarQube scan will include parameters to perform a pull request analysis if
+    there is an open pull request for the branch being built. Pull request decoration
+    in Bitbucket is done automatically by SonarQube provided the ALM integration is setup
+    properly in SonarQube.
   params:
-    - default: "false"
-      description: Whether to enable CGO.
-      name: enable-cgo
+    - name: enable-cgo
+      description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
       type: string
-    - default: ""
-      description: GOOS variable.
-      name: go-os
+      default: "false"
+    - name: go-os
+      description: "`GOOS` variable (the execution operating system such as `linux`, `windows`)."
       type: string
-    - default: ""
-      description: GOARCH variable.
-      name: go-arch
+      default: "linux"
+    - name: go-arch
+      description: "`GOARCH` variable (the execution architecture such as `arm`, `amd64`)."
       type: string
-    - default: "false"
-      description: Whether quality gate needs to pass.
-      name: sonar-quality-gate
+      default: "amd64"
+    - name: docker-dir
+      description: >-
+        Path to the directory to use as Docker context.
+        The resulting Go binary will be copied there.
       type: string
-    - default: "false"
-      description: Whether to skip the SonarQube analysis or not.
-      name: sonar-skip
+      default: docker
+    - name: sonar-quality-gate
+      description: Whether the SonarQube quality gate needs to pass for the task to succeed.
       type: string
+      default: "false"
+    - name: sonar-skip
+      description: Whether to skip SonarQube analysis or not.
+      type: string
+      default: "false"
   steps:
     - name: build-go-binary
       image: build/package/Dockerfile.go-toolset
@@ -38,7 +61,8 @@ spec:
         build-go \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
-          --go-arch=$(params.go-arch)
+          --go-arch=$(params.go-arch) \
+          --docker-dir=$(params.docker-dir)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar
