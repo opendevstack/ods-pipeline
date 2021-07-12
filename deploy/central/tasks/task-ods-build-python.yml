@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-python-v0-1-0
+  name: ods-build-python
 spec:
   description: ODS Build Python applications
   params:
