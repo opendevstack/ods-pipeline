@@ -55,7 +55,7 @@ if [ -s go-lint-report.txt ]; then
 fi
 
 echo "Build"
-go build -o docker/app
+go build -gcflags "all=-trimpath=$(pwd)" -o docker/app
 
 echo "Test"
 mkdir -p build/test-results/test
