@@ -44,15 +44,3 @@ func (c *Client) Scan(project, branch, commit string, pr *PullRequest) (string, 
 	}
 	return string(stdout), nil
 }
-
-//     def getQualityGateJSON(String projectKey) {
-//         withSonarServerConfig { hostUrl, authToken ->
-//             script.sh(
-//                 label: 'Get status of quality gate',
-//                 script: "curl -s -u ${authToken}: ${hostUrl}/api/qualitygates/project_status?projectKey=${projectKey}",
-//                 returnStdout: true
-//             )
-//         }
-//     }
-
-// }
