@@ -4,4 +4,4 @@ resources:
   - task-ods-deploy-helm.yaml
   - task-ods-finish.yaml
   - task-ods-start.yaml
-  - task-ods-build-python
+  - task-ods-build-python.yaml
