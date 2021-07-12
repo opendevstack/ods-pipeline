@@ -3,13 +3,20 @@ kind: ClusterTask
 metadata:
   name: ods-finish
 spec:
-  description: Finishes the pipeline
+  description: |
+    Finishes the pipeline run.
+
+    This task uploads generated artifacts to Nexus, and sets the build status of
+    the built commit in Bitbucket according to the aggregate task status.
+
+    This task is automatically added to any pipeline run in as a `finally` task
+    by the webhook interceptor and cannot be customized by users at this point.
   params:
-    - description: name of pipeline run
-      name: pipeline-run-name
+    - name: pipeline-run-name
+      description: Name of pipeline run.
       type: string
     - name: aggregate-tasks-status
-      description: The aggregate status of all the tasks.
+      description: Aggregate status of all tasks.
       default: "None"
   steps:
     - name: ods-finish
