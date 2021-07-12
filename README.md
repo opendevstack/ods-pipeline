@@ -28,6 +28,7 @@ The most important pieces are:
 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
+* [Tasks](/docs/tasks)
 
 ## Development & Running tests
 
