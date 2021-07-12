@@ -21,7 +21,8 @@ func getEventsAndLogsOfPod(
 	ctx context.Context,
 	c kubernetes.Interface,
 	pod *corev1.Pod,
-	errs chan error) {
+	errs chan error,
+	podLogs chan []byte) {
 	quitEvents := make(chan bool)
 	podName := pod.Name
 	podNamespace := pod.Namespace
@@ -37,7 +38,7 @@ func getEventsAndLogsOfPod(
 
 	watchingEvents := true
 	for _, container := range pod.Spec.Containers {
-		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name)
+		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, podLogs)
 		if err != nil {
 			fmt.Printf("failure while getting container logs: %s", err)
 			errs <- err
@@ -53,7 +54,8 @@ func getEventsAndLogsOfPod(
 func streamContainerLogs(
 	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string) error {
+	podNamespace, podName, containerName string,
+	podLogs chan []byte) error {
 	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
 
 	w, err := c.CoreV1().Pods(podNamespace).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
@@ -114,7 +116,9 @@ func streamContainerLogs(
 					return fmt.Errorf("error in reading log stream: %w", err)
 				}
 
-				fmt.Print(string(buf[:numBytes]))
+				b := buf[:numBytes]
+				podLogs <- b
+				fmt.Print(string(b))
 			} else {
 				time.Sleep(time.Second)
 			}
