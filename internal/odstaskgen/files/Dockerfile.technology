@@ -1,0 +1,10 @@
+# Update this file accordingly to your needs.
+
+FROM registry.access.redhat.com/ubi8 AS builder
+
+# Build instructions
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+# Runtime instructions
+

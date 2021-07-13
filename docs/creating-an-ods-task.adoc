@@ -1,5 +1,28 @@
 = Creating an ODS Task
 
+Creating a technology-specific ODS Task consists of a few steps like creating a Dockerfile, OpenShift resources, the Tekton Task itself and more.
+
+Run `make generate-ods-task-files technology=<technology>` to create the minimum number of necessary files to get started.
+
+For instance, if you were to generate a dotnet ODS Task, you could easily get started running:
+
+```
+$ make generate-ods-task-files technology=dotnet
+go run cmd/ods-task-generator/main.go dotnet
+Creating file deploy/central/images/bc-ods-build-dotnet.yml
+Creating file deploy/central/images/is-ods-build-dotnet.yml
+Creating file deploy/central/tasks/task-ods-build-dotnet.yml
+Creating file build/package/Dockerfile.dotnet
+Creating file build/package/scripts/build-dotnet.sh
+Appending file deploy/central/images/kustomization.yaml
+Appending file deploy/central/tasks/kustomization.yaml
+You're all set to write contribute with your technofmty-specific ODS Task.
+Now to create a sample application that will be used to test the Task under test/testdata/workspaces/.
+Once you're done implementing and testing your Task, review the checklist in docs/creating-an-ods-task.adoc to make sure you're not missing anything.
+```
+
+== Checklist
+
 To create a technology-specific Task (e.g. python), the following files should be **added**:
 
 - [ ] build/package/Dockerfile.python-toolset - The Dockerfile with the dependencies and runtime.
@@ -16,6 +39,5 @@ To create a technology-specific Task (e.g. python), the following files should b
 The following files should be **updated**:
 
 - [ ] .github/workflows/main.yml - Build ods python image and push it to the internal registry.
-- [ ] build/package/scripts/build-python.sh` - Extend it to include the new ods python image.
 
 // TODO: Elaborate more on how to test a Task
