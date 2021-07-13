@@ -1,0 +1,42 @@
+bases:
+- ../images
+- ../tasks
+patchesStrategicMerge:
+- patches/bc-ods-buildah.yaml
+- patches/bc-ods-finish.yaml
+- patches/bc-ods-go-toolset.yaml
+- patches/bc-ods-helm.yaml
+- patches/bc-ods-sonar.yaml
+- patches/bc-ods-start.yaml
+- patches/bc-ods-webhook-interceptor.yaml
+patchesJson6902:
+- target:
+    group: tekton.dev
+    version: v1beta1
+    kind: ClusterTask
+    name: ods-build-go
+  path: patches/task-ods-build-go.yaml
+- target:
+    group: tekton.dev
+    version: v1beta1
+    kind: ClusterTask
+    name: ods-build-image
+  path: patches/task-ods-build-image.yaml
+- target:
+    group: tekton.dev
+    version: v1beta1
+    kind: ClusterTask
+    name: ods-deploy-helm
+  path: patches/task-ods-deploy-helm.yaml
+- target:
+    group: tekton.dev
+    version: v1beta1
+    kind: ClusterTask
+    name: ods-finish
+  path: patches/task-ods-finish.yaml
+- target:
+    group: tekton.dev
+    version: v1beta1
+    kind: ClusterTask
+    name: ods-start
+  path: patches/task-ods-start.yaml

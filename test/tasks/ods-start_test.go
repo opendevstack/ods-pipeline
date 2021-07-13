@@ -8,7 +8,7 @@ import (
 
 func TestTaskODSStart(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-start-v0-1-0",
+		"ods-start",
 		map[string]tasktesting.TestCase{
 			"clones the app": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
@@ -16,7 +16,6 @@ func TestTaskODSStart(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 					ctxt.Params = map[string]string{
-						"image":             "localhost:5000/ods/ods-start:latest",
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
 						"project":           ctxt.ODS.Project,
