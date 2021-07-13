@@ -17,13 +17,17 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"no-proxy":    "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,localhost,boehringer.com,eu.boehringer.com,am.boehringer.com,biscrum.com",
+						"https-proxy": "http://appaccess-zscaler.boehringer.com:80",
+					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFiles := []string{
-						"docker/app/src/main.py",
+						"docker/app/main.py",
 						"docker/app/requirements.txt",
 						"report.xml",
 						"coverage.xml",

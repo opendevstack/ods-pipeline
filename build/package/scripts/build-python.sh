@@ -1,10 +1,13 @@
 #!/bin/bash
 set -eu
 
+NO_PROXY="${NO_PROXY:-}"
+HTTPS_PROXY="${HTTPS_PROXY:-}"
+
 printf "\nInstall test requirements\n" 
 . /opt/venv/bin/activate
 pip install --upgrade pip
-pip install -r tests_requirements.txt
+pip install --proxy $HTTPS_PROXY -r tests_requirements.txt
 pip check
 
 printf "\nExecute linting\n"
