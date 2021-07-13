@@ -19,3 +19,7 @@ cp report.xml .ods/artifacts/xunit-reports/report.xml
 
 mkdir -p .ods/artifacts/code-coverage
 cp coverage.xml .ods/artifacts/code-coverage/coverage.xml
+
+printf "\nCopy src and requirements.txt to docker/app\n"
+cp -rv src docker/app
+cp -rv requirements.txt docker/app

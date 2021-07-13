@@ -23,11 +23,10 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFiles := []string{
-						// "docker/Dockerfile",
-						// "docker/app",
-						// "build/test-results/test/report.xml",
+						"docker/app/src/main.py",
+						"docker/app/requirements.txt",
+						"report.xml",
 						"coverage.xml",
-						"test-results.txt",
 						".ods/artifacts/xunit-reports/report.xml",
 						".ods/artifacts/code-coverage/coverage.xml",
 						".ods/artifacts/sonarqube-analysis/analysis-report.md",
