@@ -18,8 +18,10 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"no-proxy":    "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,localhost,boehringer.com,eu.boehringer.com,am.boehringer.com,biscrum.com",
-						"https-proxy": "http://appaccess-zscaler.boehringer.com:80",
+						// configure the following lines if you need to run the test within your corporate network
+						// this is needed to allow pip to download pkgs
+						// "no-proxy":    "",
+						// "https-proxy": "",
 					}
 				},
 				WantRunSuccess: true,
