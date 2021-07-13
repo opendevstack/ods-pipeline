@@ -30,7 +30,6 @@ func TestTaskODSBuildPython(t *testing.T) {
 						"test-results.txt",
 						".ods/artifacts/xunit-reports/report.xml",
 						".ods/artifacts/code-coverage/coverage.xml",
-						".ods/artifacts/code-coverage/.coverage",
 						".ods/artifacts/sonarqube-analysis/analysis-report.md",
 						".ods/artifacts/sonarqube-analysis/issues-report.csv",
 					}

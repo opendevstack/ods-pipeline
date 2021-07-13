@@ -1,6 +1,6 @@
 -r ./requirements.txt
 
-mypy==0.812
-flake8==3.9.1
+mypy==0.910
+flake8==3.9.2
 pytest==6.2.4
-pytest-cov==2.11.1
+pytest-cov==2.12.1
