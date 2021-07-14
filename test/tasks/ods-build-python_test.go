@@ -49,7 +49,6 @@ func TestTaskODSBuildPython(t *testing.T) {
 
 					wantContains = strings.ReplaceAll(wantContains, "\t", "")
 					wantContains = strings.ReplaceAll(wantContains, "\n", "")
-					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentContains(t, wsDir, "build/test-results/coverage/coverage.xml", wantContains)
 				},
