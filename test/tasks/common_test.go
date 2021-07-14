@@ -57,6 +57,7 @@ func getFileContentLean(filename string) (string, error) {
 
 	contentStr := strings.ReplaceAll(string(content), "\t", "")
 	contentStr = strings.ReplaceAll(contentStr, "\n", "")
+	contentStr = strings.ReplaceAll(contentStr, " ", "")
 
 	return contentStr, nil
 }
