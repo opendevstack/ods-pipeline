@@ -13,14 +13,6 @@ spec:
       description: Whether to skip the SonarQube analysis or not.
       name: sonar-skip
       type: string
-    - default: ""
-      description: HTTPS proxy holds the hostname or IP address of your proxy server.
-      name: https-proxy
-      type: string
-    - default: ""
-      description: No Proxy
-      name: no-proxy
-      type: string
   steps:
     - name: build-python
       image: build/package/Dockerfile.python-toolset
@@ -28,10 +20,6 @@ spec:
       script: |
 
         # build-python is build/package/scripts/build-python.sh.
-        export NO_PROXY=$(params.no-proxy)
-        export no_proxy=$(params.no-proxy)
-        export HTTPS_PROXY=$(params.https-proxy)
-        export https_proxy=$(params.https-proxy)
         build-python
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
@@ -47,16 +35,6 @@ spec:
             secretKeyRef:
               key: password
               name: ods-sonar-auth
-        - name: BITBUCKET_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: ods-bitbucket
-        - name: BITBUCKET_ACCESS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: ods-bitbucket-auth
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then

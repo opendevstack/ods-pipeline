@@ -1,13 +1,13 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: ods-build-python
+  name: ods-python-toolset
 spec:
   nodeSelector: null
   output:
     to:
       kind: ImageStreamTag
-      name: "ods-build-python:latest"
+      name: "ods-python-toolset:latest"
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5

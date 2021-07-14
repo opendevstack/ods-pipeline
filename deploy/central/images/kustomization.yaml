@@ -6,7 +6,7 @@ resources:
   - bc-ods-sonar.yaml
   - bc-ods-start.yaml
   - bc-ods-webhook-interceptor.yaml
-  - bc-ods-build-python.yaml
+  - bc-ods-python-toolset.yaml
   - is-ods-buildah.yaml
   - is-ods-finish.yaml
   - is-ods-go-toolset.yaml
@@ -14,4 +14,4 @@ resources:
   - is-ods-sonar.yaml
   - is-ods-start.yaml
   - is-ods-webhook-interceptor.yaml
-  - is-ods-build-python.yaml
+  - is-ods-python-toolset.yaml

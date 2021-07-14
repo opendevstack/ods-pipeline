@@ -18,12 +18,6 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						// configure the following lines if you need to run the test within your corporate network
-						// this is needed to allow pip to download pkgs
-						// "no-proxy":    "",
-						// "https-proxy": "",
-					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
