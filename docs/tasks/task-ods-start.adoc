@@ -2,7 +2,14 @@
 
 = ods-start
 
-The task will clone a repo from the provided url into the workspace.
+Starts the pipeline run.
+
+This task will clone a repo from the provided url into the workspace, and
+sets the build status of the checked out commit in Bitbucket to "in progress".
+
+This task is automatically added to any pipeline run as the first task
+by the webhook interceptor and cannot be customized by users at this point.
+
 
 == Parameters
 
@@ -13,86 +20,76 @@ The task will clone a repo from the provided url into the workspace.
 
 | url
 | 
-| git url to clone
+| Git URL to clone
 
 
 | git-full-ref
 | 
-| git revision to checkout (branch, tag, sha, ref…)
+| Git revision to checkout (branch, tag, sha, ref, ...)
 
 
 | refspec
 | 
-| (optional) git refspec to fetch before checking out revision
+| (Optional) Git refspec to fetch before checking out revision.
 
 
 | submodules
 | true
-| defines if the resource should initialize and fetch the submodules
+| Defines if the resource should initialize and fetch the submodules.
 
 
 | depth
 | 1
-| performs a shallow clone where only the most recent commit(s) will be fetched
+| Performs a shallow clone where only the most recent commit(s) will be fetched.
 
 
 | ssl-verify
 | true
-| defines if http.sslVerify should be set to true or false in the global git config
-
-
-| delete-existing
-| true
-| clean out the contents of the repo's destination directory (if it already exists) before trying to clone the repo there
+| Defines if http.sslVerify should be set to `true` or `false` in the global Git config.
 
 
 | http-proxy
 | 
-| git HTTP proxy server for non-SSL requests
+| Git HTTP proxy server for non-SSL requests.
 
 
 | https-proxy
 | 
-| git HTTPS proxy server for SSL requests
+| Git HTTPS proxy server for SSL requests.
 
 
 | no-proxy
 | 
-| git no proxy - opt out of proxying HTTP/HTTPS requests
-
-
-| verbose
-| true
-| log the commands used during execution
+| Git no proxy - opt out of proxying HTTP/HTTPS requests.
 
 
 | project
 | 
-| project
+| Name of the project to build. The project is equal to the Bitbucket project of the repository to clone.
 
 
 | component
 | 
-| component
+| Name of the component to build. The component is the repository name without "project" prefix.
 
 
 | repository
 | 
-| repository
+| Name of the Bitbucket repository to clone.
 
 
 | pr-key
 | 
-| pull request key
+| Bitbucket pull request key. Empty if there is no open PR for the specified Git branch.
 
 
 | pr-base
 | 
-| pull request base
+| Bitbucket pull request base branch. Empty if there is no open PR for the specified Git branch.
 
 
 | pipeline-run-name
 | 
-| name of pipeline run
+| Name of pipeline run.
 
 |===
