@@ -31,8 +31,11 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantFiles := []string{
 						"docker/app/main.py",
 						"docker/app/requirements.txt",
-						"report.xml",
+						"build/test-results/test/report.xml",
+						"build/test-results/coverage/.coverage",
+						"build/test-results/coverage/coverage.xml",
 						"coverage.xml",
+						".coverage",
 						".ods/artifacts/xunit-reports/report.xml",
 						".ods/artifacts/code-coverage/coverage.xml",
 						".ods/artifacts/sonarqube-analysis/analysis-report.md",
