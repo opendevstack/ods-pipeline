@@ -2,7 +2,10 @@
 
 = ods-build-go
 
-ODS Build Go applications
+Builds Go applications.
+The Go source code is checked against gofmt and linted with golangci-lint before it is built.
+Tests are executed and xUnit and coverage reports generated.
+
 
 == Parameters
 
