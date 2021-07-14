@@ -2,6 +2,9 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+ARG nexusHost
+ARG nexusAuth
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     PIP_NO_CACHE_DIR=off \
@@ -9,6 +12,13 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
 RUN microdnf install -y python38 tar
+
+RUN if [ ! -z ${nexusHost} ] && [ ! -z ${nexusAuth} ]; \
+    then pip3 config set global.index-url https://${nexusAuth}@${nexusHost}/repository/pypi-all/simple \
+    && pip3 config set global.trusted-host ${nexusHost} \
+    && pip3 config set global.extra-index-url https://pypi.org/simple; \
+    fi; \
+    pip3 config set global.cert /etc/ssl/certs/ca-bundle.crt
 
 WORKDIR /app
 

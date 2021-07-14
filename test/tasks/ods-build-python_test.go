@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,26 +40,16 @@ func TestTaskODSBuildPython(t *testing.T) {
 						}
 					}
 
-					wantContains := `
-					<package name="." line-rate="0.8571" branch-rate="0.5" complexity="0">
-						<classes>
-							<class name="main.py" filename="main.py" complexity="0" line-rate="0.8571" branch-rate="0.5">
-								<methods/>
-								<lines>
-										<line number="2" hits="1"/>
-										<line number="4" hits="1"/>
-										<line number="7" hits="1"/>
-										<line number="8" hits="1"/>
-										<line number="9" hits="1"/>
-										<line number="13" hits="1" branch="true" condition-coverage="50% (1/2)" missing-branches="14"/>
-										<line number="14" hits="0"/>
-								</lines>
-							</class>
-						</classes>
-					</package>`
+					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					wantContains := string(wantContainsBytes)
 
 					wantContains = strings.ReplaceAll(wantContains, "\t", "")
 					wantContains = strings.ReplaceAll(wantContains, "\n", "")
+					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentContains(t, wsDir, "build/test-results/coverage/coverage.xml", wantContains)
 				},
