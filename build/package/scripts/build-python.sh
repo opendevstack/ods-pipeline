@@ -18,11 +18,9 @@ NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 
 if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
     
-    # Encode login credentials
-    NEXUS_USERNAME=$(urlencode "${NEXUS_USERNAME}")
-    NEXUS_PASSWORD=$(urlencode "${NEXUS_PASSWORD}")
-
-    pip3 config set global.index-url https://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_HOST}/repository/pypi-all/simple
+    NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
+    
+    pip3 config set global.index-url https://${NEXUS_AUTH}@${NEXUS_HOST}/repository/pypi-all/simple
     pip3 config set global.trusted-host ${NEXUS_HOST}
     pip3 config set global.extra-index-url https://pypi.org/simple
 fi;
