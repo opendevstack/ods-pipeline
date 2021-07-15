@@ -1,10 +1,27 @@
 #!/bin/bash
 set -eu
 
-#  NEXUS_HOST removes the protocol segment from NEXUS_URL
-NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')  
+urlencode() {
+    local LC_COLLATE=C
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:$i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
+            *) printf '%%%02X' "'$c" ;;
+        esac
+    done
+}
+
+# Remove the protocol segment from NEXUS_URL
+NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 
 if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
+    
+    # Encode login credentials
+    NEXUS_USERNAME=$(urlencode "${NEXUS_USERNAME}")
+    NEXUS_PASSWORD=$(urlencode "${NEXUS_PASSWORD}")
+
     pip3 config set global.index-url https://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_HOST}/repository/pypi-all/simple
     pip3 config set global.trusted-host ${NEXUS_HOST}
     pip3 config set global.extra-index-url https://pypi.org/simple
