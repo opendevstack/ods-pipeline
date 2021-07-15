@@ -18,9 +18,12 @@ npm run test
 # junit 'artifacts/xunit.xml'
 
 #TODO: Copy to .ods/artifacts
+mkdir -p .ods/artifacts/xunit-reports
 cat build/test-results/test/report.xml
 cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
 
+# code coverage
+mkdir -p .ods/artifacts/code-coverage
 cat build/coverage/clover.xml
 cp build/coverage/clover.xml .ods/artifacts/code-coverage/clover.xml
 
