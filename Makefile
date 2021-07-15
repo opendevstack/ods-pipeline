@@ -128,15 +128,6 @@ deploy-ods-tasks:
 	kubectl create -f deploy/tasks
 .PHONY: deploy-ods-tasks
 
-## Generate ODS Task files to get started
-generate-ods-task-files:
-ifeq ($(strip $(technology)),)
-	@echo "Argument 'technology' is required, e.g. make generate-ods-task-files technology=dotnet"
-	@exit 1
-endif
-	go run cmd/ods-task-generator/main.go $(technology)
-.PHONY: generate-ods-task-files
-
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
 help:
