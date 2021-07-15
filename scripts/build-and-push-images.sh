@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 SKIP_BUILD="false"
-IMAGES="buildah finish go-toolset helm sonar start webhook-interceptor"
+IMAGES="buildah finish go-toolset helm sonar start webhook-interceptor python-toolset"
 http_proxy="${http_proxy:-}"
 https_proxy="${https_proxy:-}"
 
