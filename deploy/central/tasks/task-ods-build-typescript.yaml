@@ -1,0 +1,49 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-build-typescript
+spec:
+  description: ODS Build Typescript applications
+  params:
+    - default: "false"
+      description: Whether quality gate needs to pass.
+      name: sonar-quality-gate
+      type: string
+    - default: "false"
+      description: Whether to skip the SonarQube analysis or not.
+      name: sonar-skip
+      type: string
+  steps:
+    - name: build-typescript
+      image: build/package/Dockerfile.typescript-toolset
+      resources: {}
+      script: |
+
+        # build-typescript is build/package/scripts/build-typescript.sh.
+        build-typescript
+      workingDir: $(workspaces.source.path)
+    - name: scan-with-sonar
+      image: build/package/Dockerfile.sonar
+      env:
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-sonar-auth
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          mkdir -p .ods/artifacts/sonarqube-analysis
+          # sonar is built from cmd/sonar/main.go.
+          sonar -quality-gate=$(params.sonar-quality-gate)
+        fi
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

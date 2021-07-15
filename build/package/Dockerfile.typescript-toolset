@@ -1,0 +1,19 @@
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN microdnf -y install nodejs && microdnf clean all
+
+WORKDIR /app
+
+USER root
+
+RUN mkdir -p /.npm && \
+    chown -R 1001:0 /app /.npm && \
+    chmod -R g=u /app /.npm
+
+# Add scripts
+COPY build/package/scripts/build-typescript.sh /usr/local/bin/build-typescript
+RUN chmod +x /usr/local/bin/build-typescript
+
+USER 1001

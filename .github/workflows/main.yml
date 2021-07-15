@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "finish", "go-toolset", "helm", "sonar", "start", "webhook-interceptor", "python-toolset"]
+        image: ["buildah", "finish", "go-toolset", "helm", "sonar", "start", "webhook-interceptor", "python-toolset", "typescript-toolset"]
     steps:
       -
         name: Checkout
@@ -106,7 +106,13 @@ jobs:
         run: |
           docker load --input /tmp/buildx-image-ods-python-toolset/image-ods-python-toolset.tar
           docker push localhost:5000/ods/ods-python-toolset:latest
-          docker rmi localhost:5000/ods/ods-python-toolset:latest          
+          docker rmi localhost:5000/ods/ods-python-toolset:latest
+      -
+        name: Push typescript-toolset image
+        run: |
+          docker load --input /tmp/buildx-image-ods-typescript-toolset/image-ods-typescript-toolset.tar
+          docker push localhost:5000/ods/ods-typescript-toolset:latest
+          docker rmi localhost:5000/ods/ods-typescript-toolset:latest          
       -
         name: Delete image tarballs
         run: |

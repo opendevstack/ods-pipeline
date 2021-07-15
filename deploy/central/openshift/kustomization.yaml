@@ -10,6 +10,7 @@ patchesStrategicMerge:
   - patches/bc-ods-start.yaml
   - patches/bc-ods-webhook-interceptor.yaml
   - patches/bc-ods-python-toolset.yaml
+  - patches/bc-ods-typescript-toolset.yaml
 patchesJson6902:
   - target:
       group: tekton.dev
@@ -47,3 +48,9 @@ patchesJson6902:
       kind: ClusterTask
       name: ods-build-python
     path: patches/task-ods-build-python.yaml
+  - target:
+      group: tekton.dev
+      version: v1beta1
+      kind: ClusterTask
+      name: ods-build-typescript
+    path: patches/task-ods-build-typescript.yaml

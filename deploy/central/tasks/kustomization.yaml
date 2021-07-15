@@ -5,3 +5,4 @@ resources:
   - task-ods-finish.yaml
   - task-ods-start.yaml
   - task-ods-build-python.yaml
+  - task-ods-build-typescript.yaml
