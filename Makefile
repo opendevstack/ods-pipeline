@@ -123,11 +123,6 @@ clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
 
-## Apply Tasks ODS manifests
-deploy-ods-tasks:
-	kubectl create -f deploy/tasks
-.PHONY: deploy-ods-tasks
-
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
 help:
