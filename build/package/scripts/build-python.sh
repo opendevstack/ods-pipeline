@@ -1,6 +1,15 @@
 #!/bin/bash
 set -eu
 
+#  NEXUS_HOST removes the protocol segment from NEXUS_URL
+NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')  
+
+if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
+    pip3 config set global.index-url https://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_HOST}/repository/pypi-all/simple
+    pip3 config set global.trusted-host ${NEXUS_HOST}
+    pip3 config set global.extra-index-url https://pypi.org/simple
+fi;
+
 printf "\nInstall test requirements\n" 
 . /opt/venv/bin/activate
 pip install --upgrade pip
