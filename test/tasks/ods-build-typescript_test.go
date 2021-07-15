@@ -23,12 +23,14 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFiles := []string{
-						"docker/app/main.py",
-						"docker/app/requirements.txt",
 						"build/test-results/test/report.xml",
-						"build/test-results/coverage/coverage.xml",
+						"build/coverage/clover.xml",
+						"build/coverage/coverage-final.json",
+						"build/coverage/lcov.info",
 						".ods/artifacts/xunit-reports/report.xml",
-						".ods/artifacts/code-coverage/coverage.xml",
+						".ods/artifacts/code-coverage/clover.xml",
+						".ods/artifacts/code-coverage/coverage-final.json",
+						".ods/artifacts/code-coverage/lcov.info",
 						".ods/artifacts/sonarqube-analysis/analysis-report.md",
 						".ods/artifacts/sonarqube-analysis/issues-report.csv",
 					}
