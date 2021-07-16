@@ -1,13 +1,18 @@
 package tasks
 
 import (
+	"bufio"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -86,4 +91,71 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 			})
 		})
 	}
+}
+
+func checkSonarQualityGate(t *testing.T, ctxt *pipelinectxt.ODSContext, qualityGateFlag bool, wantQualityGateStatus string) {
+
+	filePath := "../../deploy/cd-namespace/chart/values.generated.yaml"
+	f, err := os.Open(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	APIToken := ""
+	r := bufio.NewReader(f)
+	s, e := Readln(r)
+	for e == nil {
+		if strings.HasPrefix(s, "sonarPassword:") {
+
+			index := strings.Index(s, "'")
+			if index == -1 {
+				t.Fatalf("'sonarPassword' entry is missing in file %s", filePath)
+			}
+
+			APIToken = s[index+1 : len(s)-1]
+			break
+		}
+
+		s, e = Readln(r)
+	}
+
+	sonarClient := sonar.NewClient(&sonar.ClientConfig{
+		APIToken:      APIToken,
+		BaseURL:       "http://localhost:9000", // use localhost instead of sonarqubetest.kind!
+		ServerEdition: "community",
+	})
+
+	if qualityGateFlag {
+		sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)
+		qualityGateResult, err := sonarClient.QualityGateGet(
+			sonar.QualityGateGetParams{Project: sonarProject},
+		)
+		if err != nil || qualityGateResult.ProjectStatus.Status == "UNKNOWN" {
+			t.Log("quality gate unknown")
+			t.Fatal(err)
+		}
+
+		if qualityGateResult.ProjectStatus.Status != wantQualityGateStatus {
+			t.Fatalf("Got: %s, want: %s", qualityGateResult.ProjectStatus.Status, wantQualityGateStatus)
+		}
+
+	}
+
+}
+
+// Readln returns a single line (without the ending \n)
+// from the input buffered reader.
+// An error is returned iff there is an error with the
+// buffered reader.
+func Readln(r *bufio.Reader) (string, error) {
+	var (
+		isPrefix bool  = true
+		err      error = nil
+		line, ln []byte
+	)
+	for isPrefix && err == nil {
+		line, isPrefix, err = r.ReadLine()
+		ln = append(ln, line...)
+	}
+	return string(ln), err
 }

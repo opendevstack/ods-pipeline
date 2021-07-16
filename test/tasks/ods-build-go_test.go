@@ -20,8 +20,9 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"go-os":   runtime.GOOS,
-						"go-arch": runtime.GOARCH,
+						"go-os":              runtime.GOOS,
+						"go-arch":            runtime.GOARCH,
+						"sonar-quality-gate": "true",
 					}
 				},
 				WantRunSuccess: true,
@@ -44,6 +45,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 							t.Fatalf("Want %s, but got nothing", wf)
 						}
 					}
+
+					checkSonarQualityGate(t, ctxt.ODS, true, "OK")
 
 					b, _, err := command.Run(wsDir+"/docker/app", []string{})
 					if err != nil {
