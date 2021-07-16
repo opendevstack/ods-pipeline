@@ -1,6 +1,35 @@
 #!/bin/bash
 set -eu
 
+urlencode() {
+    local LC_COLLATE=C
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:$i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
+            *) printf '%%%02X' "'$c" ;;
+        esac
+    done
+}
+
+# Remove the protocol segment from NEXUS_URL
+NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
+
+if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
+    
+    printf "\nConfiguring npm\n"
+
+    NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
+    
+    npm config set registry=$NEXUS_URL/repository/npmjs/
+    npm config set always-auth=true
+    npm config set _auth=$(echo -n $NEXUS_AUTH | base64)
+    npm config set email=no-reply@opendevstack.org
+    npm config set ca=null
+    npm config set strict-ssl=false
+fi;
+
 printf "\nnpm ci and build\n" 
 npm ci
 npm run build

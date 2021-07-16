@@ -16,6 +16,22 @@ spec:
   steps:
     - name: build-typescript
       image: build/package/Dockerfile.typescript-toolset
+      env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
       resources: {}
       script: |
 
