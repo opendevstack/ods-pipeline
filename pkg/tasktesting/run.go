@@ -38,11 +38,12 @@ type TestCase struct {
 }
 
 type TaskRunContext struct {
-	Namespace  string
-	Clients    *kubernetes.Clients
-	Workspaces map[string]string
-	Params     map[string]string
-	ODS        *pipelinectxt.ODSContext
+	Namespace     string
+	Clients       *kubernetes.Clients
+	Workspaces    map[string]string
+	Params        map[string]string
+	ODS           *pipelinectxt.ODSContext
+	CollectedLogs []byte
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -84,10 +85,11 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	taskRun, err := WatchTaskRunUntilDone(t, testOpts, tr)
+	taskRun, collectedLogs, err := WatchTaskRunUntilDone(t, testOpts, tr)
 	if err != nil {
 		t.Fatal(err)
 	}
+	testCaseContext.CollectedLogs = collectedLogs
 
 	// Show info from Task result
 	CollectTaskResultInfo(taskRun, t.Logf)
@@ -130,7 +132,8 @@ func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	return tempDir, nil
 }
 
-func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, error) {
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, []byte, error) {
+	collectedLogs := []byte{}
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
@@ -154,12 +157,13 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		podAdded,
 	)
 
+	podLogs := make(chan []byte)
 	for {
 		select {
 		case err := <-errs:
 			if err != nil {
 				cancel()
-				return nil, err
+				return nil, collectedLogs, err
 			}
 
 		case pod := <-podAdded:
@@ -169,12 +173,16 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					errs,
+					podLogs,
 				)
 			}
 
+		case l := <-podLogs:
+			collectedLogs = append(collectedLogs, l...)
+
 		case tr := <-taskRunDone:
 			cancel()
-			return tr, nil
+			return tr, collectedLogs, nil
 		}
 	}
 }
