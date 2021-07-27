@@ -5,25 +5,27 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV NODEJS_VERSION=12 \
     YARN_VERSION=1.22.5 \
     NPM_CONFIG_PREFIX=$HOME/.npm-global \
-    # PATH=$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH \
-    PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH" \
+    PATH="/root/.yarn/bin:/root/.config/yarn/global/node_modules/.bin:$PATH" \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
-RUN microdnf -y install yum tar && microdnf clean all
+COPY build/package/yum.repos.d/google-chrome.repo /etc/yum.repos.d/google-chrome.repo
+
+RUN set -euo pipefail \
+    && curl -sSf -L http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-Official -o /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial \
+    && echo -e '[centos-8-baseos]\nname=CentOS-$releasever - BaseOS\nbaseurl=http://mirror.centos.org/centos/$releasever/BaseOS/$basearch/os/\ngpgcheck=1\npriority=99\nenabled=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' > /etc/yum.repos.d/centos-8-baseos.repo \
+    && echo -e '[centos-8-appstream]\nname=CentOS-$releasever - AppStream\nbaseurl=http://mirror.centos.org/centos/$releasever/AppStream/$basearch/os/\ngpgcheck=1\npriority=99\nenabled=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' > /etc/yum.repos.d/centos-8-appstream.repo \
+    && microdnf update -y \
+    && microdnf install --nodocs -y --enablerepo=google-chrome --enablerepo=centos-8-baseos --enablerepo=centos-8-appstream \
+    yum tar google-chrome-stable libXt libX11-xcb \
+    # Install Cypress dependencies: https://docs.cypress.io/guides/getting-started/installing-cypress.html#System-requirements
+    dbus-glib xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
+    && microdnf clean all
 
 COPY build/package/contrib/bin/configure-agent /usr/local/bin/configure-agent
 
 # Generate machine ID
 RUN dbus-uuidgen > /etc/machine-id
-
-# Install Cypress dependencies
-# https://docs.cypress.io/guides/getting-started/installing-cypress.html#System-requirements
-# COPY yum.repos.d/google-chrome.repo /etc/yum.repos.d/google-chrome.repo
-# RUN yum repolist \
-#     && yum install -y --enablerepo centos-baseos,centos-appstream xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
-#     && yum install -y --enablerepo centos-baseos,centos-appstream,google-chrome google-chrome-stable \
-#     && yum clean all -y
 
 # Install NodeJS (https://rpm.nodesource.com/setup_12.x does NOT work)
 RUN INSTALL_PKGS="nodejs nodejs-nodemon make gcc-c++" && \
