@@ -22,6 +22,11 @@ build-and-push-images:
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
 
+## Build and push images to local registry.
+build-and-push-java-image:
+		cd scripts && ./build-and-push-java-image.sh
+.PHONY: build-and-push-java-image
+
 ## Install Tekton pipelines in kind cluster.
 install-tekton-pipelines:
 	cd scripts && ./install-tekton-pipelines.sh --tekton-dashboard
@@ -108,6 +113,8 @@ deploy-bc-ods:
 start-bc-ods:
 	oc process -f deploy/build-configs/bc-ods-build-go.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
 	oc start-build ods-build-go
+	oc process -f deploy/build-configs/bc-ods-build-java.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
+	oc start-build ods-build-java
 	oc process -f deploy/build-configs/bc-ods-buildah.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
 	oc start-build ods-buildah
 	oc process -f deploy/build-configs/bc-ods-helm.yml -p GIT_URL=https://github.com/opendevstack/ods-pipeline.git | oc apply -f -
