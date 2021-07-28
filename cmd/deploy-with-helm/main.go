@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -11,9 +13,19 @@ import (
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/file"
+	k "github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
+)
+
+const (
+	tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	helmBin   = "helm"
 )
 
 func main() {
@@ -53,6 +65,7 @@ func main() {
 	}
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 
+	// Find image artifacts.
 	var files []fs.FileInfo
 	imageDigestsDir := ".ods/artifacts/image-digests"
 	if _, err := os.Stat(imageDigestsDir); os.IsNotExist(err) {
@@ -65,151 +78,198 @@ func main() {
 		files = f
 	}
 
-	for _, f := range files {
-		filename := f.Name()
-		imageStream := strings.TrimSuffix(filepath.Base(filename), ".json")
-		fmt.Println("copying image", imageStream)
-		// TODO: should we also allow external registries? maybe not ...
-		srcImageStreamUrl, err := getImageStreamUrl(ctxt.Namespace, imageStream)
-		srcRegistryTLSVerify := false
+	// Copy images into release namespace if there are any image artifacts.
+	if len(files) > 0 {
+		clientset, err := k.NewInClusterClientset()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not create Kubernetes client: %s", err)
 		}
-		// TODO: At least for OpenShift image streams, we want to autocreate
-		// the destination if it does not exist yet.
-		var destImageStreamUrl string
-		destRegistryTLSVerify := true
-		if len(targetConfig.RegistryHost) > 0 {
-			destImageStreamUrl = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
-			if targetConfig.RegistryTLSVerify != nil {
-				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
-			}
-		} else {
-			disu, err := getImageStreamUrl(releaseNamespace, imageStream)
+		// Get destination registry token from secret or file in pod.
+		var destRegistryToken string
+		if len(targetConfig.SecretRef) > 0 {
+			token, err := tokenFromSecret(clientset, releaseNamespace, targetConfig.SecretRef)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("could not get token from secret %s: %s", targetConfig.SecretRef, err)
 			}
-			destImageStreamUrl = disu
-			destRegistryTLSVerify = false
+			destRegistryToken = token
+		} else {
+			token, err := getTrimmedFileContent(tokenFile)
+			if err != nil {
+				log.Fatalf("could not get token from file %s: %s", tokenFile, err)
+			}
+			destRegistryToken = token
 		}
-		fmt.Printf("srcRegistry=%s\n", srcImageStreamUrl)
-		fmt.Printf("destRegistry=%s\n", destImageStreamUrl)
-		// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
-		// matches the SHA referenced by the Git commit tag.
-		stdout, stderr, err := command.Run(
-			"skopeo",
-			[]string{
+
+		fmt.Println("Copying images into release namespace ...")
+		for _, f := range files {
+			var imageArtifact artifact.Image
+			artifactFile := filepath.Join(imageDigestsDir, f.Name())
+			artifactContent, err := ioutil.ReadFile(artifactFile)
+			if err != nil {
+				log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
+			}
+			err = json.Unmarshal(artifactContent, &imageArtifact)
+			if err != nil {
+				log.Fatalf(
+					"could not unmarshal image artifact file %s: %s.\nFile content:\n%s",
+					artifactFile, err, string(artifactContent),
+				)
+			}
+			imageStream := imageArtifact.Name
+			fmt.Println("copying image", imageStream)
+			srcImageURL := imageArtifact.Image
+			srcRegistryTLSVerify := false
+			// TODO: At least for OpenShift image streams, we want to autocreate
+			// the destination if it does not exist yet.
+			var destImageURL string
+			destRegistryTLSVerify := true
+			if len(targetConfig.RegistryHost) > 0 {
+				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
+				if targetConfig.RegistryTLSVerify != nil {
+					destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
+				}
+			} else {
+				destImageURL = strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
+				destRegistryTLSVerify = false
+			}
+			fmt.Printf("src=%s\n", srcImageURL)
+			fmt.Printf("dest=%s\n", destImageURL)
+			// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
+			// matches the SHA referenced by the Git commit tag.
+			skopeoCopyArgs := []string{
+				"copy",
 				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				fmt.Sprintf("docker://%s:%s", srcImageStreamUrl, ctxt.GitCommitSHA),
-				fmt.Sprintf("docker://%s:%s", destImageStreamUrl, ctxt.GitCommitSHA),
-			},
-		)
-		if err != nil {
-			fmt.Println(string(stderr))
-			log.Fatal(err)
+				fmt.Sprintf("docker://%s", srcImageURL),
+				fmt.Sprintf("docker://%s", destImageURL),
+			}
+			if len(destRegistryToken) > 0 {
+				skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
+			}
+			stdout, stderr, err := command.Run("skopeo", skopeoCopyArgs)
+			if err != nil {
+				fmt.Println(string(stderr))
+				log.Fatal(err)
+			}
+			fmt.Println(string(stdout))
 		}
-		fmt.Println(string(stdout))
 	}
 
-	fmt.Println("list helm plugins...")
-
-	stdout, stderr, err := command.Run(
-		"helm",
-		[]string{
-			"plugin",
-			"list",
-		},
-	)
+	fmt.Println("List Helm plugins...")
+	stdout, stderr, err := command.Run(helmBin, []string{"plugin", "list"})
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
 	}
 	fmt.Println(string(stdout))
 
-	// if child repos exist, collect helm charts for them and place into charts/
-	// if len(odsConfig.Repositories) > 0 {
-	// 	cwd, err := os.Getwd()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Println("pulling in helm chart packages from child repositories ...")
-	// 	for _, childRepo := range odsConfig.Repositories {
-	// 		childCommitSHA, err := getGitCommitSHAInDir(".ods/repositories/" + childRepo.Name)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		// TODO: This should only return one URL - should we enforce this?
-	// 		helmChartURLs, err := nexusClient.URLs(
-	// 			fmt.Sprintf("/%s/%s/helm-charts", childRepo.Name, childCommitSHA),
-	// 		)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		// helm pull
-	// 		chartsPath := filepath.Join(*chartDir, "charts")
-	// 		err = os.Mkdir(chartsPath, 0644)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		err = os.Chdir(chartsPath)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 		for _, helmChartURL := range helmChartURLs {
-	// 			nexusClient.Download(helmChartURL)
-	// 		}
-	// 		err = os.Chdir(cwd)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 	}
-	// }
+	fmt.Println("Adding dependencies from subrepos into the charts/ directory ...")
+	// Find subcharts
+	var subrepos []fs.FileInfo
+	subreposDir := ".ods/repos"
+	if _, err := os.Stat(subreposDir); os.IsNotExist(err) {
+		fmt.Printf("no subrepos in %s\n", subreposDir)
+	} else {
+		f, err := ioutil.ReadDir(subreposDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		subrepos = f
+	}
+	chartsDir := filepath.Join(*chartDir, "charts")
+	if _, err := os.Stat(chartsDir); os.IsNotExist(err) {
+		err = os.Mkdir(chartsDir, 0755)
+		if err != nil {
+			log.Fatalf("could not create %s: %s", chartsDir, err)
+		}
+	}
+	gitCommitSHAs := map[string]interface{}{
+		"gitCommitSha": ctxt.GitCommitSHA,
+	}
+	for _, r := range subrepos {
+		subrepo := filepath.Join(subreposDir, r.Name())
+		subchart := filepath.Join(subrepo, *chartDir)
+		if _, err := os.Stat(subchart); os.IsNotExist(err) {
+			fmt.Printf("no chart in %s\n", r.Name())
+			continue
+		}
+		gitCommitSHA, err := getTrimmedFileContent(filepath.Join(subrepo, ".ods", "git-commit-sha"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		hc, err := getHelmChart(filepath.Join(subchart, "Chart.yaml"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		gitCommitSHAs[hc.Name] = map[string]string{
+			"gitCommitSha": gitCommitSHA,
+		}
+		helmArchive, err := packageHelmChart(subchart, ctxt.Version, gitCommitSHA)
+		if err != nil {
+			log.Fatal(err)
+		}
+		helmArchiveName := filepath.Base(helmArchive)
+		fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
+		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
+	}
 
-	fmt.Println("packaging helm chart ...")
-	chartVersion, err := getChartVersion(filepath.Join(*chartDir, "Chart.yaml"))
+	subcharts, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _, err = command.Run(
-		"helm",
-		[]string{
-			"package",
-			fmt.Sprintf("--app-version=%s", ctxt.GitCommitSHA),
-			fmt.Sprintf("--version=%s+%s", chartVersion, ctxt.GitCommitSHA),
-			*chartDir,
-		},
-	)
+	if len(subcharts) > 0 {
+		fmt.Printf("Contents of %s:\n", chartsDir)
+		for _, sc := range subcharts {
+			fmt.Println(sc.Name())
+		}
+	}
+
+	fmt.Println("Packaging Helm chart ...")
+	helmArchive, err := packageHelmChart(*chartDir, ctxt.Version, ctxt.GitCommitSHA)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	helmArchive, err := getHelmArchive(ctxt.Component)
+	fmt.Println("Collecting Helm values files ...")
+	generatedValuesFilename := "values.generated.yaml"
+	out, err := yaml.Marshal(gitCommitSHAs)
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = ioutil.WriteFile(generatedValuesFilename, out, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	valuesFiles := []string{}
+	valuesFilesCandidates := []string{fmt.Sprintf("values.%s.yaml", targetConfig.Kind)}
+	if targetConfig.Kind != targetConfig.Name {
+		valuesFilesCandidates = append(valuesFilesCandidates, fmt.Sprintf("values.%s.yaml", targetConfig.Name))
+	}
+	valuesFilesCandidates = append(valuesFilesCandidates, generatedValuesFilename)
+	for _, vfc := range valuesFilesCandidates {
+		if _, err := os.Stat(vfc); os.IsNotExist(err) {
+			fmt.Printf("%s is not present, skipping.\n", vfc)
+		} else {
+			fmt.Printf("%s is present, adding.\n", vfc)
+			valuesFiles = append(valuesFiles, vfc)
+		}
+	}
 
-	// fmt.Println("uploading helm chart package ...")
-	// // TODO: check err
-	// err = nexusClient.Upload(fmt.Sprintf("%s/helm-charts", nexusGroupPrefix), helmArchive)
-	// if err != nil {
-	// 	fmt.Printf("got err: %s", err)
-	// }
-
-	fmt.Printf("diffing helm release against %s...\n", helmArchive)
-	stdout, stderr, err = command.Run(
-		"helm",
-		[]string{
-			"--namespace=" + releaseNamespace,
-			"diff",
-			"upgrade",
-			"--install",
-			"--detailed-exitcode",
-			"--no-color",
-			releaseName,
-			helmArchive,
-		},
-	)
+	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
+	helmDiffArgs := []string{
+		"--namespace=" + releaseNamespace,
+		"diff",
+		"upgrade",
+		"--install",
+		"--detailed-exitcode",
+		"--no-color",
+	}
+	for _, vf := range valuesFiles {
+		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
+	}
+	helmDiffArgs = append(helmDiffArgs, releaseName, helmArchive)
+	fmt.Println(helmBin, strings.Join(helmDiffArgs, " "))
+	stdout, stderr, err = command.Run(helmBin, helmDiffArgs)
 
 	if err == nil {
 		fmt.Println("no diff ...")
@@ -218,18 +278,19 @@ func main() {
 	fmt.Println(string(stdout))
 	fmt.Println(string(stderr))
 
-	fmt.Printf("upgrading helm release to %s...\n", helmArchive)
-	stdout, stderr, err = command.Run(
-		"helm",
-		[]string{
-			"--namespace=" + releaseNamespace,
-			"upgrade",
-			"--wait",
-			"--install",
-			releaseName,
-			helmArchive,
-		},
-	)
+	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
+	helmUpgradeArgs := []string{
+		"--namespace=" + releaseNamespace,
+		"upgrade",
+		"--wait",
+		"--install",
+	}
+	for _, vf := range valuesFiles {
+		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
+	}
+	helmUpgradeArgs = append(helmUpgradeArgs, releaseName, helmArchive)
+	fmt.Println(helmBin, strings.Join(helmUpgradeArgs, " "))
+	stdout, stderr, err = command.Run(helmBin, helmUpgradeArgs)
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
@@ -274,50 +335,70 @@ func getTarget(odsConfig config.ODS, environment string, target string) (config.
 }
 
 type helmChart struct {
+	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-func getChartVersion(filename string) (string, error) {
+func getHelmChart(filename string) (*helmChart, error) {
 	y, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", fmt.Errorf("could not read chart: %w", err)
+		return nil, fmt.Errorf("could not read chart: %w", err)
 	}
 
-	var hc helmChart
+	var hc *helmChart
 	err = yaml.Unmarshal(y, &hc)
 	if err != nil {
-		return "", fmt.Errorf("could not unmarshal: %w", err)
+		return nil, fmt.Errorf("could not unmarshal: %w", err)
 	}
-	return hc.Version, nil
+	return hc, nil
 }
 
-func getHelmArchive(name string) (string, error) {
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		return "", fmt.Errorf("%w", err)
+func getChartVersion(contextVersion string, hc *helmChart) string {
+	if len(contextVersion) > 0 {
+		return contextVersion
 	}
-
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".tgz") {
-			return file.Name(), nil
-		}
-	}
-	return "", fmt.Errorf("did not find archive for %s", name)
+	return hc.Version
 }
 
-func getImageStreamUrl(namespace, imageStream string) (string, error) {
-	stdout, _, err := command.Run(
-		"oc",
-		[]string{
-			"--namespace=" + namespace,
-			"get",
-			"is/" + imageStream,
-			"-ojsonpath='{.status.dockerImageRepository}'",
-		},
-	)
+func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	return string(stdout), nil
+	return string(secret.Data["token"]), nil
+}
 
+func getTrimmedFileContent(filename string) (string, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(content)), nil
+}
+
+func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error) {
+	hc, err := getHelmChart(filepath.Join(chartDir, "Chart.yaml"))
+	if err != nil {
+		return "", fmt.Errorf("could not read chart: %w", err)
+	}
+	chartVersion := getChartVersion(ctxtVersion, hc)
+	packageVersion := fmt.Sprintf("%s+%s", chartVersion, gitCommitSHA)
+	stdout, stderr, err := command.Run(
+		helmBin,
+		[]string{
+			"package",
+			fmt.Sprintf("--app-version=%s", gitCommitSHA),
+			fmt.Sprintf("--version=%s", packageVersion),
+			chartDir,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"could not package chart %s. stderr: %s, err: %s", chartDir, string(stderr), err,
+		)
+	}
+	fmt.Println(string(stdout))
+
+	helmArchive := fmt.Sprintf("%s-%s.tgz", hc.Name, packageVersion)
+	return helmArchive, nil
 }

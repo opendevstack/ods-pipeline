@@ -14,8 +14,8 @@ spec:
       interceptors:
         - bitbucket:
             secretRef:
-              secretKey: password
-              secretName: bitbucket
+              secretKey: secret
+              secretName: ods-bitbucket-webhook
         - webhook:
             objectRef:
               apiVersion: v1

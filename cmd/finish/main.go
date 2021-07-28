@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/nexus"
@@ -15,7 +14,7 @@ import (
 func main() {
 	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	consoleURLFlag := flag.String("console-url", "", "web console URL")
+	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
 	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
@@ -27,15 +26,17 @@ func main() {
 	ctxt := &pipelinectxt.ODSContext{}
 	err := ctxt.ReadCache(".")
 	if err != nil {
-		panic(err.Error())
+		log.Fatalf(
+			"Unable to continue as pipeline context cannot be read: %s.\n"+
+				"Bitbucket build status will not be set and no artifacts will be uploaded to Nexus.",
+			err,
+		)
 	}
 
 	// Set Bitbucket build status
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *bitbucketAccessTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *bitbucketURLFlag,
+		APIToken: *bitbucketAccessTokenFlag,
+		BaseURL:  *bitbucketURLFlag,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",

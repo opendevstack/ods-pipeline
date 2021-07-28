@@ -1,7 +1,6 @@
 phases:
 
   build:
-    tasks:
     - name: go-helm-build
       params:
       - name: DOCKER_CONTEXT
@@ -18,7 +17,6 @@ phases:
         workspace: shared-workspace
 
   deploy:
-    tasks:
     - name: go-helm-deploy
       params:
       - name: RELEASE_NAME
@@ -39,7 +37,6 @@ phases:
         workspace: shared-workspace
 
   finalize:
-    tasks:
     - name: go-helm-finalize
       params:
       - name: IMAGE_STREAM

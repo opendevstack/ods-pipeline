@@ -14,10 +14,10 @@ import (
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"sigs.k8s.io/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/test/logging"
+	"sigs.k8s.io/yaml"
 )
 
 type SetupOpts struct {
@@ -44,14 +44,14 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "default", "values.kind.yaml,values.generated.yaml")
+	installCDNamespaceResources(t, namespace, "pipeline", "values.kind.yaml,values.generated.yaml")
 
 	return clients, namespace
 }
 
 func installCDNamespaceResources(t *testing.T, ns, serviceaccount, valuesFile string) {
 
-	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile}
+	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile, "--no-diff"}
 	if testing.Verbose() {
 		scriptArgs = append(scriptArgs, "-v")
 	}
@@ -174,6 +174,10 @@ func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
 }
 
 func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {
+	if tr == nil {
+		logf("error: no taskrun")
+		return
+	}
 	logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
 	logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
 	logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())

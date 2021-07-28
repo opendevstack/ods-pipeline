@@ -12,6 +12,8 @@ import (
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -36,11 +38,12 @@ type TestCase struct {
 }
 
 type TaskRunContext struct {
-	Namespace  string
-	Clients    *kubernetes.Clients
-	Workspaces map[string]string
-	Params     map[string]string
-	ODS        *pipelinectxt.ODSContext
+	Namespace     string
+	Clients       *kubernetes.Clients
+	Workspaces    map[string]string
+	Params        map[string]string
+	ODS           *pipelinectxt.ODSContext
+	CollectedLogs []byte
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -52,21 +55,12 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	taskWorkspaces := map[string]string{}
 	for wn, wd := range tc.WorkspaceDirMapping {
-		workspaceSourceDirectory := filepath.Join(
-			projectpath.Root, "test", testdataWorkspacePath, wd,
-		)
-
-		workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-
-		tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+		tempDir, err := InitWorkspace(wn, wd)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("Workspace is in %s", tempDir)
 		taskWorkspaces[wn] = tempDir
-
-		directory.Copy(workspaceSourceDirectory, tempDir)
-
 	}
 
 	testCaseContext := &TaskRunContext{
@@ -91,24 +85,18 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	podEventsDone := make(chan bool, 1)
-	go WatchTaskRunEvents(t, testOpts.Clients.KubernetesClientSet, tr.Name, testOpts.Namespace, podEventsDone)
-
-	// Wait X minutes for task to complete or be notified of a failure from an pods' event
-	tr = WaitForCondition(context.TODO(), t, testOpts.Clients.TektonClientSet, tr.Name, testOpts.Namespace, Done, testOpts.Timeout, podEventsDone)
-
-	// Show logs
-	go CollectPodLogs(testOpts.Clients.KubernetesClientSet, tr.Status.PodName, testOpts.Namespace, t.Logf, podEventsDone)
-
-	// Block until we receive a notification from CollectPodLogs on the channel
-	<-podEventsDone
+	taskRun, collectedLogs, err := WatchTaskRunUntilDone(t, testOpts, tr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCaseContext.CollectedLogs = collectedLogs
 
 	// Show info from Task result
-	CollectTaskResultInfo(tr, t.Logf)
+	CollectTaskResultInfo(taskRun, t.Logf)
 
 	// Check if task was successful
-	if tr.IsSuccessful() != tc.WantRunSuccess {
-		t.Fatalf("Got: %+v, want: %+v.", tr.IsSuccessful(), tc.WantRunSuccess)
+	if taskRun.IsSuccessful() != tc.WantRunSuccess {
+		t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
 	}
 
 	// Check local folder and evaluate output of task if needed
@@ -123,6 +111,78 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 			if err != nil {
 				t.Fatal(err)
 			}
+		}
+	}
+}
+
+func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
+	workspaceSourceDirectory := filepath.Join(
+		projectpath.Root, "test", testdataWorkspacePath, workspaceDir,
+	)
+
+	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
+
+	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
+	if err != nil {
+		return "", err
+	}
+
+	directory.Copy(workspaceSourceDirectory, tempDir)
+
+	return tempDir, nil
+}
+
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, []byte, error) {
+	collectedLogs := []byte{}
+	taskRunDone := make(chan *tekton.TaskRun)
+	podAdded := make(chan *v1.Pod)
+	errs := make(chan error)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), testOpts.Timeout)
+	go waitForTaskRunDone(
+		ctx,
+		t,
+		testOpts.Clients.TektonClientSet,
+		tr.Name,
+		testOpts.Namespace,
+		errs,
+		taskRunDone,
+	)
+
+	go waitForTaskRunPod(
+		ctx,
+		testOpts.Clients.KubernetesClientSet,
+		tr.Name,
+		testOpts.Namespace,
+		podAdded,
+	)
+
+	podLogs := make(chan []byte)
+	for {
+		select {
+		case err := <-errs:
+			if err != nil {
+				cancel()
+				return nil, collectedLogs, err
+			}
+
+		case pod := <-podAdded:
+			if pod != nil {
+				go getEventsAndLogsOfPod(
+					ctx,
+					testOpts.Clients.KubernetesClientSet,
+					pod,
+					errs,
+					podLogs,
+				)
+			}
+
+		case l := <-podLogs:
+			collectedLogs = append(collectedLogs, l...)
+
+		case tr := <-taskRunDone:
+			cancel()
+			return tr, collectedLogs, nil
 		}
 	}
 }

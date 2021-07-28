@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
@@ -15,8 +14,6 @@ func main() {
 	sonarqubeURLFlag := flag.String("sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
 	sonarqubeEditionFlag := flag.String("sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
 	qualityGateFlag := flag.Bool("quality-gate", false, "require quality gate pass")
-	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
-	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -26,9 +23,7 @@ func main() {
 	}
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
-		Timeout:       10 * time.Second,
 		APIToken:      *sonarAuthTokenFlag,
-		MaxRetries:    2,
 		BaseURL:       *sonarqubeURLFlag,
 		ServerEdition: *sonarqubeEditionFlag,
 	})
@@ -48,12 +43,6 @@ func main() {
 		sonarProject,
 		ctxt.GitRef,
 		ctxt.GitCommitSHA,
-		&sonar.BitbucketServer{
-			URL:        *bitbucketURLFlag,
-			Token:      *bitbucketAccessTokenFlag,
-			Project:    ctxt.Project,
-			Repository: ctxt.Repository,
-		},
 		prInfo,
 	)
 	if err != nil {

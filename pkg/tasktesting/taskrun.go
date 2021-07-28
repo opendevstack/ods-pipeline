@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +13,11 @@ import (
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 )
 
 var testdataWorkspacePath = "testdata/workspaces"
@@ -62,9 +67,10 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 				Name: fmt.Sprintf("%s-taskrun-%s", taskName, random.PseudoString()),
 			},
 			Spec: tekton.TaskRunSpec{
-				TaskRef:    &tekton.TaskRef{Kind: tk, Name: taskName},
-				Params:     tektonParams,
-				Workspaces: taskWorkspaces,
+				TaskRef:            &tekton.TaskRef{Kind: tk, Name: taskName},
+				Params:             tektonParams,
+				Workspaces:         taskWorkspaces,
+				ServiceAccountName: "pipeline",
 			},
 		},
 		metav1.CreateOptions{})
@@ -72,71 +78,77 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 	return tr, err
 }
 
-func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string) (tr *tekton.TaskRun) {
-	t.Helper()
-	tr, err := c.TektonV1beta1().TaskRuns(ns).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		t.Error(err)
-	}
-	return tr
-}
+func waitForTaskRunDone(
+	ctx context.Context,
+	t *testing.T,
+	c pipelineclientset.Interface,
+	name, ns string,
+	errs chan error,
+	done chan *tekton.TaskRun) {
 
-type conditionFn func(*tekton.TaskRun) bool
-
-func WaitForCondition(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string, cond conditionFn, timeout time.Duration, podEventsDone <-chan bool) *tekton.TaskRun {
-
-	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Seconds(), name, ns)
+	deadline, _ := ctx.Deadline()
+	timeout := time.Until(deadline)
+	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Round(time.Second).Seconds(), name, ns)
 
 	t.Helper()
-
-	// Do a first quick check before setting the watch
-	tr := getTr(ctx, t, c, name, ns)
-	if cond(tr) {
-		return tr
-	}
 
 	w, err := c.TektonV1beta1().TaskRuns(ns).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      name,
 		Namespace: ns,
 	}))
 	if err != nil {
-		t.Errorf("error watching taskrun: %s", err)
+		errs <- fmt.Errorf("error watching taskrun: %s", err)
+		return
 	}
 
-	// Setup a timeout channel
-	timeoutChan := make(chan struct{})
-	go func() {
-		time.Sleep(timeout)
-		timeoutChan <- struct{}{}
-	}()
-
-	// Wait for the TaskRun to be done or time out,
-	// or a failure in the pod's events,
-	// or the pod's containers to be ready
+	// Wait for the TaskRun to be done
 	for {
-		select {
-		case ev := <-w.ResultChan():
-			if ev.Object != nil {
-				tr := ev.Object.(*tekton.TaskRun)
-				if cond(tr) {
-					return tr
+		ev := <-w.ResultChan()
+		if ev.Object != nil {
+			tr, ok := ev.Object.(*tekton.TaskRun)
+			if ok {
+				if tr.IsDone() {
+					done <- tr
+					close(done)
+					return
 				}
 			}
 
-		case done := <-podEventsDone:
-			if done {
-				log.Println("-----------------------------------------------")
-				log.Printf("Won't display more pod events as all pod's containers are now ready.")
-			} else {
-				t.Fatal("Stopping test execution due to a failure in the pod's events")
-			}
-
-		case <-timeoutChan:
-			t.Fatal("time out")
 		}
 	}
 }
 
-func Done(tr *tekton.TaskRun) bool {
-	return tr.IsDone()
+func waitForTaskRunPod(
+	ctx context.Context,
+	c *kubernetes.Clientset,
+	taskRunName,
+	namespace string,
+	podAdded chan *v1.Pod) {
+	log.Printf("Waiting for pod related to TaskRun %s to be added to the cluster\n", taskRunName)
+	stop := make(chan struct{})
+
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(c, time.Second*30)
+	podsInformer := kubeInformerFactory.Core().V1().Pods().Informer()
+
+	var taskRunPod *v1.Pod
+
+	podsInformer.AddEventHandler(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				// when a new task is created, watch its events
+				pod := obj.(*v1.Pod)
+				if strings.HasPrefix(pod.Name, taskRunName) {
+					taskRunPod = pod
+					log.Printf("TaskRun %s added pod %s to the cluster", taskRunName, pod.Name)
+					stop <- struct{}{}
+				}
+
+			},
+		})
+
+	defer close(stop)
+	kubeInformerFactory.Start(stop)
+
+	<-stop
+	podAdded <- taskRunPod
 }

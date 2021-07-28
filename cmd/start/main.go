@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
@@ -34,7 +33,7 @@ func main() {
 	sslVerifyFlag := flag.String("ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
 	submodulesFlag := flag.String("submodules", "true", "defines if the resource should initialize and fetch the submodules")
 	depthFlag := flag.String("depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
-	consoleURLFlag := flag.String("console-url", "", "web console URL")
+	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
 	flag.Parse()
 
@@ -101,6 +100,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Assembled context: %+v\n", ctxt)
 	err = ctxt.WriteCache(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
@@ -108,10 +108,8 @@ func main() {
 
 	// Set Bitbucket build status to "in progress"
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   *bitbucketAccessTokenFlag,
-		MaxRetries: 2,
-		BaseURL:    *bitbucketURLFlag,
+		APIToken: *bitbucketAccessTokenFlag,
+		BaseURL:  *bitbucketURLFlag,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",

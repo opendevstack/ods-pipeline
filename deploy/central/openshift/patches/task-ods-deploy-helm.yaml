@@ -1,0 +1,6 @@
+- op: replace
+  path: /metadata/name
+  value: ods-deploy-helm-v0-1-0
+- op: replace
+  path: /spec/steps/0/image
+  value: image-registry.openshift-image-registry.svc:5000/ods/ods-helm:0.1.0

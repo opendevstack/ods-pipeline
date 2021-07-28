@@ -2,11 +2,10 @@ package sonar
 
 import (
 	"fmt"
-	"io"
-	"os"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/file"
 )
 
 func (c *Client) GenerateReport(project, author, branch string) (string, error) {
@@ -39,7 +38,7 @@ func copyReportFiles(project, destinationDir string) error {
 		currentDate(),
 		project,
 	)
-	err := copyFile(analysisReportFile, destinationDir+"/analysis-report.md")
+	err := file.Copy(analysisReportFile, destinationDir+"/analysis-report.md")
 	if err != nil {
 		return fmt.Errorf("copying %s failed: %w", analysisReportFile, err)
 	}
@@ -49,7 +48,7 @@ func copyReportFiles(project, destinationDir string) error {
 		currentDate(),
 		project,
 	)
-	err = copyFile(issuesReportFile, destinationDir+"/issues-report.csv")
+	err = file.Copy(issuesReportFile, destinationDir+"/issues-report.csv")
 	if err != nil {
 		return fmt.Errorf("copying %s failed: %w", issuesReportFile, err)
 	}
@@ -60,28 +59,4 @@ func copyReportFiles(project, destinationDir string) error {
 func currentDate() string {
 	currentTime := time.Now()
 	return currentTime.Format("2006-01-02")
-}
-
-// Copy a file
-func copyFile(from, to string) error {
-	// Open original file
-	original, err := os.Open(from)
-	if err != nil {
-		return err
-	}
-	defer original.Close()
-
-	// Create new file
-	new, err := os.Create(to)
-	if err != nil {
-		return err
-	}
-	defer new.Close()
-
-	// Copy contents of original file into new file
-	_, err = io.Copy(new, original)
-	if err != nil {
-		return err
-	}
-	return nil
 }

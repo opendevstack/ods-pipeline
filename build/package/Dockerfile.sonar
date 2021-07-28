@@ -11,10 +11,7 @@ ENV SONAR_SCANNER_VERSION=3.1.0.1141 \
 
 USER root
 
-# Add CentOS 8 repositories.
-COPY build/package/yum.repos.d/centos8.repo /etc/yum.repos.d/centos8.repo
-
-RUN microdnf install -y gcc gcc-c++ git
+RUN microdnf install -y git
 
 RUN cd /tmp && \
     curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
@@ -41,7 +38,7 @@ RUN cd /tmp \
     && curl -L https://github.com/cnescatlab/sonar-cnes-report/releases/download/${CNES_REPORT_VERSION}/sonar-cnes-report-${CNES_REPORT_VERSION}.jar -o cnesreport.jar \
     && mkdir /usr/local/cnes \
     && mv cnesreport.jar /usr/local/cnes/cnesreport.jar \
-    && chmod 777 /usr/local/cnes/cnesreport.jar
+    && chmod +x /usr/local/cnes/cnesreport.jar
 
 # Add Go binaries
 RUN mkdir -p /etc/go

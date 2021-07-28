@@ -62,8 +62,8 @@ func TestTaskODSBuildJava(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"java-image":    "localhost:5000/ods/ods-java-toolset:latest",
-						"sonar-image": "localhost:5000/ods/ods-sonar:latest"
+						"java-image": "localhost:5000/ods/ods-java-toolset:latest",
+						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
 					}
 				},
 				WantRunSuccess: false,

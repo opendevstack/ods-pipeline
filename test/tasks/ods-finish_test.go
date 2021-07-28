@@ -3,6 +3,7 @@ package tasks
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,16 +26,30 @@ const (
 
 func TestTaskODSFinish(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-finish-v0-1-0",
+		"ods-finish",
 		map[string]tasktesting.TestCase{
+			"stops gracefully when context cannot be read": {
+				WorkspaceDirMapping: map[string]string{"source": "empty"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					ctxt.Params = map[string]string{
+						"pipeline-run-name":      "foo",
+						"aggregate-tasks-status": "Failed",
+					}
+				},
+				WantRunSuccess: false,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					want := "Unable to continue as pipeline context cannot be read"
+					if !strings.Contains(string(ctxt.CollectedLogs), want) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", want, string(ctxt.CollectedLogs))
+					}
+				},
+			},
 			"set bitbucket build status to failed": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 					ctxt.Params = map[string]string{
-						"image":                  "localhost:5000/ods/ods-finish:latest",
-						"console-url":            "http://example.com",
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "None",
 					}
@@ -50,8 +65,6 @@ func TestTaskODSFinish(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 					ctxt.Params = map[string]string{
-						"image":                  "localhost:5000/ods/ods-finish:latest",
-						"console-url":            "http://example.com",
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "Succeeded",
 					}
@@ -69,10 +82,8 @@ func TestTaskODSFinish(t *testing.T) {
 func checkBuildStatus(t *testing.T, gitCommit, wantBuildStatus string) {
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   bitbucketAPIToken,
-		MaxRetries: 2,
-		BaseURL:    bitbucketURLFlag,
+		APIToken: bitbucketAPIToken,
+		BaseURL:  bitbucketURLFlag,
 	})
 
 	buildStatus, err := bitbucketClient.BuildStatusGet(gitCommit)

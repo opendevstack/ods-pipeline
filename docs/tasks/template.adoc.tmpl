@@ -1,0 +1,16 @@
+= {{ .Name }}
+
+{{ .Description }}
+
+== Parameters
+
+[cols="1,1,2"]
+|===
+| Parameter | Default | Description
+{{ range .Params }}
+
+| {{ .Name }}
+| {{ .Default }}
+| {{ .Description }}
+{{end}}
+|===

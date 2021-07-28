@@ -59,12 +59,10 @@ func init() {
 }
 
 // NewServer returns a new server.
-func NewServer(client Client, namespace string, project string, repoBase string, token string) *Server {
+func NewServer(client Client, namespace, project, repoBase, token string) *Server {
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   token,
-		MaxRetries: 2,
-		BaseURL:    strings.TrimSuffix(repoBase, "/scm"),
+		APIToken: token,
+		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
 	return &Server{
 		OpenShiftClient: client,
@@ -419,13 +417,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 				},
 			},
 			{
-				Name: "git-ref",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.git-ref)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
 				Name: "git-full-ref",
 				Value: tekton.ArrayOrString{
 					StringVal: "$(params.git-full-ref)",
@@ -467,42 +458,49 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					Type:      tekton.ParamTypeString,
 				},
 			},
+			{
+				Name: "pipeline-run-name",
+				Value: tekton.ArrayOrString{
+					StringVal: "$(context.pipelineRun.name)",
+					Type:      tekton.ParamTypeString,
+				},
+			},
 		},
 	})
 
 	var initTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		initTasks = append(initTasks, phases.Init.Tasks...)
+		initTasks = append(initTasks, phases.Init...)
 	}
 	tasks = appendTasks(tasks, initTasks)
 
 	var buildTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		buildTasks = append(buildTasks, phases.Build.Tasks...)
+		buildTasks = append(buildTasks, phases.Build...)
 	}
 	tasks = appendTasks(tasks, buildTasks)
 
 	var deployTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		deployTasks = append(deployTasks, phases.Deploy.Tasks...)
+		deployTasks = append(deployTasks, phases.Deploy...)
 	}
 	tasks = appendTasks(tasks, deployTasks)
 
 	var testTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		testTasks = append(testTasks, phases.Test.Tasks...)
+		testTasks = append(testTasks, phases.Test...)
 	}
 	tasks = appendTasks(tasks, testTasks)
 
 	var releaseTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		releaseTasks = append(releaseTasks, phases.Release.Tasks...)
+		releaseTasks = append(releaseTasks, phases.Release...)
 	}
 	tasks = appendTasks(tasks, releaseTasks)
 
 	var finalizeTasks []tekton.PipelineTask
 	for _, phases := range phasesList {
-		finalizeTasks = append(finalizeTasks, phases.Finalize.Tasks...)
+		finalizeTasks = append(finalizeTasks, phases.Finalize...)
 	}
 	tasks = appendTasks(tasks, finalizeTasks)
 
@@ -512,6 +510,15 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 			TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-" + taskVersion},
 			Workspaces: []tekton.WorkspacePipelineTaskBinding{
 				{Name: "source", Workspace: "shared-workspace"},
+			},
+			Params: []tekton.Param{
+				{
+					Name: "pipeline-run-name",
+					Value: tekton.ArrayOrString{
+						StringVal: "$(context.pipelineRun.name)",
+						Type:      tekton.ParamTypeString,
+					},
+				},
 			},
 		},
 	}
@@ -553,14 +560,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					},
 				},
 				{
-					Name: "namespace",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Namespace,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
 					Name: "git-repo-url",
 					Type: "string",
 					Default: &tekton.ArrayOrString{
@@ -569,42 +568,10 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 					},
 				},
 				{
-					Name: "git-ref",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitRef,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
 					Name: "git-full-ref",
 					Type: "string",
 					Default: &tekton.ArrayOrString{
 						StringVal: data.GitFullRef,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-sha",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitSHA,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "trigger-event",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.TriggerEvent,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "comment",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Comment,
 						Type:      tekton.ParamTypeString,
 					},
 				},

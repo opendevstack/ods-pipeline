@@ -8,6 +8,9 @@ spec:
   description: ODS
   finally:
   - name: finish
+    params:
+    - name: pipeline-run-name
+      value: $(context.pipelineRun.name)
     taskRef:
       kind: ClusterTask
       name: ods-finish-v0-1-0
@@ -24,26 +27,11 @@ spec:
   - default: bar
     name: component
     type: string
-  - default: foo-cd
-    name: namespace
-    type: string
   - default: https://bitbucket.acme.org/scm/foo/bar.git
     name: git-repo-url
     type: string
-  - default: main
-    name: git-ref
-    type: string
   - default: refs/heads/main
     name: git-full-ref
-    type: string
-  - default: ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca
-    name: git-sha
-    type: string
-  - default: repo:refs_changed
-    name: trigger-event
-    type: string
-  - default: ""
-    name: comment
     type: string
   - default: "0"
     name: pr-key
@@ -56,8 +44,6 @@ spec:
     params:
     - name: url
       value: $(params.git-repo-url)
-    - name: git-ref
-      value: $(params.git-ref)
     - name: git-full-ref
       value: $(params.git-full-ref)
     - name: project
@@ -70,6 +56,8 @@ spec:
       value: $(params.pr-key)
     - name: pr-base
       value: $(params.pr-base)
+    - name: pipeline-run-name
+      value: $(context.pipelineRun.name)
     taskRef:
       kind: ClusterTask
       name: ods-start-v0-1-0

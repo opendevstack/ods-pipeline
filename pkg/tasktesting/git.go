@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
@@ -20,12 +19,6 @@ import (
 
 // SetupFakeRepo writes .ods cache with fake data, without actually initializing a Git repo.
 func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
 
 	ctxt := &pipelinectxt.ODSContext{
 		Namespace:    ns,
@@ -37,7 +30,7 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
 	}
-	err = ctxt.WriteCache(wsDir)
+	err := ctxt.WriteCache(wsDir)
 	if err != nil {
 		t.Fatalf("could not write .ods: %s", err)
 	}
@@ -46,12 +39,6 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
 // SetupGitRepo initializes a Git repo, commits and writes the result to the .ods cache.
 func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
 
 	initAndCommitOrFatal(t, wsDir)
 
@@ -60,7 +47,7 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		Project:   "myproject",
 		GitURL:    "http://bitbucket.acme.org/scm/myproject/myrepo.git",
 	}
-	err = ctxt.Assemble(wsDir)
+	err := ctxt.Assemble(wsDir)
 	if err != nil {
 		t.Fatalf("could not assemble ODS context information: %s", err)
 	}
@@ -74,12 +61,6 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
 // SetupBitbucketRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
 func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) *pipelinectxt.ODSContext {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
 
 	initAndCommitOrFatal(t, wsDir)
 	originURL := pushToBitbucketOrFatal(t, c, ns, wsDir, projectKey)
@@ -89,7 +70,7 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 		Project:   projectKey,
 		GitURL:    originURL,
 	}
-	err = ctxt.Assemble(wsDir)
+	err := ctxt.Assemble(wsDir)
 	if err != nil {
 		t.Fatalf("could not assemble ODS context information: %s", err)
 	}
@@ -102,51 +83,41 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 }
 
 func initAndCommitOrFatal(t *testing.T, wsDir string) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
+
 	if _, err := os.Stat(".ods"); os.IsNotExist(err) {
 		err = os.Mkdir(".ods", 0755)
 		if err != nil {
 			t.Fatalf("could not create .ods: %s", err)
 		}
 	}
-	err = writeFile(".gitignore", ".ods/")
+	err := writeFile(filepath.Join(wsDir, ".gitignore"), ".ods/")
 	if err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
-	stdout, stderr, err := command.Run("git", []string{"init"})
+	stdout, stderr, err := command.RunInDir("git", []string{"init"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git init: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.Run("git", []string{"config", "user.email", "testing@opendevstack.org"})
+	stdout, stderr, err = command.RunInDir("git", []string{"config", "user.email", "testing@opendevstack.org"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git config.user.email: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.Run("git", []string{"config", "user.name", "testing"})
+	stdout, stderr, err = command.RunInDir("git", []string{"config", "user.name", "testing"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git config.user.name: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.Run("git", []string{"add", "."})
+	stdout, stderr, err = command.RunInDir("git", []string{"add", "."}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git add: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.Run("git", []string{"commit", "-m", "initial commit"})
+	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "initial commit"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
 }
 
 func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
-	}
-	defer os.Chdir(cwd)
-	os.Chdir(wsDir)
+
 	repoName := filepath.Base(wsDir)
 	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "ods-bitbucket", "url")
 	if err != nil {
@@ -159,11 +130,9 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	}
 
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		Timeout:    10 * time.Second,
-		APIToken:   bbToken,
-		MaxRetries: 2,
-		BaseURL:    bbURL,
-		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
+		APIToken: bbToken,
+		BaseURL:  bbURL,
+		Logger:   &logging.LeveledLogger{Level: logging.LevelDebug},
 	})
 
 	proj := bitbucket.Project{Key: projectKey}
@@ -185,11 +154,11 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
 		-1,
 	)
-	_, stderr, err := command.Run("git", []string{"remote", "add", "origin", originURLWithCredentials})
+	_, stderr, err := command.RunInDir("git", []string{"remote", "add", "origin", originURLWithCredentials}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to add remote origin=%s: %s, stderr: %s", originURL, err, stderr)
 	}
-	_, stderr, err = command.Run("git", []string{"push", "-u", "origin", "master"})
+	_, stderr, err = command.RunInDir("git", []string{"push", "-u", "origin", "master"}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}

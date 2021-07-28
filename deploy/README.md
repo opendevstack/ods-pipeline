@@ -1,13 +1,9 @@
-# Usage
+# deploy
 
-## Apply
+This directory contains container orchestration deployment configurations and templates.
 
-```
-oc -n ods apply -f bc-ods-build-go.yml
-```
+Manifests in `central` are applied once per cluster by an ODS administrator.
 
-## Check diff
-
-```
-oc -n ods diff -f bc-ods-build-go.yml
-```
+Manifests in `cd-namespace` are applied once per cd-namespace by an ODS user.
+The resulting resources in the `cd-namespace` use the resources (e.g. the images)
+installed centrally by an ODS administrator.
