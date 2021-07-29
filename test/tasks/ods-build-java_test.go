@@ -3,7 +3,6 @@ package tasks
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -12,19 +11,14 @@ import (
 
 func TestTaskODSBuildJava(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-java-v0-1-0",
+		"ods-build-java",
 		map[string]tasktesting.TestCase{
 			"task should build java/maven app": {
 				WorkspaceDirMapping: map[string]string{"source": "java-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"java-image":    "localhost:5000/ods/ods-java-toolset:latest",
-						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
-						"go-os":       runtime.GOOS,
-						"go-arch":     runtime.GOARCH,
-					}
+					ctxt.Params = map[string]string{}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {

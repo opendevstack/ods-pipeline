@@ -22,11 +22,6 @@ build-and-push-images:
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
 
-## Build and push images to local registry.
-build-and-push-java-image:
-		cd scripts && ./build-and-push-java-image.sh
-.PHONY: build-and-push-java-image
-
 ## Install Tekton pipelines in kind cluster.
 install-tekton-pipelines:
 	cd scripts && ./install-tekton-pipelines.sh
