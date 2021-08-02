@@ -45,8 +45,6 @@ You may use any programming language you wish to implement the logic of your tas
 
 In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information. You may also use the YAML definitions in `deploy/central/images` as an example.
 
-Creating a technology-specific ODS Task consists of a few steps like creating a Dockerfile, OpenShift resources, the Tekton Task itself and more.
-
 == Testing tasks
 
 Official ODS tasks are provided with automated tests. These tests are written in Go, and can be executed locally (in a KinD cluster) via `make test`. Each test creates a `TaskRun` with certain parameters and then checks the result of the run and the state of the workspace after the run. This allows to test each task in isolation and before using the task in a pipeline in an actual OpenShift cluster. If you want, you can also make use of this task testing framework for your own custom tasks. TODO.
