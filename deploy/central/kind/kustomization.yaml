@@ -37,3 +37,9 @@ patchesJson6902:
       kind: ClusterTask
       name: ods-build-python
     path: patches/task-ods-build-python.yaml
+  - target:
+      group: tekton.dev
+      version: v1beta1
+      kind: ClusterTask
+      name: ods-build-typescript
+    path: patches/task-ods-build-typescript.yaml
