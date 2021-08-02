@@ -78,6 +78,15 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 	return tr, err
 }
 
+func getTr(ctx context.Context, t *testing.T, c pipelineclientset.Interface, name, ns string) (tr *tekton.TaskRun) {
+	t.Helper()
+	tr, err := c.TektonV1beta1().TaskRuns(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		t.Error(err)
+	}
+	return tr
+}
+
 func waitForTaskRunDone(
 	ctx context.Context,
 	t *testing.T,

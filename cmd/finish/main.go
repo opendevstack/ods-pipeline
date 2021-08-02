@@ -26,11 +26,7 @@ func main() {
 	ctxt := &pipelinectxt.ODSContext{}
 	err := ctxt.ReadCache(".")
 	if err != nil {
-		log.Fatalf(
-			"Unable to continue as pipeline context cannot be read: %s.\n"+
-				"Bitbucket build status will not be set and no artifacts will be uploaded to Nexus.",
-			err,
-		)
+		panic(err.Error())
 	}
 
 	// Set Bitbucket build status
