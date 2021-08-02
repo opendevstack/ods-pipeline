@@ -41,6 +41,8 @@ type PipelineData struct {
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
+	Environment     string `json:"environment"`
+	Version         string `json:"version"`
 	GitRef          string `json:"gitRef"`
 	GitFullRef      string `json:"gitFullRef"`
 	GitSHA          string `json:"gitSha"`
@@ -266,6 +268,8 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
+
 	rendered, err := renderPipeline(odsConfig, pData)
 	if err != nil {
 		msg := "Could not render pipeline definition"
@@ -289,6 +293,23 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, createStatusCode)
 		return
 	}
+}
+
+func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
+	for _, bem := range mapping {
+		// exact match
+		if bem.Branch == branch {
+			return bem.Environment
+		}
+		// prefix match like "release/*", also catches "*"
+		if strings.HasSuffix(bem.Branch, "*") {
+			branchPrefix := strings.TrimSuffix(bem.Branch, "*")
+			if strings.HasPrefix(branch, branchPrefix) {
+				return bem.Environment
+			}
+		}
+	}
+	return ""
 }
 
 func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (string, error) {

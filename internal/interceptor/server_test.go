@@ -100,6 +100,63 @@ func TestIsCiSkipInCommitMessage(t *testing.T) {
 	}
 }
 
+func TestSelectEnvironmentFromMapping(t *testing.T) {
+	tests := []struct {
+		mapping []config.BranchToEnvironmentMapping
+		branch  string
+		want    string
+	}{
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "developer", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+			{
+				Branch:      "develop",
+				Environment: "foo",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release/1.0", "qa"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "*",
+				Environment: "dev",
+			},
+		}, "foo", "dev"},
+	}
+	for i, tc := range tests {
+		t.Run(fmt.Sprintf("mapping #%d", i), func(t *testing.T) {
+			got := selectEnvironmentFromMapping(tc.mapping, tc.branch)
+			if tc.want != got {
+				t.Fatalf("Got %v, want %v for branch '%s'", got, tc.want, tc.branch)
+			}
+		})
+	}
+}
+
 func fatalIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)

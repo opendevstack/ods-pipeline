@@ -5,15 +5,22 @@ import (
 )
 
 type ODS struct {
-	Repositories []Repository  `json:"repositories"`
-	Environments []Environment `json:"environments"`
-
-	Pipeline Pipeline `json:"pipeline"`
+	Repositories               []Repository                 `json:"repositories"`
+	Environments               []Environment                `json:"environments"`
+	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping"`
+	Pipeline                   Pipeline                     `json:"pipeline"`
 }
 
 type Repository struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+}
+
+type BranchToEnvironmentMapping struct {
+	// Name of Git branch. May also be a prefix like "release/*"
+	Branch string `json:"branch"`
+	// Environment of the environment.
+	Environment string `json:"environment"`
 }
 
 type Environment struct {
