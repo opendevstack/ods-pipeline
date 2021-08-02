@@ -1,0 +1,52 @@
+= Authoring Tasks
+
+This document will explain how to author custom Tekton tasks to use with ODS.
+
+Prior to creating your own task, it is important to understand in general how Tekton and ODS work. The link:introduction.adoc[introduction] provides a starting point.
+
+== Why and when to create custom tasks?
+
+ODS provides tasks out-of-the-box that can be used e.g. to build and deploy Go applications. However, these tasks are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization though. This is by design: when the official tasks are used, the ODS installation provider is able to make certain assumptions, such as which artifacts have been produced, etc.
+
+If you need more control than the official tasks offer, then creating a custom Tekton task is the way to go. You may also use a Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
+
+== How do I create a custom task?
+
+A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.yml`) just like official ODS tasks. The only difference is that ODS tasks are typically available as cluster tasks, available to every namespace, in contrast to your custom task which will only be availble within your own namespace.
+
+Now, a task contains of one or more steps, and each step is a container that runs in a pod. Therefore, when you create your task, you will need to define at least one step, which will need to define the container it will execute. For example, if you want to use the `curl` program in your custom task, then you will need to launch a container which has `curl` installed. This means that you either need to find a container image that has the binaries installed that you want to execute, or you need to build a container image first that suits your needs, before using it in your task definition.
+
+The simplest YAML definition of a task looks like this:
+```
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: hello-world
+spec:
+  description: Example task
+  steps:
+    - name: say-hello
+      image: busybox
+      script: |
+        echo hello world
+```
+
+Of course this doesn't do anything useful in the CI pipeline. Typically you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples.
+
+In the example above, we are using the `busybox` image, which executes what is defined in `script` in a shell (`sh`). Since `echo` is available in `sh`, we can print the words `hello world` to the log output.
+
+== FAQ
+
+=== Which programming language do I need to use? Do I need to use Go?
+
+You may use any programming language you wish to implement the logic of your task, since you provide both the container image to use, and the script to execute in that image. Therefore, you can write the task in any way you want: shell scripts, Go, Python, Ruby, Java, ... you name it. That said, using languages with a fast boot time and a low memory footprint is advisable. If you plan to write automated tests for your task (which can also be run locally), then you may use the Go test framework provided by `ods-pipeline`, but even then you may use a language other than Go for your actual task.
+
+=== How do I create my own container image to use in a task?
+
+In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information. You may also use the YAML definitions in `deploy/central/images` as an example.
+
+Creating a technology-specific ODS Task consists of a few steps like creating a Dockerfile, OpenShift resources, the Tekton Task itself and more.
+
+== Testing tasks
+
+Official ODS tasks are provided with automated tests. These tests are written in Go, and can be executed locally (in a KinD cluster) via `make test`. Each test creates a `TaskRun` with certain parameters and then checks the result of the run and the state of the workspace after the run. This allows to test each task in isolation and before using the task in a pipeline in an actual OpenShift cluster. If you want, you can also make use of this task testing framework for your own custom tasks. TODO.
