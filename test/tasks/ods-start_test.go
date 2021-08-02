@@ -21,6 +21,8 @@ func TestTaskODSStart(t *testing.T) {
 						"project":           ctxt.ODS.Project,
 						"component":         ctxt.ODS.Component,
 						"repository":        ctxt.ODS.Repository,
+						"environment":       ctxt.ODS.Environment,
+						"version":           ctxt.ODS.Version,
 						"pipeline-run-name": "foo",
 					}
 				},
