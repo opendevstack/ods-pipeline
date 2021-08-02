@@ -35,15 +35,13 @@ func TestRenderPipeline(t *testing.T) {
 
 	// read ods.yml
 	conf := ReadFixtureFile(t, "ods.yml")
-	var odsConfig config.ODS
+	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	phases := odsConfig.Phases
-	phasesList := []config.Phases{phases}
-	gotPipeline, err := renderPipeline(phasesList, data)
+	gotPipeline, err := renderPipeline(odsConfig, data)
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
-		t.Errorf("renderPipeline() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -77,7 +75,7 @@ func TestExtensions(t *testing.T) {
 	err = json.Unmarshal(gotBody, &gotPayload)
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPayload, gotPayload); diff != "" {
-		t.Errorf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
 	}
 }
 

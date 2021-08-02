@@ -29,7 +29,7 @@ echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 cd ${SCRIPT_DIR}/nexus
 docker build -t nexustest .
-cd -
+cd - &> /dev/null
 docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
 
 if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then

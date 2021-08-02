@@ -29,6 +29,8 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		GitFullRef:   "refs/heads/master",
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+		Environment:  "dev",
+		Version:      pipelinectxt.WIP,
 	}
 	err := ctxt.WriteCache(wsDir)
 	if err != nil {
@@ -43,9 +45,11 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	initAndCommitOrFatal(t, wsDir)
 
 	ctxt := &pipelinectxt.ODSContext{
-		Namespace: ns,
-		Project:   "myproject",
-		GitURL:    "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+		Namespace:   ns,
+		Project:     "myproject",
+		GitURL:      "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+		Environment: "dev",
+		Version:     pipelinectxt.WIP,
 	}
 	err := ctxt.Assemble(wsDir)
 	if err != nil {
@@ -66,9 +70,11 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 	originURL := pushToBitbucketOrFatal(t, c, ns, wsDir, projectKey)
 
 	ctxt := &pipelinectxt.ODSContext{
-		Namespace: ns,
-		Project:   projectKey,
-		GitURL:    originURL,
+		Namespace:   ns,
+		Project:     projectKey,
+		GitURL:      originURL,
+		Environment: "dev",
+		Version:     pipelinectxt.WIP,
 	}
 	err := ctxt.Assemble(wsDir)
 	if err != nil {

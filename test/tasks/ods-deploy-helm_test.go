@@ -115,15 +115,11 @@ func TestTaskODSDeployHelm(t *testing.T) {
 
 func createODSYML(wsDir, releaseNamespace string) error {
 	o := &config.ODS{
-		Environments: config.Environments{
-			DEV: config.Environment{
-				Targets: []config.Target{
-					{
-						Name:      "default",
-						Namespace: releaseNamespace,
-						Kind:      "dev",
-					},
-				},
+		Environments: []config.Environment{
+			{
+				Name:      "dev",
+				Namespace: releaseNamespace,
+				Stage:     "dev",
 			},
 		},
 	}

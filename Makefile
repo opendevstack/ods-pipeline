@@ -36,7 +36,7 @@ endif
 	cd scripts && ./install-cd-namespace-resources.sh -n $(namespace)
 .PHONY: install-cd-namespace
 
-## Apply ODS BuildConfig, ImageStream and ClusterTask manifests (OpenShift only)
+## OpenShift only! Apply ODS BuildConfig, ImageStream and ClusterTask manifests
 install-ods-central:
 ifeq ($(strip $(namespace)),)
 	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
@@ -45,7 +45,7 @@ endif
 	cd deploy/central && kubectl -n $(namespace) apply -k openshift
 .PHONY: install-ods-central
 
-## Start builds for each ODS BuildConfig (OpenShift only)
+## OpenShift only! Start builds for each ODS BuildConfig
 start-ods-central-builds: deploy-ods-central
 	oc start-build ods-build-go
 	oc start-build ods-buildah
@@ -55,10 +55,10 @@ start-ods-central-builds: deploy-ods-central
 	oc start-build ods-finish
 .PHONY: start-ods-central-builds
 
-## Apply ODS ClusterTask manifests in KinD
-deploy-ods-tasks-kind:
+## KinD only! Apply ODS ClusterTask manifests in KinD
+install-ods-tasks-kind:
 	cd deploy/central && kubectl apply -k kind
-.PHONY: deploy-ods-tasks-kind
+.PHONY: install-ods-tasks-kind
 
 ## Run Bitbucket server (using timebomb license, in "kind" network).
 run-bitbucket:
@@ -99,7 +99,7 @@ docs:
 	go run cmd/docs/main.go
 .PHONY: docs
 
-## Run testsuite.
+## Run complete testsuite.
 test: test-internal test-pkg test-tasks
 .PHONY: test
 
