@@ -26,9 +26,11 @@ The most important pieces are:
 
 ## Details / Documentation
 
+* [Introduction](/docs/introduction.adoc)
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
-* [Tasks](/docs/tasks)
+* [Task Library](/docs/tasks)
+* [Authoring Tasks](/docs/authoring-tasks.adoc)
 
 ## Development & Running tests
 

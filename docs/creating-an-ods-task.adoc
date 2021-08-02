@@ -2,6 +2,8 @@
 
 Creating a technology-specific ODS Task consists of a few steps like creating a Dockerfile, OpenShift resources, the Tekton Task itself and more.
 
+Please see link:authoring-tasks.adoc[Authoring tasks] for documentation about the general approach of creating a task. The following goes into details which further actions need to be taken to create a task which is part of the official ODS task library.
+
 == Checklist
 
 To create a technology-specific Task (e.g. python), the following files should be **added**:
