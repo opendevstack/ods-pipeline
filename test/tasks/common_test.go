@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	kclient "k8s.io/client-go/kubernetes"
@@ -94,9 +93,9 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 	}
 }
 
-func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *pipelinectxt.ODSContext, qualityGateFlag bool, wantQualityGateStatus string) {
+func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *tasktesting.TaskRunContext, qualityGateFlag bool, wantQualityGateStatus string) {
 
-	sonarToken, err := kubernetes.GetSecretKey(c, "ods", "ods-sonar-auth", "password")
+	sonarToken, err := kubernetes.GetSecretKey(c, ctxt.Namespace, "ods-sonar-auth", "password")
 	if err != nil {
 		t.Fatalf("could not get SonarQube token: %s", err)
 	}
@@ -108,7 +107,7 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *pipelinectx
 	})
 
 	if qualityGateFlag {
-		sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)
+		sonarProject := fmt.Sprintf("%s-%s", ctxt.ODS.Project, ctxt.ODS.Component)
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)

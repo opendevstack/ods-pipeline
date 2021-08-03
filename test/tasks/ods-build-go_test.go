@@ -46,7 +46,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						}
 					}
 
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.ODS, true, "OK")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
 
 					b, _, err := command.Run(wsDir+"/docker/app", []string{})
 					if err != nil {
