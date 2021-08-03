@@ -61,6 +61,15 @@ spec:
         Name of the component to build.
         The component is the repository name without "project" prefix.
       type: string
+    - name: environment
+      description: >-
+        Name of the environment to deploy to.
+      type: string
+    - name: version
+      description: >-
+        Version of the application.
+        If not set, version will default to `WIP`.
+      type: string
     - name: repository
       description: Name of the Bitbucket repository to clone.
       type: string
@@ -112,6 +121,8 @@ spec:
           -project=$(params.project) \
           -repository=$(params.repository) \
           -component=$(params.component) \
+          -environment=$(params.environment) \
+          -version=$(params.version) \
           -git-full-ref=$(params.git-full-ref) \
           -git-ref-spec=$(params.refspec) \
           -url=$(params.url) \

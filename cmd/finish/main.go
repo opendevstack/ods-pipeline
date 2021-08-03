@@ -67,7 +67,7 @@ func main() {
 	}
 
 	// Read files from .ods/artifacts
-	artifactsMap, err := ctxt.ReadArtifactsDir()
+	artifactsMap, err := pipelinectxt.ReadArtifactsDir()
 	if err != nil {
 		log.Fatal(err)
 	}

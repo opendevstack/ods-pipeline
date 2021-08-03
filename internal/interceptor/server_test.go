@@ -35,15 +35,13 @@ func TestRenderPipeline(t *testing.T) {
 
 	// read ods.yml
 	conf := ReadFixtureFile(t, "ods.yml")
-	var odsConfig config.ODS
+	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	phases := odsConfig.Phases
-	phasesList := []config.Phases{phases}
-	gotPipeline, err := renderPipeline(phasesList, data)
+	gotPipeline, err := renderPipeline(odsConfig, data)
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
-		t.Errorf("renderPipeline() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -56,6 +54,8 @@ func TestExtensions(t *testing.T) {
 		Project:         "foo",
 		Repository:      "foo-bar",
 		Component:       "bar",
+		Environment:     "",
+		Version:         "",
 		GitRef:          "main",
 		GitFullRef:      "refs/heads/main",
 		GitSHA:          "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
@@ -77,7 +77,7 @@ func TestExtensions(t *testing.T) {
 	err = json.Unmarshal(gotBody, &gotPayload)
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPayload, gotPayload); diff != "" {
-		t.Errorf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -97,6 +97,63 @@ func TestIsCiSkipInCommitMessage(t *testing.T) {
 			got := isCiSkipInCommitMessage((tc.message))
 			if tc.want != got {
 				t.Fatalf("Got %v, want %v for message '%s'", got, tc.want, tc.message)
+			}
+		})
+	}
+}
+
+func TestSelectEnvironmentFromMapping(t *testing.T) {
+	tests := []struct {
+		mapping []config.BranchToEnvironmentMapping
+		branch  string
+		want    string
+	}{
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "developer", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+			{
+				Branch:      "develop",
+				Environment: "foo",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release/1.0", "qa"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "*",
+				Environment: "dev",
+			},
+		}, "foo", "dev"},
+	}
+	for i, tc := range tests {
+		t.Run(fmt.Sprintf("mapping #%d", i), func(t *testing.T) {
+			got := selectEnvironmentFromMapping(tc.mapping, tc.branch)
+			if tc.want != got {
+				t.Fatalf("Got %v, want %v for branch '%s'", got, tc.want, tc.branch)
 			}
 		})
 	}

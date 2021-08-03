@@ -21,6 +21,8 @@ func main() {
 	projectFlag := flag.String("project", "", "project")
 	repositoryFlag := flag.String("repository", "", "repository")
 	componentFlag := flag.String("component", "", "component")
+	environmentFlag := flag.String("environment", "", "environment")
+	versionFlag := flag.String("version", "", "version")
 	gitRefSpecFlag := flag.String("git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
 	//gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
 	prKeyFlag := flag.String("pr-key", "", "pull request key")
@@ -91,6 +93,8 @@ func main() {
 		Project:         *projectFlag,
 		Repository:      *repositoryFlag,
 		Component:       *componentFlag,
+		Environment:     *environmentFlag,
+		Version:         *versionFlag,
 		GitFullRef:      *gitFullRefFlag,
 		GitCommitSHA:    sha,
 		PullRequestBase: *prBaseFlag,

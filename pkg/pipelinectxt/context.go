@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 const (
 	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	WIP           = "WIP"
 )
 
 type ODSContext struct {
@@ -25,7 +25,7 @@ type ODSContext struct {
 	GitRef          string
 	GitURL          string
 	Version         string
-	Target          string
+	Environment     string
 	PullRequestBase string
 	PullRequestKey  string
 }
@@ -43,6 +43,8 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 		".ods/project":        o.Project,
 		".ods/repository":     o.Repository,
 		".ods/component":      o.Component,
+		".ods/environment":    o.Environment,
+		".ods/version":        o.Version,
 		".ods/git-commit-sha": o.GitCommitSHA,
 		".ods/git-url":        o.GitURL,
 		".ods/git-ref":        o.GitRef,
@@ -67,6 +69,8 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 		".ods/project":        &o.Project,
 		".ods/repository":     &o.Repository,
 		".ods/component":      &o.Component,
+		".ods/environment":    &o.Environment,
+		".ods/version":        &o.Version,
 		".ods/git-commit-sha": &o.GitCommitSHA,
 		".ods/git-url":        &o.GitURL,
 		".ods/git-ref":        &o.GitRef,
@@ -111,7 +115,9 @@ func (o *ODSContext) Assemble(wsDir string) error {
 	if len(o.Component) == 0 {
 		o.Component = strings.TrimPrefix(o.Repository, o.Project+"-")
 	}
-
+	if len(o.Version) == 0 {
+		o.Version = WIP
+	}
 	if len(o.GitFullRef) == 0 {
 		gitHead, err := getTrimmedFileContent(filepath.Join(wsDir, ".git/HEAD"))
 		if err != nil {
@@ -141,47 +147,6 @@ func (o *ODSContext) Assemble(wsDir string) error {
 		o.GitCommitSHA = gitSHA
 	}
 	return nil
-}
-
-func (o *ODSContext) ReadArtifactsDir() (map[string][]string, error) {
-
-	artifactsDir := ".ods/artifacts/"
-	artifactsMap := map[string][]string{}
-
-	items, err := ioutil.ReadDir(artifactsDir)
-	if err != nil {
-		return artifactsMap, fmt.Errorf("%w", err)
-	}
-
-	for _, item := range items {
-		if item.IsDir() {
-			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := ioutil.ReadDir(artifactsDir + item.Name())
-			if err != nil {
-				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
-			}
-			filesInSubDir := []string{}
-			for _, subitem := range subitems {
-				if !subitem.IsDir() {
-					// artifact file here, e.g. "report.xml"
-					log.Println(item.Name() + "/" + subitem.Name())
-					filesInSubDir = append(filesInSubDir, subitem.Name())
-				}
-			}
-
-			artifactsMap[item.Name()] = filesInSubDir
-		}
-	}
-
-	log.Println("artifactsMap: ", artifactsMap)
-
-	// map of directories and files under .ods/artifacts, e.g
-	// [
-	//	"xunit-reports": ["report.xml"]
-	//	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
-	// ]
-
-	return artifactsMap, nil
 }
 
 func readRemoteOriginURL(gitConfigFilename string) (string, error) {

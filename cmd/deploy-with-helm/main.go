@@ -30,9 +30,7 @@ const (
 
 func main() {
 	chartDir := flag.String("chart-dir", "", "Chart dir")
-	environment := flag.String("environment", "", "environment")
 	releaseNameFlag := flag.String("release-name", "", "release-name")
-	target := flag.String("target", "", "target")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -52,11 +50,11 @@ func main() {
 	// read ods.yml
 	odsConfig, err := getConfig("ods.yml")
 	if err != nil {
-		log.Fatal(fmt.Sprintf("err during ods config reading %s", err))
+		log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
 	}
-	targetConfig, err := getTarget(odsConfig, *environment, *target)
+	targetConfig, err := getTargetEnvironment(odsConfig, ctxt.Environment)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("err during namespace extraction %s", err))
+		log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
 	}
 
 	releaseNamespace := targetConfig.Namespace
@@ -241,8 +239,8 @@ func main() {
 		log.Fatal(err)
 	}
 	valuesFiles := []string{}
-	valuesFilesCandidates := []string{fmt.Sprintf("values.%s.yaml", targetConfig.Kind)}
-	if targetConfig.Kind != targetConfig.Name {
+	valuesFilesCandidates := []string{fmt.Sprintf("values.%s.yaml", targetConfig.Stage)}
+	if targetConfig.Stage != targetConfig.Name {
 		valuesFilesCandidates = append(valuesFilesCandidates, fmt.Sprintf("values.%s.yaml", targetConfig.Name))
 	}
 	valuesFilesCandidates = append(valuesFilesCandidates, generatedValuesFilename)
@@ -314,24 +312,16 @@ func getConfig(filename string) (config.ODS, error) {
 	return odsConfig, nil
 }
 
-func getTarget(odsConfig config.ODS, environment string, target string) (config.Target, error) {
-	fmt.Printf("looking for namespace for env=%s, target=%s\n", environment, target)
-	var targ config.Target
-
-	var targets []config.Target
-	if environment == "dev" {
-		targets = odsConfig.Environments.DEV.Targets
-	} else {
-		return targ, fmt.Errorf("not yet")
-	}
-
-	for _, t := range targets {
-		if t.Name == target {
-			return t, nil
+func getTargetEnvironment(odsConfig config.ODS, environment string) (*config.Environment, error) {
+	var envs []string
+	for _, e := range odsConfig.Environments {
+		if e.Name == environment {
+			return &e, nil
 		}
+		envs = append(envs, e.Name)
 	}
 
-	return targ, fmt.Errorf("no match")
+	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
 }
 
 type helmChart struct {
@@ -354,7 +344,7 @@ func getHelmChart(filename string) (*helmChart, error) {
 }
 
 func getChartVersion(contextVersion string, hc *helmChart) string {
-	if len(contextVersion) > 0 {
+	if len(contextVersion) > 0 && contextVersion != pipelinectxt.WIP {
 		return contextVersion
 	}
 	return hc.Version

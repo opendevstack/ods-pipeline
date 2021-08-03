@@ -141,7 +141,7 @@ jobs:
         run: df -h
       -
         name: Install cluster tasks
-        run: make deploy-ods-tasks-kind
+        run: make install-ods-tasks-kind
       -
         name: Setup Go 1.16
         uses: actions/setup-go@v2

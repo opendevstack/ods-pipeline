@@ -5,10 +5,10 @@ import (
 )
 
 type ODS struct {
-	Repositories []Repository `json:"repositories"`
-	Environments Environments `json:"environments"`
-
-	Phases Phases `json:"phases"`
+	Repositories               []Repository                 `json:"repositories"`
+	Environments               []Environment                `json:"environments"`
+	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping"`
+	Pipeline                   Pipeline                     `json:"pipeline"`
 }
 
 type Repository struct {
@@ -16,20 +16,18 @@ type Repository struct {
 	URL  string `json:"url"`
 }
 
-type Environments struct {
-	DEV  Environment `json:"dev"`
-	QA   Environment `json:"qa"`
-	PROD Environment `json:"prod"`
-}
-type Environment struct {
-	Targets []Target `json:"targets"`
+type BranchToEnvironmentMapping struct {
+	// Name of Git branch. May also be a prefix like "release/*"
+	Branch string `json:"branch"`
+	// Environment of the environment.
+	Environment string `json:"environment"`
 }
 
-type Target struct {
+type Environment struct {
 	// Name of the environment to deploy to. This is an arbitary name.
 	Name string `json:"name"`
 	// Kind of the environment to deploy to. One of "dev", "qa", "prod".
-	Kind string `json:"kind"`
+	Stage string `json:"stage"`
 	// API URL of the target cluster.
 	URL string `json:"url"`
 	// Hostname of the target registry. If not given, the registy of the source
@@ -46,11 +44,7 @@ type Target struct {
 	Config map[string]interface{} `json:"config"`
 }
 
-type Phases struct {
-	Init     []tekton.PipelineTask `json:"init"`
-	Build    []tekton.PipelineTask `json:"build"`
-	Deploy   []tekton.PipelineTask `json:"deploy"`
-	Test     []tekton.PipelineTask `json:"test"`
-	Release  []tekton.PipelineTask `json:"release"`
-	Finalize []tekton.PipelineTask `json:"finalize"`
+type Pipeline struct {
+	Tasks   []tekton.PipelineTask `json:"tasks"`
+	Finally []tekton.PipelineTask `json:"finally"`
 }

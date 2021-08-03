@@ -41,6 +41,8 @@ type PipelineData struct {
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
+	Environment     string `json:"environment"`
+	Version         string `json:"version"`
 	GitRef          string `json:"gitRef"`
 	GitFullRef      string `json:"gitFullRef"`
 	GitSHA          string `json:"gitSha"`
@@ -251,15 +253,24 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	phasesList, err := s.collectPhasesList(s.BitbucketClient, pData)
+	odsConfig, err := getODSConfig(
+		s.BitbucketClient,
+		pData.Project,
+		pData.Repository,
+		pData.GitFullRef,
+		pipelineFilename,
+	)
+
 	if err != nil {
-		msg := "Could not collect phases list"
+		msg := fmt.Sprintf("could not download ODS config for repo %s", pData.Repository)
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, 500)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	rendered, err := renderPipeline(phasesList, pData)
+	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
+
+	rendered, err := renderPipeline(odsConfig, pData)
 	if err != nil {
 		msg := "Could not render pipeline definition"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -282,6 +293,23 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, createStatusCode)
 		return
 	}
+}
+
+func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
+	for _, bem := range mapping {
+		// exact match
+		if bem.Branch == branch {
+			return bem.Environment
+		}
+		// prefix match like "release/*", also catches "*"
+		if strings.HasSuffix(bem.Branch, "*") {
+			branchPrefix := strings.TrimSuffix(bem.Branch, "*")
+			if strings.HasPrefix(branch, branchPrefix) {
+				return bem.Environment
+			}
+		}
+	}
+	return ""
 }
 
 func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (string, error) {
@@ -309,40 +337,6 @@ func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFul
 		return nil, fmt.Errorf("could not unmarshal config: %w", err)
 	}
 	return &odsConfig, nil
-}
-
-func (s *Server) collectPhasesList(bitbucketClient *bitbucket.Client, pData PipelineData) ([]config.Phases, error) {
-	var phasesList []config.Phases
-
-	odsConfig, err := getODSConfig(
-		bitbucketClient,
-		pData.Project,
-		pData.Repository,
-		pData.GitFullRef,
-		pipelineFilename,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", pData.Repository, err)
-	}
-
-	// TODO: take child repo URL config into account.
-	for _, childRepo := range odsConfig.Repositories {
-		oc, err := getODSConfig(
-			bitbucketClient,
-			pData.Project,
-			childRepo.Name,
-			pData.GitFullRef,
-			pipelineFilename,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("could not download ODS config for repo %s: %w", childRepo.Name, err)
-		}
-		phasesList = append(phasesList, oc.Phases)
-	}
-
-	phasesList = append(phasesList, odsConfig.Phases)
-	return phasesList, nil
 }
 
 func determineProject(serverProject string, projectParam string) string {
@@ -398,12 +392,11 @@ func makePipelineName(component string, branch string) string {
 	return pipeline
 }
 
-// renderPipeline: phasesList is a list of phases in repo order.
-func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, error) {
+func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
 
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
-		Name:    "start",
+		Name:    "ods-start",
 		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-" + taskVersion},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
 			{Name: "source", Workspace: "shared-workspace"},
@@ -467,62 +460,29 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 			},
 		},
 	})
-
-	var initTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		initTasks = append(initTasks, phases.Init...)
+	if len(odsConfig.Pipeline.Tasks) > 0 {
+		odsConfig.Pipeline.Tasks[0].RunAfter = append(odsConfig.Pipeline.Tasks[0].RunAfter, "ods-start")
+		tasks = append(tasks, odsConfig.Pipeline.Tasks...)
 	}
-	tasks = appendTasks(tasks, initTasks)
 
-	var buildTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		buildTasks = append(buildTasks, phases.Build...)
-	}
-	tasks = appendTasks(tasks, buildTasks)
-
-	var deployTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		deployTasks = append(deployTasks, phases.Deploy...)
-	}
-	tasks = appendTasks(tasks, deployTasks)
-
-	var testTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		testTasks = append(testTasks, phases.Test...)
-	}
-	tasks = appendTasks(tasks, testTasks)
-
-	var releaseTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		releaseTasks = append(releaseTasks, phases.Release...)
-	}
-	tasks = appendTasks(tasks, releaseTasks)
-
-	var finalizeTasks []tekton.PipelineTask
-	for _, phases := range phasesList {
-		finalizeTasks = append(finalizeTasks, phases.Finalize...)
-	}
-	tasks = appendTasks(tasks, finalizeTasks)
-
-	finallyTasks := []tekton.PipelineTask{
-		{
-			Name:    "finish",
-			TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-" + taskVersion},
-			Workspaces: []tekton.WorkspacePipelineTaskBinding{
-				{Name: "source", Workspace: "shared-workspace"},
-			},
-			Params: []tekton.Param{
-				{
-					Name: "pipeline-run-name",
-					Value: tekton.ArrayOrString{
-						StringVal: "$(context.pipelineRun.name)",
-						Type:      tekton.ParamTypeString,
-					},
+	var finallyTasks []tekton.PipelineTask
+	finallyTasks = append(finallyTasks, odsConfig.Pipeline.Finally...)
+	finallyTasks = append(finallyTasks, tekton.PipelineTask{
+		Name:    "ods-finish",
+		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-" + taskVersion},
+		Workspaces: []tekton.WorkspacePipelineTaskBinding{
+			{Name: "source", Workspace: "shared-workspace"},
+		},
+		Params: []tekton.Param{
+			{
+				Name: "pipeline-run-name",
+				Value: tekton.ArrayOrString{
+					StringVal: "$(context.pipelineRun.name)",
+					Type:      tekton.ParamTypeString,
 				},
 			},
 		},
-	}
-
+	})
 	p := tekton.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            data.Name,
@@ -603,17 +563,6 @@ func renderPipeline(phasesList []config.Phases, data PipelineData) ([]byte, erro
 	}
 
 	return yaml.Marshal(p)
-}
-
-func appendTasks(tasks []tekton.PipelineTask, newTasks []tekton.PipelineTask) []tekton.PipelineTask {
-	lastTask := tasks[len(tasks)-1]
-	for _, taskToAdd := range newTasks {
-		if len(taskToAdd.RunAfter) == 0 {
-			taskToAdd.RunAfter = []string{lastTask.Name}
-		}
-		tasks = append(tasks, taskToAdd)
-	}
-	return tasks
 }
 
 type prInfo struct {

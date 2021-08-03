@@ -7,7 +7,14 @@ metadata:
 spec:
   description: ODS
   finally:
-  - name: finish
+  - name: go-helm-finalize
+    taskRef:
+      kind: Task
+      name: ods-finalize-docgen-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: ods-finish
     params:
     - name: pipeline-run-name
       value: $(context.pipelineRun.name)
@@ -40,7 +47,7 @@ spec:
     name: pr-base
     type: string
   tasks:
-  - name: start
+  - name: ods-start
     params:
     - name: url
       value: $(params.git-repo-url)
@@ -73,10 +80,10 @@ spec:
     - name: IMAGE_STREAM
       value: go-helm
     runAfter:
-    - start
+    - ods-start
     taskRef:
-      kind: Task
-      name: ods-build-go
+      kind: ClusterTask
+      name: ods-build-go-v0-1-0
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -95,20 +102,8 @@ spec:
     runAfter:
     - go-helm-build
     taskRef:
-      kind: Task
-      name: ods-deploy-helm
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: go-helm-finalize
-    params:
-    - name: IMAGE_STREAM
-      value: go-helm
-    runAfter:
-    - go-helm-deploy
-    taskRef:
-      kind: Task
-      name: ods-finalize-docgen
+      kind: ClusterTask
+      name: ods-deploy-helm-v0-1-0
     workspaces:
     - name: source
       workspace: shared-workspace

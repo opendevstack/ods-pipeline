@@ -39,14 +39,6 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
-    - name: environment
-      description: The name of the environment to deploy to
-      type: string
-      default: dev
-    - name: target
-      description: The name of the target to deploy into
-      type: string
-      default: default
     - name: overwrite-values
       description: >-
         Specify the values you want to overwrite, comma separated.
@@ -61,9 +53,7 @@ spec:
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
-          -release-name=$(params.release-name) \
-          -environment=$(params.environment) \
-          -target=$(params.target)
+          -release-name=$(params.release-name)
       workingDir: $(workspaces.source.path)
   workspaces:
     - name: source

@@ -73,6 +73,16 @@ by the webhook interceptor and cannot be customized by users at this point.
 | Name of the component to build. The component is the repository name without "project" prefix.
 
 
+| environment
+| 
+| Name of the environment to deploy to.
+
+
+| version
+| 
+| Version of the application. If not set, version will default to `WIP`.
+
+
 | repository
 | 
 | Name of the Bitbucket repository to clone.

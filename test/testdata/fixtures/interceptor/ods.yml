@@ -1,49 +1,44 @@
-phases:
-
-  build:
+pipeline:
+  tasks:
     - name: go-helm-build
-      params:
-      - name: DOCKER_CONTEXT
-        value: docker
-      - name: TLSVERIFY
-        value: 'false'
-      - name: IMAGE_STREAM
-        value: go-helm
       taskRef:
-        kind: Task
-        name: ods-build-go
+        kind: ClusterTask
+        name: ods-build-go-v0-1-0
+      params:
+        - name: DOCKER_CONTEXT
+          value: docker
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE_STREAM
+          value: go-helm
       workspaces:
-      - name: source
-        workspace: shared-workspace
-
-  deploy:
+        - name: source
+          workspace: shared-workspace
     - name: go-helm-deploy
-      params:
-      - name: RELEASE_NAME
-        value: go-helm
-      - name: RELEASE_NAMESPACE
-        value: $(params.project)-dev
-      - name: PROJECT
-        value: $(params.project)
-      - name: REPOSITORY
-        value: michael-go-helm
-      - name: NAMESPACE
-        value: $(params.namespace)
       taskRef:
-        kind: Task
-        name: ods-deploy-helm
+        kind: ClusterTask
+        name: ods-deploy-helm-v0-1-0
+      runAfter:
+        - go-helm-build
+      params:
+        - name: RELEASE_NAME
+          value: go-helm
+        - name: RELEASE_NAMESPACE
+          value: $(params.project)-dev
+        - name: PROJECT
+          value: $(params.project)
+        - name: REPOSITORY
+          value: michael-go-helm
+        - name: NAMESPACE
+          value: $(params.namespace)
       workspaces:
-      - name: source
-        workspace: shared-workspace
-
-  finalize:
+        - name: source
+          workspace: shared-workspace
+  finally:
     - name: go-helm-finalize
-      params:
-      - name: IMAGE_STREAM
-        value: go-helm
       taskRef:
         kind: Task
-        name: ods-finalize-docgen
+        name: ods-finalize-docgen-v0-1-0
       workspaces:
-      - name: source
-        workspace: shared-workspace
+        - name: source
+          workspace: shared-workspace
