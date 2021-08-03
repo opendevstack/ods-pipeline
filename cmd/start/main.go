@@ -11,6 +11,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -37,6 +38,11 @@ func main() {
 	depthFlag := flag.String("depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
 	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
+	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
+	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
+	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
+	nexusTemporaryRepositoryFlag := flag.String("nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	//nexusPermanentRepositoryFlag := flag.String("nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
 	flag.Parse()
 
 	checkoutDir := "."
@@ -128,6 +134,16 @@ func main() {
 		URL:         pipelineRunURL,
 		Description: "ODS Pipeline Build",
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = nexus.NewClient(
+		*nexusURLFlag,
+		*nexusUsernameFlag,
+		*nexusPasswordFlag,
+		*nexusTemporaryRepositoryFlag,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

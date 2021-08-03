@@ -20,7 +20,8 @@
   repository.createPyPiHosted('pypi-private', 'pypi-private', true, WritePolicy.ALLOW_ONCE);
   repository.createPyPiGroup('pypi-all', ['pypi-registry', 'pypi-private'], 'default');
   repository.createRawHosted('leva-documentation', 'leva-documentation', false, WritePolicy.ALLOW);
-  repository.createRawHosted('ods-pipelines', 'ods-pipelines', false, WritePolicy.ALLOW);
+  repository.createRawHosted('ods-temporary-artifacts', 'ods-temporary-artifacts', false, WritePolicy.ALLOW);
+  repository.createRawHosted('ods-permanent-artifacts', 'ods-permanent-artifacts', false, WritePolicy.ALLOW);
   repositoryManager = repository.repositoryManager;
   repository = repositoryManager.get('maven-public');
   config = repository.configuration.copy();

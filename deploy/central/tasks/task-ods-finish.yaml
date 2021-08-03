@@ -37,6 +37,16 @@ spec:
             secretKeyRef:
               key: password
               name: ods-nexus-auth
+        - name: NEXUS_TEMPORARY_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              key: temporaryRepository
+              name: ods-nexus
+        - name: NEXUS_PERMANENT_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              key: permanentRepository
+              name: ods-nexus
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:

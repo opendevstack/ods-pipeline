@@ -33,7 +33,7 @@ func NewClient(URL, user, password, repository string) (*Client, error) {
 	return &Client{RM: rm, Username: user, Password: password, Repository: repository}, nil
 }
 
-// URLs gets URLs
+// URLs gets URLs of assets in given repository group.
 func (c *Client) URLs(group string) ([]string, error) {
 	query := nexusrm.NewSearchQueryBuilder().Repository(c.Repository).Group(group)
 	assets, err := nexusrm.SearchAssets(c.RM, query)
