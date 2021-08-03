@@ -55,7 +55,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentContains(t, wsDir, "build/test-results/coverage/coverage.xml", wantContains)
-					checkSonarQualityGate(t, ctxt.ODS, true, "OK")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.ODS, true, "OK")
 				},
 			},
 		})

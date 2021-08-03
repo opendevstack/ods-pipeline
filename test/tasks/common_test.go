@@ -5,15 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	kclient "k8s.io/client-go/kubernetes"
 )
 
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
@@ -93,34 +94,15 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 	}
 }
 
-func checkSonarQualityGate(t *testing.T, ctxt *pipelinectxt.ODSContext, qualityGateFlag bool, wantQualityGateStatus string) {
+func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *pipelinectxt.ODSContext, qualityGateFlag bool, wantQualityGateStatus string) {
 
-	filePath := "../../deploy/cd-namespace/chart/values.generated.yaml"
-	f, err := os.Open(filePath)
+	sonarToken, err := kubernetes.GetSecretKey(c, "ods", "ods-sonar-auth", "password")
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	APIToken := ""
-	r := bufio.NewReader(f)
-	s, e := Readln(r)
-	for e == nil {
-		if strings.HasPrefix(s, "sonarPassword:") {
-
-			index := strings.Index(s, "'")
-			if index == -1 {
-				t.Fatalf("'sonarPassword' entry is missing in file %s", filePath)
-			}
-
-			APIToken = s[index+1 : len(s)-1]
-			break
-		}
-
-		s, e = Readln(r)
+		t.Fatalf("could not get SonarQube token: %s", err)
 	}
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
-		APIToken:      APIToken,
+		APIToken:      sonarToken,
 		BaseURL:       "http://localhost:9000", // use localhost instead of sonarqubetest.kind!
 		ServerEdition: "community",
 	})
