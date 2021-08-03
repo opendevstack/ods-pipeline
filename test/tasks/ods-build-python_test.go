@@ -19,6 +19,9 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"sonar-quality-gate": "true",
+					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -52,6 +55,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentContains(t, wsDir, "build/test-results/coverage/coverage.xml", wantContains)
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
 				},
 			},
 		})
