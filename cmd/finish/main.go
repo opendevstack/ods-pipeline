@@ -16,6 +16,8 @@ func main() {
 	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
 	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
+	// See https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks.
+	// Possible values are: Succeeded, Failed, Completed, None.
 	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
 	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
@@ -45,7 +47,7 @@ func main() {
 		*pipelineRunNameFlag,
 	)
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
-		State:       getBuildStatus(aggregateTasksStatusFlag),
+		State:       getBuildStatus(*aggregateTasksStatusFlag),
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
 		URL:         pipelineRunURL,
@@ -82,9 +84,15 @@ func main() {
 	}
 }
 
-func getBuildStatus(aggregateTasksStatusFlag *string) string {
-
-	if *aggregateTasksStatusFlag == "Succeeded" {
+func getBuildStatus(aggregateTasksStatus string) string {
+	// Meaning of aggregateTasksStatus values:
+	// Succeeded: all tasks have succeeded.
+	// Failed: one ore more tasks failed.
+	// Completed: all tasks completed successfully including one or more skipped tasks.
+	// None: no aggregate execution status available (i.e. none of the above),
+	// one or more tasks could be pending/running/cancelled/timedout.
+	// See https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks.
+	if aggregateTasksStatus == "Succeeded" || aggregateTasksStatus == "Completed" {
 		return "SUCCESSFUL"
 	} else {
 		return "FAILED"
