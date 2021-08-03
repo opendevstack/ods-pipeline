@@ -54,6 +54,8 @@ func TestExtensions(t *testing.T) {
 		Project:         "foo",
 		Repository:      "foo-bar",
 		Component:       "bar",
+		Environment:     "",
+		Version:         "",
 		GitRef:          "main",
 		GitFullRef:      "refs/heads/main",
 		GitSHA:          "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",

@@ -78,6 +78,8 @@
         "project": "foo",
         "component": "bar",
         "repository": "foo-bar",
+        "environment": "",
+        "version": "",
         "gitRef": "main",
         "gitFullRef": "refs/heads/main",
         "gitSha": "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
