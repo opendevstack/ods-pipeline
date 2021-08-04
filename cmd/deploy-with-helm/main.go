@@ -63,17 +63,30 @@ func main() {
 	}
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 
-	// Find image artifacts.
-	var files []fs.FileInfo
-	imageDigestsDir := ".ods/artifacts/image-digests"
-	if _, err := os.Stat(imageDigestsDir); os.IsNotExist(err) {
-		fmt.Printf("no image digest in %s\n", imageDigestsDir)
-	} else {
-		f, err := ioutil.ReadDir(imageDigestsDir)
+	// Find subrepos
+	var subrepos []fs.FileInfo
+	if _, err := os.Stat(pipelinectxt.SubreposPath); err == nil {
+		f, err := ioutil.ReadDir(pipelinectxt.SubreposPath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		files = f
+		subrepos = f
+	}
+
+	// Find image artifacts.
+	var files []string
+	id, err := collectImageDigests(pipelinectxt.ImageDigestsPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	files = append(files, id...)
+	for _, s := range subrepos {
+		subrepoImageDigestsPath := filepath.Join(pipelinectxt.SubreposPath, s.Name(), pipelinectxt.ImageDigestsPath)
+		id, err := collectImageDigests(subrepoImageDigestsPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		files = append(files, id...)
 	}
 
 	// Copy images into release namespace if there are any image artifacts.
@@ -99,9 +112,8 @@ func main() {
 		}
 
 		fmt.Println("Copying images into release namespace ...")
-		for _, f := range files {
+		for _, artifactFile := range files {
 			var imageArtifact artifact.Image
-			artifactFile := filepath.Join(imageDigestsDir, f.Name())
 			artifactContent, err := ioutil.ReadFile(artifactFile)
 			if err != nil {
 				log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
@@ -163,17 +175,6 @@ func main() {
 
 	fmt.Println("Adding dependencies from subrepos into the charts/ directory ...")
 	// Find subcharts
-	var subrepos []fs.FileInfo
-	subreposDir := ".ods/repos"
-	if _, err := os.Stat(subreposDir); os.IsNotExist(err) {
-		fmt.Printf("no subrepos in %s\n", subreposDir)
-	} else {
-		f, err := ioutil.ReadDir(subreposDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		subrepos = f
-	}
 	chartsDir := filepath.Join(*chartDir, "charts")
 	if _, err := os.Stat(chartsDir); os.IsNotExist(err) {
 		err = os.Mkdir(chartsDir, 0755)
@@ -185,7 +186,7 @@ func main() {
 		"gitCommitSha": ctxt.GitCommitSHA,
 	}
 	for _, r := range subrepos {
-		subrepo := filepath.Join(subreposDir, r.Name())
+		subrepo := filepath.Join(pipelinectxt.SubreposPath, r.Name())
 		subchart := filepath.Join(subrepo, *chartDir)
 		if _, err := os.Stat(subchart); os.IsNotExist(err) {
 			fmt.Printf("no chart in %s\n", r.Name())
@@ -391,4 +392,18 @@ func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string) (string, error
 
 	helmArchive := fmt.Sprintf("%s-%s.tgz", hc.Name, packageVersion)
 	return helmArchive, nil
+}
+
+func collectImageDigests(imageDigestsDir string) ([]string, error) {
+	var files []string
+	if _, err := os.Stat(imageDigestsDir); err == nil {
+		f, err := ioutil.ReadDir(imageDigestsDir)
+		if err != nil {
+			return files, fmt.Errorf("could not read image digests dir: %w", err)
+		}
+		for _, fi := range f {
+			files = append(files, filepath.Join(imageDigestsDir, fi.Name()))
+		}
+	}
+	return files, nil
 }

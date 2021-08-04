@@ -2,7 +2,6 @@ package tasktesting
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -115,19 +114,14 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", testdataWorkspacePath, workspaceDir,
+		projectpath.Root, "test", TestdataWorkspacesPath, workspaceDir,
 	)
-
 	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-
-	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
-	if err != nil {
-		return "", err
-	}
-
-	directory.Copy(workspaceSourceDirectory, tempDir)
-
-	return tempDir, nil
+	return directory.CopyToTempDir(
+		workspaceSourceDirectory,
+		workspaceParentDirectory,
+		"workspace-",
+	)
 }
 
 func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, error) {

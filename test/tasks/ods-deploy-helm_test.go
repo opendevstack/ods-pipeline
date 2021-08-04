@@ -3,7 +3,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/yaml"
 )
 
 func TestTaskODSDeployHelm(t *testing.T) {
@@ -26,7 +24,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 
-					err := createODSYML(wsDir, ctxt.Namespace)
+					err := createHelmODSYML(wsDir, ctxt.Namespace)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -51,7 +49,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 
-					err := createODSYML(wsDir, ctxt.Namespace)
+					err := createHelmODSYML(wsDir, ctxt.Namespace)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -113,7 +111,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 // 	return releaseNamespace, err
 // }
 
-func createODSYML(wsDir, releaseNamespace string) error {
+func createHelmODSYML(wsDir, releaseNamespace string) error {
 	o := &config.ODS{
 		Environments: []config.Environment{
 			{
@@ -123,12 +121,7 @@ func createODSYML(wsDir, releaseNamespace string) error {
 			},
 		},
 	}
-	y, err := yaml.Marshal(o)
-	if err != nil {
-		return err
-	}
-	filename := filepath.Join(wsDir, "ods.yml")
-	return ioutil.WriteFile(filename, y, 0644)
+	return createODSYML(wsDir, o)
 }
 
 func checkDeployment(clientset *kubernetes.Clientset, namespace, name string) (*appsv1.Deployment, error) {

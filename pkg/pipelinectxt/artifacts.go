@@ -4,11 +4,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
+)
+
+const (
+	ArtifactsDir     = "artifacts"
+	ArtifactsPath    = BaseDir + "/" + ArtifactsDir
+	PipelineRunsDir  = "pipeline-runs"
+	PipelineRunsPath = ArtifactsPath + "/" + PipelineRunsDir
+	ImageDigestsDir  = "image-digests"
+	ImageDigestsPath = ArtifactsPath + "/" + ImageDigestsDir
 )
 
 func ReadArtifactsDir() (map[string][]string, error) {
 
-	artifactsDir := ".ods/artifacts/"
+	artifactsDir := filepath.Join(BaseDir, ArtifactsDir)
 	artifactsMap := map[string][]string{}
 
 	items, err := ioutil.ReadDir(artifactsDir)
@@ -19,7 +29,7 @@ func ReadArtifactsDir() (map[string][]string, error) {
 	for _, item := range items {
 		if item.IsDir() {
 			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := ioutil.ReadDir(artifactsDir + item.Name())
+			subitems, err := ioutil.ReadDir(filepath.Join(artifactsDir, item.Name()))
 			if err != nil {
 				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
 			}

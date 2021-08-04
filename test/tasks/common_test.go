@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,9 +10,13 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/config"
+	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	kclient "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 )
 
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
@@ -25,6 +28,10 @@ const (
 	storageCapacity     = "1Gi"
 	storageSourceDir    = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 )
+
+func checkODSFileContent(t *testing.T, wsDir, filename, want string) {
+	checkFileContent(t, filepath.Join(wsDir, pipelinectxt.BaseDir), filename, want)
+}
 
 func checkFileContent(t *testing.T, wsDir, filename, want string) {
 	got, err := getTrimmedFileContent(filepath.Join(wsDir, filename))
@@ -42,6 +49,14 @@ func getTrimmedFileContent(filename string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
+}
+
+func trimmedFileContentOrFatal(t *testing.T, filename string) string {
+	c, err := getTrimmedFileContent(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
 }
 
 func checkFileContentContains(t *testing.T, wsDir, filename, wantContains string) {
@@ -126,19 +141,34 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *tasktesting
 
 }
 
-// Readln returns a single line (without the ending \n)
-// from the input buffered reader.
-// An error is returned iff there is an error with the
-// buffered reader.
-func Readln(r *bufio.Reader) (string, error) {
-	var (
-		isPrefix bool  = true
-		err      error = nil
-		line, ln []byte
-	)
-	for isPrefix && err == nil {
-		line, isPrefix, err = r.ReadLine()
-		ln = append(ln, line...)
+func createODSYML(wsDir string, o *config.ODS) error {
+	y, err := yaml.Marshal(o)
+	if err != nil {
+		return err
 	}
-	return string(ln), err
+	filename := filepath.Join(wsDir, "ods.yml")
+	return ioutil.WriteFile(filename, y, 0644)
+}
+
+func nexusClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *nexus.Client {
+	nexusSecret, err := kubernetes.GetSecret(c, namespace, "ods-nexus-auth")
+	if err != nil {
+		t.Fatalf("could not get Nexus secret: %s", err)
+	}
+	nexusConfigMap, err := kubernetes.GetConfigMap(c, namespace, "ods-nexus")
+	if err != nil {
+		t.Fatalf("could not get Nexus config: %s", err)
+	}
+
+	nexusURL := strings.Replace(nexusConfigMap.Data["url"], "nexustest.kind", "localhost", 1)
+	nexusClient, err := nexus.NewClient(
+		nexusURL,
+		string(nexusSecret.Data["username"]),
+		string(nexusSecret.Data["password"]),
+		nexusConfigMap.Data["temporaryRepository"],
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return nexusClient
 }

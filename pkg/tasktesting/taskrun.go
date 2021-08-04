@@ -20,7 +20,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-var testdataWorkspacePath = "testdata/workspaces"
+const (
+	TestdataWorkspacesPath = "testdata/workspaces"
+)
 
 func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaces map[string]string, namespace string) (*tekton.TaskRun, error) {
 
@@ -57,7 +59,7 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 				ClaimName: "task-pv-claim",
 				ReadOnly:  false,
 			},
-			SubPath: filepath.Join(testdataWorkspacePath, wsDirName),
+			SubPath: filepath.Join(TestdataWorkspacesPath, wsDirName),
 		})
 	}
 

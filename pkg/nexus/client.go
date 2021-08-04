@@ -3,17 +3,13 @@ package nexus
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
 
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
 type Client struct {
 	RM         nexusrm.RM
+	URL        string
 	Username   string
 	Password   string
 	Repository string
@@ -30,73 +26,7 @@ func NewClient(URL, user, password, repository string) (*Client, error) {
 		return nil, fmt.Errorf("could not create nexus client: %w", err)
 	}
 
-	return &Client{RM: rm, Username: user, Password: password, Repository: repository}, nil
-}
-
-// URLs gets URLs of assets in given repository group.
-func (c *Client) URLs(group string) ([]string, error) {
-	query := nexusrm.NewSearchQueryBuilder().Repository(c.Repository).Group(group)
-	assets, err := nexusrm.SearchAssets(c.RM, query)
-	if err != nil {
-		return nil, fmt.Errorf("could not search assets: %w", err)
-	}
-
-	res := []string{}
-	for _, a := range assets {
-		res = append(res, a.DownloadURL)
-	}
-	return res, nil
-}
-
-// Upload a file to a repository group
-func (c *Client) Upload(group, file string) error {
-
-	filename := filepath.Base(file)
-
-	link := fmt.Sprintf("%s/repository/%s%s/%s", c.RM.Info().Host, c.Repository, group, filename)
-	fmt.Println("Uploading", file, "to", link)
-
-	osFile, err := os.Open(file)
-	if err != nil {
-		return fmt.Errorf("could not open file %s: %w", file, err)
-	}
-
-	uploadAssetRaw := nexusrm.UploadAssetRaw{
-		File:     osFile,
-		Filename: filename,
-	}
-	uploadComponentRaw := nexusrm.UploadComponentRaw{
-		Directory: group,
-		Tag:       "",
-		Assets:    []nexusrm.UploadAssetRaw{uploadAssetRaw},
-	}
-	err = nexusrm.UploadComponent(c.RM, c.Repository, uploadComponentRaw)
-	if err != nil {
-		return fmt.Errorf("could not upload component: %w", err)
-	}
-	return nil
-}
-
-func (c *Client) Download(url string) (int64, error) {
-	outfile := path.Base(url)
-	out, err := os.Create(outfile)
-	if err != nil {
-		return 0, err
-	}
-	defer out.Close()
-
-	// TODO: timeout
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Basic "+basicAuth(c.Username, c.Password))
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	return io.Copy(out, resp.Body)
+	return &Client{RM: rm, URL: URL, Username: user, Password: password, Repository: repository}, nil
 }
 
 func basicAuth(username, password string) string {

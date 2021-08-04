@@ -6,19 +6,10 @@ import (
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
-// Search gets URLs
-func Search(URL, user, password, repository, group string) ([]string, error) {
-	rm, err := nexusrm.New(
-		URL,
-		user,
-		password,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not create nexus client: %w", err)
-	}
-
-	query := nexusrm.NewSearchQueryBuilder().Repository(repository).Group(group)
-	assets, err := nexusrm.SearchAssets(rm, query)
+// Search gets URLs of assets in given repository group.
+func (c *Client) Search(group string) ([]string, error) {
+	query := nexusrm.NewSearchQueryBuilder().Repository(c.Repository).Group(group)
+	assets, err := nexusrm.SearchAssets(c.RM, query)
 	if err != nil {
 		return nil, fmt.Errorf("could not search assets: %w", err)
 	}

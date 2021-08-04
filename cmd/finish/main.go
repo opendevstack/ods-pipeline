@@ -46,7 +46,7 @@ func main() {
 		)
 	}
 
-	// Set Bitbucket build status
+	fmt.Println("Setting Bitbucket build status ...")
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: *bitbucketAccessTokenFlag,
 		BaseURL:  *bitbucketURLFlag,
@@ -68,7 +68,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Handle artifacts.
+	fmt.Println("Handling artifacts ...")
 	nexusClient, err := nexus.NewClient(
 		*nexusURLFlag,
 		*nexusUsernameFlag,
@@ -80,14 +80,13 @@ func main() {
 	}
 
 	if tasksSuccessful(*aggregateTasksStatusFlag) {
-		// Create artifact of pipeline run
+		fmt.Println("Creating artifact of pipeline run ...")
 		err := createPipelineRunArtifact(*pipelineRunNameFlag, *aggregateTasksStatusFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		// Read files from .ods/artifacts and upload to Nexus
-		// in a folder named like the Git commit SHA.
+		fmt.Println("Uploading artifacts to Nexus ...")
 		artifactsMap, err := pipelinectxt.ReadArtifactsDir()
 		if err != nil {
 			log.Fatal(err)
@@ -95,7 +94,10 @@ func main() {
 
 		for artifactsSubDir, files := range artifactsMap {
 			for _, filename := range files {
-				err = nexusClient.Upload(fmt.Sprintf("/%s/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir), ".ods/artifacts/"+artifactsSubDir+"/"+filename)
+				nexusGroup := fmt.Sprintf("/%s/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir)
+				localFile := filepath.Join(pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
+				fmt.Printf("Uploading %s to Nexus group %s ...\n", localFile, nexusGroup)
+				err = nexusClient.Upload(nexusGroup, localFile)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -116,16 +118,16 @@ func createPipelineRunArtifact(pipelineRunName, aggregateTasksStatus string) err
 	if err != nil {
 		return fmt.Errorf("could not marshal pipeline run artifact: %w", err)
 	}
-	praDir := ".ods/artifacts/pipeline-runs"
-	err = os.MkdirAll(praDir, 0755)
+	err = os.MkdirAll(pipelinectxt.PipelineRunsPath, 0755)
 	if err != nil {
 		return fmt.Errorf("could not create pipeline run artifact directory: %w", err)
 	}
-	filename := filepath.Join(praDir, pra.Name+".json")
+	filename := filepath.Join(pipelinectxt.PipelineRunsPath, pra.Name+".json")
 	err = ioutil.WriteFile(filename, j, 0644)
 	if err != nil {
 		return fmt.Errorf("could not write pipeline run artifact: %w", err)
 	}
+	return nil
 }
 
 // getBitbucketBuildStatus returns a build status for use with Bitbucket based
@@ -133,9 +135,9 @@ func createPipelineRunArtifact(pipelineRunName, aggregateTasksStatus string) err
 // See https://developer.atlassian.com/server/bitbucket/how-tos/updating-build-status-for-commits/.
 func getBitbucketBuildStatus(aggregateTasksStatus string) string {
 	if tasksSuccessful(aggregateTasksStatus) {
-		return "SUCCESSFUL"
+		return bitbucket.BuildStatusSuccessful
 	} else {
-		return "FAILED"
+		return bitbucket.BuildStatusFailed
 	}
 }
 

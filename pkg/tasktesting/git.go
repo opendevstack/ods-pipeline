@@ -34,7 +34,7 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	}
 	err := ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could not write .ods: %s", err)
+		t.Fatalf("could not write %s: %s", pipelinectxt.BaseDir, err)
 	}
 	return ctxt
 }
@@ -58,7 +58,7 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
 	err = ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could not write .ods: %s", err)
+		t.Fatalf("could not write %s: %s", pipelinectxt.BaseDir, err)
 	}
 	return ctxt
 }
@@ -83,20 +83,20 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 
 	err = ctxt.WriteCache(wsDir)
 	if err != nil {
-		t.Fatalf("could not write .ods: %s", err)
+		t.Fatalf("could not write %s: %s", pipelinectxt.BaseDir, err)
 	}
 	return ctxt
 }
 
 func initAndCommitOrFatal(t *testing.T, wsDir string) {
 
-	if _, err := os.Stat(".ods"); os.IsNotExist(err) {
-		err = os.Mkdir(".ods", 0755)
+	if _, err := os.Stat(pipelinectxt.BaseDir); os.IsNotExist(err) {
+		err = os.Mkdir(pipelinectxt.BaseDir, 0755)
 		if err != nil {
-			t.Fatalf("could not create .ods: %s", err)
+			t.Fatalf("could not create %s: %s", pipelinectxt.BaseDir, err)
 		}
 	}
-	err := writeFile(filepath.Join(wsDir, ".gitignore"), ".ods/")
+	err := writeFile(filepath.Join(wsDir, ".gitignore"), pipelinectxt.BaseDir+"/")
 	if err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
@@ -125,11 +125,7 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) string {
 
 	repoName := filepath.Base(wsDir)
-	bbURL, err := kubernetes.GetConfigMapKey(c, ns, "ods-bitbucket", "url")
-	if err != nil {
-		t.Fatalf("could not get Bitbucket URL: %s", err)
-	}
-	bbURL = "http://localhost:7990"
+	bbURL := "http://localhost:7990"
 	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")
 	if err != nil {
 		t.Fatalf("could not get Bitbucket token: %s", err)
