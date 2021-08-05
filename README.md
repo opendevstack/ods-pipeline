@@ -54,3 +54,11 @@ More fine-grained make targets are available, see:
 make help
 ```
 
+## Compatibility
+
+ For OpenShift Pipelines releases and its relationship to Tekton and OpenShift versions, see https://docs.openshift.com/container-platform/4.8/cicd/pipelines/op-release-notes.html
+
+ | ods-pipeline | OpenShift Pipelines | ODS Core/Quickstarters |
+ |---|---|---|
+ | 0.1 (to be released end of August 2021) | 1.5 | 4.0.0 |
+ | 0.2 (to be released TBD) | 1.5 | 4.0.0 |
