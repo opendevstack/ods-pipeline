@@ -1,0 +1,75 @@
+# User Installation
+
+## Prerequisites
+
+You'll need:
+
+* A namespace in an OpenShift cluster (such as `foo-cd`) and a project in Bitbucket (such as `FOO`)
+* `git`, `oc` and `helm` installed locally
+* to be logged into OpenShift
+
+## Instructions
+
+1. Create a repository in Bitbucket, e.g. `foo-cd`
+2. Clone it locally
+3. Use `git subtree` to get the required sources:
+
+```
+gitRef=master
+git fetch --depth=1 https://github.com/opendestack/ods-pipeline.git $gitRef:ods-pipeline-$gitRef
+git checkout ods-pipeline-$gitRef
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch
+git checkout -
+git subtree add --prefix=cd-namespace subtree-split-branch
+```
+
+4. Change to the new folder `cd-namespace`.
+5. Add a `values.foo-cd.yaml` file and fill in the parameters.
+6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`.
+7. Run `oc -n foo-cd expose svc el-ods-pipeline`
+
+## Using ods-pipeline in your repos
+
+After the installation, add an `ods.yml` into each repo you want to add. Example:
+```
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+
+environments:
+- name: dev
+  namespace: foo-dev
+
+pipeline:
+  tasks:
+  - name: backend-build-go
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-go-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-build-image
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-image-v0-1-0
+    runAfter:
+    - backend-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-deploy
+    taskRef:
+      kind: ClusterTask
+      name: ods-deploy-helm-v0-1-0
+    runAfter:
+    - backend-build-image
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+```
+
+In Bitbucket, add a webhook pointing to the exposed route. The secret must match
+the one you entered in the values file.
+
+The next push in that repo will trigger the pipeline.
