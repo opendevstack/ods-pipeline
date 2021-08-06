@@ -37,16 +37,7 @@ func TestTaskODSStart(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					checkODSFileContent(t, wsDir, "component", ctxt.ODS.Component)
-					checkODSFileContent(t, wsDir, "git-commit-sha", ctxt.ODS.GitCommitSHA)
-					checkODSFileContent(t, wsDir, "git-full-ref", ctxt.ODS.GitFullRef)
-					checkODSFileContent(t, wsDir, "git-ref", ctxt.ODS.GitRef)
-					checkODSFileContent(t, wsDir, "git-url", ctxt.ODS.GitURL)
-					checkODSFileContent(t, wsDir, "namespace", ctxt.Namespace)
-					checkODSFileContent(t, wsDir, "pr-base", "")
-					checkODSFileContent(t, wsDir, "pr-key", "")
-					checkODSFileContent(t, wsDir, "project", ctxt.ODS.Project)
-					checkODSFileContent(t, wsDir, "repository", ctxt.ODS.Repository)
+					checkODSContext(t, wsDir, ctxt.ODS)
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
@@ -104,29 +95,11 @@ func TestTaskODSStart(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					// Check .ods directory contents of main repo
-					checkODSFileContent(t, wsDir, "component", ctxt.ODS.Component)
-					checkODSFileContent(t, wsDir, "git-commit-sha", ctxt.ODS.GitCommitSHA)
-					checkODSFileContent(t, wsDir, "git-full-ref", ctxt.ODS.GitFullRef)
-					checkODSFileContent(t, wsDir, "git-ref", ctxt.ODS.GitRef)
-					checkODSFileContent(t, wsDir, "git-url", ctxt.ODS.GitURL)
-					checkODSFileContent(t, wsDir, "namespace", ctxt.Namespace)
-					checkODSFileContent(t, wsDir, "pr-base", "")
-					checkODSFileContent(t, wsDir, "pr-key", "")
-					checkODSFileContent(t, wsDir, "project", ctxt.ODS.Project)
-					checkODSFileContent(t, wsDir, "repository", ctxt.ODS.Repository)
+					checkODSContext(t, wsDir, ctxt.ODS)
 
 					// Check .ods directory contents of subrepo
 					subrepoDir := filepath.Join(wsDir, pipelinectxt.SubreposPath, subrepoContext.Repository)
-					checkODSFileContent(t, subrepoDir, "component", subrepoContext.Component)
-					checkODSFileContent(t, subrepoDir, "git-commit-sha", subrepoContext.GitCommitSHA)
-					checkODSFileContent(t, subrepoDir, "git-full-ref", subrepoContext.GitFullRef)
-					checkODSFileContent(t, subrepoDir, "git-ref", subrepoContext.GitRef)
-					checkODSFileContent(t, subrepoDir, "git-url", subrepoContext.GitURL)
-					checkODSFileContent(t, subrepoDir, "namespace", subrepoContext.Namespace)
-					checkODSFileContent(t, subrepoDir, "pr-base", "")
-					checkODSFileContent(t, subrepoDir, "pr-key", "")
-					checkODSFileContent(t, subrepoDir, "project", subrepoContext.Project)
-					checkODSFileContent(t, subrepoDir, "repository", subrepoContext.Repository)
+					checkODSContext(t, subrepoDir, subrepoContext)
 
 					// Check artifacts are downloaded properly in subrepo
 					sourceArtifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)

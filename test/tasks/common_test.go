@@ -29,6 +29,19 @@ const (
 	storageSourceDir    = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 )
 
+func checkODSContext(t *testing.T, repoDir string, want *pipelinectxt.ODSContext) {
+	checkODSFileContent(t, repoDir, "component", want.Component)
+	checkODSFileContent(t, repoDir, "git-commit-sha", want.GitCommitSHA)
+	checkODSFileContent(t, repoDir, "git-full-ref", want.GitFullRef)
+	checkODSFileContent(t, repoDir, "git-ref", want.GitRef)
+	checkODSFileContent(t, repoDir, "git-url", want.GitURL)
+	checkODSFileContent(t, repoDir, "namespace", want.Namespace)
+	checkODSFileContent(t, repoDir, "pr-base", want.PullRequestBase)
+	checkODSFileContent(t, repoDir, "pr-key", want.PullRequestKey)
+	checkODSFileContent(t, repoDir, "project", want.Project)
+	checkODSFileContent(t, repoDir, "repository", want.Repository)
+}
+
 func checkODSFileContent(t *testing.T, wsDir, filename, want string) {
 	checkFileContent(t, filepath.Join(wsDir, pipelinectxt.BaseDir), filename, want)
 }
