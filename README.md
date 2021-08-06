@@ -31,6 +31,7 @@ The most important pieces are:
 * [Architecture Decision Records](/docs/adr)
 * [Task Library](/docs/tasks)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
+* [User Installation Guide](/docs/user-installation.adoc)
 
 ## Development & Running tests
 
