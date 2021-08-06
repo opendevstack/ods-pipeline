@@ -2,7 +2,6 @@ package sonar
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -26,8 +25,7 @@ func (c *Client) GenerateReport(project, author, branch string) (string, error) 
 		return "", fmt.Errorf("scanning failed: %w", err)
 	}
 
-	artifactsDir := filepath.Join(pipelinectxt.BaseDir, pipelinectxt.ArtifactsDir, "sonarqube-analysis")
-	err = copyReportFiles(project, artifactsDir)
+	err = copyReportFiles(project, pipelinectxt.SonarAnalysisPath)
 	if err != nil {
 		return "", fmt.Errorf("copying report to artifacts failed: %w", err)
 	}

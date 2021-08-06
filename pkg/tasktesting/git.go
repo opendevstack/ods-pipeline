@@ -16,6 +16,10 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
+const (
+	bitbucketProjectKey = "ODSPIPELINETEST"
+)
+
 // SetupFakeRepo writes .ods cache with fake data, without actually initializing a Git repo.
 func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
@@ -43,10 +47,11 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
 	initAndCommitOrFatal(t, wsDir)
 
+	bbURL := "http://localhost:7990"
+	repoName := filepath.Base(wsDir)
 	ctxt := &pipelinectxt.ODSContext{
 		Namespace:   ns,
-		Project:     "myproject",
-		GitURL:      "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+		GitURL:      fmt.Sprintf("%s/scm/%s/%s.git", bbURL, bitbucketProjectKey, repoName),
 		Environment: "dev",
 		Version:     pipelinectxt.WIP,
 	}

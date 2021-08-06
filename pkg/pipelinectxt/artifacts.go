@@ -8,12 +8,18 @@ import (
 )
 
 const (
-	ArtifactsDir     = "artifacts"
-	ArtifactsPath    = BaseDir + "/" + ArtifactsDir
-	PipelineRunsDir  = "pipeline-runs"
-	PipelineRunsPath = ArtifactsPath + "/" + PipelineRunsDir
-	ImageDigestsDir  = "image-digests"
-	ImageDigestsPath = ArtifactsPath + "/" + ImageDigestsDir
+	ArtifactsDir      = "artifacts"
+	ArtifactsPath     = BaseDir + "/" + ArtifactsDir
+	PipelineRunsDir   = "pipeline-runs"
+	PipelineRunsPath  = ArtifactsPath + "/" + PipelineRunsDir
+	ImageDigestsDir   = "image-digests"
+	ImageDigestsPath  = ArtifactsPath + "/" + ImageDigestsDir
+	SonarAnalysisDir  = "sonarqube-analysis"
+	SonarAnalysisPath = ArtifactsPath + "/" + SonarAnalysisDir
+	CodeCoveragesDir  = "code-coverage"
+	CodeCoveragesPath = ArtifactsPath + "/" + CodeCoveragesDir
+	XUnitReportsDir   = "xunit-reports"
+	XUnitReportsPath  = ArtifactsPath + "/" + XUnitReportsDir
 )
 
 func ReadArtifactsDir() (map[string][]string, error) {

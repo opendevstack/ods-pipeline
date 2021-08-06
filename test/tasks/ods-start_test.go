@@ -45,7 +45,7 @@ func TestTaskODSStart(t *testing.T) {
 				},
 			},
 			"clones repo and configured subrepos": {
-				WorkspaceDirMapping: map[string]string{"source": "multi-component-app"},
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup sub-component
@@ -114,7 +114,7 @@ func TestTaskODSStart(t *testing.T) {
 				},
 			},
 			"fails when subrepo has no successful pipeline run": {
-				WorkspaceDirMapping: map[string]string{"source": "multi-component-app"},
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup sub-component

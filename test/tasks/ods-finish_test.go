@@ -8,6 +8,7 @@ import (
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -58,9 +59,9 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 
 	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{
-		"xunit-reports":      {"report.xml"},
-		"code-coverage":      {"coverage.out"},
-		"sonarqube-analysis": {"analysis-report.md", "issues-report.csv"},
+		pipelinectxt.XUnitReportsDir:  {"report.xml"},
+		pipelinectxt.CodeCoveragesDir: {"coverage.out"},
+		pipelinectxt.SonarAnalysisDir: {"analysis-report.md", "issues-report.csv"},
 	}
 
 	for artifactsSubDir, files := range artifactsMap {

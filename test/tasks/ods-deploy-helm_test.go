@@ -3,7 +3,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -31,8 +30,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					wsDir := ctxt.Workspaces["source"]
-					resourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-sample-app")
+					resourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-sample-app")
 					_, err := checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, resourceName)
 					if err != nil {
 						t.Fatal(err)
@@ -56,8 +54,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					wsDir := ctxt.Workspaces["source"]
-					parentChartResourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-app-with-dependencies")
+					parentChartResourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-app-with-dependencies")
 					// Parent chart
 					_, err := checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, parentChartResourceName)
 					if err != nil {
@@ -68,7 +65,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatal(err)
 					}
 					// Subchart
-					subChartResourceName := fmt.Sprintf("%s-%s", filepath.Base(wsDir), "helm-sample-database")
+					subChartResourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-sample-database")
 					_, err = checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
 					if err != nil {
 						t.Fatal(err)
