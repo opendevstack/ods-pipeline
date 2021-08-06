@@ -15,10 +15,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const (
-	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-)
-
 type TestOpts struct {
 	TaskKindRef             string
 	TaskName                string

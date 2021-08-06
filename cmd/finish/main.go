@@ -69,12 +69,12 @@ func main() {
 	}
 
 	fmt.Println("Handling artifacts ...")
-	nexusClient, err := nexus.NewClient(
-		*nexusURLFlag,
-		*nexusUsernameFlag,
-		*nexusPasswordFlag,
-		*nexusTemporaryRepositoryFlag,
-	)
+	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
+		BaseURL:    *nexusURLFlag,
+		Username:   *nexusUsernameFlag,
+		Password:   *nexusPasswordFlag,
+		Repository: *nexusTemporaryRepositoryFlag,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

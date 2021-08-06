@@ -165,12 +165,12 @@ func main() {
 
 	fmt.Println("Downloading any artifacts ...")
 	// If there are subrepos, then all of them need to have a successful pipeline run.
-	nexusClient, err := nexus.NewClient(
-		*nexusURLFlag,
-		*nexusUsernameFlag,
-		*nexusPasswordFlag,
-		*nexusTemporaryRepositoryFlag,
-	)
+	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
+		BaseURL:    *nexusURLFlag,
+		Username:   *nexusUsernameFlag,
+		Password:   *nexusPasswordFlag,
+		Repository: *nexusTemporaryRepositoryFlag,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -208,9 +208,9 @@ func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext,
 		return err
 	}
 	if len(urls) > 0 {
-		fmt.Printf("Found artifacts in repository %s inside group %s, downloading ...\n", nexusClient.Repository, group)
+		fmt.Printf("Found artifacts in repository %s inside group %s, downloading ...\n", nexusClient.Repository(), group)
 	} else {
-		fmt.Printf("No artifacts found in repository %s inside group %s.\n", nexusClient.Repository, group)
+		fmt.Printf("No artifacts found in repository %s inside group %s.\n", nexusClient.Repository(), group)
 	}
 	for _, s := range urls {
 		u, err := url.Parse(s)

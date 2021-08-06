@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
-	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -150,25 +150,13 @@ func createODSYML(wsDir string, o *config.ODS) error {
 	return ioutil.WriteFile(filename, y, 0644)
 }
 
-func nexusClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *nexus.Client {
-	nexusSecret, err := kubernetes.GetSecret(c, namespace, "ods-nexus-auth")
-	if err != nil {
-		t.Fatalf("could not get Nexus secret: %s", err)
-	}
-	nexusConfigMap, err := kubernetes.GetConfigMap(c, namespace, "ods-nexus")
-	if err != nil {
-		t.Fatalf("could not get Nexus config: %s", err)
-	}
-
-	nexusURL := strings.Replace(nexusConfigMap.Data["url"], "nexustest.kind", "localhost", 1)
-	nexusClient, err := nexus.NewClient(
-		nexusURL,
-		string(nexusSecret.Data["username"]),
-		string(nexusSecret.Data["password"]),
-		nexusConfigMap.Data["temporaryRepository"],
-	)
+func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
+	buildStatus, err := c.BuildStatusGet(gitCommit)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return nexusClient
+	if buildStatus.State != wantBuildStatus {
+		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
+	}
+
 }

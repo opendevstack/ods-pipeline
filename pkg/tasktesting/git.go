@@ -12,7 +12,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	kclient "k8s.io/client-go/kubernetes"
 )
@@ -131,11 +130,7 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		t.Fatalf("could not get Bitbucket token: %s", err)
 	}
 
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: bbToken,
-		BaseURL:  bbURL,
-		Logger:   &logging.LeveledLogger{Level: logging.LevelDebug},
-	})
+	bitbucketClient := BitbucketClientOrFatal(t, c, ns)
 
 	proj := bitbucket.Project{Key: projectKey}
 	repo, err := bitbucketClient.RepoCreate(proj.Key, bitbucket.RepoCreatePayload{

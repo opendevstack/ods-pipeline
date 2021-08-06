@@ -8,8 +8,9 @@ import (
 
 // Search gets URLs of assets in given repository group.
 func (c *Client) Search(group string) ([]string, error) {
-	query := nexusrm.NewSearchQueryBuilder().Repository(c.Repository).Group(group)
-	assets, err := nexusrm.SearchAssets(c.RM, query)
+	c.logger().Debugf("Search for %s", group)
+	query := nexusrm.NewSearchQueryBuilder().Repository(c.clientConfig.Repository).Group(group)
+	assets, err := nexusrm.SearchAssets(c.rm, query)
 	if err != nil {
 		return nil, fmt.Errorf("could not search assets: %w", err)
 	}

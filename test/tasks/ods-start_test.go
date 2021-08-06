@@ -8,6 +8,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -47,7 +48,8 @@ func TestTaskODSStart(t *testing.T) {
 					checkODSFileContent(t, wsDir, "project", ctxt.ODS.Project)
 					checkODSFileContent(t, wsDir, "repository", ctxt.ODS.Repository)
 
-					checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "INPROGRESS")
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 				},
 			},
@@ -76,7 +78,7 @@ func TestTaskODSStart(t *testing.T) {
 					}
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
 
-					nexusClient := nexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					groupBase := fmt.Sprintf("/%s/%s/%s", subCtxt.Project, subCtxt.Repository, subCtxt.GitCommitSHA)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					err = nexusClient.Upload(groupBase+"/xunit-reports", filepath.Join(artifactsBaseDir, "xunit-reports", "report.xml"))
@@ -133,7 +135,8 @@ func TestTaskODSStart(t *testing.T) {
 					destinationArtifactsBaseDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
 					checkFileContent(t, destinationArtifactsBaseDir, xUnitFileSource, xUnitContent)
 
-					checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "INPROGRESS")
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 				},
 			},

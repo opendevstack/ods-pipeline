@@ -17,15 +17,13 @@ func (c *Client) Download(url, outfile string) (int64, error) {
 	}
 	defer out.Close()
 
-	// TODO: timeout
-	client := &http.Client{}
-
+	c.logger().Debugf("Download %s to %s", url, outfile)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
 	}
-	req.Header.Add("Authorization", "Basic "+basicAuth(c.Username, c.Password))
-	resp, err := client.Do(req)
+	req.Header.Add("Authorization", "Basic "+c.basicAuth())
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
