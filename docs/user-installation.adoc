@@ -1,0 +1,79 @@
+# User Installation Guide
+
+This guide will show how to install `ods-pipeline` in an existing ODS project. It is possible to use the new Tekton pipelines approach and the classic Jenkins approach side by side.
+
+## Prerequisites
+
+You'll need:
+
+* A namespace in an OpenShift cluster (such as `foo-cd`) and a project in Bitbucket (such as `FOO`)
+* `git`, `oc` and `helm` installed locally
+* to be logged into OpenShift on the command line
+
+## Instructions
+
+1. Create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name.
+2. Clone the repository locally.
+3. Use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `cd-namespace`. The steps can be repeated in the future with other revisions to update the sources.
+
+```
+gitRef=master
+git fetch --depth=1 https://github.com/opendestack/ods-pipeline.git $gitRef:ods-pipeline-$gitRef
+git checkout ods-pipeline-$gitRef
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch
+git checkout -
+git subtree add --prefix=cd-namespace subtree-split-branch
+```
+
+4. Change to the new folder `cd-namespace`.
+5. Add a `values.foo-cd.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`.
+6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`.
+7. Run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL.
+
+Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories.
+
+## Using ods-pipeline in your repos
+
+Add an `ods.yml` into each repo you want to add. Example:
+```
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+
+environments:
+- name: dev
+  namespace: foo-dev
+
+pipeline:
+  tasks:
+  - name: backend-build-go
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-go-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-build-image
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-image-v0-1-0
+    runAfter:
+    - backend-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-deploy
+    taskRef:
+      kind: ClusterTask
+      name: ods-deploy-helm-v0-1-0
+    runAfter:
+    - backend-build-image
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+```
+
+In Bitbucket, add a webhook pointing to the exposed route. The secret must match
+the one you entered in the values file.
+
+The next push in that repo will trigger the pipeline.

@@ -1,3 +1,5 @@
+:toc:
+
 = Authoring Tasks
 
 This document will explain how to author custom Tekton tasks to use with ODS.
@@ -31,7 +33,7 @@ spec:
         echo hello world
 ```
 
-Of course this doesn't do anything useful in the CI pipeline. Typically you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples.
+Of course this doesn't do anything useful in the CI pipeline. Typically you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.
 
 In the example above, we are using the `busybox` image, which executes what is defined in `script` in a shell (`sh`). Since `echo` is available in `sh`, we can print the words `hello world` to the log output.
 
@@ -61,3 +63,17 @@ In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig
 == Testing tasks
 
 Official ODS tasks are provided with automated tests. These tests are written in Go, and can be executed locally (in a KinD cluster) via `make test`. Each test creates a `TaskRun` with certain parameters and then checks the result of the run and the state of the workspace after the run. This allows to test each task in isolation and before using the task in a pipeline in an actual OpenShift cluster. If you want, you can also make use of this task testing framework for your own custom tasks. TODO.
+
+== Examples
+
+=== Building Ruby applications
+
+ODS does not offer a task to build Ruby applications at the moment. How would you create a task that builds a Ruby application in your OpenShift project?
+
+TODO
+
+=== Customizing how Go applications are built
+
+While ODS offers a task to build Go applications, that task is quite opinionated and does not offer a lot of control for you as a user. For example, it will lint your code with `golangci-lint` and you cannot disable this step. This is by design to allow the platform to make certain assumptions about software created by ODS tasks. However, imagine you have some legacy code that will not pass linting and you are unable to change this (quickly). How would you create a task that does not run the linter?
+
+TODO
