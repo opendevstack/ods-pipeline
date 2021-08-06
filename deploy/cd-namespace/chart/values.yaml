@@ -12,10 +12,12 @@ bitbucketUrl: ''
 bitbucketUsername: ''
 # Bitbucket personal access token (PAT) in clear text. This token needs to be
 # created in Bitbucket for the user identified by "bitbucketUsername".
+# The user requires write permissions in order to set build status or add code
+# insights on commits.
 bitbucketAccessToken: ''
 # Shared secret between webhooks in Bitbucket and the event listener. Create
 # a random secret and enter it here, then use it later on as the secret in any
-# webhook you setup.
+# webhook you setup. The value needs to be in clear text.
 bitbucketWebhookSecret: ''
 
 # Nexus
