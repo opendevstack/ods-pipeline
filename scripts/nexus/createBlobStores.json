@@ -7,6 +7,7 @@
   blobStore.createFileBlobStore('npm-private', '/nexus-data/blobs/npm-private');
   blobStore.createFileBlobStore('pypi-private', '/nexus-data/blobs/pypi-private');
   blobStore.createFileBlobStore('leva-documentation', '/nexus-data/blobs/leva-documentation');
-  blobStore.createFileBlobStore('ods-pipelines', '/nexus-data/blobs/ods-pipelines')",
+  blobStore.createFileBlobStore('ods-temporary-artifacts', '/nexus-data/blobs/ods-temporary-artifacts');
+  blobStore.createFileBlobStore('ods-permanent-artifacts', '/nexus-data/blobs/ods-permanent-artifacts')",
   "type":"groovy"
 }

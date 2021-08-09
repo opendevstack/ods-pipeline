@@ -27,6 +27,8 @@ nexusUrl: ''
 nexusUsername: ''
 # Nexus password for the user identified by "nexusUsername" in clear text.
 nexusPassword: ''
+nexusTemporaryRepository: 'ods-temporary-artifacts'
+nexusPermanentRepository: 'ods-permanent-artifacts'
 
 # Sonar
 # SonarQube URL (including scheme). Example: https://sonarqube.example.com.

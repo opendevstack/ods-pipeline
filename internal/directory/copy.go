@@ -9,6 +9,18 @@ import (
 	"syscall"
 )
 
+func CopyToTempDir(sourceDir, destinationBaseDir, pattern string) (string, error) {
+	tempDir, err := ioutil.TempDir(destinationBaseDir, pattern)
+	if err != nil {
+		return "", fmt.Errorf("could not create temporary directory: %w", err)
+	}
+	err = Copy(sourceDir, tempDir)
+	if err != nil {
+		return "", fmt.Errorf("could not copy source directory: %w", err)
+	}
+	return tempDir, nil
+}
+
 func Copy(scrDir, dest string) error {
 	entries, err := ioutil.ReadDir(scrDir)
 	if err != nil {
@@ -65,14 +77,13 @@ func copyFile(srcFile, dstFile string) error {
 	if err != nil {
 		return err
 	}
-
 	defer out.Close()
 
 	in, err := os.Open(srcFile)
-	defer in.Close()
 	if err != nil {
 		return err
 	}
+	defer in.Close()
 
 	_, err = io.Copy(out, in)
 	if err != nil {
@@ -96,7 +107,7 @@ func createIfNotExists(dir string, perm os.FileMode) error {
 	}
 
 	if err := os.MkdirAll(dir, perm); err != nil {
-		return fmt.Errorf("failed to create directory: '%s', error: '%s'", dir, err.Error())
+		return fmt.Errorf("failed to create directory: '%s', error: %w", dir, err)
 	}
 
 	return nil

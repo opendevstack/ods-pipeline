@@ -9,19 +9,8 @@ import (
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
-)
-
-// TODO:
-// Read the from configmap and secret files
-// from test/testdata/deploy/cd-kind
-const (
-	nexusURL          = "http://localhost:8081"
-	nexusUser         = "developer"
-	nexusPassword     = "s3cr3t"
-	nexusRepository   = "ods-pipelines"
-	bitbucketURLFlag  = "http://localhost:7990"
-	bitbucketAPIToken = "NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP"
 )
 
 func TestTaskODSFinish(t *testing.T) {
@@ -40,7 +29,8 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "FAILED")
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
 				},
 			},
 			"set bitbucket build status to successful and artifacts are in Nexus": {
@@ -55,7 +45,8 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "SUCCESSFUL")
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt)
 				},
 			},
@@ -80,41 +71,15 @@ func TestTaskODSFinish(t *testing.T) {
 	)
 }
 
-func checkBuildStatus(t *testing.T, gitCommit, wantBuildStatus string) {
-
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: bitbucketAPIToken,
-		BaseURL:  bitbucketURLFlag,
-	})
-
-	buildStatus, err := bitbucketClient.BuildStatusGet(gitCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if buildStatus.State != wantBuildStatus {
-		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
-	}
-
-}
-
 func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 
-	nexusClient, err := nexus.NewClient(
-		nexusURL,
-		nexusUser,
-		nexusPassword,
-		nexusRepository,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 
 	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{
-		"xunit-reports":      {"report.xml"},
-		"code-coverage":      {"coverage.out"},
-		"sonarqube-analysis": {"analysis-report.md", "issues-report.csv"},
+		pipelinectxt.XUnitReportsDir:  {"report.xml"},
+		pipelinectxt.CodeCoveragesDir: {"coverage.out"},
+		pipelinectxt.SonarAnalysisDir: {"analysis-report.md", "issues-report.csv"},
 	}
 
 	for artifactsSubDir, files := range artifactsMap {
@@ -133,7 +98,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 		for _, file := range files {
 
 			// e.g. "http://localhost:8081/repository/ods-pipelines/ODSPIPELINETEST/workspace-866704509/b1415e831b4f5b24612abf24499663ddbff6babb/xunit-reports/report.xml"
-			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusURL, nexusRepository, ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
+			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusClient.URL(), nexusClient.Repository(), ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
 
 			if !contains(artifactURLs, url) {
 				t.Fatalf("Artifact %s with URL %+v not found in Nexus under any of the following URLs: %v", file, url, artifactURLs)
@@ -150,7 +115,7 @@ func waitForArtifacts(t *testing.T, nexusClient *nexus.Client, group string, exp
 	artifactURLs := []string{}
 
 	for elapsed < timeout {
-		artifactURLs, err := nexusClient.URLs(group)
+		artifactURLs, err := nexusClient.Search(group)
 		if err != nil {
 			t.Fatal(err)
 		}

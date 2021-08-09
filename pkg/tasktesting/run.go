@@ -3,7 +3,6 @@ package tasktesting
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,10 +15,6 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
-)
-
-const (
-	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 type TestOpts struct {
@@ -122,19 +117,14 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", testdataWorkspacePath, workspaceDir,
+		projectpath.Root, "test", TestdataWorkspacesPath, workspaceDir,
 	)
-
 	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-
-	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
-	if err != nil {
-		return "", err
-	}
-
-	directory.Copy(workspaceSourceDirectory, tempDir)
-
-	return tempDir, nil
+	return directory.CopyToTempDir(
+		workspaceSourceDirectory,
+		workspaceParentDirectory,
+		"workspace-",
+	)
 }
 
 func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, bytes.Buffer, error) {

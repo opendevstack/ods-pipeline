@@ -13,14 +13,15 @@ import (
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
 
-var testdataWorkspacePath = "testdata/workspaces"
+const (
+	TestdataWorkspacesPath = "testdata/workspaces"
+)
 
 func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaces map[string]string, namespace string) (*tekton.TaskRun, error) {
 
@@ -57,7 +58,7 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 				ClaimName: "task-pv-claim",
 				ReadOnly:  false,
 			},
-			SubPath: filepath.Join(testdataWorkspacePath, wsDirName),
+			SubPath: filepath.Join(TestdataWorkspacesPath, wsDirName),
 		})
 	}
 
@@ -132,20 +133,20 @@ func waitForTaskRunPod(
 	c *kubernetes.Clientset,
 	taskRunName,
 	namespace string,
-	podAdded chan *v1.Pod) {
+	podAdded chan *corev1.Pod) {
 	log.Printf("Waiting for pod related to TaskRun %s to be added to the cluster\n", taskRunName)
 	stop := make(chan struct{})
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(c, time.Second*30)
 	podsInformer := kubeInformerFactory.Core().V1().Pods().Informer()
 
-	var taskRunPod *v1.Pod
+	var taskRunPod *corev1.Pod
 
 	podsInformer.AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				// when a new task is created, watch its events
-				pod := obj.(*v1.Pod)
+				pod := obj.(*corev1.Pod)
 				if strings.HasPrefix(pod.Name, taskRunName) {
 					taskRunPod = pod
 					log.Printf("TaskRun %s added pod %s to the cluster", taskRunName, pod.Name)

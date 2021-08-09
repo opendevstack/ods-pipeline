@@ -55,10 +55,6 @@ spec:
       value: $(params.git-full-ref)
     - name: project
       value: $(params.project)
-    - name: component
-      value: $(params.component)
-    - name: repository
-      value: $(params.repository)
     - name: pr-key
       value: $(params.pr-key)
     - name: pr-base

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -32,13 +33,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wantFiles := []string{
 						"docker/Dockerfile",
 						"docker/app",
-						"build/test-results/test/report.xml",
-						"coverage.out",
-						"test-results.txt",
-						".ods/artifacts/xunit-reports/report.xml",
-						".ods/artifacts/code-coverage/coverage.out",
-						".ods/artifacts/sonarqube-analysis/analysis-report.md",
-						".ods/artifacts/sonarqube-analysis/issues-report.csv",
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.out"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

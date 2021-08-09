@@ -7,8 +7,22 @@ Starts the pipeline run.
 This task will clone a repo from the provided url into the workspace, and
 sets the build status of the checked out commit in Bitbucket to "in progress".
 
-This task is automatically added to any pipeline run as the first task
-by the webhook interceptor and cannot be customized by users at this point.
+If the checked out repositories' `ods.yml` file defines subrepos, those will
+be checked out as well into `.ods/repos`. Subrepos will be checked out at
+the branch specified in `ods.yml` or `master` if no branch is given.
+However, if a version (e.g. `1.0.0`) is passed to the pipeline, then
+subrepos are checked out at a corresponding release branch (e.g.
+`release/1.0.0`) if it exists.
+
+Any artifacts in Nexus for the checked out Git commits are downloaded and
+placed into `.ods/artifacts`. When subrepos are configured, a successful
+pipeline run must exist for each subrepo for the pipeline to continue. If no
+such run artifact exists, the pipeline will stop. Users will need to re-run
+the pipeline of the subrepo first before running the pipeline of the
+umbrella repo again.
+
+*This task is automatically added to any pipeline run as the first task
+by the webhook interceptor and cannot be customized by users at this point.*
 
 
 == Parameters
@@ -68,11 +82,6 @@ by the webhook interceptor and cannot be customized by users at this point.
 | Name of the project to build. The project is equal to the Bitbucket project of the repository to clone.
 
 
-| component
-| 
-| Name of the component to build. The component is the repository name without "project" prefix.
-
-
 | environment
 | 
 | Name of the environment to deploy to.
@@ -81,11 +90,6 @@ by the webhook interceptor and cannot be customized by users at this point.
 | version
 | 
 | Version of the application. If not set, version will default to `WIP`.
-
-
-| repository
-| 
-| Name of the Bitbucket repository to clone.
 
 
 | pr-key

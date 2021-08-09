@@ -6,6 +6,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/file"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
 func (c *Client) GenerateReport(project, author, branch string) (string, error) {
@@ -24,7 +25,7 @@ func (c *Client) GenerateReport(project, author, branch string) (string, error) 
 		return "", fmt.Errorf("scanning failed: %w", err)
 	}
 
-	err = copyReportFiles(project, ".ods/artifacts/sonarqube-analysis")
+	err = copyReportFiles(project, pipelinectxt.SonarAnalysisPath)
 	if err != nil {
 		return "", fmt.Errorf("copying report to artifacts failed: %w", err)
 	}
