@@ -209,7 +209,10 @@ func main() {
 		}
 		helmArchiveName := filepath.Base(helmArchive)
 		fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
-		file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
+		err = file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	subcharts, err := ioutil.ReadDir(chartsDir)

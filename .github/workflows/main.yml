@@ -151,6 +151,9 @@ jobs:
         name: Check if docs are up-to-date
         run: ./.github/workflows/check-docs.sh
       -
+        name: Lint
+        run: make lint
+      -
         name: Run tests
         run: |
           set -o pipefail
