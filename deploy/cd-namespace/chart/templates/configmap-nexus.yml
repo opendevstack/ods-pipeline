@@ -6,3 +6,5 @@ metadata:
     {{- include "chart.labels" . | nindent 4 }}
 data:
   url: '{{ .Values.nexusUrl }}'
+  temporaryRepository: '{{ .Values.nexusTemporaryRepository }}'
+  permanentRepository: '{{ .Values.nexusPermanentRepository }}'

@@ -331,12 +331,7 @@ func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFul
 		log.Printf("no ODS config located in repo %s", repository)
 		return nil, nil
 	}
-	var odsConfig config.ODS
-	err = yaml.Unmarshal(body, &odsConfig)
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal config: %w", err)
-	}
-	return &odsConfig, nil
+	return config.Read(body)
 }
 
 func determineProject(serverProject string, projectParam string) string {
@@ -420,20 +415,6 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
 				Name: "project",
 				Value: tekton.ArrayOrString{
 					StringVal: "$(params.project)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "component",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.component)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "repository",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.repository)",
 					Type:      tekton.ParamTypeString,
 				},
 			},

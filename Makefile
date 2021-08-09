@@ -7,6 +7,16 @@ MAKEFLAGS += --no-builtin-rules
 # Namespace to use (applied for some targets)
 namespace =
 
+## Run gofmt.
+fmt:
+	gofmt -w .
+.PHONY: fmt
+
+## Run golangci-lint.
+lint:
+	golangci-lint run
+.PHONY: lint
+
 ## Check if system meets prerequisites.
 check-system:
 	cd scripts && ./check-system.sh

@@ -9,8 +9,22 @@ spec:
     This task will clone a repo from the provided url into the workspace, and
     sets the build status of the checked out commit in Bitbucket to "in progress".
 
-    This task is automatically added to any pipeline run as the first task
-    by the webhook interceptor and cannot be customized by users at this point.
+    If the checked out repositories' `ods.yml` file defines subrepos, those will
+    be checked out as well into `.ods/repos`. Subrepos will be checked out at
+    the branch specified in `ods.yml` or `master` if no branch is given.
+    However, if a version (e.g. `1.0.0`) is passed to the pipeline, then
+    subrepos are checked out at a corresponding release branch (e.g.
+    `release/1.0.0`) if it exists.
+
+    Any artifacts in Nexus for the checked out Git commits are downloaded and
+    placed into `.ods/artifacts`. When subrepos are configured, a successful
+    pipeline run must exist for each subrepo for the pipeline to continue. If no
+    such run artifact exists, the pipeline will stop. Users will need to re-run
+    the pipeline of the subrepo first before running the pipeline of the
+    umbrella repo again.
+
+    *This task is automatically added to any pipeline run as the first task
+    by the webhook interceptor and cannot be customized by users at this point.*
   params:
     - name: url
       description: Git URL to clone
@@ -56,11 +70,6 @@ spec:
         Name of the project to build.
         The project is equal to the Bitbucket project of the repository to clone.
       type: string
-    - name: component
-      description: >-
-        Name of the component to build.
-        The component is the repository name without "project" prefix.
-      type: string
     - name: environment
       description: >-
         Name of the environment to deploy to.
@@ -69,9 +78,6 @@ spec:
       description: >-
         Version of the application.
         If not set, version will default to `WIP`.
-      type: string
-    - name: repository
-      description: Name of the Bitbucket repository to clone.
       type: string
     - name: pr-key
       description: >-
@@ -97,6 +103,31 @@ spec:
     - name: ods-start
       image: build/package/Dockerfile.start
       env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
+        - name: NEXUS_TEMPORARY_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              key: temporaryRepository
+              name: ods-nexus
+        - name: NEXUS_PERMANENT_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              key: permanentRepository
+              name: ods-nexus
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
@@ -119,8 +150,6 @@ spec:
         # ods-start is built from cmd/start/main.go.
         ods-start \
           -project=$(params.project) \
-          -repository=$(params.repository) \
-          -component=$(params.component) \
           -environment=$(params.environment) \
           -version=$(params.version) \
           -git-full-ref=$(params.git-full-ref) \

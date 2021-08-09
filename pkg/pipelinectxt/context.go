@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +14,9 @@ import (
 const (
 	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	WIP           = "WIP"
+	BaseDir       = ".ods"
+	SubreposDir   = "repos"
+	SubreposPath  = BaseDir + "/" + SubreposDir
 )
 
 type ODSContext struct {
@@ -32,26 +36,26 @@ type ODSContext struct {
 
 // WriteCache writes the ODS context to .ods
 func (o *ODSContext) WriteCache(wsDir string) error {
-	dotODS := filepath.Join(wsDir, ".ods")
+	dotODS := filepath.Join(wsDir, BaseDir)
 	if _, err := os.Stat(dotODS); os.IsNotExist(err) {
 		err = os.Mkdir(dotODS, 0755)
 		if err != nil {
-			return fmt.Errorf("could not create .ods: %s", err)
+			return fmt.Errorf("could not create %s: %s", BaseDir, err)
 		}
 	}
 	files := map[string]string{
-		".ods/project":        o.Project,
-		".ods/repository":     o.Repository,
-		".ods/component":      o.Component,
-		".ods/environment":    o.Environment,
-		".ods/version":        o.Version,
-		".ods/git-commit-sha": o.GitCommitSHA,
-		".ods/git-url":        o.GitURL,
-		".ods/git-ref":        o.GitRef,
-		".ods/git-full-ref":   o.GitFullRef,
-		".ods/namespace":      o.Namespace,
-		".ods/pr-base":        o.PullRequestBase,
-		".ods/pr-key":         o.PullRequestKey,
+		BaseDir + "/project":        o.Project,
+		BaseDir + "/repository":     o.Repository,
+		BaseDir + "/component":      o.Component,
+		BaseDir + "/environment":    o.Environment,
+		BaseDir + "/version":        o.Version,
+		BaseDir + "/git-commit-sha": o.GitCommitSHA,
+		BaseDir + "/git-url":        o.GitURL,
+		BaseDir + "/git-ref":        o.GitRef,
+		BaseDir + "/git-full-ref":   o.GitFullRef,
+		BaseDir + "/namespace":      o.Namespace,
+		BaseDir + "/pr-base":        o.PullRequestBase,
+		BaseDir + "/pr-key":         o.PullRequestKey,
 	}
 	for filename, content := range files {
 		err := writeFile(filepath.Join(wsDir, filename), content)
@@ -66,18 +70,18 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 // TODO: test that this works
 func (o *ODSContext) ReadCache(wsDir string) error {
 	files := map[string]*string{
-		".ods/project":        &o.Project,
-		".ods/repository":     &o.Repository,
-		".ods/component":      &o.Component,
-		".ods/environment":    &o.Environment,
-		".ods/version":        &o.Version,
-		".ods/git-commit-sha": &o.GitCommitSHA,
-		".ods/git-url":        &o.GitURL,
-		".ods/git-ref":        &o.GitRef,
-		".ods/git-full-ref":   &o.GitFullRef,
-		".ods/namespace":      &o.Namespace,
-		".ods/pr-base":        &o.PullRequestBase,
-		".ods/pr-key":         &o.PullRequestKey,
+		BaseDir + "/project":        &o.Project,
+		BaseDir + "/repository":     &o.Repository,
+		BaseDir + "/component":      &o.Component,
+		BaseDir + "/environment":    &o.Environment,
+		BaseDir + "/version":        &o.Version,
+		BaseDir + "/git-commit-sha": &o.GitCommitSHA,
+		BaseDir + "/git-url":        &o.GitURL,
+		BaseDir + "/git-ref":        &o.GitRef,
+		BaseDir + "/git-full-ref":   &o.GitFullRef,
+		BaseDir + "/namespace":      &o.Namespace,
+		BaseDir + "/pr-base":        &o.PullRequestBase,
+		BaseDir + "/pr-key":         &o.PullRequestKey,
 	}
 	for filename, content := range files {
 		if len(*content) == 0 {
@@ -93,30 +97,12 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 }
 
 func (o *ODSContext) Assemble(wsDir string) error {
-	absoluteWsDir, err := filepath.Abs(wsDir)
-	if err != nil {
-		return fmt.Errorf("could not get absolute path of %s: %w", wsDir, err)
-	}
-	wsName := filepath.Base(absoluteWsDir)
-
 	if len(o.Namespace) == 0 {
 		ns, err := getTrimmedFileContent(namespaceFile)
 		if err != nil {
 			return fmt.Errorf("could not read %s: %w", namespaceFile, err)
 		}
 		o.Namespace = ns
-	}
-	if len(o.Project) == 0 {
-		o.Project = strings.TrimSuffix(o.Namespace, "-cd")
-	}
-	if len(o.Repository) == 0 {
-		o.Repository = wsName
-	}
-	if len(o.Component) == 0 {
-		o.Component = strings.TrimPrefix(o.Repository, o.Project+"-")
-	}
-	if len(o.Version) == 0 {
-		o.Version = WIP
 	}
 	if len(o.GitFullRef) == 0 {
 		gitHead, err := getTrimmedFileContent(filepath.Join(wsDir, ".git/HEAD"))
@@ -146,7 +132,35 @@ func (o *ODSContext) Assemble(wsDir string) error {
 		}
 		o.GitCommitSHA = gitSHA
 	}
+	u, err := url.Parse(o.GitURL)
+	if err != nil {
+		return fmt.Errorf("could not parse remote origin URL: %w", err)
+	}
+	pathParts := strings.Split(u.Path, "/")
+	organisation := pathParts[len(pathParts)-2]
+	repository := pathParts[len(pathParts)-1]
+	if len(o.Project) == 0 {
+		o.Project = strings.ToLower(organisation)
+	}
+	if len(o.Repository) == 0 {
+		o.Repository = filenameWithoutExtension(repository)
+	}
+	if len(o.Component) == 0 {
+		o.Component = strings.TrimPrefix(o.Repository, o.Project+"-")
+	}
+	if len(o.Version) == 0 {
+		o.Version = WIP
+	}
 	return nil
+}
+
+func (o *ODSContext) Copy() *ODSContext {
+	n := *o
+	return &n
+}
+
+func filenameWithoutExtension(filename string) string {
+	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
 
 func readRemoteOriginURL(gitConfigFilename string) (string, error) {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -23,16 +24,12 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFiles := []string{
-						"build/test-results/test/report.xml",
-						"build/coverage/clover.xml",
-						"build/coverage/coverage-final.json",
-						"build/coverage/lcov.info",
-						".ods/artifacts/xunit-reports/report.xml",
-						".ods/artifacts/code-coverage/clover.xml",
-						".ods/artifacts/code-coverage/coverage-final.json",
-						".ods/artifacts/code-coverage/lcov.info",
-						".ods/artifacts/sonarqube-analysis/analysis-report.md",
-						".ods/artifacts/sonarqube-analysis/issues-report.csv",
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

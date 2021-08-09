@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+const (
+	BuildStatusInProgress = "INPROGRESS"
+	BuildStatusSuccessful = "SUCCESSFUL"
+	BuildStatusFailed     = "FAILED"
+)
+
 type BuildStatusCreatePayload struct {
 	State       string `json:"state"`
 	Key         string `json:"key"`

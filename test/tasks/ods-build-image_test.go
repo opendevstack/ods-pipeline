@@ -28,8 +28,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					checkResultingFiles(t, wsDir)
-					checkResultingImage(t, ctxt.Namespace, wsDir)
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImage(t, ctxt, wsDir)
 				},
 			},
 			"task should reuse existing image": {
@@ -37,7 +37,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					buildAndPushImage(t, ctxt.Namespace, wsDir)
+					buildAndPushImage(t, ctxt, wsDir)
 					ctxt.Params = map[string]string{
 						"registry":   "kind-registry.kind:5000",
 						"tls-verify": "false",
@@ -46,9 +46,9 @@ func TestTaskODSBuildImage(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					checkResultingFiles(t, wsDir)
-					checkResultingImage(t, ctxt.Namespace, wsDir)
-					checkLabelOnImage(t, ctxt.Namespace, wsDir, "tasktestrun", "true")
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImage(t, ctxt, wsDir)
+					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
 				},
 			},
 		},
@@ -60,8 +60,8 @@ func TestTaskODSBuildImage(t *testing.T) {
 // will pick up the existing image.
 // The image is labelled with "tasktestrun=true" so that it is possible to
 // verify that the image has not been rebuild in the task.
-func buildAndPushImage(t *testing.T, ns, wsDir string) {
-	tag := getDockerImageTag(t, ns, wsDir)
+func buildAndPushImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	tag := getDockerImageTag(t, ctxt, wsDir)
 	_, stderr, err := command.Run("docker", []string{
 		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),
 	})
@@ -76,9 +76,9 @@ func buildAndPushImage(t *testing.T, ns, wsDir string) {
 	}
 }
 
-func checkResultingFiles(t *testing.T, wsDir string) {
+func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	wantFiles := []string{
-		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", filepath.Base(wsDir)),
+		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", ctxt.ODS.Component),
 	}
 	for _, wf := range wantFiles {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -87,10 +87,10 @@ func checkResultingFiles(t *testing.T, wsDir string) {
 	}
 }
 
-func checkLabelOnImage(t *testing.T, ns, wsDir, wantLabelKey, wantLabelValue string) {
+func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wantLabelKey, wantLabelValue string) {
 	stdout, stderr, err := command.Run("docker", []string{
 		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
-		getDockerImageTag(t, ns, wsDir),
+		getDockerImageTag(t, ctxt, wsDir),
 	})
 	if err != nil {
 		t.Fatalf("could not run get label on image: %s, stderr: %s", err, string(stderr))
@@ -101,10 +101,10 @@ func checkLabelOnImage(t *testing.T, ns, wsDir, wantLabelKey, wantLabelValue str
 	}
 }
 
-func checkResultingImage(t *testing.T, ns, wsDir string) {
+func checkResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	stdout, stderr, err := command.Run("docker", []string{
 		"run", "--rm",
-		getDockerImageTag(t, ns, wsDir),
+		getDockerImageTag(t, ctxt, wsDir),
 	})
 	if err != nil {
 		t.Fatalf("could not run built image: %s, stderr: %s", err, string(stderr))
@@ -116,10 +116,10 @@ func checkResultingImage(t *testing.T, ns, wsDir string) {
 	}
 }
 
-func getDockerImageTag(t *testing.T, ns, wsDir string) string {
+func getDockerImageTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
 	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit-sha"))
 	if err != nil {
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
-	return fmt.Sprintf("localhost:5000/%s/%s:%s", ns, filepath.Base(wsDir), sha)
+	return fmt.Sprintf("localhost:5000/%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, sha)
 }

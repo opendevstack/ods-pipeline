@@ -1,7 +1,18 @@
 package config
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"sigs.k8s.io/yaml"
+)
+
+const (
+	DefaultBranch = "refs/heads/master"
 )
 
 type ODS struct {
@@ -11,9 +22,20 @@ type ODS struct {
 	Pipeline                   Pipeline                     `json:"pipeline"`
 }
 
+// Repository represents a Git repository.
 type Repository struct {
+	// Name of the Git repository (without host/organisation and trailing .git)
+	// Example: "foobar"
 	Name string `json:"name"`
-	URL  string `json:"url"`
+	// URL of Git repository (optional). If not given, the repository given by
+	// Name is assumed to be under the same organisation than the repository
+	// hosting the ods.yml file.
+	// Example: "https://acme.org/foo/bar.git"
+	URL string `json:"url"`
+	// Branch of Git repository (optional). If none is given, this defaults to
+	// the "master" branch.
+	// Example: "develop"
+	Branch string `json:"branch"`
 }
 
 type BranchToEnvironmentMapping struct {
@@ -44,7 +66,41 @@ type Environment struct {
 	Config map[string]interface{} `json:"config"`
 }
 
+// Pipeline represents a Tekton pipeline.
 type Pipeline struct {
 	Tasks   []tekton.PipelineTask `json:"tasks"`
 	Finally []tekton.PipelineTask `json:"finally"`
+}
+
+// Read reads an ods config from given byte slice or errors.
+func Read(body []byte) (*ODS, error) {
+	var odsConfig ODS
+	err := yaml.Unmarshal(body, &odsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal config: %w", err)
+	}
+	return &odsConfig, nil
+}
+
+// ReadFromFile reads an ods config from given filename or errors.
+func ReadFromFile(filename string) (*ODS, error) {
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file %s: %w", filename, err)
+	}
+	return Read(body)
+}
+
+// ReadFromDir reads an ods config file from given dir or errors.
+func ReadFromDir(dir string) (*ODS, error) {
+	candidates := []string{
+		filepath.Join(dir, "ods.yml"),
+		filepath.Join(dir, "ods.yaml"),
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return ReadFromFile(c)
+		}
+	}
+	return nil, fmt.Errorf("no matching file in '%s', looked for: %s", dir, strings.Join(candidates, ", "))
 }
