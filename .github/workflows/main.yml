@@ -1,6 +1,10 @@
 name: Tekton Tasks Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   build-images:
@@ -150,9 +154,6 @@ jobs:
       -
         name: Check if docs are up-to-date
         run: ./.github/workflows/check-docs.sh
-      -
-        name: Lint
-        run: make lint
       -
         name: Run tests
         run: |
