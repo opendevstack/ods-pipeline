@@ -15,7 +15,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/random"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis"
 	"knative.dev/pkg/test/logging"
 	"sigs.k8s.io/yaml"
 )
@@ -178,7 +177,8 @@ func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {
 		logf("error: no taskrun")
 		return
 	}
-	logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
-	logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
-	logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
+	logf("TaskRun: %v\n", tr)
+	// logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
+	// logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
+	// logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,7 +92,9 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
+	if collectedLogsBuffer.Len() > 0 {
+		testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
+	}
 
 	// Show info from Task result
 	CollectTaskResultInfo(taskRun, t.Logf)
@@ -138,6 +141,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
+	collectedLogsDoneChan := make(chan bool)
 	collectedLogsChan := make(chan []byte)
 	var collectedLogsBuffer bytes.Buffer
 
@@ -175,16 +179,26 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					collectedLogsChan,
+					collectedLogsDoneChan,
 					errs,
 				)
 			}
 
 		case tr := <-taskRunDone:
-			cancel()
-			return tr, collectedLogsBuffer, nil
+			log.Printf("Task run done: %s\n", tr.Name)
+			collectedLogsDoneChan <- false
 
 		case b := <-collectedLogsChan:
 			collectedLogsBuffer.Write(b)
+
+		case collectedLogsIsDone := <-collectedLogsDoneChan:
+			if collectedLogsIsDone {
+				cancel()
+				return tr, collectedLogsBuffer, nil
+			} else {
+				log.Println("TaskRun has been marked as 'done' but logs are not collected yet")
+			}
 		}
+
 	}
 }
