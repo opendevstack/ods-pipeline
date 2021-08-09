@@ -2,7 +2,8 @@ FROM registry.access.redhat.com/ubi8
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV GO_VERSION 1.16.3
+ENV GO_VERSION=1.16.3 \
+    GOLANGCI_LINT_VERSION=v1.41.1
 
 RUN yum install -y gcc gcc-c++ make git
 
@@ -16,7 +17,7 @@ RUN cd /tmp && \
 ENV PATH $PATH:/usr/local/go/bin
 ENV GOBIN /usr/local/bin
 
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v1.39.0
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin $GOLANGCI_LINT_VERSION
 
 RUN go get -u github.com/jstemmer/go-junit-report
 

@@ -30,7 +30,11 @@ func (ts *TestServer) stub(l logging.SimpleLogger) http.HandlerFunc {
 				l.Logf("responding with body from %s", response.Fixture)
 				ts.Responses[r.URL.Path] = res[1:]
 				w.WriteHeader(response.StatusCode)
-				w.Write(response.Body)
+				_, err := w.Write(response.Body)
+				if err != nil {
+					http.Error(w, "write error", http.StatusInternalServerError)
+					return
+				}
 				return
 			}
 		}

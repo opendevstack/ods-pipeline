@@ -109,7 +109,6 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			start := time.Now()
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef:             taskKindRef, // could be read from task definition
 				TaskName:                taskName,    // could be read from task definition
@@ -118,7 +117,6 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
 				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
 			})
-			t.Logf("Test execution time: %fs", time.Since(start).Seconds())
 		})
 	}
 }
