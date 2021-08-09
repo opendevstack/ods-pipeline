@@ -3,6 +3,7 @@ package tasks
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,6 +57,23 @@ func TestTaskODSFinish(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					checkBuildStatus(t, ctxt.ODS.GitCommitSHA, "SUCCESSFUL")
 					checkArtifactsAreInNexus(t, ctxt)
+				},
+			},
+			"stops gracefully when context cannot be read": {
+				WorkspaceDirMapping: map[string]string{"source": "empty"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					ctxt.Params = map[string]string{
+						"pipeline-run-name":      "foo",
+						"aggregate-tasks-status": "Failed",
+					}
+				},
+				WantRunSuccess: false,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					want := "Unable to continue as pipeline context cannot be read"
+
+					if !strings.Contains(string(ctxt.CollectedLogs), want) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", want, string(ctxt.CollectedLogs))
+					}
 				},
 			},
 		},

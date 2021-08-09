@@ -21,6 +21,7 @@ func getEventsAndLogsOfPod(
 	ctx context.Context,
 	c kubernetes.Interface,
 	pod *corev1.Pod,
+	collectedLogsChan chan []byte,
 	errs chan error) {
 	quitEvents := make(chan bool)
 	podName := pod.Name
@@ -37,7 +38,7 @@ func getEventsAndLogsOfPod(
 
 	watchingEvents := true
 	for _, container := range pod.Spec.Containers {
-		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name)
+		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, collectedLogsChan)
 		if err != nil {
 			fmt.Printf("failure while getting container logs: %s", err)
 			errs <- err
@@ -53,7 +54,7 @@ func getEventsAndLogsOfPod(
 func streamContainerLogs(
 	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string) error {
+	podNamespace, podName, containerName string, collectedLogsChan chan []byte) error {
 	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
 
 	w, err := c.CoreV1().Pods(podNamespace).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
@@ -92,6 +93,7 @@ func streamContainerLogs(
 					if err != nil {
 						return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 					}
+					collectedLogsChan <- logs
 					fmt.Println(string(logs))
 					return nil
 				}
@@ -100,7 +102,7 @@ func streamContainerLogs(
 		default:
 			// if log stream has started, read some bytes
 			if logStream != nil {
-				buf := make([]byte, 100)
+				buf := make([]byte, 10000)
 
 				numBytes, err := logStream.Read(buf)
 				if numBytes == 0 {
@@ -114,6 +116,7 @@ func streamContainerLogs(
 					return fmt.Errorf("error in reading log stream: %w", err)
 				}
 
+				collectedLogsChan <- buf[:numBytes]
 				fmt.Print(string(buf[:numBytes]))
 			} else {
 				time.Sleep(time.Second)
