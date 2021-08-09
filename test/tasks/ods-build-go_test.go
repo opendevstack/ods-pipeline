@@ -79,7 +79,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						}
 					}
 
-					wantLintReportContent := "main.go:6:2: printf: Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
+					wantLintReportContent := "main.go:6:2: printf: fmt.Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
 
 					checkFileContent(t, wsDir, ".ods/artifacts/lint-report/report.txt", wantLintReportContent)
 				},
