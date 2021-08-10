@@ -18,6 +18,8 @@ spec:
     params:
     - name: pipeline-run-name
       value: $(context.pipelineRun.name)
+    - name: aggregate-tasks-status
+      value: $(tasks.status)
     taskRef:
       kind: ClusterTask
       name: ods-finish-v0-1-0

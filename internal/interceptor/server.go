@@ -474,6 +474,7 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData, taskSuffix string)
 
 	var finallyTasks []tekton.PipelineTask
 	finallyTasks = append(finallyTasks, odsConfig.Pipeline.Finally...)
+
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
 		Name:    "ods-finish",
 		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
@@ -488,8 +489,16 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData, taskSuffix string)
 					Type:      tekton.ParamTypeString,
 				},
 			},
+			{
+				Name: "aggregate-tasks-status",
+				Value: tekton.ArrayOrString{
+					StringVal: "$(tasks.status)",
+					Type:      tekton.ParamTypeString,
+				},
+			},
 		},
 	})
+
 	p := tekton.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            data.Name,
