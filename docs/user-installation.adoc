@@ -14,15 +14,15 @@ You'll need:
 
 1. Create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name.
 2. Clone the repository locally and make an initial commit.
-3. Use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `cd-namespace`. The steps can be repeated in the future with other revisions to update the sources.
+3. Use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `cd-namespace`.
 
 ```
 pipelineGitRef=master
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
 git checkout ods-pipeline-$pipelineGitRef
-git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
 git checkout -
-git subtree add --prefix=cd-namespace subtree-split-branch
+git subtree add --prefix=cd-namespace subtree-split-branch-$pipelineGitRef
 ```
 
 4. Change to the new folder `cd-namespace`.
@@ -31,6 +31,18 @@ git subtree add --prefix=cd-namespace subtree-split-branch
 7. Run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL.
 
 Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories.
+
+## Updating
+
+You may fetch updates (e.g. new versions) of ods-pipeline like this:
+```
+pipelineGitRef=master
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
+git checkout ods-pipeline-$pipelineGitRef
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
+git checkout -
+git subtree merge --prefix=cd-namespace subtree-split-branch-$pipelineGitRef --squash
+```
 
 ## Using ods-pipeline in your repos
 
