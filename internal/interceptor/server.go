@@ -439,6 +439,20 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
 					Type:      tekton.ParamTypeString,
 				},
 			},
+			{
+				Name: "environment",
+				Value: tekton.ArrayOrString{
+					StringVal: "$(params.environment)",
+					Type:      tekton.ParamTypeString,
+				},
+			},
+			{
+				Name: "version",
+				Value: tekton.ArrayOrString{
+					StringVal: "$(params.version)",
+					Type:      tekton.ParamTypeString,
+				},
+			},
 		},
 	})
 	if len(odsConfig.Pipeline.Tasks) > 0 {
@@ -529,6 +543,22 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
 					Type: "string",
 					Default: &tekton.ArrayOrString{
 						StringVal: data.PullRequestBase,
+						Type:      tekton.ParamTypeString,
+					},
+				},
+				{
+					Name: "environment",
+					Type: "string",
+					Default: &tekton.ArrayOrString{
+						StringVal: data.Environment,
+						Type:      tekton.ParamTypeString,
+					},
+				},
+				{
+					Name: "version",
+					Type: "string",
+					Default: &tekton.ArrayOrString{
+						StringVal: data.Version,
 						Type:      tekton.ParamTypeString,
 					},
 				},
