@@ -46,6 +46,12 @@ spec:
   - default: ""
     name: pr-base
     type: string
+  - default: ""
+    name: environment
+    type: string
+  - default: ""
+    name: version
+    type: string
   tasks:
   - name: ods-start
     params:
@@ -61,6 +67,10 @@ spec:
       value: $(params.pr-base)
     - name: pipeline-run-name
       value: $(context.pipelineRun.name)
+    - name: environment
+      value: $(params.environment)
+    - name: version
+      value: $(params.version)
     taskRef:
       kind: ClusterTask
       name: ods-start-v0-1-0
