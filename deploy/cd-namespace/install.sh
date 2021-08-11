@@ -4,6 +4,7 @@ set -ue
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERBOSE="false"
+DRY_RUN="false"
 DIFF="true"
 NAMESPACE=""
 RELEASE_NAME="ods-pipeline"
@@ -27,6 +28,8 @@ while [[ "$#" -gt 0 ]]; do
 
     --no-diff) DIFF="false"; shift;;
 
+    --dry-run) DRY_RUN="true"; shift;;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
@@ -46,12 +49,16 @@ if kubectl -n ${NAMESPACE} get serviceaccount/${SERVICEACCOUNT} &> /dev/null; th
     echo "Serviceaccount exists already ..."
 else
     echo "Creating serviceaccount ..."
-    kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
+    if [ "${DRY_RUN}" == "true" ]; then
+        echo "(skipping in dry-run)"
+    else
+        kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
 
-    kubectl -n ${NAMESPACE} \
-        create rolebinding "${SERVICEACCOUNT}-edit" \
-        --clusterrole edit \
-        --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+        kubectl -n ${NAMESPACE} \
+            create rolebinding "${SERVICEACCOUNT}-edit" \
+            --clusterrole edit \
+            --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+    fi
 fi
 
 echo "Installing Helm release ..."
@@ -62,23 +69,35 @@ if [ "${DIFF}" == "true" ]; then
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."
     else
+        if [ "${DRY_RUN}" == "true" ]; then
+            echo "(skipping in dry-run)"
+        else
+            helm -n ${NAMESPACE} \
+                upgrade --install \
+                ${VALUES_ARGS} \
+                ${RELEASE_NAME} ${CHART_DIR}
+        fi
+    fi
+else
+    if [ "${DRY_RUN}" == "true" ]; then
+        echo "(skipping in dry-run)"
+    else
         helm -n ${NAMESPACE} \
             upgrade --install \
             ${VALUES_ARGS} \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
-else
-    helm -n ${NAMESPACE} \
-            upgrade --install \
-            ${VALUES_ARGS} \
-            ${RELEASE_NAME} ${CHART_DIR}
 fi
 
 echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
-kubectl -n ${NAMESPACE} \
-    patch sa ${SERVICEACCOUNT} \
-    --type json \
-    -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
+if [ "${DRY_RUN}" == "true" ]; then
+    echo "(skipping in dry-run)"
+else
+    kubectl -n ${NAMESPACE} \
+        patch sa ${SERVICEACCOUNT} \
+        --type json \
+        -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
+fi
 
 # echo "Exposing event listener ..."
 # oc -n ${NAMESPACE} expose svc el-ods-pipeline

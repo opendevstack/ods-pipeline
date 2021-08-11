@@ -27,7 +27,7 @@ git subtree add --prefix=cd-namespace subtree-split-branch-$pipelineGitRef
 
 4. Change to the new folder `cd-namespace`.
 5. Add a `values.foo-cd.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`.
-6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`.
+6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`. You may also use `--dry-run` to see the changes first.
 7. Run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL.
 
 Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories.
