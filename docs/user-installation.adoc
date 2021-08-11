@@ -18,7 +18,7 @@ You'll need:
 
 ```
 gitRef=master
-git fetch --depth=1 https://github.com/opendestack/ods-pipeline.git $gitRef:ods-pipeline-$gitRef
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $gitRef:ods-pipeline-$gitRef
 git checkout ods-pipeline-$gitRef
 git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch
 git checkout -
