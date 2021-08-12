@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/file"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -116,8 +115,8 @@ func main() {
 		if aquasecInstalled() {
 			fmt.Println("Scanning image with Aqua scanner ...")
 			aquaImage := fmt.Sprintf("%s/%s", imageNamespace, imageName)
-			htmlReportFile := "report.html"
-			jsonReportFile := "report.json"
+			htmlReportFile := filepath.Join(workingDir, "report.html")
+			jsonReportFile := filepath.Join(workingDir, "report.json")
 			scanSuccessful := false
 
 			stdout, stderr, err = aquaScan(opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -132,16 +131,17 @@ func main() {
 			}
 			fmt.Println(string(stdout))
 
-			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-
 			aquaScanUrl := fmt.Sprintf(
 				"%s/#/images/%s/%s/vulns",
 				opts.aquaURL, url.QueryEscape(opts.aquaRegistry), url.QueryEscape(aquaImage),
 			)
 			fmt.Printf("Aqua vulnerability report is at %s ...\n", aquaScanUrl)
+
+			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			fmt.Println("Creating Bitbucket code insight report ...")
 			err = createBitbucketInsightReport(opts, aquaScanUrl, scanSuccessful, ctxt)
 			if err != nil {
@@ -239,13 +239,13 @@ func aquaScan(opts options, image, htmlReportFile, jsonReportFile string) ([]byt
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
 func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {
 	if _, err := os.Stat(htmlReportFile); err == nil {
-		err := file.Copy(htmlReportFile, filepath.Join(pipelinectxt.AquaScansPath, htmlReportFile))
+		err := pipelinectxt.CopyArtifact(htmlReportFile, pipelinectxt.AquaScansPath)
 		if err != nil {
 			return fmt.Errorf("copying HTML report to artifacts failed: %w", err)
 		}
 	}
 	if _, err := os.Stat(jsonReportFile); err == nil {
-		err = file.Copy(jsonReportFile, filepath.Join(pipelinectxt.AquaScansPath, jsonReportFile))
+		err := pipelinectxt.CopyArtifact(jsonReportFile, pipelinectxt.AquaScansPath)
 		if err != nil {
 			return fmt.Errorf("copying JSON report to artifacts failed: %w", err)
 		}

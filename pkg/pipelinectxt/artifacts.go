@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/opendevstack/pipeline/internal/file"
 )
 
 const (
@@ -37,6 +39,15 @@ func WriteJsonArtifact(in interface{}, artifactsPath, filename string) error {
 		return fmt.Errorf("could not create %s: %w", artifactsPath, err)
 	}
 	return ioutil.WriteFile(filepath.Join(artifactsPath, filename), out, 0644)
+}
+
+// CopyArtifact copies given "sourceFile" into "artifactsPath".
+func CopyArtifact(sourceFile, artifactsPath string) error {
+	err := os.MkdirAll(artifactsPath, 0755)
+	if err != nil {
+		return fmt.Errorf("could not create %s: %w", artifactsPath, err)
+	}
+	return file.Copy(sourceFile, filepath.Join(artifactsPath, filepath.Base(sourceFile)))
 }
 
 func ReadArtifactsDir() (map[string][]string, error) {
