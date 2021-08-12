@@ -54,6 +54,9 @@ func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	} else {
 		httpClient.Timeout = 20 * time.Second
 	}
+	// Be careful not to pass a variable of type *logging.LeveledLogger
+	// holding a nil value. If you pass nil for Logger, make sure it is of
+	// logging.LeveledLoggerInterface type.
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}

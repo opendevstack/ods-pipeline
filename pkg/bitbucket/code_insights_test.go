@@ -1,8 +1,12 @@
 package bitbucket
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/testfile"
 	"github.com/opendevstack/pipeline/test/testserver"
 )
 
@@ -70,5 +74,31 @@ func TestInsightReportCreate(t *testing.T) {
 	}
 	if r.Key != "report.key" {
 		t.Fatalf("got %s, want %s", r.Key, "report.key")
+	}
+	checkLastRequest(t, srv, "bitbucket/insight-report-create.json")
+}
+
+func checkLastRequest(t *testing.T, srv *testserver.TestServer, golden string) {
+	req, err := srv.LastRequest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotBody, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got interface{}
+	err = json.Unmarshal(gotBody, &got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantBody := testfile.ReadGolden(t, golden)
+	var want interface{}
+	err = json.Unmarshal(wantBody, &want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("request body mismatch (-want +got):\n%s", diff)
 	}
 }

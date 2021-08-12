@@ -3,18 +3,16 @@ package interceptor
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"path"
-	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/testfile"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"sigs.k8s.io/yaml"
 )
 
 func TestRenderPipeline(t *testing.T) {
-	wantPipeline := ReadGoldenFile(t, "pipeline.yml")
+	wantPipeline := testfile.ReadGolden(t, "interceptor/pipeline.yml")
 	data := PipelineData{
 		Name:            "bar-main",
 		Project:         "foo",
@@ -34,7 +32,7 @@ func TestRenderPipeline(t *testing.T) {
 	}
 
 	// read ods.yml
-	conf := ReadFixtureFile(t, "ods.yml")
+	conf := testfile.ReadFixture(t, "interceptor/ods.yml")
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
@@ -46,8 +44,8 @@ func TestRenderPipeline(t *testing.T) {
 }
 
 func TestExtensions(t *testing.T) {
-	bodyFixture := ReadFixtureFile(t, "payload.json")
-	wantBody := ReadGoldenFile(t, "payload.json")
+	bodyFixture := testfile.ReadFixture(t, "interceptor/payload.json")
+	wantBody := testfile.ReadGolden(t, "interceptor/payload.json")
 	data := PipelineData{
 		Name:            "bar-main",
 		Namespace:       "foo-cd",
@@ -163,31 +161,4 @@ func fatalIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-// ReadFixtureFile returns the contents of the fixture file or fails.
-func ReadFixtureFile(t *testing.T, filename string) []byte {
-	return readFileOrFatal(t, "../../test/testdata/fixtures/interceptor/"+filename)
-}
-
-// ReadGoldenFile returns the contents of the golden file or fails.
-func ReadGoldenFile(t *testing.T, filename string) []byte {
-	return readFileOrFatal(t, "../../test/testdata/golden/interceptor/"+filename)
-}
-
-func readFileOrFatal(t *testing.T, name string) []byte {
-	b, err := readFile(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return b
-}
-
-func readFile(name string) ([]byte, error) {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		return []byte{}, fmt.Errorf("Could not get filename when looking for %s", name)
-	}
-	filepath := path.Join(path.Dir(filename), name)
-	return ioutil.ReadFile(filepath)
 }

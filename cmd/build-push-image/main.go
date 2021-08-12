@@ -259,7 +259,7 @@ func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {
 // createBitbucketInsightReport attaches a code insight report to the Git commit
 // being built in Bitbucket. The code insight report points to the Aqua security scan.
 func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool, ctxt *pipelinectxt.ODSContext) error {
-	var logger *logging.LeveledLogger
+	var logger logging.LeveledLoggerInterface
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	}
@@ -286,10 +286,10 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 			Result:      scanResult,
 			Data: []bitbucket.InsightReportData{
 				{
-					Title: "Link",
+					Title: "Report",
 					Type:  "LINK",
 					Value: map[string]string{
-						"linktext": aquaScanUrl,
+						"linktext": "Result in Aqua",
 						"href":     aquaScanUrl,
 					},
 				},

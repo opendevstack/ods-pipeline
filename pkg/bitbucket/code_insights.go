@@ -24,13 +24,13 @@ type InsightReport struct {
 
 type InsightReportCreatePayload struct {
 	Data        []InsightReportData `json:"data"`
-	Details     string              `json:"details"`
+	Details     string              `json:"details,omitempty"`
 	Title       string              `json:"title"`
-	Reporter    string              `json:"reporter"`
+	Reporter    string              `json:"reporter,omitempty"`
 	CreatedDate int64               `json:"createdDate"`
-	Link        string              `json:"link"`
-	LogoURL     string              `json:"logoUrl"`
-	Result      string              `json:"result"`
+	Link        string              `json:"link,omitempty"`
+	LogoURL     string              `json:"logoUrl,omitempty"`
+	Result      string              `json:"result,omitempty"`
 }
 
 type InsightReportData struct {
@@ -60,7 +60,7 @@ func (c *Client) InsightReportCreate(projectKey, repositorySlug, commitID, key s
 		return nil, fmt.Errorf("request returned error: %w", err)
 	}
 	if statusCode != 200 {
-		c.clientConfig.Logger.Debugf("Request Body:\n%s", b)
+		c.clientConfig.Logger.Debugf("Request Body:\n%s", string(b))
 		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
 	}
 	var insightReport InsightReport
