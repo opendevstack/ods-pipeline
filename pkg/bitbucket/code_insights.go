@@ -60,6 +60,7 @@ func (c *Client) InsightReportCreate(projectKey, repositorySlug, commitID, key s
 		return nil, fmt.Errorf("request returned error: %w", err)
 	}
 	if statusCode != 200 {
+		c.clientConfig.Logger.Debugf("Request Body:\n%s", b)
 		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
 	}
 	var insightReport InsightReport

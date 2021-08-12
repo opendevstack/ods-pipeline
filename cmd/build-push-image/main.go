@@ -15,6 +15,7 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -40,6 +41,7 @@ type options struct {
 	buildahBuildExtraArgs string
 	buildahPushExtraArgs  string
 	aquasecGate           bool
+	debug                 bool
 }
 
 func main() {
@@ -61,6 +63,7 @@ func main() {
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", "docker", "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", "docker", "extra parameters passed for the push command when pushing images")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", false, "whether the Aqua security scan needs to pass for the task to succeed")
+	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
 	workingDir := "."
@@ -256,9 +259,14 @@ func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {
 // createBitbucketInsightReport attaches a code insight report to the Git commit
 // being built in Bitbucket. The code insight report points to the Aqua security scan.
 func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool, ctxt *pipelinectxt.ODSContext) error {
+	var logger *logging.LeveledLogger
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	}
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
+		Logger:   logger,
 	})
 	reportKey := "org.opendevstack.aquasec"
 	scanResult := bitbucket.InsightReportFail
