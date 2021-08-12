@@ -1,0 +1,30 @@
+# Admin Installation Guide
+
+This guide will show how to install `ods-pipeline` in an existing ODS cluster. Note this is a one-time installation done by a cluster admin and does not need to be repeated for every project that wants to use `ods-pipeline`.
+
+## Prerequisites
+
+You'll need:
+
+* A namespace in an OpenShift cluster (such as `ods`)
+* `git` and `oc`
+* to be logged into OpenShift on the command line as a cluster admin
+
+## Instructions
+
+1. Run `make install-ods-central namespace=ods`
+2. If you want to make use of Aqua, change the `ods-buildah` BuildConfig to include a build arg:
+
+```
+spec:
+  strategy:
+    dockerStrategy:
+      buildArgs:
+        - name: aquasecScannerUrl
+          value: >-
+            https://username:password@download.aquasec.com/scanner/5.3.0/scannercli 
+```
+
+Make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
+
+4. Run `make start-ods-central-builds`
