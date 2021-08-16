@@ -137,13 +137,12 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarP
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)
-		if err != nil || qualityGateResult.ProjectStatus.Status == "UNKNOWN" {
-			t.Log("quality gate unknown")
+		if err != nil {
 			t.Fatal(err)
 		}
-
-		if qualityGateResult.ProjectStatus.Status != wantQualityGateStatus {
-			t.Fatalf("Got: %s, want: %s", qualityGateResult.ProjectStatus.Status, wantQualityGateStatus)
+		actualStatus := qualityGateResult.ProjectStatus.Status
+		if actualStatus != wantQualityGateStatus {
+			t.Fatalf("Got: %s, want: %s", actualStatus, wantQualityGateStatus)
 		}
 
 	}
