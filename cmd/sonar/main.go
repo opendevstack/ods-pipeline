@@ -44,12 +44,7 @@ func main() {
 		ServerEdition: *sonarqubeEditionFlag,
 	})
 
-	// Monorepo support: separate projects in SonarQube.
-	// See https://community.sonarsource.com/t/monorepo-and-sonarqube/37990/3.
-	sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)
-	if len(artifactPrefix) > 0 {
-		sonarProject = fmt.Sprintf("%s-%s", sonarProject, strings.TrimSuffix(artifactPrefix, "-"))
-	}
+	sonarProject := sonar.ProjectKey(ctxt, artifactPrefix)
 
 	fmt.Println("Scanning with sonar-scanner ...")
 	var prInfo *sonar.PullRequest

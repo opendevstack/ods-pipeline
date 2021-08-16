@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -54,7 +55,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentContains(t, wsDir, "build/test-results/coverage/coverage.xml", wantContains)
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
+					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
 		})

@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -121,9 +120,9 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 	}
 }
 
-func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *tasktesting.TaskRunContext, qualityGateFlag bool, wantQualityGateStatus string) {
+func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarProject string, qualityGateFlag bool, wantQualityGateStatus string) {
 
-	sonarToken, err := kubernetes.GetSecretKey(c, ctxt.Namespace, "ods-sonar-auth", "password")
+	sonarToken, err := kubernetes.GetSecretKey(c, namespace, "ods-sonar-auth", "password")
 	if err != nil {
 		t.Fatalf("could not get SonarQube token: %s", err)
 	}
@@ -135,7 +134,6 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, ctxt *tasktesting
 	})
 
 	if qualityGateFlag {
-		sonarProject := fmt.Sprintf("%s-%s", ctxt.ODS.Project, ctxt.ODS.Component)
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)

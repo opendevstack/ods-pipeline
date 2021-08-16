@@ -11,6 +11,7 @@ import (
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -47,7 +48,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 						}
 					}
 
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
+					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 
 					b, _, err := command.Run(wsDir+"/docker/app", []string{})
 					if err != nil {
@@ -103,7 +105,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 						}
 					}
 
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
+					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 
 					b, _, err := command.Run(filepath.Join(wsDir, binary), []string{})
 					if err != nil {

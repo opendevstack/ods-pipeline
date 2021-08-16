@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
 // Loosely based on https://github.com/brandur/wanikaniapi.
@@ -47,6 +49,17 @@ func NewClient(clientConfig *ClientConfig) *Client {
 		httpClient:   httpClient,
 		clientConfig: clientConfig,
 	}
+}
+
+// ProjectKey returns the SonarQube project key for given context and artifact prefix.
+// Monorepo support: separate projects in SonarQube.
+// See https://community.sonarsource.com/t/monorepo-and-sonarqube/37990/3.
+func ProjectKey(ctxt *pipelinectxt.ODSContext, artifactPrefix string) string {
+	sonarProject := fmt.Sprintf("%s-%s", ctxt.Project, ctxt.Component)
+	if len(artifactPrefix) > 0 {
+		sonarProject = fmt.Sprintf("%s-%s", sonarProject, strings.TrimSuffix(artifactPrefix, "-"))
+	}
+	return sonarProject
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
