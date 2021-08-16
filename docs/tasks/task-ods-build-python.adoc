@@ -11,6 +11,23 @@ ODS Build Python applications
 | Parameter | Default | Description
 
 
+| working-dir
+| .
+| Working directory. The path must be relative to the root of the repository,
+without leading `./` and trailing `/`.
+
+
+
+| docker-dir
+| docker
+| Path to the directory to use as Docker context, relative to `working-dir`. The resulting Go binary will be copied there.
+
+
+| max-line-length
+| 120
+| Maximum line length.
+
+
 | sonar-quality-gate
 | false
 | Whether quality gate needs to pass.

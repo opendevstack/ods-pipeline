@@ -19,7 +19,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-go",
 		map[string]tasktesting.TestCase{
-			"should build go app": {
+			"build go app": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -60,7 +60,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 				},
 			},
-			"should build go app in subdirectory": {
+			"build go app in subdirectory": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -117,7 +117,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 				},
 			},
-			"should fail linting go app and generate lint report": {
+			"fail linting go app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app-lint-error"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
