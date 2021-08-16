@@ -5,9 +5,14 @@ ENABLE_CGO="false"
 GO_OS=""
 GO_ARCH=""
 DOCKER_DIR="docker"
+WORKING_DIR="."
+ARTIFACT_PREFIX=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+
+    --working-dir) WORKING_DIR="$2"; shift;;
+    --working-dir=*) WORKING_DIR="${1#*=}";;
 
     --enable-cgo) ENABLE_CGO="$2"; shift;;
     --enable-cgo=*) ENABLE_CGO="${1#*=}";;
@@ -23,6 +28,12 @@ while [[ "$#" -gt 0 ]]; do
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+ROOT_DIR=$(pwd)
+if [ "${WORKING_DIR}" != "." ]; then
+  cd "${WORKING_DIR}"
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
+fi
 
 echo "Run Go build"
 go version
@@ -48,13 +59,14 @@ fi
 echo "Lint"
 golangci-lint version
 set +e
+rm go-lint-report.txt &>/dev/null
 golangci-lint run > go-lint-report.txt
 exitcode=$?
 set -e
-if [ -s go-lint-report.txt ]; then
+if [ -f go-lint-report.txt ]; then
   cat go-lint-report.txt
-  mkdir -p .ods/artifacts/lint-report
-  cp go-lint-report.txt .ods/artifacts/lint-report/report.txt
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
+  cp go-lint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
   exit $exitcode
 fi
 
@@ -62,31 +74,30 @@ echo "Build"
 go build -gcflags "all=-trimpath=$(pwd)" -o "${DOCKER_DIR}/app"
 
 echo "Test"
-mkdir -p build/test-results/test
-if [ -f .ods/artifacts/xunit-reports/report.xml ]; then
-  echo "restoring archived test artifacts ..."
-  cp .ods/artifacts/xunit-reports/report.xml build/test-results/test/report.xml
-  cp .ods/artifacts/code-coverage/coverage.out coverage.out
+if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+  echo "Test artifacts already present, skipping tests ..."
 else
   GOPKGS=$(go list ./... | grep -v /vendor)
   set +e
-  echo "running tests ..."
+  rm coverage.out test-results.txt report.xml &>/dev/null
   go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
   exitcode=$?
   set -e
   if [ -f test-results.txt ]; then
       cat test-results.txt
-      go-junit-report < test-results.txt > build/test-results/test/report.xml
-      mkdir -p .ods/artifacts/xunit-reports
-      cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
+      go-junit-report < test-results.txt > report.xml
+      mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+      cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
   else
-    echo "no test results found"
+    echo "No test results found"
+    exit 1
   fi
   if [ -f coverage.out ]; then
-      mkdir -p .ods/artifacts/code-coverage
-      cp coverage.out .ods/artifacts/code-coverage/coverage.out
+      mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+      cp coverage.out "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out"
   else
-    echo "no code coverage found"
+    echo "No code coverage found"
+    exit 1
   fi
   exit $exitcode
 fi
