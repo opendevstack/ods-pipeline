@@ -88,13 +88,15 @@ func main() {
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)
-		if err != nil || qualityGateResult.ProjectStatus.Status == "UNKNOWN" {
-			fmt.Println("Quality gate status unknown")
-			fmt.Println(err)
-			os.Exit(1)
-		} else if qualityGateResult.ProjectStatus.Status == "ERROR" {
-			fmt.Println("Quality gate failed")
-			os.Exit(1)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		actualStatus := qualityGateResult.ProjectStatus.Status
+		if actualStatus != sonar.QualityGateStatusOk {
+			log.Fatalf(
+				"Quality gate status is '%s', not '%s'\n",
+				actualStatus, sonar.QualityGateStatusOk,
+			)
 		} else {
 			fmt.Println("Quality gate passed")
 		}
