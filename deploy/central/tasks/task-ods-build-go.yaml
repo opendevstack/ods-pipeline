@@ -60,6 +60,12 @@ spec:
   steps:
     - name: build-go-binary
       image: build/package/Dockerfile.go-toolset
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
 
@@ -69,7 +75,8 @@ spec:
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
-          --docker-dir=$(params.docker-dir)
+          --docker-dir=$(params.docker-dir) \
+          --debug=${DEBUG}
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar

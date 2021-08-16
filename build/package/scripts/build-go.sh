@@ -7,6 +7,7 @@ GO_ARCH=""
 DOCKER_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
+DEBUG="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -26,8 +27,15 @@ while [[ "$#" -gt 0 ]]; do
     --docker-dir) DOCKER_DIR="$2"; shift;;
     --docker-dir=*) DOCKER_DIR="${1#*=}";;
 
+    --debug) DEBUG="$2"; shift;;
+    --debug=*) DEBUG="${1#*=}";;
+
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+fi
 
 ROOT_DIR=$(pwd)
 if [ "${WORKING_DIR}" != "." ]; then
@@ -64,7 +72,7 @@ rm go-lint-report.txt &>/dev/null
 golangci-lint run > go-lint-report.txt
 exitcode=$?
 set -e
-if [ -f go-lint-report.txt ]; then
+if [ -s go-lint-report.txt ]; then
   cat go-lint-report.txt
   mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
   cp go-lint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
