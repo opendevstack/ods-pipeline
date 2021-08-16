@@ -13,15 +13,41 @@ urlencode() {
     done
 }
 
+DOCKER_DIR="docker"
+WORKING_DIR="."
+ARTIFACT_PREFIX=""
+DEBUG="false"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+
+    --working-dir) WORKING_DIR="$2"; shift;;
+    --working-dir=*) WORKING_DIR="${1#*=}";;
+
+    --docker-dir) DOCKER_DIR="$2"; shift;;
+    --docker-dir=*) DOCKER_DIR="${1#*=}";;
+
+    --debug) DEBUG="$2"; shift;;
+    --debug=*) DEBUG="${1#*=}";;
+
+  *) echo "Unknown parameter passed: $1"; exit 1;;
+esac; shift; done
+
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+fi
+
+ROOT_DIR=$(pwd)
+if [ "${WORKING_DIR}" != "." ]; then
+  cd "${WORKING_DIR}"
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
+fi
+
+echo "Configuring npm to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
-
 if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
-    
-    printf "\nConfiguring npm\n"
-
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
-    
     npm config set registry=$NEXUS_URL/repository/npmjs/
     npm config set always-auth=true
     npm config set _auth=$(echo -n $NEXUS_AUTH | base64)
@@ -30,34 +56,28 @@ if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWO
     npm config set strict-ssl=false
 fi;
 
-printf "\nnpm ci and build\n" 
+echo "Building ..."
 npm ci
 npm run build
-mkdir -p docker/dist
-cp -r dist docker/dist
+mkdir -p "${DOCKER_DIR}/dist"
+cp -r dist "${DOCKER_DIR}/dist"
 
-printf "\nCopying node_modules to docker/dist/node_modules...\n"
-# TODO: https://github.com/laktak/rsyncy
-# rsync -arh --info=progress2 node_modules/ docker/dist/node_modules
-cp -r node_modules docker/dist/node_modules
+echo "Copying node_modules to ${DOCKER_DIR}/dist/node_modules ..."
+cp -r node_modules "${DOCKER_DIR}/dist/node_modules"
 
-printf "\nRun tests\n" 
+echo "Testing ..."
 npm run test
-# TODO: install junit
-# junit 'artifacts/xunit.xml'
 
-#TODO: Copy to .ods/artifacts
-mkdir -p .ods/artifacts/xunit-reports
+mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
 cat build/test-results/test/report.xml
-cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
+cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-# code coverage
-mkdir -p .ods/artifacts/code-coverage
+mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
 cat build/coverage/clover.xml
-cp build/coverage/clover.xml .ods/artifacts/code-coverage/clover.xml
+cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
 cat build/coverage/coverage-final.json
-cp build/coverage/coverage-final.json .ods/artifacts/code-coverage/coverage-final.json
+cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
 cat build/coverage/lcov.info
-cp build/coverage/lcov.info .ods/artifacts/code-coverage/lcov.info
+cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
