@@ -31,6 +31,13 @@ properly in SonarQube.
 | Parameter | Default | Description
 
 
+| working-dir
+| .
+| Working directory. The path must be relative to the root of the repository,
+without leading `./` and trailing `/`.
+
+
+
 | enable-cgo
 | false
 | Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
@@ -48,7 +55,7 @@ properly in SonarQube.
 
 | docker-dir
 | docker
-| Path to the directory to use as Docker context. The resulting Go binary will be copied there.
+| Path to the directory to use as Docker context, relative to `working-dir`. The resulting Go binary will be copied there.
 
 
 | sonar-quality-gate

@@ -25,6 +25,12 @@ spec:
     in Bitbucket is done automatically by SonarQube provided the ALM integration is setup
     properly in SonarQube.
   params:
+    - name: working-dir
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
+      type: string
+      default: "."
     - name: enable-cgo
       description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
       type: string
@@ -39,7 +45,7 @@ spec:
       default: "amd64"
     - name: docker-dir
       description: >-
-        Path to the directory to use as Docker context.
+        Path to the directory to use as Docker context, relative to `working-dir`.
         The resulting Go binary will be copied there.
       type: string
       default: docker
@@ -54,15 +60,23 @@ spec:
   steps:
     - name: build-go-binary
       image: build/package/Dockerfile.go-toolset
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
 
         # build-go is build/package/scripts/build-go.sh.
         build-go \
+          --working-dir=$(params.working-dir) \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
-          --docker-dir=$(params.docker-dir)
+          --docker-dir=$(params.docker-dir) \
+          --debug=${DEBUG}
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar
@@ -84,7 +98,9 @@ spec:
         else
           mkdir -p .ods/artifacts/sonarqube-analysis
           # sonar is built from cmd/sonar/main.go.
-          sonar -quality-gate=$(params.sonar-quality-gate)
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)
   workspaces:

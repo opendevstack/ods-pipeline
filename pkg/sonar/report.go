@@ -2,6 +2,7 @@ package sonar
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -9,23 +10,24 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
-func (c *Client) GenerateReport(project, author, branch string) (string, error) {
+// GenerateReports generates SonarQube reports using cnesreport.
+// See https://github.com/cnescatlab/sonar-cnes-report.
+func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) (string, error) {
 	reportParams := []string{
 		"-jar", "/usr/local/cnes/cnesreport.jar",
 		"-s", c.clientConfig.BaseURL,
 		"-t", c.clientConfig.APIToken,
-		"-p", project,
+		"-p", sonarProject,
 		"-a", author,
 		branch,
 	}
 	stdout, stderr, err := command.Run("java", reportParams)
 	if err != nil {
-		fmt.Println(string(stdout))
-		fmt.Println(string(stderr))
-		return "", fmt.Errorf("scanning failed: %w", err)
+		return string(stdout), fmt.Errorf("report generation failed: %w, stderr: %s", err, string(stderr))
 	}
 
-	err = copyReportFiles(project, pipelinectxt.SonarAnalysisPath)
+	artifactsPath := filepath.Join(rootPath, pipelinectxt.SonarAnalysisPath)
+	err = copyReportFiles(sonarProject, artifactsPath, artifactPrefix)
 	if err != nil {
 		return "", fmt.Errorf("copying report to artifacts failed: %w", err)
 	}
@@ -33,13 +35,16 @@ func (c *Client) GenerateReport(project, author, branch string) (string, error) 
 	return string(stdout), nil
 }
 
-func copyReportFiles(project, destinationDir string) error {
+func copyReportFiles(project, destinationDir, artifactPrefix string) error {
 	analysisReportFile := fmt.Sprintf(
 		"%s-%s-analysis-report.md",
 		currentDate(),
 		project,
 	)
-	err := file.Copy(analysisReportFile, destinationDir+"/analysis-report.md")
+	err := file.Copy(
+		analysisReportFile,
+		filepath.Join(destinationDir, artifactPrefix+"analysis-report.md"),
+	)
 	if err != nil {
 		return fmt.Errorf("copying %s failed: %w", analysisReportFile, err)
 	}
@@ -49,7 +54,10 @@ func copyReportFiles(project, destinationDir string) error {
 		currentDate(),
 		project,
 	)
-	err = file.Copy(issuesReportFile, destinationDir+"/issues-report.csv")
+	err = file.Copy(
+		issuesReportFile,
+		filepath.Join(destinationDir, artifactPrefix+"issues-report.csv"),
+	)
 	if err != nil {
 		return fmt.Errorf("copying %s failed: %w", issuesReportFile, err)
 	}

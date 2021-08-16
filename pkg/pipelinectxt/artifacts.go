@@ -26,6 +26,8 @@ const (
 	CodeCoveragesPath = ArtifactsPath + "/" + CodeCoveragesDir
 	XUnitReportsDir   = "xunit-reports"
 	XUnitReportsPath  = ArtifactsPath + "/" + XUnitReportsDir
+	LintReportsDir    = "lint-reports"
+	LintReportsPath   = ArtifactsPath + "/" + LintReportsDir
 )
 
 // WriteJsonArtifact marshals given "in" struct and writes it into "artifactsPath" as "filename".
