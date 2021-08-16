@@ -35,7 +35,8 @@ if [ "${WORKING_DIR}" != "." ]; then
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
 
-echo "Run Go build"
+echo "Working on Go module in $(pwd) ..."
+
 go version
 if [ "${ENABLE_CGO}" = "false" ]; then
   export CGO_ENABLED=0
@@ -47,7 +48,7 @@ if [ -n "${GO_ARCH}" ]; then
   export GOARCH="${GO_ARCH}"
 fi
 
-echo "Check format"
+echo "Checking format ..."
 unformatted=$(gofmt -l .)
 if [ -n "${unformatted}" ]; then
   echo "Unformatted files:"
@@ -56,7 +57,7 @@ if [ -n "${unformatted}" ]; then
   exit 1
 fi
 
-echo "Lint"
+echo "Linting ..."
 golangci-lint version
 set +e
 rm go-lint-report.txt &>/dev/null
@@ -70,10 +71,10 @@ if [ -f go-lint-report.txt ]; then
   exit $exitcode
 fi
 
-echo "Build"
+echo "Building ..."
 go build -gcflags "all=-trimpath=$(pwd)" -o "${DOCKER_DIR}/app"
 
-echo "Test"
+echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
 else

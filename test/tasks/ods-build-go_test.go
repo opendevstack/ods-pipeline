@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/directory"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
@@ -57,14 +59,23 @@ func TestTaskODSBuildGo(t *testing.T) {
 				},
 			},
 			"should build go app in subdirectory": {
-				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
+					// Setup subdir in "monorepo"
 					subdir := "go-src"
-					err := os.MkdirAll(subdir, 0755)
+					err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
 					if err != nil {
 						t.Fatal(err)
 					}
+					err = directory.Copy(
+						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "go-sample-app"),
+						filepath.Join(wsDir, subdir),
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
 						"go-os":              runtime.GOOS,
@@ -118,7 +129,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFiles := []string{
-						".ods/artifacts/lint-report/report.txt",
+						".ods/artifacts/lint-reports/report.txt",
 					}
 
 					for _, wf := range wantFiles {
@@ -129,7 +140,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 					wantLintReportContent := "main.go:6:2: printf: fmt.Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
 
-					checkFileContent(t, wsDir, ".ods/artifacts/lint-report/report.txt", wantLintReportContent)
+					checkFileContent(t, wsDir, ".ods/artifacts/lint-reports/report.txt", wantLintReportContent)
 				},
 			},
 		})
