@@ -12,11 +12,8 @@ spec:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
-        name: $(tt.params.pipeline-name)-$(uid)
+        generateName: $(tt.params.pipeline-name)-
       spec:
-        params:
-          - name: pipeline-run-name
-            value: $(tt.params.pipeline-name)-$(uid)
         pipelineRef:
           name: $(tt.params.pipeline-name)
         serviceAccountName: pipeline
