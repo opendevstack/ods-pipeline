@@ -56,13 +56,16 @@ endif
 .PHONY: install-ods-central
 
 ## OpenShift only! Start builds for each ODS BuildConfig
-start-ods-central-builds: deploy-ods-central
-	oc start-build ods-build-go
+start-ods-central-builds:
 	oc start-build ods-buildah
+	oc start-build ods-finish
+	oc start-build ods-go-toolset
 	oc start-build ods-helm
+	oc start-build ods-python-toolset
 	oc start-build ods-sonar
 	oc start-build ods-start
-	oc start-build ods-finish
+	oc start-build ods-typescript-toolset
+	oc start-build ods-webhook-interceptor
 .PHONY: start-ods-central-builds
 
 ## KinD only! Apply ODS ClusterTask manifests in KinD

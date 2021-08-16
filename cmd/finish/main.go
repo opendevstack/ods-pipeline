@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -114,20 +112,7 @@ func createPipelineRunArtifact(pipelineRunName, aggregateTasksStatus string) err
 		Name:                pipelineRunName,
 		AggregateTaskStatus: aggregateTasksStatus,
 	}
-	j, err := json.Marshal(pra)
-	if err != nil {
-		return fmt.Errorf("could not marshal pipeline run artifact: %w", err)
-	}
-	err = os.MkdirAll(pipelinectxt.PipelineRunsPath, 0755)
-	if err != nil {
-		return fmt.Errorf("could not create pipeline run artifact directory: %w", err)
-	}
-	filename := filepath.Join(pipelinectxt.PipelineRunsPath, pra.Name+".json")
-	err = ioutil.WriteFile(filename, j, 0644)
-	if err != nil {
-		return fmt.Errorf("could not write pipeline run artifact: %w", err)
-	}
-	return nil
+	return pipelinectxt.WriteJsonArtifact(pra, pipelinectxt.PipelineRunsPath, pra.Name+".json")
 }
 
 // getBitbucketBuildStatus returns a build status for use with Bitbucket based

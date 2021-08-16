@@ -62,4 +62,9 @@ stream located in the namespace of the pipeline run.
 | 
 | Extra parameters passed for the push command when pushing images.
 
+
+| aqua-gate
+| false
+| Whether the Aqua security scan needs to pass for the task to succeed.
+
 |===

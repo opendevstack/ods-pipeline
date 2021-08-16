@@ -4,6 +4,3 @@
 - op: replace
   path: /spec/steps/0/image
   value: image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:0.1.0
-- op: replace
-  path: /spec/steps/1/image
-  value: image-registry.openshift-image-registry.svc:5000/ods/ods-buildah:0.1.0

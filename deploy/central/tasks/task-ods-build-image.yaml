@@ -51,54 +51,67 @@ spec:
       description: Extra parameters passed for the push command when pushing images.
       type: string
       default: ''
+    - name: aqua-gate
+      description: Whether the Aqua security scan needs to pass for the task to succeed.
+      type: string
+      default: "false"
   results:
     - description: Digest of the image just built.
       name: image-digest
   steps:
     - name: build-and-push-image
       image: build/package/Dockerfile.buildah
+      env:
+        - name: BITBUCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-bitbucket
+        - name: BITBUCKET_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-bitbucket-auth
+        - name: AQUA_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-aqua
+        - name: AQUA_REGISTRY
+          valueFrom:
+            configMapKeyRef:
+              key: registry
+              name: ods-aqua
+        - name: AQUA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-aqua-auth
+        - name: AQUA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-aqua-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
 
-        odsNamespace=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
-
-        odsGitCommit=$(cat .ods/git-commit-sha)
-
-        imageStreamParam="$(params.image-stream)"
-        imageStream=${imageStreamParam:-$(cat .ods/component)}
-
-        set +e
-
-        imageDigest=$(skopeo inspect \
-          --format '{{.Digest}}' \
-          --tls-verify=$(params.tls-verify) \
-          docker://$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit)
-
-        if [ "$?" = "0" ]; then
-          set -e
-          echo "Image exists already"
-          mkdir -p /tekton/results
-          echo $imageDigest > /tekton/results/image-digest
-        else
-          set -e
-          image="$(params.registry)/$odsNamespace/$imageStream:$odsGitCommit"
-
-          buildah --storage-driver=$(params.storage-driver) bud \
-            $(params.buildah-build-extra-args) --format=$(params.format) \
-            --tls-verify=$(params.tls-verify) --no-cache \
-            -f $(params.dockerfile) -t $image $(params.docker-dir)
-
-          buildah --storage-driver=$(params.storage-driver) push \
-            $(params.buildah-push-extra-args) --tls-verify=$(params.tls-verify) \
-            --digestfile $(workspaces.source.path)/image-digest $image \
-            docker://$image
-          
-          mkdir -p /tekton/results
-          cat $(workspaces.source.path)/image-digest | tee /tekton/results/image-digest
-        fi
-
-        mkdir -p $(workspaces.source.path)/.ods/artifacts/image-digests
-        echo "{\"image\":\"${image}\", \"registry\":\"$(params.registry)\", \"repository\":\"${odsNamespace}\", \"name\":\"${imageStream}\", \"tag\":\"${odsGitCommit}\", \"digest\":\"$(cat /tekton/results/image-digest)\"}" > $(workspaces.source.path)/.ods/artifacts/image-digests/$imageStream.json
+        #  ods-build-push-image is built from cmd/build-push-image/main.go.
+        ods-build-push-image \
+          -image-stream=$(params.image-stream) \
+          -registry=$(params.registry) \
+          -tls-verify=$(params.tls-verify) \
+          -storage-driver=$(params.storage-driver) \
+          -format=$(params.format) \
+          -dockerfile=$(params.dockerfile) \
+          -context-dir=$(params.docker-dir) \
+          -buildah-build-extra-args=$(params.buildah-build-extra-args) \
+          -buildah-push-extra-args=$(params.buildah-push-extra-args) \
+          -aqua-gate=$(params.aqua-gate)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers

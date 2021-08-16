@@ -37,7 +37,7 @@ func TestTaskODSBuildImage(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					buildAndPushImage(t, ctxt, wsDir)
+					buildAndPushImageWithLabel(t, ctxt, wsDir)
 					ctxt.Params = map[string]string{
 						"registry":   "kind-registry.kind:5000",
 						"tls-verify": "false",
@@ -55,13 +55,14 @@ func TestTaskODSBuildImage(t *testing.T) {
 	)
 }
 
-// buildAndPushImage builds an image and pushes it to the registry.
+// buildAndPushImageWithLabel builds an image and pushes it to the registry.
 // The used image tag equals the Git SHA that is being built, so the task
 // will pick up the existing image.
 // The image is labelled with "tasktestrun=true" so that it is possible to
 // verify that the image has not been rebuild in the task.
-func buildAndPushImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	tag := getDockerImageTag(t, ctxt, wsDir)
+	t.Logf("Build image %s ahead of taskrun", tag)
 	_, stderr, err := command.Run("docker", []string{
 		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),
 	})
