@@ -76,7 +76,7 @@ func main() {
 	fmt.Println("Generating reports ...")
 	stdout, err = sonarClient.GenerateReports(
 		sonarProject,
-		"author",
+		"OpenDevStack",
 		ctxt.GitRef,
 		rootPath,
 		artifactPrefix,
