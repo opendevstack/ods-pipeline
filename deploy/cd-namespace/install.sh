@@ -26,9 +26,9 @@ while [[ "$#" -gt 0 ]]; do
     -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
     -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
 
-    --no-diff) DIFF="false"; shift;;
+    --no-diff) DIFF="false";;
 
-    --dry-run) DRY_RUN="true"; shift;;
+    --dry-run) DRY_RUN="true";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
