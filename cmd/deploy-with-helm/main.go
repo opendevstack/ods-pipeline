@@ -39,6 +39,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if len(ctxt.Environment) == 0 {
+		fmt.Println("No environment to deploy to selected. Skipping deployment ...")
+		return
+	}
+
 	var releaseName string
 	if len(*releaseNameFlag) > 0 {
 		releaseName = *releaseNameFlag

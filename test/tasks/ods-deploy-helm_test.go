@@ -3,9 +3,12 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/opendevstack/pipeline/pkg/config"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +20,23 @@ func TestTaskODSDeployHelm(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-deploy-helm",
 		map[string]tasktesting.TestCase{
+			"should skip when no environment selected": {
+				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					// simulate empty environment
+					err := ioutil.WriteFile(
+						filepath.Join(wsDir, pipelinectxt.BaseDir, "environment"),
+						[]byte(""),
+						0644,
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				WantRunSuccess: true,
+			},
 			"should upgrade Helm chart": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
