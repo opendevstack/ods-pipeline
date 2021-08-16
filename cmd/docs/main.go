@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/docs"
@@ -8,5 +9,11 @@ import (
 )
 
 func main() {
-	docs.RenderTasks(filepath.Join(projectpath.Root, "deploy/central/tasks"), filepath.Join(projectpath.Root, "docs/tasks"))
+	err := docs.RenderTasks(
+		filepath.Join(projectpath.Root, "deploy/central/tasks-chart"),
+		filepath.Join(projectpath.Root, "docs/tasks"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

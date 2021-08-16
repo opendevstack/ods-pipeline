@@ -1,0 +1,29 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ods-helm
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'ods-helm:{{ .Values.imageTag }}'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: build/package/Dockerfile.helm
+      from:
+        kind: DockerImage
+        name: 'registry.redhat.io/ubi8/ubi-minimal'
+      pullSecret:
+        name: registry.redhat.io
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: '{{ .Values.odsPipelineGitRepoUri }}'
+      ref: '{{ .Values.odsPipelineGitRepoRef }}'
+  runPolicy: Serial

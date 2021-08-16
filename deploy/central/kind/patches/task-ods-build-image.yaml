@@ -1,6 +1,0 @@
-- op: replace
-  path: /spec/steps/0/image
-  value: localhost:5000/ods/ods-buildah
-- op: replace
-  path: /spec/params/0/default
-  value: kind-registry.kind:5000

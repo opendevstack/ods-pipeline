@@ -34,7 +34,7 @@ Now your cd namespace is fully setup and you can start to utilize Tekton pipelin
 
 ## Updating
 
-You may fetch updates (e.g. new versions) of ods-pipeline like this:
+You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 ```
 pipelineGitRef=master
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef

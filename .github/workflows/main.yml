@@ -62,7 +62,7 @@ jobs:
       -
         name: Setup KinD cluster with internal registry
         working-directory: scripts
-        run: ./kind-with-registry.sh    
+        run: ./kind-with-registry.sh
       -
         name: Push buildah image
         run: |
@@ -116,7 +116,7 @@ jobs:
         run: |
           docker load --input /tmp/buildx-image-ods-typescript-toolset/image-ods-typescript-toolset.tar
           docker push localhost:5000/ods/ods-typescript-toolset:latest
-          docker rmi localhost:5000/ods/ods-typescript-toolset:latest          
+          docker rmi localhost:5000/ods/ods-typescript-toolset:latest
       -
         name: Delete image tarballs
         run: |
