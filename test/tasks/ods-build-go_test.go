@@ -77,9 +77,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					subdir := "go-src"
+					binary := fmt.Sprintf("%s/docker/app", subdir)
 					wantFiles := []string{
-						"docker/Dockerfile",
-						"docker/app",
+						fmt.Sprintf("%s/docker/Dockerfile", subdir),
+						binary,
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.out", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
@@ -93,7 +94,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt, true, "OK")
 
-					b, _, err := command.Run(wsDir+"/docker/app", []string{})
+					b, _, err := command.Run(filepath.Join(wsDir, binary), []string{})
 					if err != nil {
 						t.Fatal(err)
 					}
