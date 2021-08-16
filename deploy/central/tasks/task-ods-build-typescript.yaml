@@ -5,14 +5,26 @@ metadata:
 spec:
   description: ODS Build Typescript applications
   params:
-    - default: "false"
+    - name: working-dir
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
+      type: string
+      default: "."
+    - name: docker-dir
+      description: >-
+        Path to the directory to use as Docker context, relative to `working-dir`.
+        The resulting Go binary will be copied there.
+      type: string
+      default: docker
+    - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
-      name: sonar-quality-gate
       type: string
-    - default: "false"
+      default: "false"
+    - name: sonar-skip
       description: Whether to skip the SonarQube analysis or not.
-      name: sonar-skip
       type: string
+      default: "false"
   steps:
     - name: build-typescript
       image: build/package/Dockerfile.typescript-toolset
@@ -32,11 +44,19 @@ spec:
             secretKeyRef:
               key: password
               name: ods-nexus-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
 
         # build-typescript is build/package/scripts/build-typescript.sh.
-        build-typescript
+        build-typescript \
+          --working-dir=$(params.working-dir) \
+          --docker-dir=$(params.docker-dir) \
+          --debug=${DEBUG}
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar
@@ -58,7 +78,9 @@ spec:
         else
           mkdir -p .ods/artifacts/sonarqube-analysis
           # sonar is built from cmd/sonar/main.go.
-          sonar -quality-gate=$(params.sonar-quality-gate)
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)
   workspaces:
