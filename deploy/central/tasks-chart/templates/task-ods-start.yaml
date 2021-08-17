@@ -156,6 +156,8 @@ spec:
           -git-full-ref=$(params.git-full-ref) \
           -git-ref-spec=$(params.refspec) \
           -url=$(params.url) \
+          -pr-key=$(params.pr-key) \
+          -pr-base=$(params.pr-base) \
           -http-proxy=$(params.http-proxy) \
           -https-proxy=$(params.https-proxy) \
           -no-proxy=$(params.no-proxy) \
