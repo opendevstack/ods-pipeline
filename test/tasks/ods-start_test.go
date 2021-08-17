@@ -23,7 +23,9 @@ func TestTaskODSStart(t *testing.T) {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
 					ctxt.Params = map[string]string{
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
@@ -57,7 +59,9 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					subCtxt := tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, bitbucketProjectKey)
+					subCtxt := tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey,
+					)
 					subrepoContext = subCtxt
 					err = os.RemoveAll(tempDir)
 					if err != nil {
@@ -67,7 +71,9 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
 
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					groupBase := fmt.Sprintf("/%s/%s/%s", subCtxt.Project, subCtxt.Repository, subCtxt.GitCommitSHA)
@@ -126,7 +132,9 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, bitbucketProjectKey)
+					tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey,
+					)
 					err = os.RemoveAll(tempDir)
 					if err != nil {
 						t.Fatal(err)
@@ -135,7 +143,9 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
 					ctxt.Params = map[string]string{
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",

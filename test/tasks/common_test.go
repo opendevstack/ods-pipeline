@@ -21,11 +21,7 @@ import (
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
 
 const (
-	bitbucketProjectKey = "ODSPIPELINETEST"
-	taskKindRef         = "ClusterTask"
-	storageClasName     = "standard" // if using KinD, set it to "standard"
-	storageCapacity     = "1Gi"
-	storageSourceDir    = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
+	taskKindRef = "ClusterTask"
 )
 
 func checkODSContext(t *testing.T, repoDir string, want *pipelinectxt.ODSContext) {
@@ -97,9 +93,9 @@ func getFileContentLean(filename string) (string, error) {
 func runTaskTestCases(t *testing.T, taskName string, testCases map[string]tasktesting.TestCase) {
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{
-			SourceDir:        storageSourceDir,
-			StorageCapacity:  storageCapacity,
-			StorageClassName: storageClasName,
+			SourceDir:        tasktesting.StorageSourceDir,
+			StorageCapacity:  tasktesting.StorageCapacity,
+			StorageClassName: tasktesting.StorageClassName,
 		},
 	)
 

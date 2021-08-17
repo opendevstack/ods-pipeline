@@ -16,10 +16,6 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
-const (
-	bitbucketProjectKey = "ODSPIPELINETEST"
-)
-
 // SetupFakeRepo writes .ods cache with fake data, without actually initializing a Git repo.
 func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 
@@ -51,7 +47,7 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	repoName := filepath.Base(wsDir)
 	ctxt := &pipelinectxt.ODSContext{
 		Namespace:   ns,
-		GitURL:      fmt.Sprintf("%s/scm/%s/%s.git", bbURL, bitbucketProjectKey, repoName),
+		GitURL:      fmt.Sprintf("%s/scm/%s/%s.git", bbURL, BitbucketProjectKey, repoName),
 		Environment: "dev",
 		Version:     pipelinectxt.WIP,
 	}
@@ -123,6 +119,21 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "initial commit"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
+	}
+}
+
+func PushFileToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, branch, filename string) {
+	stdout, stderr, err := command.RunInDir("git", []string{"add", filename}, wsDir)
+	if err != nil {
+		t.Fatalf("failed to add file=%s: %s, stdout: %s, stderr: %s", filename, err, stdout, stderr)
+	}
+	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "update " + filename}, wsDir)
+	if err != nil {
+		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
+	}
+	stdout, stderr, err = command.RunInDir("git", []string{"push", "origin", branch}, wsDir)
+	if err != nil {
+		t.Fatalf("failed to push to remote: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
 }
 
