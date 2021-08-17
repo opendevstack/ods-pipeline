@@ -6,3 +6,4 @@ imageTag: 0.1.0
 odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
 odsPipelineGitRepoRef: master
 aquasecScannerUrl: ''
+sonarEdition: 'community'
