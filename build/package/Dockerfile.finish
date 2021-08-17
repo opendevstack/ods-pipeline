@@ -22,6 +22,7 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/finish && CGO_ENABLED=0 go build -o /usr/local/bin/ods-finish
 
-FROM registry.access.redhat.com/ubi8/ubi-micro
+# ubi-micro cannot be used as it misses the ca-certificates package.
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 COPY --from=builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
 WORKDIR /go

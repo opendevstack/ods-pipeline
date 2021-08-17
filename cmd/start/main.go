@@ -26,7 +26,6 @@ func main() {
 	environmentFlag := flag.String("environment", "", "environment")
 	versionFlag := flag.String("version", "", "version")
 	gitRefSpecFlag := flag.String("git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
-	//gitCommitSHAFlag := flag.String("git-commit-sha", "", "Git commit SHA")
 	prKeyFlag := flag.String("pr-key", "", "pull request key")
 	prBaseFlag := flag.String("pr-base", "", "pull request base")
 	httpProxyFlag := flag.String("http-proxy", ".", "HTTP_PROXY")
