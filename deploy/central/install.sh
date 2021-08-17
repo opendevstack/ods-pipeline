@@ -7,10 +7,10 @@ VERBOSE="false"
 DRY_RUN="false"
 DIFF="true"
 NAMESPACE=""
-RELEASE_NAME="ods-pipeline"
-SERVICEACCOUNT="pipeline"
-VALUES_FILE="values.custom.yaml"
-CHART_DIR="./chart"
+RELEASE_NAME=""
+VALUES_FILE=""
+CHART_DIR=""
+CHART=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -23,8 +23,8 @@ while [[ "$#" -gt 0 ]]; do
     -f|--values) VALUES_FILE="$2"; shift;;
     -f=*|--values=*) VALUES_FILE="${1#*=}";;
 
-    -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
-    -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
+    -c|--chart) CHART="$2"; shift;;
+    -c=*|--chart=*) CHART="${1#*=}";;
 
     --no-diff) DIFF="false";;
 
@@ -41,27 +41,31 @@ for valueFile in ${VALUES_FILES}; do
     VALUES_ARGS="${VALUES_ARGS} --values=${valueFile}"
 done
 
+if [ -z "${CHART}" ]; then
+    echo "--chart is required"
+    exit 1
+elif [ "${CHART}" == "tasks" ]; then
+    RELEASE_NAME="ods-pipeline-tasks"
+    CHART_DIR="./tasks-chart"
+elif [ "${CHART}" == "images" ]; then
+    RELEASE_NAME="ods-pipeline-images"
+    CHART_DIR="./images-chart"
+    if [ -z "${NAMESPACE}" ]; then
+        echo "--namespace is required"
+        exit 1
+    fi
+else
+    echo "--chart is not valid. Use 'tasks' or 'images'."
+    exit 1
+fi
+
+
+
 if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-if kubectl -n ${NAMESPACE} get serviceaccount/${SERVICEACCOUNT} &> /dev/null; then
-    echo "Serviceaccount exists already ..."
-else
-    echo "Creating serviceaccount ..."
-    if [ "${DRY_RUN}" == "true" ]; then
-        echo "(skipping in dry-run)"
-    else
-        kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
-
-        kubectl -n ${NAMESPACE} \
-            create rolebinding "${SERVICEACCOUNT}-edit" \
-            --clusterrole edit \
-            --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
-    fi
-fi
-
-echo "Installing Helm release ..."
+echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
     if helm -n ${NAMESPACE} \
             diff upgrade --install --detailed-exitcode \
@@ -82,22 +86,13 @@ else
     if [ "${DRY_RUN}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        helm -n ${NAMESPACE} \
+        NAMESPACE_FLAG=""
+        if [ -n "${NAMESPACE}" ]; then
+            NAMESPACE_FLAG="-n ${NAMESPACE}"
+        fi
+        helm ${NAMESPACE_FLAG} \
             upgrade --install \
             ${VALUES_ARGS} \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
 fi
-
-echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
-if [ "${DRY_RUN}" == "true" ]; then
-    echo "(skipping in dry-run)"
-else
-    kubectl -n ${NAMESPACE} \
-        patch sa ${SERVICEACCOUNT} \
-        --type json \
-        -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
-fi
-
-# echo "Exposing event listener ..."
-# oc -n ${NAMESPACE} expose svc el-ods-pipeline

@@ -42,7 +42,9 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "pipeline", "values.kind.yaml,values.generated.yaml")
+	installCDNamespaceResources(
+		t, namespace, "pipeline", "./chart/values.kind.yaml,./chart/values.generated.yaml",
+	)
 
 	return clients, namespace
 }

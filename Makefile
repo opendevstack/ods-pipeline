@@ -52,7 +52,7 @@ ifeq ($(strip $(namespace)),)
 	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
 	@exit 1
 endif
-	cd deploy/central && kubectl -n $(namespace) apply -k openshift
+	cd scripts && ./install-ods-central-resources.sh -n $(namespace)
 .PHONY: install-ods-central
 
 ## OpenShift only! Start builds for each ODS BuildConfig
@@ -70,7 +70,7 @@ start-ods-central-builds:
 
 ## KinD only! Apply ODS ClusterTask manifests in KinD
 install-ods-tasks-kind:
-	cd deploy/central && kubectl apply -k kind
+	cd scripts && ./install-ods-tasks-kind.sh
 .PHONY: install-ods-tasks-kind
 
 ## Run Bitbucket server (using timebomb license, in "kind" network).

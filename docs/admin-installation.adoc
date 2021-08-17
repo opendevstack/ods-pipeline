@@ -7,24 +7,40 @@ This guide will show how to install `ods-pipeline` in an existing ODS cluster. N
 You'll need:
 
 * A namespace in an OpenShift cluster (such as `ods`)
-* `git` and `oc`
-* to be logged into OpenShift on the command line as a cluster admin
+* `git`, `oc` and `helm` installed locally
+* to be logged into OpenShift on the command line *as a cluster admin*
 
 ## Instructions
 
-1. Run `make install-ods-central namespace=ods`
-2. If you want to make use of Aqua, change the `ods-buildah` BuildConfig to include a build arg:
+1. Create a repository in Bitbucket, e.g. `ods`. The name can be anything, but since the repository will define the resources in namespace `ods` in code, it makes sense to mirror the namespace name.
+2. Clone the repository locally and make an initial commit.
+3. Use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/central`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `central`.
 
 ```
-spec:
-  strategy:
-    dockerStrategy:
-      buildArgs:
-        - name: aquasecScannerUrl
-          value: >-
-            https://username:password@download.aquasec.com/scanner/5.3.0/scannercli 
+pipelineGitRef=master
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
+git checkout ods-pipeline-$pipelineGitRef
+git subtree split --squash --prefix=deploy/central -b subtree-split-branch-$pipelineGitRef
+git checkout -
+git subtree add --prefix=central subtree-split-branch-$pipelineGitRef
 ```
 
-Make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
+4. Change to the new folder `central`.
+5. Add a `values.ods.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`. If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
+6. Run `./install.sh -n ods --chart=images --values=values.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
+7. Run `./install.sh -n ods --chart=tasks --values=values.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
+4. Start a build for each `BuildConfig`.
 
-4. Run `make start-ods-central-builds`
+Now your `ods` namespace is fully setup and users can start to utilize Tekton pipelines for their repositories.
+
+## Updating
+
+You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
+```
+pipelineGitRef=master
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
+git checkout ods-pipeline-$pipelineGitRef
+git subtree split --squash --prefix=deploy/central -b subtree-split-branch-$pipelineGitRef
+git checkout -
+git subtree merge --prefix=central subtree-split-branch-$pipelineGitRef --squash
+```
