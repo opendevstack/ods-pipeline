@@ -85,6 +85,9 @@ go build -gcflags "all=-trimpath=$(pwd)" -o "${DOCKER_DIR}/app"
 echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
+  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
+  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
 else
   GOPKGS=$(go list ./... | grep -v /vendor)
   set +e
