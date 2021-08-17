@@ -25,15 +25,17 @@ func (c *Client) Scan(sonarProject, branch, commit string, pr *PullRequest) (str
 	if c.clientConfig.Debug {
 		scannerParams = append(scannerParams, "-X")
 	}
-	if pr != nil {
-		scannerParams = append(
-			scannerParams,
-			fmt.Sprintf("-Dsonar.pullrequest.key=%s", pr.Key),
-			fmt.Sprintf("-Dsonar.pullrequest.branch=%s", pr.Branch),
-			fmt.Sprintf("-Dsonar.pullrequest.base=%s", pr.Base),
-		)
-	} else if c.clientConfig.ServerEdition != "community" {
-		scannerParams = append(scannerParams, fmt.Sprintf("-Dsonar.branch.name=%s", branch))
+	if c.clientConfig.ServerEdition != "community" {
+		if pr != nil {
+			scannerParams = append(
+				scannerParams,
+				fmt.Sprintf("-Dsonar.pullrequest.key=%s", pr.Key),
+				fmt.Sprintf("-Dsonar.pullrequest.branch=%s", pr.Branch),
+				fmt.Sprintf("-Dsonar.pullrequest.base=%s", pr.Base),
+			)
+		} else {
+			scannerParams = append(scannerParams, fmt.Sprintf("-Dsonar.branch.name=%s", branch))
+		}
 	}
 
 	fmt.Printf("scan params: %v", scannerParams)
