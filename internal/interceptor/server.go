@@ -202,7 +202,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		RepoBase:        s.RepoBase,
 		GitURI:          gitURI,
 		Namespace:       s.Namespace,
-		PVC:             fmt.Sprintf("pipeline-%s", component),
+		PVC:             "ods-pipeline",
 		TriggerEvent:    req.EventKey,
 		Comment:         commentText,
 	}

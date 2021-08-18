@@ -1,68 +1,91 @@
 = Task Requirements
 
-== link:/deploy/task-ods-start.yml[`ods-start`]
+== `ods-start`
 
 [cols="1,1"]
 |===
 | REQ-TASK-START-1
-| Clone repository for given refspec and, if `ods.yml` is present, first-level of child repositories.
+a| The task shall check out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.yml` configures any child repositories, those shall be checked out as well from the configured URL and Git ref.
+
+* All checkouts shall support shallow mode
+* All checkouts shall support submodules
 
 | REQ-TASK-START-2
-| Read ODS config and clone any child repositories
+a| The task shall store context information under `.ods` for each checked out repository:
+
+* repository related information: project key, component key, repository name, Git URL, Git (full) ref, Git commit SHA, pull request base and pull request key.
+* OpenShift related information: namespace
+* deployment related information: version and environment
 
 | REQ-TASK-START-3
-a| For each repository, store context information under `.ods/`:
-
-* repo related information is sourced on repository data like the project key, component key, repository name, refspec, etc.
-* artifacts from Nexus belonging to the same commit are downloaded and placed into `.ods/artifacts`
+| The task shall download all artifacts from Nexus belonging to the same commit being built and place them into the respective `.ods/artifacts` for each checked out repository.
 
 | REQ-TASK-START-4
-| Set Bitbucket build status to "in progress"
+| The task shall set the Bitbucket build status of the commit being built to "in progress". The build status shall link back to the pipeline run.
+
+| REQ-TASK-START-5
+| The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
 |===
 
-== link:/deploy/task-ods-finish.yml[`ods-finish`]
+== `ods-finish`
 
 [cols="1,1"]
 |===
 | REQ-TASK-FINISH-1
-| Set Bitbucket build status to "failed" or "successful", see https://github.com/tektoncd/pipeline/pull/3817, available as of 0.24.
+| The task shall set the Bitbucket build status to "failed" or "successful", depending on whether all tasks succeeded or not. The build status shall link back to the pipeline run.
 
 | REQ-TASK-FINISH-2
-| Upload all files in `.ods/artifacts` to Nexus in a folder named like the Git commit SHA.
+| The task shall create an artifact for the pipeline run, containing its name and status, provided that all tasks succeeded.
 
 | REQ-TASK-FINISH-3
-| Optional notification of failure/success of Teams channel based on `ConfigMap` (out of scope for now)
+| The task shall upload all files in any `.ods/artifacts` folder to Nexus, storing them in a group named `/<PROJECT>/<REPOSITORY>/<GIT-COMMIT-SHA>`, provided that all tasks succeeded.
 |===
 
-== link:/deploy/task-ods-build-go.yml[`ods-build-go`]
+== `ods-build-go`
 
 [cols="1,1"]
 |===
 | REQ-TASK-BUILD-GO-1
-| Build Go module based Go binary into `docker/app`.
+| The task shall check that all Go files are gofmt'd and fail if this is not the case.
 
 | REQ-TASK-BUILD-GO-2
-| Run golanglint-ci, fail on failure.
+| The task shall run golanglint-ci and fail if there are any findings.
 
 | REQ-TASK-BUILD-GO-3
-| Run go test, creating code coverage and xUnit report, and place them into `.ods/artifacts`.
+a| The task shall build a Go module based Go binary into `docker/app`:
+
+* The destination directory shall be customizable
+* Paths in stack traces shall be trimmed
+* The target operating system (`GOOS`) and architecture (`GOARCH`) shall be customizable
+* CGO shall be disabled by default but shall be enablable by parameter.
 
 | REQ-TASK-BUILD-GO-4
-| Allow to run Make targets (ci-build, ci-lint, ci-test) instead of REQ-TASK-BUILD-GO-1,2,3.
+a| The task shall run `go test`, creating code coverage and xUnit report.
+
+* All packages except vendored ones shall be tested.
+* The artifacts shall be placed in the working directory (for SonarQube to pick them up) and in `.ods/artifacts`.
+* If tests already ran for the commit being built, testing shall be skipped and the existing artifacts shall be copied into the working directory.
 
 | REQ-TASK-BUILD-GO-5
-| Run sonar-scanner on branch.
+a| The task shall run `sonar-scanner` on the sources, communicating with the SonarQube server specified by the `ods-sonar` config map and the `ods-sonar-auth` secret:
+
+* The project name shall be fixed to `<PROJECT>-<COMPONENT>`
+* If the server edition supports it, the branch parameter shall be set, unless the branch being built belongs to an open PR, in which case PR analysis parameter shall be sent instead.
 
 | REQ-TASK-BUILD-GO-6
-| Run sonar-scanner with PR analysis.
+a| The task shall be able to run in a subdirectory of the checked out repository.
+
+* Generated artifacts shall be prefixed with `<SUBDIRECTORY>-`
+* The SonarQube project shall be suffixed with `-<SUBDIRECTORY>`
+
 |===
 
-== link:/deploy/task-ods-build-image.yml[`ods-build-image`]
+== `ods-build-image` TODO
 
 [cols="1,1"]
 |===
 | REQ-TASK-BUILD-IMAGE-1
-| Build image based on `Dockerfile` in Docker context directory `docker`. Both Dockerfile and directory can be changed via parameter. The resulting SHA shall be placed in `.ods/artifacts`.
+| The task shall build a container image based on the `Dockerfile` in Docker context directory `docker`. Both Dockerfile and directory can be changed via parameter. The resulting SHA shall be placed in `.ods/artifacts`.
 
 | REQ-TASK-BUILD-IMAGE-2
 | Scan the built image with Aqua scanner. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
@@ -71,7 +94,7 @@ a| For each repository, store context information under `.ods/`:
 | Push image to registry.
 |===
 
-== link:/deploy/task-ods-deploy-helm.yml[`ods-deploy-helm`]
+== `ods-deploy-helm` TODO
 
 [cols="1,1"]
 |===
