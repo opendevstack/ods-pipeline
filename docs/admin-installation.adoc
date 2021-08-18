@@ -22,10 +22,10 @@ git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGi
 git checkout ods-pipeline-$pipelineGitRef
 git subtree split --squash --prefix=deploy/central -b subtree-split-branch-$pipelineGitRef
 git checkout -
-git subtree add --prefix=central subtree-split-branch-$pipelineGitRef
+git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
-4. Change to the new folder `central`.
+4. Change to the new folder `ods-pipeline`.
 5. Add a `values.ods.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`. If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
 6. Run `./install.sh -n ods --chart=images --values=values.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
 7. Run `./install.sh -n ods --chart=tasks --values=values.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
