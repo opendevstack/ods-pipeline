@@ -43,7 +43,7 @@ git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGi
 git checkout ods-pipeline-$pipelineGitRef
 git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
 git checkout -
-git subtree merge --prefix=cd-namespace subtree-split-branch-$pipelineGitRef --squash
+git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
 
 ## Using ods-pipeline in your repos
