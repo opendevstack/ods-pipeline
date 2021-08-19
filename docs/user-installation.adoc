@@ -2,11 +2,13 @@
 
 This guide will show how to install `ods-pipeline` in an existing ODS project. It is possible to use the new Tekton pipelines approach and the classic Jenkins approach side by side.
 
+Note that at the moment, `ods-pipeline` is somewhat compatible with an existing ODS 3.x/4.x installation, but it is not integrated (yet). If `ods-pipeline` gets integrated into OpenDevStack in the future, then the installation guide as presented below may not be needed anymore as the setup process might be automated then. However, the executed steps will likely be similar.
+
 ## Prerequisites
 
 You'll need:
 
-* A namespace in an OpenShift cluster (such as `foo-cd`) and a project in Bitbucket (such as `FOO`)
+* A namespace in an OpenShift cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`)
 * `git`, `oc` and `helm` installed locally
 * to be logged into OpenShift on the command line
 
