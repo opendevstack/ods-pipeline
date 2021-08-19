@@ -8,53 +8,37 @@
 
 ODS provides CI/CD pipeline support based on OpenShift Pipelines. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
 
-The "user perspective" of what the ODS pipeline is and how it works is described in the [ODS Pipeline Introduction](/docs/introduction.adoc). It is important to understand this before looking at this repository, which is the actual "plumbing".
+The [ODS Pipeline Introduction](/docs/introduction.adoc) describes what ODS pipeline is and how it works. It is important to understand this before looking at further documentation or any other repository content.
 
-## How is this repository organized?
+## Documentation
 
-The repo follows the [Standard Go Project Layout](https://github.com/golang-standards/project-layout).
+The documentation provided by ODS pipeline has three audiences:
 
-The most important pieces are:
+* **Admins** install and maintain a central ODS pipeline installation in an OpenShift cluster that can be used by many users.
 
-* **build/package**: `Dockerfile`s for the various container images in use. These images back Tekton tasks or the webhook interceptor.
-* **cmd**: Main executables. These are installed (in different combinations) into the contaier images.
-* **deploy**: OpenShift/K8S resource definitions, such as `BuildConfig`/`ImageStream` or `ClusterTask` resources. The tasks typically make use of the images built via `build/package` and their `script` calls one or more executables built from the `cmd` folder.
-* **docs**: Design and user documents
-* **internal/interceptor**: Implementation of Tekton trigger interceptor - it creates and modifies the actual Tekton pipelines on the fly based on the config found in the repository triggering the webhook request.
-* **pkg**: Packages shared by the various main executables and the interceptor. These packages are the public interface and may be used outside this repo (e.g. by custom tasks). Example of packages are `bitbucket` (a Bitbucket Server API v1.0 client), `sonar` (a SonarQube client exposing API endpoints, scanner CLI and report CLI in one unified interface), `nexus` (a Nexus client for uploading, downloading and searching for assets) and `config` (the ODS configuration specification).
-* **test**: Test scripts and test data
+* **Users** consume an existing central ODS pipeline installation. Users install ODS pipeline resources into a namespace they own to run CI/CD pipelines for their repositories.
 
-## Details / Documentation
+* **Developers** contribute to the ODS pipeline project itself, for example by improving existing tasks, adding new ones, updating documentation, etc.
 
-* [Introduction](/docs/introduction.adoc)
+**Admin Guide**
+* [Installation](/docs/admin-installation.adoc)
+
+**User Guide**
+* [Installation](/docs/user-installation.adoc)
+* [Task Reference](/docs/tasks)
+* [Authoring Tasks](/docs/authoring-tasks.adoc)
+
+**Developer Guide**
+* [Repository Layout](/docs/repository-layout.adoc)
+* [Development & Running Tests](/docs/development.adoc)
+* [Artifacts](/docs/artifacts.adoc)
+* [Creating an ODS task](/docs/creating-an-ods-task.adoc)
+
+This repository also hosts the design documents that describe ODS pipeline more formally. Those design documents provide more detail and background on goals, requirements and architecture decisions and may be useful for all audiences.
+
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
-* [Task Library](/docs/tasks)
-* [Authoring Tasks](/docs/authoring-tasks.adoc)
-* [Admin Installation Guide](/docs/admin-installation.adoc)
-* [User Installation Guide](/docs/user-installation.adoc)
-
-## Development & Running tests
-
-First, check if your system meets the prerequisites:
-```
-make check-system
-```
-
-Then, launch a KinD cluster, install Tekton, build&push images and run services:
-```
-make prepare-local-env
-```
-
-Finally, run the tests:
-```
-make test
-```
-
-More fine-grained make targets are available, see:
-```
-make help
-```
+* [Task Requirements](/docs/task-requirements.adoc)
 
 ## Compatibility
 

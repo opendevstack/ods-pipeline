@@ -1,0 +1,21 @@
+= Development & Running tests
+
+First, check if your system meets the prerequisites:
+```
+make check-system
+```
+
+Then, launch a KinD cluster, install Tekton, build&push images and run services:
+```
+make prepare-local-env
+```
+
+Finally, run the tests:
+```
+make test
+```
+
+More fine-grained make targets are available, see:
+```
+make help
+```
