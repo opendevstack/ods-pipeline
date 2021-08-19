@@ -1,10 +1,11 @@
-# deploy/central
+# Deployment of central "ODS namespace"
 
-This folder contains resources deployed centrally in the cluster. The resources
-are defined using Helm.
+This directory is maintained in https://github.com/opendevstack/ods-pipeline, and may be used by ODS pipeline admins to control the deployment of ODS pipeline resources in the centrals "ODS namespace" in OpenShift. For this purpose, this directory may be added to another Git repository via `git subtree` as explained in the [Admin Installation Guide](/docs/admin-installation.adoc).
 
-Central resources are:
-* `BuildConfig` and `ImageStream` resources  (in folder `images-chart`)
+## Directory Contents
+
+The resources are defined using Helm:
+* `BuildConfig` and `ImageStream` resources (in folder `images-chart`)
 * `ClusterTask` resources (in folder `tasks-chart`)
 
 The resources under `images-chart` are only applicable for OpenShift clusters.
