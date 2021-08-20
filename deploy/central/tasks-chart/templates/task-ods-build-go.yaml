@@ -43,10 +43,10 @@ spec:
       description: "`GOARCH` variable (the execution architecture such as `arm`, `amd64`)."
       type: string
       default: "amd64"
-    - name: docker-dir
+    - name: output-dir
       description: >-
-        Path to the directory to use as Docker context, relative to `working-dir`.
-        The resulting Go binary will be copied there.
+        Path to the directory into which the resulting Go binary should be copied, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
       type: string
       default: docker
     - name: sonar-quality-gate
@@ -76,7 +76,7 @@ spec:
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
-          --docker-dir=$(params.docker-dir) \
+          --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
