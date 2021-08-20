@@ -1,8 +1,35 @@
-= Task Requirements
+= Software Requirements
 
-== `ods-start`
+== General Requirements
 
-[cols="1,1"]
+=== Webhook Interceptor
+
+[cols="1,3"]
+|===
+| REQ-INTERCEPTOR-1
+a| The interceptor shall be able to respond to `repo:refs_changed` and `pr:opened` events.
+
+* All other events shall be dropped.
+
+| REQ-INTERCEPTOR-2
+a| The interceptor shall not trigger pipelines for Git commits which message instructs to skip CI. Instructions may be anywhere in the commit message and may be one of:
+
+* `[ci skip]`
+* `[skip ci]`
+* `***NO_CI***`
+
+| REQ-INTERCEPTOR-3
+a| The interceptor shall create or update a pipeline corresponding to the Git branch received in the webhook request.
+
+* The pipeline name shall be made out of the component and the sanitized branch. A maximum of 63 characters shall be respected.
+* The tasks (including `finally` tasks) of the pipline shall be read from the ODS config file in the repository.
+|===
+
+== Task Requirements
+
+=== `ods-start`
+
+[cols="1,3"]
 |===
 | REQ-TASK-START-1
 a| The task shall check out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.yml` configures any child repositories, those shall be checked out as well from the configured URL and Git ref.
@@ -27,9 +54,9 @@ a| The task shall store context information under `.ods` for each checked out re
 | The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
 |===
 
-== `ods-finish`
+=== `ods-finish`
 
-[cols="1,1"]
+[cols="1,3"]
 |===
 | REQ-TASK-FINISH-1
 | The task shall set the Bitbucket build status to "failed" or "successful", depending on whether all tasks succeeded or not. The build status shall link back to the pipeline run.
@@ -41,9 +68,9 @@ a| The task shall store context information under `.ods` for each checked out re
 | The task shall upload all files in any `.ods/artifacts` folder to Nexus, storing them in a group named `/<PROJECT>/<REPOSITORY>/<GIT-COMMIT-SHA>`, provided that all tasks succeeded.
 |===
 
-== `ods-build-go`
+=== `ods-build-go`
 
-[cols="1,1"]
+[cols="1,3"]
 |===
 | REQ-TASK-BUILD-GO-1
 | The task shall check that all Go files are gofmt'd and fail if this is not the case.
@@ -80,9 +107,9 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 
 |===
 
-== `ods-build-image`
+=== `ods-build-image`
 
-[cols="1,1"]
+[cols="1,3"]
 |===
 | REQ-TASK-BUILD-IMAGE-1
 | The task shall build a container image based on the `Dockerfile` in the Docker context directory.
@@ -101,19 +128,29 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 | If the Aqua scanner is installed in the base image, the  pushed image shall be scanned. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
 |===
 
-== `ods-deploy-helm` TODO
+=== `ods-deploy-helm`
 
-[cols="1,1"]
+[cols="1,3"]
 |===
 | REQ-TASK-DEPLOY-HELM-1
-| Push images into the target namespace. The images that are pushed are determined by the artifacts in `.ods/artifacts/image-digests` (which contains information from where to get the images). TODO: define how to select the target namespace (somehow based on branch/tag/YAML).
+a| The task shall skip when no `environment` is given.
 
 | REQ-TASK-DEPLOY-HELM-2
-| It errors if there is no chart at the location identified by the `chartDir` parameter (defaulting to `chart`).
+a| The task shall push images into the target namespace.
+
+* The images that are pushed are determined by the artifacts in `.ods/artifacts/image-digests`. Each artifact contains information from where to get the images.
+* The target namespace is selected from the given `environment`.
 
 | REQ-TASK-DEPLOY-HELM-3
-| Upgrade (or install) Helm chart, showing a diff beforehand and decrypting secrets on the fly.
+a| The task shall upgrade (or install) a Helm chart.
 
-| REQ-TASK-DEPLOY-HELM-4 (?)
-| Lint chart before applying and error if there is a failure.
+* The Helm chart is expected at the location identified by the `chartDir` parameter (defaulting to `chart`).
+* The task shall error if no chart can be found.
+* A diff shall be performed before the upgrade/install. If there are no differences, upgrade/install shall be skipped.
+* Any secrets shall be decrypted on the fly.
+* The upgrade/install shall wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful.
+* Any values files corresponding to the environment and stage shall be respected (`values.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`).
+* A values file containing the Git commit SHA shall be auto-generated and added to the Helm upgrade invocation.
+* The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
+* Charts in any of the respositories configured in `ods.yml` shall be packaged according to the same rules and added as a subchart.
 |===
