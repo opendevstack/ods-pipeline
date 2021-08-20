@@ -13,7 +13,7 @@ urlencode() {
     done
 }
 
-DOCKER_DIR="docker"
+OUTPUT_DIR="docker"
 MAX_LINE_LENGTH="120"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
@@ -28,8 +28,8 @@ while [[ "$#" -gt 0 ]]; do
     --max-line-length) MAX_LINE_LENGTH="$2"; shift;;
     --max-line-length=*) MAX_LINE_LENGTH="${1#*=}";;
 
-    --docker-dir) DOCKER_DIR="$2"; shift;;
-    --docker-dir=*) DOCKER_DIR="${1#*=}";;
+    --output-dir) OUTPUT_DIR="$2"; shift;;
+    --output-dir=*) OUTPUT_DIR="${1#*=}";;
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
@@ -79,6 +79,6 @@ mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
 cat coverage.xml
 cp coverage.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
 
-echo "Copying src and requirements.txt to ${DOCKER_DIR}/app ..."
-cp -rv src "${DOCKER_DIR}/app"
-cp -rv requirements.txt "${DOCKER_DIR}/app"
+echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
+cp -rv src "${OUTPUT_DIR}/app"
+cp -rv requirements.txt "${OUTPUT_DIR}/app"

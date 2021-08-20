@@ -4,7 +4,7 @@ set -eu
 ENABLE_CGO="false"
 GO_OS=""
 GO_ARCH=""
-DOCKER_DIR="docker"
+OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 DEBUG="false"
@@ -24,8 +24,8 @@ while [[ "$#" -gt 0 ]]; do
     --go-arch) GO_ARCH="$2"; shift;;
     --go-arch=*) GO_ARCH="${1#*=}";;
 
-    --docker-dir) DOCKER_DIR="$2"; shift;;
-    --docker-dir=*) DOCKER_DIR="${1#*=}";;
+    --output-dir) OUTPUT_DIR="$2"; shift;;
+    --output-dir=*) OUTPUT_DIR="${1#*=}";;
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
@@ -80,7 +80,7 @@ if [ -s go-lint-report.txt ]; then
 fi
 
 echo "Building ..."
-go build -gcflags "all=-trimpath=$(pwd)" -o "${DOCKER_DIR}/app"
+go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"
 
 echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then

@@ -13,7 +13,7 @@ urlencode() {
     done
 }
 
-DOCKER_DIR="docker"
+OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 DEBUG="false"
@@ -24,8 +24,8 @@ while [[ "$#" -gt 0 ]]; do
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
 
-    --docker-dir) DOCKER_DIR="$2"; shift;;
-    --docker-dir=*) DOCKER_DIR="${1#*=}";;
+    --output-dir) OUTPUT_DIR="$2"; shift;;
+    --output-dir=*) OUTPUT_DIR="${1#*=}";;
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
@@ -59,11 +59,11 @@ fi;
 echo "Building ..."
 npm ci
 npm run build
-mkdir -p "${DOCKER_DIR}/dist"
-cp -r dist "${DOCKER_DIR}/dist"
+mkdir -p "${OUTPUT_DIR}/dist"
+cp -r dist "${OUTPUT_DIR}/dist"
 
-echo "Copying node_modules to ${DOCKER_DIR}/dist/node_modules ..."
-cp -r node_modules "${DOCKER_DIR}/dist/node_modules"
+echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
+cp -r node_modules "${OUTPUT_DIR}/dist/node_modules"
 
 echo "Testing ..."
 npm run test

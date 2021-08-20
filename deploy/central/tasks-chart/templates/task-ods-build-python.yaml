@@ -11,10 +11,10 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
-    - name: docker-dir
+    - name: output-dir
       description: >-
-        Path to the directory to use as Docker context, relative to `working-dir`.
-        The resulting Go binary will be copied there.
+        Path to the directory into which outputs should be placed, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
       type: string
       default: docker
     - name: max-line-length
@@ -61,7 +61,7 @@ spec:
         build-python \
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
-          --docker-dir=$(params.docker-dir) \
+          --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
