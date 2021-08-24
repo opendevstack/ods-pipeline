@@ -95,9 +95,9 @@ spec:
       description: Name of pipeline run.
       type: string
   results:
-    - description: The precise commit SHA that was fetched by this Task
+    - description: The commit SHA that was fetched by this task.
       name: commit
-    - description: The precise URL that was fetched by this Task
+    - description: The URL that was fetched by this task.
       name: url
   steps:
     - name: ods-start

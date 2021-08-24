@@ -20,10 +20,16 @@ type Param struct {
 	Description string
 }
 
+type Result struct {
+	Name        string
+	Description string
+}
+
 type Task struct {
 	Name        string
 	Description string
 	Params      []Param
+	Results     []Result
 }
 
 func renderTemplate(targetDir, targetFilename string, data Task) error {
@@ -101,6 +107,12 @@ func RenderTasks(sourceDir, targetDir string) error {
 				Name:        p.Name,
 				Default:     defaultValue,
 				Description: p.Description,
+			})
+		}
+		for _, r := range t.Spec.Results {
+			task.Results = append(task.Results, Result{
+				Name:        r.Name,
+				Description: r.Description,
 			})
 		}
 		targetFilename := fmt.Sprintf("%s.adoc", t.Name)

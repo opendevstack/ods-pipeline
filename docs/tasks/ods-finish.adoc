@@ -17,7 +17,6 @@ by the webhook interceptor and cannot be customized by users at this point.
 |===
 | Parameter | Default | Description
 
-
 | pipeline-run-name
 | 
 | Name of pipeline run.
@@ -28,3 +27,7 @@ by the webhook interceptor and cannot be customized by users at this point.
 | Aggregate status of all tasks.
 
 |===
+
+== Results
+
+N/A

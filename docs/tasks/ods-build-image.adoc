@@ -17,7 +17,6 @@ stream located in the namespace of the pipeline run.
 |===
 | Parameter | Default | Description
 
-
 | registry
 | image-registry.openshift-image-registry.svc:5000
 | Image registry to push image to.
@@ -66,5 +65,16 @@ stream located in the namespace of the pipeline run.
 | aqua-gate
 | false
 | Whether the Aqua security scan needs to pass for the task to succeed.
+
+|===
+
+== Results
+
+[cols="1,3"]
+|===
+| Name | Description
+
+| image-digest
+| Digest of the image just built.
 
 |===
