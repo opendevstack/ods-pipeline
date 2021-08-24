@@ -10,6 +10,10 @@ import (
 	kclient "k8s.io/client-go/kubernetes"
 )
 
+const (
+	BitbucketProjectKey = "ODSPIPELINETEST"
+)
+
 // BitbucketClientOrFatal returns a Bitbucket client, configured based on ConfigMap/Secret in the given namespace.
 func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *bitbucket.Client {
 	bitbucketSecret, err := kubernetes.GetSecret(c, namespace, "ods-bitbucket-auth")

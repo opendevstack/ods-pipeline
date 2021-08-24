@@ -20,7 +20,9 @@ func TestTaskODSFinish(t *testing.T) {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
 					ctxt.Params = map[string]string{
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "None",
@@ -36,7 +38,9 @@ func TestTaskODSFinish(t *testing.T) {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, bitbucketProjectKey)
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
 					ctxt.Params = map[string]string{
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "Succeeded",

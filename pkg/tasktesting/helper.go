@@ -18,6 +18,12 @@ import (
 	"knative.dev/pkg/test/logging"
 )
 
+const (
+	StorageClassName = "standard" // if using KinD, set it to "standard"
+	StorageCapacity  = "1Gi"
+	StorageSourceDir = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
+)
+
 type SetupOpts struct {
 	SourceDir        string
 	StorageCapacity  string
@@ -42,9 +48,7 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(
-		t, namespace, "pipeline", "./chart/values.kind.yaml,./chart/values.generated.yaml",
-	)
+	installCDNamespaceResources(t, namespace, "pipeline", "./chart/values.kind.yaml,./chart/values.generated.yaml")
 
 	return clients, namespace
 }
