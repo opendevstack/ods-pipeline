@@ -32,12 +32,6 @@ spec:
       description: Path to the directory to use as Docker context.
       type: string
       default: docker
-    - name: tls-verify
-      description: >-
-        Verify the TLS on the registry endpoint (for push/pull to a non-TLS
-        registry).
-      type: string
-      default: 'true'
     - name: format
       description: 'The format of the built container, `oci` or `docker`.'
       type: string
@@ -104,7 +98,6 @@ spec:
         ods-build-push-image \
           -image-stream=$(params.image-stream) \
           -registry=$(params.registry) \
-          -tls-verify=$(params.tls-verify) \
           -storage-driver=$(params.storage-driver) \
           -format=$(params.format) \
           -dockerfile=$(params.dockerfile) \

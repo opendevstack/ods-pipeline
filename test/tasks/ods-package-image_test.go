@@ -20,9 +20,6 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"tls-verify": "false",
-					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -37,9 +34,6 @@ func TestTaskODSPackageImage(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					buildAndPushImageWithLabel(t, ctxt, wsDir)
-					ctxt.Params = map[string]string{
-						"tls-verify": "false",
-					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {

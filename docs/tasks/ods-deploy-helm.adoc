@@ -45,11 +45,6 @@ those subrepos are packaged as well, and added as dependencies to the top-most c
 | 
 | The Helm release name. If empty, the release name is simply the name of the chart.
 
-
-| overwrite-values
-| 
-| Specify the values you want to overwrite, comma separated. Example: `autoscaling.enabled=true,replicas=1`
-
 |===
 
 == Results

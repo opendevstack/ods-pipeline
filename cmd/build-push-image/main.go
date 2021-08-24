@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -21,7 +22,8 @@ import (
 )
 
 const (
-	aquasecBin = "aquasec"
+	aquasecBin                  = "aquasec"
+	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
 )
 
 type options struct {
@@ -33,6 +35,7 @@ type options struct {
 	aquaRegistry          string
 	imageStream           string
 	registry              string
+	certDir               string
 	imageNamespace        string
 	tlsVerify             bool
 	storageDriver         string
@@ -55,6 +58,7 @@ func main() {
 	flag.StringVar(&opts.aquaRegistry, "aqua-registry", os.Getenv("AQUA_REGISTRY"), "aqua-registry")
 	flag.StringVar(&opts.imageStream, "image-stream", "", "Image stream")
 	flag.StringVar(&opts.registry, "registry", "image-registry.openshift-image-registry.svc:5000", "Registry")
+	flag.StringVar(&opts.certDir, "cert-dir", "/etc/containers/certs.d", "Use certificates at the specified path to access the registry")
 	flag.StringVar(&opts.imageNamespace, "image-namespace", "", "image namespace")
 	flag.BoolVar(&opts.tlsVerify, "tls-verify", true, "TLS verify")
 	flag.StringVar(&opts.storageDriver, "storage-driver", "vfs", "storage driver")
@@ -74,6 +78,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
+		opts.certDir = kubernetesServiceaccountDir
+	}
+	if opts.debug {
+		directory.ListFiles(opts.certDir)
+	}
+
+	// TLS verification of the KinD registry is not possible at the moment as
+	// requests error out with "server gave HTTP response to HTTPS client".
+	if strings.HasPrefix(opts.registry, "kind-registry.kind") {
+		opts.tlsVerify = false
+	}
+
 	imageNamespace := opts.imageNamespace
 	if len(imageNamespace) == 0 {
 		imageNamespace = ctxt.Namespace
@@ -89,7 +106,7 @@ func main() {
 	)
 
 	fmt.Printf("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := getImageDigestFromRegistry(imageRef, opts.tlsVerify)
+	imageDigest, err := getImageDigestFromRegistry(imageRef, opts)
 	if err == nil {
 		fmt.Println("Image exists already.")
 	} else {
@@ -189,13 +206,16 @@ func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 		"bud",
 		fmt.Sprintf("--format=%s", opts.format),
 		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
+		fmt.Sprintf("--cert-dir=%s", opts.certDir),
 		"--no-cache",
 		fmt.Sprintf("--file=%s", opts.dockerfile),
 		fmt.Sprintf("--tag=%s", tag),
-		opts.contextDir,
 	}
 	args = append(args, extraArgs...)
-	return command.Run("buildah", args)
+	if opts.debug {
+		args = append(args, "--log-level=debug")
+	}
+	return command.Run("buildah", append(args, opts.contextDir))
 }
 
 // buildahPush pushes a local image to the given imageRef.
@@ -208,11 +228,14 @@ func buildahPush(opts options, workingDir, imageRef string) ([]byte, []byte, err
 		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
 		"push",
 		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
+		fmt.Sprintf("--cert-dir=%s", opts.certDir),
 		fmt.Sprintf("--digestfile=%s", filepath.Join(workingDir, "image-digest")),
-		imageRef, fmt.Sprintf("docker://%s", imageRef),
 	}
 	args = append(args, extraArgs...)
-	return command.Run("buildah", args)
+	if opts.debug {
+		args = append(args, "--log-level=debug")
+	}
+	return command.Run("buildah", append(args, imageRef, fmt.Sprintf("docker://%s", imageRef)))
 }
 
 // buildahPush pushes a local image to the given imageName.
@@ -315,13 +338,17 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 // getImageDigestFromRegistry returns a SHA256 image digest if the specified
 // imageRef exists. Example return value:
 // "sha256:3b6de1c737065e9973ddb7cc60b769b866b7649ff6f2de3816934dda832de294"
-func getImageDigestFromRegistry(imageRef string, tlsVerify bool) (string, error) {
-	stdout, _, err := command.Run("skopeo", []string{
+func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
+	args := []string{
 		"inspect",
 		fmt.Sprintf("--format=%s", "{{.Digest}}"),
-		fmt.Sprintf("--tls-verify=%v", tlsVerify),
-		"docker://" + imageRef,
-	})
+		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
+		fmt.Sprintf("--cert-dir=%s", opts.certDir),
+	}
+	if opts.debug {
+		args = append(args, "--debug")
+	}
+	stdout, _, err := command.Run("skopeo", append(args, "docker://"+imageRef))
 	return string(stdout), err
 }
 

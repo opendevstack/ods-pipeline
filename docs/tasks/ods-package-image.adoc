@@ -42,11 +42,6 @@ stream located in the namespace of the pipeline run.
 | Path to the directory to use as Docker context.
 
 
-| tls-verify
-| true
-| Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry).
-
-
 | format
 | oci
 | The format of the built container, `oci` or `docker`.

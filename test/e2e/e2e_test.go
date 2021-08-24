@@ -100,9 +100,6 @@ func TestWebhookInterceptor(t *testing.T) {
     taskRef:
       kind: ClusterTask
       name: ods-package-image
-    params:
-    - name: tls-verify
-      value: 'false'
     workspaces:
     - name: source
       workspace: shared-workspace`

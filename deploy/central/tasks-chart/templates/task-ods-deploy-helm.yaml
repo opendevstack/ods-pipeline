@@ -39,12 +39,6 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
-    - name: overwrite-values
-      description: >-
-        Specify the values you want to overwrite, comma separated.
-        Example: `autoscaling.enabled=true,replicas=1`
-      type: string
-      default: ''
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
