@@ -21,7 +21,6 @@ func TestTaskODSBuildImage(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"registry":   "kind-registry.kind:5000",
 						"tls-verify": "false",
 					}
 				},
@@ -39,7 +38,6 @@ func TestTaskODSBuildImage(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					buildAndPushImageWithLabel(t, ctxt, wsDir)
 					ctxt.Params = map[string]string{
-						"registry":   "kind-registry.kind:5000",
 						"tls-verify": "false",
 					}
 				},
