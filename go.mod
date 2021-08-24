@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/google/go-cmp v0.5.4
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
 	github.com/tektoncd/pipeline v0.21.0
 	k8s.io/api v0.21.1
