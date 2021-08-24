@@ -61,7 +61,7 @@ else
     fi
 fi
 
-echo "Installing Helm release ..."
+echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
     if helm -n ${NAMESPACE} \
             diff upgrade --install --detailed-exitcode \
@@ -98,6 +98,3 @@ else
         --type json \
         -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
 fi
-
-# echo "Exposing event listener ..."
-# oc -n ${NAMESPACE} expose svc el-ods-pipeline
