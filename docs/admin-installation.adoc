@@ -2,6 +2,8 @@
 
 This guide will show how to install `ods-pipeline` in an existing ODS cluster. Note this is a one-time installation done by a cluster admin and does not need to be repeated for every project that wants to use `ods-pipeline`.
 
+Centrally installed resources are `BuildConfig` and `ImageStream` resources to produce images required by the ODS tasks, as well as the `ClusterTask` resources themselves.
+
 ## Prerequisites
 
 You'll need:
