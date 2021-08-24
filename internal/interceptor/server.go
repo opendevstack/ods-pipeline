@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	taskKind    = "ClusterTask"
-	taskVersion = "v0-1-0"
+	taskKind = "ClusterTask"
 )
 
 // Server represents this service, and is a global.
@@ -32,6 +31,7 @@ type Server struct {
 	Project         string
 	RepoBase        string
 	Token           string
+	TaskSuffix      string
 	BitbucketClient *bitbucket.Client
 }
 
@@ -61,7 +61,7 @@ func init() {
 }
 
 // NewServer returns a new server.
-func NewServer(client Client, namespace, project, repoBase, token string) *Server {
+func NewServer(client Client, namespace, project, repoBase, token, taskSuffix string) *Server {
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: token,
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
@@ -72,6 +72,7 @@ func NewServer(client Client, namespace, project, repoBase, token string) *Serve
 		Project:         project,
 		RepoBase:        repoBase,
 		Token:           token,
+		TaskSuffix:      taskSuffix,
 		BitbucketClient: bitbucketClient,
 	}
 }
@@ -270,7 +271,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
 
-	rendered, err := renderPipeline(odsConfig, pData)
+	rendered, err := renderPipeline(odsConfig, pData, s.TaskSuffix)
 	if err != nil {
 		msg := "Could not render pipeline definition"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -387,12 +388,12 @@ func makePipelineName(component string, branch string) string {
 	return pipeline
 }
 
-func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
+func renderPipeline(odsConfig *config.ODS, data PipelineData, taskSuffix string) ([]byte, error) {
 
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
 		Name:    "ods-start",
-		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-" + taskVersion},
+		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
 			{Name: "source", Workspace: "shared-workspace"},
 		},
@@ -464,7 +465,7 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData) ([]byte, error) {
 	finallyTasks = append(finallyTasks, odsConfig.Pipeline.Finally...)
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
 		Name:    "ods-finish",
-		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-" + taskVersion},
+		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
 			{Name: "source", Workspace: "shared-workspace"},
 		},
