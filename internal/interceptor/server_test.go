@@ -36,7 +36,7 @@ func TestRenderPipeline(t *testing.T) {
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	gotPipeline, err := renderPipeline(odsConfig, data)
+	gotPipeline, err := renderPipeline(odsConfig, data, "-v0-1-0")
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
 		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)

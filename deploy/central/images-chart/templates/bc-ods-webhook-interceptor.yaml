@@ -18,6 +18,9 @@ spec:
       from:
         kind: DockerImage
         name: 'registry.redhat.io/ubi8/ubi-minimal'
+      buildArgs:
+        - name: taskSuffix
+          value: '{{ .Values.taskSuffix }}'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
