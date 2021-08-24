@@ -36,7 +36,6 @@ those subrepos are packaged as well, and added as dependencies to the top-most c
 |===
 | Parameter | Default | Description
 
-
 | chart-dir
 | ./chart
 | Helm chart directory that will be deployed
@@ -52,3 +51,7 @@ those subrepos are packaged as well, and added as dependencies to the top-most c
 | Specify the values you want to overwrite, comma separated. Example: `autoscaling.enabled=true,replicas=1`
 
 |===
+
+== Results
+
+N/A

@@ -30,7 +30,6 @@ properly in SonarQube.
 |===
 | Parameter | Default | Description
 
-
 | working-dir
 | .
 | Working directory. The path must be relative to the root of the repository,
@@ -68,3 +67,7 @@ without leading `./` and trailing `/`.
 | Whether to skip SonarQube analysis or not.
 
 |===
+
+== Results
+
+N/A
