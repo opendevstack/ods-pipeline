@@ -4,6 +4,11 @@ This guide will show how to install `ods-pipeline` in an existing ODS project. I
 
 Note that at the moment, `ods-pipeline` is somewhat compatible with an existing ODS 3.x/4.x installation, but it is not integrated (yet). If `ods-pipeline` gets integrated into OpenDevStack in the future, then the installation guide as presented below may not be needed anymore as the setup process might be automated then. However, the executed steps will likely be similar.
 
+The guide will install the following required resources:
+
+* `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
+* Tekton Triggers related resources (e.g. `EventListener`, `TriggerTemplate`, etc.) including the ODS webhook interceptor, all of which allow to trigger pipelines in response to Bitbucket webhook requests
+
 ## Prerequisites
 
 You'll need:
