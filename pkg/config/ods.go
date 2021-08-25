@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,8 +12,13 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+type Stage string
+
 const (
-	DefaultBranch = "refs/heads/master"
+	Dev           Stage  = "dev"
+	QA                   = "qa"
+	Prod                 = "prod"
+	DefaultBranch string = "refs/heads/master"
 )
 
 type ODS struct {
@@ -49,7 +55,7 @@ type Environment struct {
 	// Name of the environment to deploy to. This is an arbitary name.
 	Name string `json:"name"`
 	// Kind of the environment to deploy to. One of "dev", "qa", "prod".
-	Stage string `json:"stage"`
+	Stage Stage `json:"stage"`
 	// API URL of the target cluster.
 	URL string `json:"url"`
 	// Hostname of the target registry. If not given, the registy of the source
@@ -66,6 +72,24 @@ type Environment struct {
 	Config map[string]interface{} `json:"config"`
 }
 
+func (o *ODS) Validate() error {
+	for _, e := range o.Environments {
+		if err := e.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e Environment) Validate() error {
+	switch e.Stage {
+	case Dev, QA, Prod:
+		return nil
+	default:
+		return fmt.Errorf("invalid stage value '%s' for environment %s", e.Stage, e.Name)
+	}
+}
+
 // Pipeline represents a Tekton pipeline.
 type Pipeline struct {
 	Tasks   []tekton.PipelineTask `json:"tasks"`
@@ -74,12 +98,19 @@ type Pipeline struct {
 
 // Read reads an ods config from given byte slice or errors.
 func Read(body []byte) (*ODS, error) {
-	var odsConfig ODS
-	err := yaml.Unmarshal(body, &odsConfig)
+	var odsConfig *ODS
+	err := yaml.UnmarshalStrict(body, &odsConfig, func(dec *json.Decoder) *json.Decoder {
+		dec.DisallowUnknownFields()
+		return dec
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal config: %w", err)
 	}
-	return &odsConfig, nil
+
+	if err = odsConfig.Validate(); err != nil {
+		return nil, err
+	}
+	return odsConfig, nil
 }
 
 // ReadFromFile reads an ods config from given filename or errors.
