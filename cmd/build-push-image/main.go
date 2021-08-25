@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
@@ -179,7 +180,11 @@ func main() {
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
-	return command.Run("buildah", []string{
+	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
+	if err != nil {
+		log.Printf("could not parse extra args (%s): %s", opts.buildahBuildExtraArgs, err)
+	}
+	args := []string{
 		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
 		"bud",
 		fmt.Sprintf("--format=%s", opts.format),
@@ -188,18 +193,26 @@ func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 		fmt.Sprintf("--file=%s", opts.dockerfile),
 		fmt.Sprintf("--tag=%s", tag),
 		opts.contextDir,
-	})
+	}
+	args = append(args, extraArgs...)
+	return command.Run("buildah", args)
 }
 
 // buildahPush pushes a local image to the given imageRef.
 func buildahPush(opts options, workingDir, imageRef string) ([]byte, []byte, error) {
-	return command.Run("buildah", []string{
+	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
+	if err != nil {
+		log.Printf("could not parse extra args (%s): %s", opts.buildahPushExtraArgs, err)
+	}
+	args := []string{
 		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
 		"push",
 		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
 		fmt.Sprintf("--digestfile=%s", filepath.Join(workingDir, "image-digest")),
 		imageRef, fmt.Sprintf("docker://%s", imageRef),
-	})
+	}
+	args = append(args, extraArgs...)
+	return command.Run("buildah", args)
 }
 
 // buildahPush pushes a local image to the given imageName.
