@@ -62,6 +62,7 @@ branchToEnvironmentMapping:
 environments:
 - name: dev
   namespace: foo-dev
+  stage: dev
 
 pipeline:
   tasks:
