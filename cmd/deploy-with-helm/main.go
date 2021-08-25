@@ -33,8 +33,10 @@ func main() {
 	releaseNameFlag := flag.String("release-name", "", "release-name")
 	flag.Parse()
 
+	checkoutDir := "."
+
 	ctxt := &pipelinectxt.ODSContext{}
-	err := ctxt.ReadCache(".")
+	err := ctxt.ReadCache(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func main() {
 	fmt.Printf("releaseName=%s\n", releaseName)
 
 	// read ods.yml
-	odsConfig, err := getConfig("ods.yml")
+	odsConfig, err := config.ReadFromDir(checkoutDir)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
 	}
@@ -249,7 +251,7 @@ func main() {
 	}
 	valuesFiles := []string{}
 	valuesFilesCandidates := []string{fmt.Sprintf("values.%s.yaml", targetConfig.Stage)}
-	if targetConfig.Stage != targetConfig.Name {
+	if string(targetConfig.Stage) != targetConfig.Name {
 		valuesFilesCandidates = append(valuesFilesCandidates, fmt.Sprintf("values.%s.yaml", targetConfig.Name))
 	}
 	valuesFilesCandidates = append(valuesFilesCandidates, generatedValuesFilename)
@@ -305,23 +307,7 @@ func main() {
 	fmt.Println(string(stdout))
 }
 
-func getConfig(filename string) (config.ODS, error) {
-	// read ods.yml
-	var odsConfig config.ODS
-	y, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return odsConfig, fmt.Errorf("could not read: %w", err)
-	}
-
-	err = yaml.Unmarshal(y, &odsConfig)
-	if err != nil {
-		return odsConfig, fmt.Errorf("could not unmarshal: %w", err)
-	}
-
-	return odsConfig, nil
-}
-
-func getTargetEnvironment(odsConfig config.ODS, environment string) (*config.Environment, error) {
+func getTargetEnvironment(odsConfig *config.ODS, environment string) (*config.Environment, error) {
 	var envs []string
 	for _, e := range odsConfig.Environments {
 		if e.Name == environment {
