@@ -38,7 +38,7 @@ This repository also hosts the design documents that describe ODS pipeline more 
 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
-* [Task Requirements](/docs/task-requirements.adoc)
+* [Software Requirements](/docs/software-requirements.adoc)
 
 ## Compatibility
 
