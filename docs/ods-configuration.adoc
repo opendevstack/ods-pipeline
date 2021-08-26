@@ -1,0 +1,178 @@
+:toc:
+
+= ODS Configuration
+
+This guide will explain how to use and configure pipelines for your repositories. It is assumed you have already installed link:user-installation.adoc[`ods-pipeline`] in a namespace you own.
+
+== Overview
+
+In order to trigger pipelines from a repository, you'll need:
+
+* a `ods.yml` or `ods.yaml` file at the root of the repository
+* a webhook configuration that points to the event listener route of your ODS pipeline installation
+
+An example `ods.yml` looks like this:
+
+.ods.yaml
+[source,yaml]
+----
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+
+environments:
+- name: dev
+  namespace: foo-dev
+  stage: dev
+
+pipeline:
+  tasks:
+  - name: backend-build-go
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-go-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-build-image
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-image-v0-1-0
+    runAfter:
+    - backend-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-deploy
+    taskRef:
+      kind: ClusterTask
+      name: ods-deploy-helm-v0-1-0
+    runAfter:
+    - backend-build-image
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
+
+To setup a webhook, go to "Repository Settings > Webhooks" and create a new webhook:
+
+* "Name": choose any name you wish, e.g. `ods-pipeline`
+* "URL": enter the URL of the route of your event listener
+* "Secret": enter the value of the `secret` field in the OpenShift `ods-bitbucket-webhook` Secret.
+
+Select the "Push" event and save the configuration.
+
+Once both `ods.yml` and webhook configuration exist, any push in that repo will trigger the pipeline described in `ods.yml`.
+
+== Reference
+
+The configuration in `ods.yml` allows four top-level fields:
+
+* `pipeline`
+* `environments`
+* `branchToEnvironmentMapping`
+* `repositories`
+
+=== `pipeline`
+
+The pipeline field allows to define the pipeline tasks. Normal tasks may be specified under `tasks`. Example:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  tasks:
+  - name: backend-build-go
+    taskRef:
+      kind: ClusterTask
+      name: ods-build-go-v0-1-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
+
+Each task reference is just the plain Tekton definition. See the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-tasks-to-the-pipeline[Adding Tasks to the Pipeline] for more information.
+
+A typical central `ods-pipeline` installation offers its task as `CluserTask` resources, therefore the `taskRef.kind` needs to be `ClusterTask`. The value of the `taskRef.name` field depends on the version of `ods-pipeline` that is installed in your cluster. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Cluster Tasks".
+
+The pipeline created based on the configuration will have a workspace named `shared-workspace` available, which is backed by a PVC (named `ods-pipeline`) in your namespace.
+
+Next to the tasks you specify, `ods-pipeline` will automatically inject two tasks into the pipeline, `ods-start` and `ods-finish`. `ods-start` is inserted as the very first task, checking out the repository given in the webhook, setting the Bitbucket build status and dealing with Nexus artifacts, etc.
+
+The `ods-finish` task is added as a final task to the pipeline. Final tasks run at the end, regardless whether all previous tasks succeeded. The `ods-finish` sets the Bitbucket build status and deals with Nexus artifacts, etc.
+
+You can also specify further final tasks to be added to the pipeline by specyfing them under `finally`. Example:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  tasks: [ ... ]
+  finally:
+  - name: foo
+    taskRef:
+      kind: Task
+      name: foo
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
+
+Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
+
+=== `environments`
+
+The `environments` field allows you to specify target environments to deploy to. Each environment must have a `name` and a `stage` field. Example:
+
+.ods.yaml
+[source,yaml]
+----
+environments:
+- name: development
+  stage: dev
+----
+
+The value of `name` may freely be chosen. The `stage` must be one of `dev`, `qa` or `prod`. Each environment corresponds to one namespace in an OpenShift/Kubernetes cluster. The namespace may either be specified explicitly (via `namespace`), or it will be computed based on the project and the environment name (`<PROJECT>-<ENV-NAME>`). In the example above, `namespace` is not configured, therefore the target namespace will be resolved to `foo-development` (if the project is named `foo`).
+
+Environments may also be located external to the cluster in which the pipeline runs. In this case, an environment may specify further fields:
+
+* `url`: API URL of the target cluster
+* `secretRef`: Name of the Secret resource holding the API user credentials
+* `registryHost`: Hostname of the target registry
+* `config`: Additional configuration of the target in the form of a map. This information may be used by custom tasks.
+
+WARNING: External environments are not implemented in `ods-deploy-helm` yet, see link:https://github.com/opendevstack/ods-pipeline/issues/63[issue #63].
+
+=== `branchToEnvironmentMapping`
+
+In order for the pipeline to select an environment to deploy to, you have to configure which branch should be deployed to which environment. This can be done via `branchToEnvironmentMapping`. Example:
+
+.ods.yaml
+[source,yaml]
+----
+branchToEnvironmentMapping:
+- branch: master
+  environment: development
+----
+
+In this case, the `master` branch will be deployed to the environment with the name `development`.
+
+TIP: If you want to promote images between environments without rebuilding them, ensure that you are merging without merge commits (fast-forward, `--ff-only`).
+
+=== `repositories`
+
+If your application is made out of multiple components, you may want to have one "umbrella" repository that ties all those components together and deploys the whole application together. In this case, the umbrella repository can specify the subrepositores via the `repositories` field. Example:
+
+.ods.yaml
+[source,yaml]
+----
+repositories:
+- name: foo
+- name: bar
+  branch: main
+  url: https://bitbucket.acme.org/scm/baz/bar.git
+----
+
+If the repository does not specify a URL, the repository is assumed to be under the same organisation than the repository hosting the `ods.yml` file. If no branch is given, `master` is used as a default.
+
+Repositories listed in `ods.yml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.

@@ -72,6 +72,12 @@ environments:
   stage: staging`),
 			WantError: "invalid stage value 'staging' for environment foo",
 		},
+		"blank name": {
+			Fixture: []byte(`environments:
+- name: ""
+  stage: qa`),
+			WantError: "name of environment must not be blank",
+		},
 		"valid": {
 			Fixture: []byte(`environments:
 - name: foo

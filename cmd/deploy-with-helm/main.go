@@ -66,7 +66,7 @@ func main() {
 
 	releaseNamespace := targetConfig.Namespace
 	if len(releaseNamespace) == 0 {
-		log.Fatal("no namespace to deploy to")
+		releaseNamespace = fmt.Sprintf("%s-%s", ctxt.Project, targetConfig.Name)
 	}
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 

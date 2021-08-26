@@ -25,6 +25,7 @@ The documentation provided by ODS pipeline has three audiences:
 
 **User Guide**
 * [Installation](/docs/user-installation.adoc)
+* [ODS configuration](/docs/ods-configuration.adoc)
 * [Task Reference](/docs/tasks)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
 

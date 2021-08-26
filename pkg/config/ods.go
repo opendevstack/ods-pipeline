@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -82,6 +83,9 @@ func (o *ODS) Validate() error {
 }
 
 func (e Environment) Validate() error {
+	if len(e.Name) == 0 {
+		return errors.New("name of environment must not be blank")
+	}
 	switch e.Stage {
 	case Dev, QA, Prod:
 		return nil
