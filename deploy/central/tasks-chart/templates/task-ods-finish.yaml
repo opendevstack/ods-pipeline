@@ -23,6 +23,8 @@ spec:
       # Image is built from build/package/Dockerfile.finish.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-finish:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: NEXUS_URL
           valueFrom:
             configMapKeyRef:

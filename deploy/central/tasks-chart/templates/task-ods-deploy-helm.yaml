@@ -65,6 +65,8 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
+        - name: HOME
+          value: '/tekton/home'
       resources: {}
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.

@@ -133,6 +133,8 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
+        - name: HOME
+          value: '/tekton/home'
       resources: {}
       script: |
         # build-gradle is build/package/scripts/build-gradle.sh.
@@ -146,6 +148,8 @@ spec:
       # Image is built from build/package/Dockerfile.sonar.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: SONAR_URL
           valueFrom:
             configMapKeyRef:

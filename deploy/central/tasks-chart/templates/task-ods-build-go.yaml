@@ -66,6 +66,8 @@ spec:
       # Image is built from build/package/Dockerfile.go-toolset.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-go-toolset:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: DEBUG
           valueFrom:
             configMapKeyRef:
@@ -88,6 +90,8 @@ spec:
       # Image is built from build/package/Dockerfile.sonar.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: SONAR_URL
           valueFrom:
             configMapKeyRef:
