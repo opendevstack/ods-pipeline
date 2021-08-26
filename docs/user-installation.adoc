@@ -37,7 +37,7 @@ git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`. You may also use `--dry-run` to see the changes first.
 7. Run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL.
 
-Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories.
+Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories. See link:ods-configuration.adoc[ODS configuration] for more information on usage.
 
 ## Updating
 
@@ -50,50 +50,3 @@ git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-
 git checkout -
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
-
-## Using ods-pipeline in your repos
-
-Add an `ods.yml` into each repo you want to add. Example:
-```
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: foo-dev
-  stage: dev
-
-pipeline:
-  tasks:
-  - name: backend-build-go
-    taskRef:
-      kind: ClusterTask
-      name: ods-build-go-v0-1-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-build-image
-    taskRef:
-      kind: ClusterTask
-      name: ods-build-image-v0-1-0
-    runAfter:
-    - backend-build-go
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-deploy
-    taskRef:
-      kind: ClusterTask
-      name: ods-deploy-helm-v0-1-0
-    runAfter:
-    - backend-build-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-```
-
-In Bitbucket, add a webhook pointing to the exposed route. The secret must match
-the one you entered in the values file.
-
-The next push in that repo will trigger the pipeline.
