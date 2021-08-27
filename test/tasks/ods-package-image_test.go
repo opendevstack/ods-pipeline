@@ -11,9 +11,9 @@ import (
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
-func TestTaskODSBuildImage(t *testing.T) {
+func TestTaskODSPackageImage(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-image",
+		"ods-package-image",
 		map[string]tasktesting.TestCase{
 			"task should build image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},

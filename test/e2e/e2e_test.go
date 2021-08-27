@@ -96,10 +96,10 @@ func TestWebhookInterceptor(t *testing.T) {
 	filename := "ods.yml"
 	fileContent := `pipeline:
   tasks:
-  - name: build-image
+  - name: package-image
     taskRef:
       kind: ClusterTask
-      name: ods-build-image
+      name: ods-package-image
     params:
     - name: tls-verify
       value: 'false'

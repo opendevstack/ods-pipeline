@@ -44,7 +44,7 @@ An ODS installation provides you with the following tasks, which are implemented
 * `ods-build-java`: Build a Java application (includes Sonar scan)
 * `ods-build-python`: Build a Python application (includes Sonar scan)
 * `ods-build-nodejs`: Build a TypeScript/JavaScript application (includes Sonar scan)
-* `ods-build-image`: Package application into container image (includes Aqua scan)
+* `ods-package-image`: Package application into container image (includes optional Aqua scan)
 * `ods-deploy-helm`: Deploy a Helm chart
 * `ods-test-geb`: Run Geb/Spock tests
 * `ods-test-cypress`: Run Cypress tests
@@ -57,7 +57,7 @@ Let's look at the `ods-build-*` tasks in more detail to understand what such tas
 
 The other "language build tasks" like `ods-build-java` have the same steps, except that they make use of e.g. `gradle build` to build a JAR instead of a Go binary.
 
-The `ods-build-image` tasks consist of the following steps:
+The `ods-package-image` tasks consist of the following steps:
 
 * Build container image with Buildah
 * Scan image with Trivy / Aqua
@@ -65,7 +65,7 @@ The `ods-build-image` tasks consist of the following steps:
 
 The produced images are tagged with the Git commit SHA being built. If the task detects this image tag to be already present in the image stream, all steps are skipped.
 
-The behaviour of each task can be customized by setting parameters. For example, the `ods-build-image` tasks assumes the `Dockerfile` to be located in the `docker` directory by default. You can instruct the task to use a different Docker context by providing the `context-dir` parameter to the task.
+The behaviour of each task can be customized by setting parameters. For example, the `ods-package-image` tasks assumes the `Dockerfile` to be located in the `docker` directory by default. You can instruct the task to use a different Docker context by providing the `context-dir` parameter to the task.
 
 ## How do I use the tasks provided by ODS?
 
@@ -91,10 +91,10 @@ pipeline:
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: backend-build-image
+  - name: backend-package-image
     taskRef:
       kind: ClusterTask
-      name: ods-build-image-v0-1-0
+      name: ods-package-image-v0-1-0
     runAfter:
     - backend-build-go
     params:
@@ -108,7 +108,7 @@ pipeline:
       kind: ClusterTask
       name: ods-deploy-helm-v0-1-0
     runAfter:
-    - backend-build-image
+    - backend-package-image
     params:
     - name: release-name
       value: backend
@@ -117,7 +117,7 @@ pipeline:
       workspace: shared-workspace
 ```
 
-You can see that it defines three tasks, `ods-build-go`, `ods-build-image` and `ods-deploy-helm`, which run sequentially.
+You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially.
 
 In a repository created through ODS quickstarter provisioning, you already have an `ods.yml` file with task definitions, and when a commit is pushed to Bitbucket, a pipeline reflecting those tasks will start automatically. However, any repository can gain this functionality by adding an `ods.yml` file and setting a webhook firing on every push in the Bitbucket repository.
 

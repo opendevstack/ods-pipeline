@@ -34,10 +34,10 @@ pipeline:
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: backend-build-image
+  - name: backend-package-image
     taskRef:
       kind: ClusterTask
-      name: ods-build-image-v0-1-0
+      name: ods-package-image-v0-1-0
     runAfter:
     - backend-build-go
     workspaces:
@@ -48,7 +48,7 @@ pipeline:
       kind: ClusterTask
       name: ods-deploy-helm-v0-1-0
     runAfter:
-    - backend-build-image
+    - backend-package-image
     workspaces:
     - name: source
       workspace: shared-workspace

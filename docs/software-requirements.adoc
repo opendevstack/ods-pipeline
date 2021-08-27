@@ -107,24 +107,24 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 
 |===
 
-=== `ods-build-image`
+=== `ods-package-image`
 
 [cols="1,3"]
 |===
-| REQ-TASK-BUILD-IMAGE-1
+| REQ-TASK-PACKAGE-IMAGE-1
 | The task shall build a container image based on the `Dockerfile` in the Docker context directory.
 
 * The Docker context directory shall default to `docker` and be parameterized by `docker-dir`.
 * The Dockerfile shall default to `Dockerfile`, and be parameterized by `dockerfile`. The location shall be relative to the Docker context directory.
 * The resulting image name and SHA shall be placed into `.ods/artifacts`.
 
-| REQ-TASK-BUILD-IMAGE-2
+| REQ-TASK-PACKAGE-IMAGE-2
 | The task shall check if an image with the tag to built exist already in the target registry, and if so, skip the build.
 
-| REQ-TASK-BUILD-IMAGE-3
+| REQ-TASK-PACKAGE-IMAGE-3
 | The task shall push the image to the target registry.
 
-| REQ-TASK-BUILD-IMAGE-4
+| REQ-TASK-PACKAGE-IMAGE-4
 | If the Aqua scanner is installed in the base image, the  pushed image shall be scanned. The resulting report shall be placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
 |===
 
