@@ -1,0 +1,28 @@
+:toc:
+
+= Debugging Issues
+
+If you experience issues with `ods-pipeline`, the following instructions and tips may help to resolve them.
+
+== Problem: no pipeline run is triggered
+
+When you push a commit to Bitbucket, the webhook will fire a request to the event listener route. The request will be handled by the `el-ods-pipeline` deployment, which will pass the request through the Tekton built-in Bitbucket interceptor and the custom ODS webhook interceptor (`ods-pipeline` deployment). The result of such a webhook request is usually a pipeline run. When this is not the case, a few things might have gone wrong:
+
+* The webhook setting in Bitbucket is not enabled.
+* The webhook setting in Bitbucket does not fire on "Push" events.
+* The webhook setting in Bitbucket does not point to the route connected to the `el-ods-pipeline` service.
+* The webhook setting in Bitbucket has an incorrect secret. This would be visible in the `el-ods-pipeline` deployment logs. The configured secret must match the one in the `ods-bitbucket-webhook` secret.
+* The pipeline assembled from the `ods.yml` file is not valid. This would be visible in the `el-ods-pipeline` deployment logs. An example of this case might be YAML syntax errors or passing unknwon parameters to tasks.
+* The commit pushed contains instructions to skip CI such as `[ci skip]`. This would be visible in the ODS webhook interceptor deployment.
+
+In general, the logs of the `el-ods-pipeline` and `ods-pipeline` deployments should contain more information what went wrong if no pipeline run has been triggered.
+
+== Problem: pipeline run is not proceeding
+
+When a pipeline run has been triggered but it does not make (any) progress, it may help to look at the YAML representation of the `PipelineRun` resource. Especially the `status` may yield more information. Further information might be gathered from looking at the events connected to the pipeline run.
+
+If the pipeline run does not progress for a specific task run, the `TaskRun` resources of the pipeline run allow further inspection of the YAML of each `TaskRun` resource as well as their corresponding pods. Typical issues why pods are pending and do not run are missing `ConfigMap` or `Secret` resources to mount, missing/mispelled image references, or insufficient compute resources in the cluster.
+
+== Problem: pipeline run proceeds but task fails
+
+When a task fails, its logs may indicate what the issue is. While some issues might be related to the application (e.g. failing tests), others might not, such as network issues. If the task logs do not provide enough information to diagnose the issue, you can turn on debug mode by setting the `debug` field to `true` in the `ods-pipeline` ConfigMap resource. The next pipeline run (or a re-run of the failed one) will output additional information.

@@ -14,38 +14,72 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
+type options struct {
+	bitbucketAccessToken     string
+	bitbucketURL             string
+	consoleURL               string
+	pipelineRunName          string
+	nexusURL                 string
+	nexusUsername            string
+	nexusPassword            string
+	nexusTemporaryRepository string
+	nexusPermanentRepository string
+	project                  string
+	environment              string
+	version                  string
+	prKey                    string
+	prBase                   string
+	gitRefSpec               string
+	httpProxy                string
+	httpsProxy               string
+	noProxy                  string
+	url                      string
+	gitFullRef               string
+	sslVerify                string
+	submodules               string
+	depth                    string
+	debug                    bool
+}
+
 func main() {
-	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
-	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	namespaceFlag := flag.String("namespace", "", "namespace")
-	projectFlag := flag.String("project", "", "project")
-	environmentFlag := flag.String("environment", "", "environment")
-	versionFlag := flag.String("version", "", "version")
-	gitRefSpecFlag := flag.String("git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
-	prKeyFlag := flag.String("pr-key", "", "pull request key")
-	prBaseFlag := flag.String("pr-base", "", "pull request base")
-	httpProxyFlag := flag.String("http-proxy", ".", "HTTP_PROXY")
-	httpsProxyFlag := flag.String("https-proxy", ".", "HTTPS_PROXY")
-	noProxyFlag := flag.String("no-proxy", ".", "NO_PROXY")
-	urlFlag := flag.String("url", ".", "URL to clone")
-	gitFullRefFlag := flag.String("git-full-ref", "", "Git (full) ref to clone")
-	sslVerifyFlag := flag.String("ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
-	submodulesFlag := flag.String("submodules", "true", "defines if the resource should initialize and fetch the submodules")
-	depthFlag := flag.String("depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
-	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
-	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
-	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
-	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
-	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	nexusTemporaryRepositoryFlag := flag.String("nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	//nexusPermanentRepositoryFlag := flag.String("nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	opts := options{}
+	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
+	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
+	flag.StringVar(&opts.project, "project", "", "project")
+	flag.StringVar(&opts.environment, "environment", "", "environment")
+	flag.StringVar(&opts.version, "version", "", "version")
+	flag.StringVar(&opts.gitRefSpec, "git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
+	flag.StringVar(&opts.prKey, "pr-key", "", "pull request key")
+	flag.StringVar(&opts.prBase, "pr-base", "", "pull request base")
+	flag.StringVar(&opts.httpProxy, "http-proxy", ".", "HTTP_PROXY")
+	flag.StringVar(&opts.httpsProxy, "https-proxy", ".", "HTTPS_PROXY")
+	flag.StringVar(&opts.noProxy, "no-proxy", ".", "NO_PROXY")
+	flag.StringVar(&opts.url, "url", ".", "URL to clone")
+	flag.StringVar(&opts.gitFullRef, "git-full-ref", "", "Git (full) ref to clone")
+	flag.StringVar(&opts.sslVerify, "ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
+	flag.StringVar(&opts.submodules, "submodules", "true", "defines if the resource should initialize and fetch the submodules")
+	flag.StringVar(&opts.depth, "depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
+	flag.StringVar(&opts.consoleURL, "console-url", os.Getenv("CONSOLE_URL"), "web console URL")
+	flag.StringVar(&opts.pipelineRunName, "pipeline-run-name", "", "name of pipeline run")
+	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
+	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
+	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
+	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
 	checkoutDir := "."
+
+	var logger logging.LeveledLoggerInterface
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	}
 
 	fmt.Println("Cleaning checkout directory ...")
 	err := deleteDirectoryContents(checkoutDir)
@@ -54,41 +88,40 @@ func main() {
 	}
 
 	// set proxy env vars
-	if len(*httpProxyFlag) > 0 {
-		err = os.Setenv("HTTP_PROXY", *httpProxyFlag)
+	if len(opts.httpProxy) > 0 {
+		err = os.Setenv("HTTP_PROXY", opts.httpProxy)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	if len(*httpsProxyFlag) > 0 {
-		err = os.Setenv("HTTPS_PROXY", *httpsProxyFlag)
+	if len(opts.httpsProxy) > 0 {
+		err = os.Setenv("HTTPS_PROXY", opts.httpsProxy)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	if len(*noProxyFlag) > 0 {
-		err = os.Setenv("NO_PROXY", *noProxyFlag)
+	if len(opts.noProxy) > 0 {
+		err = os.Setenv("NO_PROXY", opts.noProxy)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	baseCtxt := &pipelinectxt.ODSContext{
-		Namespace:       *namespaceFlag,
-		Project:         *projectFlag,
-		Environment:     *environmentFlag,
-		Version:         *versionFlag,
-		PullRequestBase: *prBaseFlag,
-		PullRequestKey:  *prKeyFlag,
+		Project:         opts.project,
+		Environment:     opts.environment,
+		Version:         opts.version,
+		PullRequestBase: opts.prBase,
+		PullRequestKey:  opts.prKey,
 	}
 	ctxt, err := checkoutAndAssembleContext(
 		checkoutDir,
-		*urlFlag,
-		*gitFullRefFlag,
-		*gitRefSpecFlag,
-		*sslVerifyFlag,
-		*submodulesFlag,
-		*depthFlag,
+		opts.url,
+		opts.gitFullRef,
+		opts.gitRefSpec,
+		opts.sslVerify,
+		opts.submodules,
+		opts.depth,
 		baseCtxt,
 	)
 	if err != nil {
@@ -98,14 +131,15 @@ func main() {
 
 	fmt.Println("Setting Bitbucket build status to 'in progress' ...")
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: *bitbucketAccessTokenFlag,
-		BaseURL:  *bitbucketURLFlag,
+		APIToken: opts.bitbucketAccessToken,
+		BaseURL:  opts.bitbucketURL,
+		Logger:   logger,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		*consoleURLFlag,
+		opts.consoleURL,
 		ctxt.Namespace,
-		*pipelineRunNameFlag,
+		opts.pipelineRunName,
 	)
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       bitbucket.BuildStatusInProgress,
@@ -135,7 +169,7 @@ func main() {
 			subrepoURL := subrepo.URL
 			if len(subrepoURL) == 0 {
 				subrepoURL = strings.Replace(
-					*urlFlag,
+					opts.url,
 					fmt.Sprintf("/%s.git", ctxt.Repository),
 					fmt.Sprintf("/%s.git", subrepo.Name),
 					1,
@@ -149,10 +183,10 @@ func main() {
 				subrepoCheckoutDir,
 				subrepoURL,
 				subrepoGitFullRef,
-				*gitRefSpecFlag,
-				*sslVerifyFlag,
-				*submodulesFlag,
-				*depthFlag,
+				opts.gitRefSpec,
+				opts.sslVerify,
+				opts.submodules,
+				opts.depth,
 				baseCtxt,
 			)
 			if err != nil {
@@ -165,10 +199,11 @@ func main() {
 	fmt.Println("Downloading any artifacts ...")
 	// If there are subrepos, then all of them need to have a successful pipeline run.
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:    *nexusURLFlag,
-		Username:   *nexusUsernameFlag,
-		Password:   *nexusPasswordFlag,
-		Repository: *nexusTemporaryRepositoryFlag,
+		BaseURL:    opts.nexusURL,
+		Username:   opts.nexusUsername,
+		Password:   opts.nexusPassword,
+		Repository: opts.nexusTemporaryRepository,
+		Logger:     logger,
 	})
 	if err != nil {
 		log.Fatal(err)

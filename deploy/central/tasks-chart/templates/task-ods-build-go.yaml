@@ -93,6 +93,11 @@ spec:
             secretKeyRef:
               key: password
               name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then

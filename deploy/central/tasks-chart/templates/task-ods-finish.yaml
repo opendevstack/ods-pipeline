@@ -63,6 +63,11 @@ spec:
             configMapKeyRef:
               key: consoleUrl
               name: ods-cluster
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       workingDir: $(workspaces.source.path)
       script: |

@@ -8,17 +8,34 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 )
 
+type options struct {
+	sonarAuthToken string
+	sonarURL       string
+	sonarEdition   string
+	workingDir     string
+	qualityGate    bool
+	debug          bool
+}
+
 func main() {
-	sonarAuthTokenFlag := flag.String("sonar-auth-token", os.Getenv("SONAR_AUTH_TOKEN"), "sonar-auth-token")
-	sonarqubeURLFlag := flag.String("sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
-	sonarqubeEditionFlag := flag.String("sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
-	workingDirFlag := flag.String("working-dir", ".", "working directory")
-	qualityGateFlag := flag.Bool("quality-gate", false, "require quality gate pass")
+	opts := options{}
+	flag.StringVar(&opts.sonarAuthToken, "sonar-auth-token", os.Getenv("SONAR_AUTH_TOKEN"), "sonar-auth-token")
+	flag.StringVar(&opts.sonarURL, "sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
+	flag.StringVar(&opts.sonarEdition, "sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
+	flag.StringVar(&opts.workingDir, "working-dir", ".", "working directory")
+	flag.BoolVar(&opts.qualityGate, "quality-gate", false, "require quality gate pass")
+	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
+
+	var logger logging.LeveledLoggerInterface
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	}
 
 	ctxt := &pipelinectxt.ODSContext{}
 	err := ctxt.ReadCache(".")
@@ -29,19 +46,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Chdir(*workingDirFlag)
+	err = os.Chdir(opts.workingDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	artifactPrefix := ""
-	if *workingDirFlag != "." {
-		artifactPrefix = strings.Replace(*workingDirFlag, "/", "-", -1) + "-"
+	if opts.workingDir != "." {
+		artifactPrefix = strings.Replace(opts.workingDir, "/", "-", -1) + "-"
 	}
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
-		APIToken:      *sonarAuthTokenFlag,
-		BaseURL:       *sonarqubeURLFlag,
-		ServerEdition: *sonarqubeEditionFlag,
+		APIToken:      opts.sonarAuthToken,
+		BaseURL:       opts.sonarURL,
+		ServerEdition: opts.sonarEdition,
+		Debug:         opts.debug,
+		Logger:        logger,
 	})
 
 	sonarProject := sonar.ProjectKey(ctxt, artifactPrefix)
@@ -83,7 +102,7 @@ func main() {
 	}
 	fmt.Println(stdout)
 
-	if *qualityGateFlag {
+	if opts.qualityGate {
 		fmt.Println("Checking quality gate ...")
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
