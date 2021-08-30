@@ -62,7 +62,7 @@ func parseTasks(helmTemplateOutput []byte) ([]*tekton.ClusterTask, error) {
 		var t tekton.ClusterTask
 		err := yaml.Unmarshal(taskBytes, &t)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot unmarshal tasks: %w", err)
 		}
 		if len(t.Name) > 0 {
 			tasks = append(tasks, &t)

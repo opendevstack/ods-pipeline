@@ -39,17 +39,33 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
-    - name: overwrite-values
-      description: >-
-        Specify the values you want to overwrite, comma separated.
-        Example: `autoscaling.enabled=true,replicas=1`
+    - name: cpu-request
+      description: Minimum amount of CPU compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
       type: string
-      default: ''
+      default: "100m"
+    - name: cpu-limit
+      description: Maximum amount of CPU compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "500m"
+    - name: memory-request
+      description: Minimum amount of memory compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "128Mi"
+    - name: memory-limit
+      description: Maximum amount of memory compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "256Mi"
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
       image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-helm:{{ .Values.imageTag }}'
-      resources: {}
+      resources:
+        requests:
+          memory: '$(params.memory-request)'
+          cpu: '$(params.cpu-request)'
+        limits:
+          memory: '$(params.memory-limit)'
+          cpu: '$(params.cpu-limit)'
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \

@@ -94,6 +94,22 @@ spec:
     - name: pipeline-run-name
       description: Name of pipeline run.
       type: string
+    - name: cpu-request
+      description: Minimum amount of CPU compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "100m"
+    - name: cpu-limit
+      description: Maximum amount of CPU compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "500m"
+    - name: memory-request
+      description: Minimum amount of memory compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "128Mi"
+    - name: memory-limit
+      description: Maximum amount of memory compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "256Mi"
   results:
     - description: The commit SHA that was fetched by this task.
       name: commit
@@ -144,7 +160,13 @@ spec:
             configMapKeyRef:
               key: consoleUrl
               name: ods-cluster
-      resources: {}
+      resources:
+        requests:
+          memory: '$(params.memory-request)'
+          cpu: '$(params.cpu-request)'
+        limits:
+          memory: '$(params.memory-limit)'
+          cpu: '$(params.cpu-limit)'
       workingDir: $(workspaces.source.path)
       script: |
 

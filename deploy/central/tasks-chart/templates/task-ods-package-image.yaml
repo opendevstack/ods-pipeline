@@ -54,6 +54,22 @@ spec:
       description: Whether the Aqua security scan needs to pass for the task to succeed.
       type: string
       default: "false"
+    - name: cpu-request
+      description: Minimum amount of CPU compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "100m"
+    - name: cpu-limit
+      description: Maximum amount of CPU compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "1"
+    - name: memory-request
+      description: Minimum amount of memory compute resources required, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "1Gi"
+    - name: memory-limit
+      description: Maximum amount of memory compute resources allowed, as per https://kubernetes.io/docs/concepts/configuration/manage-resources-containers.
+      type: string
+      default: "2Gi"
   results:
     - description: Digest of the image just built.
       name: image-digest
@@ -97,7 +113,13 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
-      resources: {}
+      resources:
+        requests:
+          memory: '$(params.memory-request)'
+          cpu: '$(params.cpu-request)'
+        limits:
+          memory: '$(params.memory-limit)'
+          cpu: '$(params.cpu-limit)'
       script: |
 
         #  ods-build-push-image is built from cmd/build-push-image/main.go.
