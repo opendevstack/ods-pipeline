@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
@@ -19,19 +20,35 @@ type PipelineRunArtifact struct {
 	AggregateTaskStatus string `json:"aggregateTaskStatus"`
 }
 
+type options struct {
+	bitbucketAccessToken     string
+	bitbucketURL             string
+	consoleURL               string
+	pipelineRunName          string
+	aggregateTasksStatus     string
+	nexusURL                 string
+	nexusUsername            string
+	nexusPassword            string
+	nexusTemporaryRepository string
+	nexusPermanentRepository string
+	debug                    bool
+}
+
 func main() {
-	bitbucketAccessTokenFlag := flag.String("bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
-	bitbucketURLFlag := flag.String("bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	consoleURLFlag := flag.String("console-url", os.Getenv("CONSOLE_URL"), "web console URL")
-	pipelineRunNameFlag := flag.String("pipeline-run-name", "", "name of pipeline run")
+	opts := options{}
+	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
+	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
+	flag.StringVar(&opts.consoleURL, "console-url", os.Getenv("CONSOLE_URL"), "web console URL")
+	flag.StringVar(&opts.pipelineRunName, "pipeline-run-name", "", "name of pipeline run")
 	// See https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks.
 	// Possible values are: Succeeded, Failed, Completed, None.
-	aggregateTasksStatusFlag := flag.String("aggregate-tasks-status", "None", "aggregate status of all the tasks")
-	nexusURLFlag := flag.String("nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
-	nexusUsernameFlag := flag.String("nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
-	nexusPasswordFlag := flag.String("nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	nexusTemporaryRepositoryFlag := flag.String("nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	//nexusPermanentRepositoryFlag := flag.String("nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.aggregateTasksStatus, "aggregate-tasks-status", "None", "aggregate status of all the tasks")
+	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
+	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
+	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
+	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
 	ctxt := &pipelinectxt.ODSContext{}
@@ -44,19 +61,25 @@ func main() {
 		)
 	}
 
+	var logger logging.LeveledLoggerInterface
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	}
+
 	fmt.Println("Setting Bitbucket build status ...")
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: *bitbucketAccessTokenFlag,
-		BaseURL:  *bitbucketURLFlag,
+		APIToken: opts.bitbucketAccessToken,
+		BaseURL:  opts.bitbucketURL,
+		Logger:   logger,
 	})
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		*consoleURLFlag,
+		opts.consoleURL,
 		ctxt.Namespace,
-		*pipelineRunNameFlag,
+		opts.pipelineRunName,
 	)
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
-		State:       getBitbucketBuildStatus(*aggregateTasksStatusFlag),
+		State:       getBitbucketBuildStatus(opts.aggregateTasksStatus),
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
 		URL:         pipelineRunURL,
@@ -68,18 +91,19 @@ func main() {
 
 	fmt.Println("Handling artifacts ...")
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:    *nexusURLFlag,
-		Username:   *nexusUsernameFlag,
-		Password:   *nexusPasswordFlag,
-		Repository: *nexusTemporaryRepositoryFlag,
+		BaseURL:    opts.nexusURL,
+		Username:   opts.nexusUsername,
+		Password:   opts.nexusPassword,
+		Repository: opts.nexusTemporaryRepository,
+		Logger:     logger,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if tasksSuccessful(*aggregateTasksStatusFlag) {
+	if tasksSuccessful(opts.aggregateTasksStatus) {
 		fmt.Println("Creating artifact of pipeline run ...")
-		err := createPipelineRunArtifact(*pipelineRunNameFlag, *aggregateTasksStatusFlag)
+		err := createPipelineRunArtifact(opts.pipelineRunName, opts.aggregateTasksStatus)
 		if err != nil {
 			log.Fatal(err)
 		}

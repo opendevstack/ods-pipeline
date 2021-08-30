@@ -43,6 +43,12 @@ spec:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
       image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-helm:{{ .Values.imageTag }}'
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
