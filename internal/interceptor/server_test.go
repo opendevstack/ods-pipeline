@@ -12,7 +12,7 @@ import (
 )
 
 func TestRenderPipeline(t *testing.T) {
-	wantPipeline := testfile.ReadGolden(t, "interceptor/pipeline.yml")
+	wantPipeline := testfile.ReadGolden(t, "interceptor/pipeline.yaml")
 	data := PipelineData{
 		Name:            "bar-main",
 		Project:         "foo",
@@ -31,8 +31,8 @@ func TestRenderPipeline(t *testing.T) {
 		PullRequestBase: "",
 	}
 
-	// read ods.yml
-	conf := testfile.ReadFixture(t, "interceptor/ods.yml")
+	// read ods.yaml
+	conf := testfile.ReadFixture(t, "interceptor/ods.yaml")
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)

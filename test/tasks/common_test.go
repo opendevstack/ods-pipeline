@@ -150,7 +150,7 @@ func createODSYML(wsDir string, o *config.ODS) error {
 	if err != nil {
 		return err
 	}
-	filename := filepath.Join(wsDir, "ods.yml")
+	filename := filepath.Join(wsDir, "ods.yaml")
 	return ioutil.WriteFile(filename, y, 0644)
 }
 

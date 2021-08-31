@@ -26,7 +26,7 @@ Before the Helm chart is applied, it is packaged, setting the `appVersion` to th
 and the `version` to the externally provided version, if any. If `version` is not given, the value
 in `Chart.yaml` is used as-is.
 
-If the pipeline runs for a repository defining subrepos in its `ods.yml` file, then any charts in
+If the pipeline runs for a repository defining subrepos in its `ods.y(a)ml` file, then any charts in
 those subrepos are packaged as well, and added as dependencies to the top-most chart under `charts/`.
 
 

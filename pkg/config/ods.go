@@ -20,7 +20,11 @@ const (
 	QA                   = "qa"
 	Prod                 = "prod"
 	DefaultBranch string = "refs/heads/master"
+	ODSYMLFile    string = "ods.yml"
+	ODSYAMLFile   string = "ods.yaml"
 )
+
+var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
 
 type ODS struct {
 	Repositories               []Repository                 `json:"repositories"`
@@ -36,7 +40,7 @@ type Repository struct {
 	Name string `json:"name"`
 	// URL of Git repository (optional). If not given, the repository given by
 	// Name is assumed to be under the same organisation than the repository
-	// hosting the ods.yml file.
+	// hosting the ods.y(a)ml file.
 	// Example: "https://acme.org/foo/bar.git"
 	URL string `json:"url"`
 	// Branch of Git repository (optional). If none is given, this defaults to
@@ -128,14 +132,11 @@ func ReadFromFile(filename string) (*ODS, error) {
 
 // ReadFromDir reads an ods config file from given dir or errors.
 func ReadFromDir(dir string) (*ODS, error) {
-	candidates := []string{
-		filepath.Join(dir, "ods.yml"),
-		filepath.Join(dir, "ods.yaml"),
-	}
-	for _, c := range candidates {
-		if _, err := os.Stat(c); err == nil {
-			return ReadFromFile(c)
+	for _, c := range ODSFileCandidates {
+		candidate := filepath.Join(dir, c)
+		if _, err := os.Stat(candidate); err == nil {
+			return ReadFromFile(candidate)
 		}
 	}
-	return nil, fmt.Errorf("no matching file in '%s', looked for: %s", dir, strings.Join(candidates, ", "))
+	return nil, fmt.Errorf("no matching file in '%s', looked for: %s", dir, strings.Join(ODSFileCandidates, ", "))
 }

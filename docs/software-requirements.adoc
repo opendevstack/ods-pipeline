@@ -32,7 +32,7 @@ a| The interceptor shall create or update a pipeline corresponding to the Git br
 [cols="1,3"]
 |===
 | REQ-TASK-START-1
-a| The task shall check out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.yml` configures any child repositories, those shall be checked out as well from the configured URL and Git ref.
+a| The task shall check out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.y(a)ml` configures any child repositories, those shall be checked out as well from the configured URL and Git ref.
 
 * All checkouts shall support shallow mode
 * All checkouts shall support submodules
@@ -152,5 +152,5 @@ a| The task shall upgrade (or install) a Helm chart.
 * Any values files corresponding to the environment and stage shall be respected (`values.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`).
 * A values file containing the Git commit SHA shall be auto-generated and added to the Helm upgrade invocation.
 * The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
-* Charts in any of the respositories configured in `ods.yml` shall be packaged according to the same rules and added as a subchart.
+* Charts in any of the respositories configured in `ods.y(a)ml` shall be packaged according to the same rules and added as a subchart.
 |===

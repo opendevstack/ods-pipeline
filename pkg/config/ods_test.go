@@ -19,7 +19,7 @@ func TestReadFromDir(t *testing.T) {
 }
 
 func TestReadFromFile(t *testing.T) {
-	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods.yml"))
+	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
