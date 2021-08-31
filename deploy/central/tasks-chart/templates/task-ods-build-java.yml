@@ -10,7 +10,7 @@ spec:
     - TODO
 
   params:
-    - name: docker-dir
+    - name: output-dir
       description: >-
         Path to the directory to use as Docker context.
         The resulting Java Jar will be copied there.
@@ -32,7 +32,7 @@ spec:
 
         # build-java is build/package/scripts/build-java.sh.
         build-java \
-          --docker-dir=$(params.docker-dir)
+          --output-dir=$(params.output-dir)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar
