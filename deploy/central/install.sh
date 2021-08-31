@@ -65,10 +65,17 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
+DIFF_UPGRADE_ARGS="diff upgrade"
+UPGRADE_ARGS="upgrade"
+if helm plugin list | grep secrets &> /dev/null; then
+    DIFF_UPGRADE_ARGS="secrets diff upgrade"
+    UPGRADE_ARGS="secrets upgrade"
+fi
+
 echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
     if helm -n ${NAMESPACE} \
-            diff upgrade --install --detailed-exitcode \
+            ${DIFF_UPGRADE_ARGS} --install --detailed-exitcode \
             ${VALUES_ARGS} \
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."
@@ -77,7 +84,7 @@ if [ "${DIFF}" == "true" ]; then
             echo "(skipping in dry-run)"
         else
             helm -n ${NAMESPACE} \
-                upgrade --install \
+                ${UPGRADE_ARGS} --install \
                 ${VALUES_ARGS} \
                 ${RELEASE_NAME} ${CHART_DIR}
         fi
@@ -91,7 +98,7 @@ else
             NAMESPACE_FLAG="-n ${NAMESPACE}"
         fi
         helm ${NAMESPACE_FLAG} \
-            upgrade --install \
+            ${UPGRADE_ARGS} --install \
             ${VALUES_ARGS} \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
