@@ -16,7 +16,6 @@ import (
 const (
 	tokenFile         = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	caCert            = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	pipelineFilename  = "ods.yml"
 	tektonAPIBasePath = "/apis/tekton.dev/v1beta1"
 	letterBytes       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )

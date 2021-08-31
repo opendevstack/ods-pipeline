@@ -14,7 +14,7 @@ If you need more control than the official tasks offer, then creating a custom T
 
 == How do I create a custom task?
 
-A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.yml`) just like official ODS tasks. The only difference is that ODS tasks are typically available as cluster tasks, available to every namespace, in contrast to your custom task which will only be availble within your own namespace.
+A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.y(a)ml`) just like official ODS tasks. The only difference is that ODS tasks are typically available as cluster tasks, available to every namespace, in contrast to your custom task which will only be availble within your own namespace.
 
 Now, a task contains of one or more steps, and each step is a container that runs in a pod. Therefore, when you create your task, you will need to define at least one step, which will need to define the container it will execute. For example, if you want to use the `curl` program in your custom task, then you will need to launch a container which has `curl` installed. This means that you either need to find a container image that has the binaries installed that you want to execute, or you need to build a container image first that suits your needs, before using it in your task definition.
 

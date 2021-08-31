@@ -75,7 +75,7 @@ func main() {
 	}
 	fmt.Printf("releaseName=%s\n", releaseName)
 
-	// read ods.yml
+	// read ods.y(a)ml
 	odsConfig, err := config.ReadFromDir(checkoutDir)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))

@@ -9,9 +9,9 @@ spec:
     This task will clone a repo from the provided url into the workspace, and
     sets the build status of the checked out commit in Bitbucket to "in progress".
 
-    If the checked out repositories' `ods.yml` file defines subrepos, those will
+    If the checked out repositories' `ods.y(a)ml` file defines subrepos, those will
     be checked out as well into `.ods/repos`. Subrepos will be checked out at
-    the branch specified in `ods.yml` or `master` if no branch is given.
+    the branch specified in `ods.y(a)ml` or `master` if no branch is given.
     However, if a version (e.g. `1.0.0`) is passed to the pipeline, then
     subrepos are checked out at a corresponding release branch (e.g.
     `release/1.0.0`) if it exists.

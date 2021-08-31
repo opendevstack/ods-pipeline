@@ -8,10 +8,10 @@ This guide will explain how to use and configure pipelines for your repositories
 
 In order to trigger pipelines from a repository, you'll need:
 
-* a `ods.yml` or `ods.yaml` file at the root of the repository
+* a `ods.yaml` or `ods.yml` file at the root of the repository
 * a webhook configuration that points to the event listener route of your ODS pipeline installation
 
-An example `ods.yml` looks like this:
+An example `ods.yaml` looks like this:
 
 .ods.yaml
 [source,yaml]
@@ -62,11 +62,11 @@ To setup a webhook, go to "Repository Settings > Webhooks" and create a new webh
 
 Select the "Push" event and save the configuration.
 
-Once both `ods.yml` and webhook configuration exist, any push in that repo will trigger the pipeline described in `ods.yml`.
+Once both `ods.yaml` and webhook configuration exist, any push in that repo will trigger the pipeline described in `ods.yaml`.
 
 == Reference
 
-The configuration in `ods.yml` allows four top-level fields:
+The configuration in `ods.yaml` allows four top-level fields:
 
 * `pipeline`
 * `environments`
@@ -173,6 +173,6 @@ repositories:
   url: https://bitbucket.acme.org/scm/baz/bar.git
 ----
 
-If the repository does not specify a URL, the repository is assumed to be under the same organisation than the repository hosting the `ods.yml` file. If no branch is given, `master` is used as a default.
+If the repository does not specify a URL, the repository is assumed to be under the same organisation than the repository hosting the `ods.yaml` file. If no branch is given, `master` is used as a default.
 
-Repositories listed in `ods.yml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.
+Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.

@@ -259,7 +259,6 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		pData.Project,
 		pData.Repository,
 		pData.GitFullRef,
-		pipelineFilename,
 	)
 
 	if err != nil {
@@ -323,11 +322,22 @@ func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFul
 	return commitList.Values[0].ID, nil
 }
 
-func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef, filename string) (*config.ODS, error) {
-	body, err := bitbucketClient.RawGet(project, repository, filename, gitFullRef)
-	if err != nil {
-		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, err)
+func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (*config.ODS, error) {
+	var body []byte
+	var getErr error
+	for _, c := range config.ODSFileCandidates {
+		b, err := bitbucketClient.RawGet(project, repository, c, gitFullRef)
+		if err == nil {
+			body = b
+			getErr = nil
+			break
+		}
+		getErr = err
 	}
+	if getErr != nil {
+		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, getErr)
+	}
+
 	if body == nil {
 		log.Printf("no ODS config located in repo %s", repository)
 		return nil, nil

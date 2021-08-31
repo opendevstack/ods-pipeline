@@ -41,7 +41,7 @@ Rel(event_listener, bitbucket_interceptor, "Pass on", "event")
 Rel(bitbucket_interceptor, ods_interceptor, "Pass on", "event")
 
 Rel(ods_interceptor, trigger_binding, "Pass on", "event")
-Rel(ods_interceptor, bitbucket_repo, "Download ods.yml")
+Rel(ods_interceptor, bitbucket_repo, "Download ods.y(a)ml")
 Rel(ods_interceptor, pipeline, "Create or update")
 
 Rel(trigger_binding, trigger_template, "Pass on", "event")
