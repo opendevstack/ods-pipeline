@@ -2,23 +2,25 @@
 
 Creating a technology-specific ODS Task consists of a few steps like creating a Dockerfile, OpenShift resources, the Tekton Task itself and more.
 
+Please see link:authoring-tasks.adoc[Authoring tasks] for documentation about the general approach of creating a task. The following goes into details which further actions need to be taken to create a task which is part of the official ODS task library.
+
 == Checklist
 
 To create a technology-specific Task (e.g. python), the following files should be **added**:
 
 - [ ] build/package/Dockerfile.python-toolset - The Dockerfile with the dependencies and runtime.
 - [ ] build/package/scripts/build-python.sh - Bash script to carry out the build, linting, testing operations. 
-- [ ] deploy/central/images/bc-ods-build-python.yml - BuildConfig to generate the ods-build-python image.
-- [ ] deploy/central/images/is-ods-build-python.yml - Create ImageStream resource in OpenShift.
+- [ ] deploy/central/images/bc-ods-build-python.yaml - BuildConfig to generate the ods-build-python image.
+- [ ] deploy/central/images/is-ods-build-python.yaml - Create ImageStream resource in OpenShift.
 - [ ] deploy/central/images/kustomization.yaml - Add `bc-ods-build-python.yaml` and `is-ods-build-python.yaml` to the resources.
 - [ ] deploy/central/tasks/kustomization.yaml - Add `task-ods-build-python.yaml` to the resources.
-- [ ] deploy/central/tasks/task-ods-build-python.yml - The Tekton Task.
+- [ ] deploy/central/tasks/task-ods-build-python.yaml - The Tekton Task.
 - [ ] docs/tasks/task-ods-build-python.adoc - To describe the task and its parameters.
 - [ ] test/tasks/ods-build-python_test.go - A test file to test the behavior of the Tekton Task.
 - [ ] test/testdata/workspaces/python-flask-sample-app - Sample application that will be used to test the Task.
 
 The following files should be **updated**:
 
-- [ ] .github/workflows/main.yml - Build ods python image and push it to the internal registry.
+- [ ] .github/workflows/main.yaml - Build ods python image and push it to the internal registry.
 
 // TODO: Elaborate more on how to test a Task

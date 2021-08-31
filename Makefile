@@ -7,6 +7,16 @@ MAKEFLAGS += --no-builtin-rules
 # Namespace to use (applied for some targets)
 namespace =
 
+## Run gofmt.
+fmt:
+	gofmt -w .
+.PHONY: fmt
+
+## Run golangci-lint.
+lint:
+	golangci-lint run
+.PHONY: lint
+
 ## Check if system meets prerequisites.
 check-system:
 	cd scripts && ./check-system.sh
@@ -36,30 +46,33 @@ endif
 	cd scripts && ./install-cd-namespace-resources.sh -n $(namespace)
 .PHONY: install-cd-namespace
 
-## Apply ODS BuildConfig, ImageStream and ClusterTask manifests (OpenShift only)
+## OpenShift only! Apply ODS BuildConfig, ImageStream and ClusterTask manifests
 install-ods-central:
 ifeq ($(strip $(namespace)),)
 	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
 	@exit 1
 endif
-	cd deploy/central && kubectl -n $(namespace) apply -k openshift
+	cd scripts && ./install-ods-central-resources.sh -n $(namespace)
 .PHONY: install-ods-central
 
-## Start builds for each ODS BuildConfig (OpenShift only)
-start-ods-central-builds: deploy-ods-central
-	oc start-build ods-build-go
-	oc start-build ods-build-java
+## OpenShift only! Start builds for each ODS BuildConfig
+start-ods-central-builds:
 	oc start-build ods-buildah
+	oc start-build ods-finish
+	oc start-build ods-go-toolset
+	oc start-build ods-build-java
 	oc start-build ods-helm
+	oc start-build ods-python-toolset
 	oc start-build ods-sonar
 	oc start-build ods-start
-	oc start-build ods-finish
+	oc start-build ods-typescript-toolset
+	oc start-build ods-webhook-interceptor
 .PHONY: start-ods-central-builds
 
-## Apply ODS ClusterTask manifests in KinD
-deploy-ods-tasks-kind:
-	cd deploy/central && kubectl apply -k kind
-.PHONY: deploy-ods-tasks-kind
+## KinD only! Apply ODS ClusterTask manifests in KinD
+install-ods-tasks-kind:
+	cd scripts && ./install-ods-tasks-kind.sh
+.PHONY: install-ods-tasks-kind
 
 ## Run Bitbucket server (using timebomb license, in "kind" network).
 run-bitbucket:
@@ -100,7 +113,7 @@ docs:
 	go run cmd/docs/main.go
 .PHONY: docs
 
-## Run testsuite.
+## Run complete testsuite.
 test: test-internal test-pkg test-tasks
 .PHONY: test
 

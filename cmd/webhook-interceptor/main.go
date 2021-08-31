@@ -14,17 +14,13 @@ import (
 )
 
 const (
-	namespaceFile     = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	tokenFile         = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-	caCert            = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	pipelineFilename  = "ods.yml"
-	tektonAPIBasePath = "/apis/tekton.dev/v1beta1"
-	letterBytes       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	namespaceSuffix   = "-cd"
-	apiHostEnvVar     = "API_HOST"
-	apiHostDefault    = "openshift.default.svc.cluster.local"
-	repoBaseEnvVar    = "REPO_BASE"
-	tokenEnvVar       = "ACCESS_TOKEN"
+	namespaceFile    = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	namespaceSuffix  = "-cd"
+	apiHostEnvVar    = "API_HOST"
+	apiHostDefault   = "openshift.default.svc.cluster.local"
+	repoBaseEnvVar   = "REPO_BASE"
+	tokenEnvVar      = "ACCESS_TOKEN"
+	taskSuffixEnvVar = "ODS_TASK_SUFFIX"
 )
 
 func init() {
@@ -51,6 +47,15 @@ func serve() error {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
 	}
 
+	taskSuffix := os.Getenv(taskSuffixEnvVar)
+	if len(taskSuffix) == 0 {
+		log.Println(
+			"INFO:",
+			taskSuffixEnvVar,
+			"not set, using no suffix",
+		)
+	}
+
 	apiHost := os.Getenv(apiHostEnvVar)
 	if len(apiHost) == 0 {
 		apiHost = apiHostDefault
@@ -74,7 +79,7 @@ func serve() error {
 		return fmt.Errorf("%w", err)
 	}
 
-	server := interceptor.NewServer(client, namespace, project, repoBase, token)
+	server := interceptor.NewServer(client, namespace, project, repoBase, token, taskSuffix)
 
 	log.Println("Ready to accept requests")
 
@@ -98,12 +103,4 @@ func getFileContent(filename string) (string, error) {
 		return "", err
 	}
 	return string(content), nil
-}
-
-func randStringBytes(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }

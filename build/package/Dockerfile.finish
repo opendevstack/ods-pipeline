@@ -3,19 +3,15 @@ FROM registry.access.redhat.com/ubi8 AS builder
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV GO_VERSION 1.16.3
-
-RUN yum install -y git
-
+RUN yum install -y git && rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 RUN cd /tmp && \
     curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
     rm -f *.tar.gz && \
     cd - && \
     mkdir /go
-
 ENV PATH $PATH:/usr/local/go/bin
 ENV GOBIN /usr/local/bin
-
 RUN chmod g+w /go
 
 # Add Go binaries
@@ -26,6 +22,7 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/finish && CGO_ENABLED=0 go build -o /usr/local/bin/ods-finish
 
-FROM registry.access.redhat.com/ubi8/ubi-micro
+# ubi-micro cannot be used as it misses the ca-certificates package.
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 COPY --from=builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
 WORKDIR /go

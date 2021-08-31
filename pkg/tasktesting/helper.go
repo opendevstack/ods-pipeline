@@ -2,7 +2,6 @@ package tasktesting
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -17,7 +16,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/test/logging"
-	"sigs.k8s.io/yaml"
+)
+
+const (
+	StorageClassName = "standard" // if using KinD, set it to "standard"
+	StorageCapacity  = "1Gi"
+	StorageSourceDir = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
 )
 
 type SetupOpts struct {
@@ -44,7 +48,7 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "pipeline", "values.kind.yaml,values.generated.yaml")
+	installCDNamespaceResources(t, namespace, "pipeline", "./chart/values.kind.yaml,./chart/values.generated.yaml")
 
 	return clients, namespace
 }
@@ -109,68 +113,6 @@ func TearDown(t *testing.T, cs *k.Clients, namespace string) {
 		t.Errorf("Failed to delete persistent volume %s: %s", pvName, err)
 	}
 
-}
-
-func getCRDYaml(cs *k.Clients, ns string) ([]byte, error) {
-	var output []byte
-	printOrAdd := func(kind, name string, i interface{}) {
-		bs, err := yaml.Marshal(i)
-		if err != nil {
-			return
-		}
-		output = append(output, []byte("\n---\n")...)
-		output = append(output, bs...)
-	}
-
-	ps, err := cs.TektonClientSet.TektonV1beta1().Pipelines(ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get pipeline: %w", err)
-	}
-	for _, i := range ps.Items {
-		printOrAdd("Pipeline", i.Name, i)
-	}
-
-	prrs, err := cs.TektonClientSet.TektonV1beta1().PipelineRuns(ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get pipelinerun: %w", err)
-	}
-	for _, i := range prrs.Items {
-		printOrAdd("PipelineRun", i.Name, i)
-	}
-
-	cts, err := cs.TektonClientSet.TektonV1beta1().ClusterTasks().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get cluster tasks: %w", err)
-	}
-	for _, i := range cts.Items {
-		printOrAdd("Task", i.Name, i)
-	}
-
-	ts, err := cs.TektonClientSet.TektonV1beta1().Tasks(ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get tasks: %w", err)
-	}
-	for _, i := range ts.Items {
-		printOrAdd("Task", i.Name, i)
-	}
-
-	trs, err := cs.TektonClientSet.TektonV1beta1().TaskRuns(ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get taskrun: %w", err)
-	}
-	for _, i := range trs.Items {
-		printOrAdd("TaskRun", i.Name, i)
-	}
-
-	pods, err := cs.KubernetesClientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("could not get pods: %w", err)
-	}
-	for _, i := range pods.Items {
-		printOrAdd("Pod", i.Name, i)
-	}
-
-	return output, nil
 }
 
 func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {

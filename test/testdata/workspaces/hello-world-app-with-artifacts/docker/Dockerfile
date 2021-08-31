@@ -1,4 +1,4 @@
-FROM alpine
+FROM busybox
 
 COPY message.txt message.txt
 

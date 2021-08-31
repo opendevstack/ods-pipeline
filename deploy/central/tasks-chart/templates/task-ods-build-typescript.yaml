@@ -1,0 +1,94 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-build-typescript{{ .Values.taskSuffix }}
+spec:
+  description: ODS Build Typescript applications
+  params:
+    - name: working-dir
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
+      type: string
+      default: "."
+    - name: output-dir
+      description: >-
+        Path to the directory into which outputs should be placed, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
+      type: string
+      default: docker
+    - name: sonar-quality-gate
+      description: Whether quality gate needs to pass.
+      type: string
+      default: "false"
+    - name: sonar-skip
+      description: Whether to skip the SonarQube analysis or not.
+      type: string
+      default: "false"
+  steps:
+    - name: build-typescript
+      # Image is built from build/package/Dockerfile.typescript-toolset.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-typescript-toolset:{{ .Values.imageTag }}'
+      env:
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+
+        # build-typescript is build/package/scripts/build-typescript.sh.
+        build-typescript \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG}
+      workingDir: $(workspaces.source.path)
+    - name: scan-with-sonar
+      # Image is built from build/package/Dockerfile.sonar.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-sonar:{{ .Values.imageTag }}'
+      env:
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          mkdir -p .ods/artifacts/sonarqube-analysis
+          # sonar is built from cmd/sonar/main.go.
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate)
+        fi
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

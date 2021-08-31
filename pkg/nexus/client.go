@@ -3,103 +3,87 @@ package nexus
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
+	"time"
 
+	"github.com/opendevstack/pipeline/pkg/logging"
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
+// Client represents a Nexus client, wrapping github.com/sonatype-nexus-community/gonexus/rm.RM
 type Client struct {
-	RM         nexusrm.RM
-	Username   string
-	Password   string
-	Repository string
+	rm           nexusrm.RM
+	httpClient   *http.Client
+	clientConfig *ClientConfig
 }
 
-// NewClient initializes client
-func NewClient(URL, user, password, repository string) (*Client, error) {
+// ClientConfig configures a Nexus client.
+type ClientConfig struct {
+	// Nexus username.
+	Username string
+	// Password of Nexus user.
+	Password string
+	// URL of Nexus instance.
+	BaseURL string
+	// Nexus repository name.
+	Repository string
+	// Logger is the logger to send logging messages to.
+	Logger logging.LeveledLoggerInterface
+	// Timeout of HTTP client used to download assets.
+	Timeout time.Duration
+	// HTTP client used to download assets.
+	HTTPClient *http.Client
+}
+
+// NewClient initializes a Nexus client.
+func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	rm, err := nexusrm.New(
-		URL,
-		user,
-		password,
+		clientConfig.BaseURL,
+		clientConfig.Username,
+		clientConfig.Password,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not create nexus client: %w", err)
 	}
+	httpClient := clientConfig.HTTPClient
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
+	if clientConfig.Timeout > 0 {
+		httpClient.Timeout = clientConfig.Timeout
+	} else {
+		httpClient.Timeout = 20 * time.Second
+	}
+	// Be careful not to pass a variable of type *logging.LeveledLogger
+	// holding a nil value. If you pass nil for Logger, make sure it is of
+	// logging.LeveledLoggerInterface type.
+	if clientConfig.Logger == nil {
+		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
+	}
 
-	return &Client{RM: rm, Username: user, Password: password, Repository: repository}, nil
+	return &Client{rm: rm, clientConfig: clientConfig, httpClient: httpClient}, nil
 }
 
-// URLs gets URLs
-func (c *Client) URLs(group string) ([]string, error) {
-	query := nexusrm.NewSearchQueryBuilder().Repository(c.Repository).Group(group)
-	assets, err := nexusrm.SearchAssets(c.RM, query)
-	if err != nil {
-		return nil, fmt.Errorf("could not search assets: %w", err)
-	}
-
-	res := []string{}
-	for _, a := range assets {
-		res = append(res, a.DownloadURL)
-	}
-	return res, nil
+// URL returns the Nexus instance URL targeted by this client.
+func (c *Client) URL() string {
+	return c.clientConfig.BaseURL
 }
 
-// Upload a file to a repository group
-func (c *Client) Upload(group, file string) error {
-
-	filename := filepath.Base(file)
-
-	link := fmt.Sprintf("%s/repository/%s%s/%s", c.RM.Info().Host, c.Repository, group, filename)
-	fmt.Println("Uploading", file, "to", link)
-
-	osFile, err := os.Open(file)
-	if err != nil {
-		return fmt.Errorf("could not open file %s: %w", file, err)
-	}
-
-	uploadAssetRaw := nexusrm.UploadAssetRaw{
-		File:     osFile,
-		Filename: filename,
-	}
-	uploadComponentRaw := nexusrm.UploadComponentRaw{
-		Directory: group,
-		Tag:       "",
-		Assets:    []nexusrm.UploadAssetRaw{uploadAssetRaw},
-	}
-	err = nexusrm.UploadComponent(c.RM, c.Repository, uploadComponentRaw)
-	if err != nil {
-		return fmt.Errorf("could not upload component: %w", err)
-	}
-	return nil
+// Repository returns the Nexus repository targeted by this client.
+func (c *Client) Repository() string {
+	return c.clientConfig.Repository
 }
 
-func (c *Client) Download(url string) (int64, error) {
-	outfile := path.Base(url)
-	out, err := os.Create(outfile)
-	if err != nil {
-		return 0, err
-	}
-	defer out.Close()
-
-	// TODO: timeout
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Basic "+basicAuth(c.Username, c.Password))
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	return io.Copy(out, resp.Body)
+// Username returns the username used by this client.
+func (c *Client) Username() string {
+	return c.clientConfig.Username
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
+func (c *Client) logger() logging.LeveledLoggerInterface {
+	return c.clientConfig.Logger
+}
+
+func (c *Client) basicAuth() string {
+	auth := c.clientConfig.Username + ":" + c.clientConfig.Password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }

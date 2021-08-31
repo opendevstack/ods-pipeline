@@ -1,3 +1,0 @@
-- op: replace
-  path: /spec/steps/0/image
-  value: localhost:5000/ods/ods-finish

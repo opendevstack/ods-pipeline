@@ -7,10 +7,25 @@
 [cols="1,1,2"]
 |===
 | Parameter | Default | Description
-{{ range .Params }}
+{{- range .Params }}
 
 | {{ .Name }}
 | {{ .Default }}
 | {{ .Description }}
-{{end}}
+{{ end }}
 |===
+
+== Results
+{{ if .Results }}
+[cols="1,3"]
+|===
+| Name | Description
+{{- range .Results }}
+
+| {{ .Name }}
+| {{ .Description }}
+{{ end }}
+|===
+{{- else }}
+N/A
+{{- end }}

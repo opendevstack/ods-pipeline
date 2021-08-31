@@ -1,0 +1,32 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ods-sonar
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'ods-sonar:{{ .Values.imageTag }}'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: build/package/Dockerfile.sonar
+      from:
+        kind: DockerImage
+        name: 'registry.redhat.io/ubi8/ubi-minimal'
+      buildArgs:
+        - name: sonarEdition
+          value: '{{ .Values.sonarEdition }}'
+      pullSecret:
+        name: registry.redhat.io
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: '{{ .Values.odsPipelineGitRepoUri }}'
+      ref: '{{ .Values.odsPipelineGitRepoRef }}'
+  runPolicy: Serial

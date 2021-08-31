@@ -14,17 +14,10 @@ import (
 )
 
 const (
-	namespaceFile     = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	tokenFile         = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	caCert            = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	pipelineFilename  = "ods.yml"
 	tektonAPIBasePath = "/apis/tekton.dev/v1beta1"
 	letterBytes       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	namespaceSuffix   = "-cd"
-	apiHostEnvVar     = "API_HOST"
-	apiHostDefault    = "openshift.default.svc.cluster.local"
-	repoBaseEnvVar    = "REPO_BASE"
-	tokenEnvVar       = "ACCESS_TOKEN"
 )
 
 // Client makes requests, e.g. to create and delete pipelines, or to forward

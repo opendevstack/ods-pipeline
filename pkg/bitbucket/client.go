@@ -38,7 +38,7 @@ func NewClient(clientConfig *ClientConfig) *Client {
 		httpClient.Timeout = 20 * time.Second
 	}
 	if clientConfig.Logger == nil {
-		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
+		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 	return &Client{
 		httpClient:   httpClient,

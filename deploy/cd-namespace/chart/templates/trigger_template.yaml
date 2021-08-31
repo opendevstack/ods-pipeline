@@ -1,0 +1,23 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: {{ include "chart.fullname" . }}
+spec:
+  params:
+    - description: The PVC backing up the pipeline
+      name: pipeline-pvc
+    - description: Name of the pipeline as determined by the interceptor
+      name: pipeline-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: $(tt.params.pipeline-name)-
+      spec:
+        pipelineRef:
+          name: $(tt.params.pipeline-name)
+        serviceAccountName: pipeline
+        workspaces:
+          - name: shared-workspace
+            persistentVolumeClaim:
+              claimName: $(tt.params.pipeline-pvc)

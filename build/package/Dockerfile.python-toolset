@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
     HOME=/app \
     PATH="/opt/venv/bin:$PATH"
 
-RUN microdnf install -y python38 tar
+RUN microdnf install -y make python38 tar
 
 RUN pip3 config set global.cert /etc/ssl/certs/ca-bundle.crt
 

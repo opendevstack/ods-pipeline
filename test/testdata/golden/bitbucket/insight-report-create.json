@@ -1,0 +1,44 @@
+{
+    "data": [
+        {
+            "title": "Some title",
+            "value": "Some value",
+            "type": "TEXT"
+        },
+        {
+            "title": "Build length",
+            "value": 60000,
+            "type": "DURATION"
+        },
+        {
+            "title": "Download link",
+            "value": {
+                "href": "https://link.to.download/file.zip",
+                "linktext": "installer.zip"
+            },
+            "type": "LINK"
+        },
+        {
+            "title": "Build started date",
+            "value": 1539656375,
+            "type": "DATE"
+        },
+        {
+            "title": "Code coverage",
+            "value": 85,
+            "type": "PERCENTAGE"
+        },
+        {
+            "title": "Some count",
+            "value": 5,
+            "type": "NUMBER"
+        }
+    ],
+    "details": "This is the details of the report, it can be a longer string describing the report",
+    "title": "report.title",
+    "reporter": "Reporter/tool that produced this report",
+    "createdDate": 1621231657051,
+    "link": "http://insight.host.com",
+    "logoUrl": "http://insight.host.com/logo",
+    "result": "PASS"
+}

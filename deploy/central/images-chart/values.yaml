@@ -1,0 +1,9 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imageTag: 0.1.0
+odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
+odsPipelineGitRepoRef: master
+aquasecScannerUrl: ''
+sonarEdition: 'community'

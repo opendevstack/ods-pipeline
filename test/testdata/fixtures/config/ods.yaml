@@ -1,0 +1,3 @@
+environments:
+- name: foo
+  stage: prod

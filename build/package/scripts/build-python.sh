@@ -13,43 +13,72 @@ urlencode() {
     done
 }
 
+OUTPUT_DIR="docker"
+MAX_LINE_LENGTH="120"
+WORKING_DIR="."
+ARTIFACT_PREFIX=""
+DEBUG="false"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+
+    --working-dir) WORKING_DIR="$2"; shift;;
+    --working-dir=*) WORKING_DIR="${1#*=}";;
+
+    --max-line-length) MAX_LINE_LENGTH="$2"; shift;;
+    --max-line-length=*) MAX_LINE_LENGTH="${1#*=}";;
+
+    --output-dir) OUTPUT_DIR="$2"; shift;;
+    --output-dir=*) OUTPUT_DIR="${1#*=}";;
+
+    --debug) DEBUG="$2"; shift;;
+    --debug=*) DEBUG="${1#*=}";;
+
+  *) echo "Unknown parameter passed: $1"; exit 1;;
+esac; shift; done
+
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+fi
+
+ROOT_DIR=$(pwd)
+if [ "${WORKING_DIR}" != "." ]; then
+  cd "${WORKING_DIR}"
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
+fi
+
+echo "Configuring pip to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
-
 if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
-    
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
-    
-    pip3 config set global.index-url https://${NEXUS_AUTH}@${NEXUS_HOST}/repository/pypi-all/simple
+    NEXUS_URL_WITH_AUTH="$(echo "${NEXUS_URL}" | sed -E 's/:\/\//:\/\/'${NEXUS_AUTH}@'/g')"
+    pip3 config set global.index-url ${NEXUS_URL_WITH_AUTH}/repository/pypi-all/simple
     pip3 config set global.trusted-host ${NEXUS_HOST}
     pip3 config set global.extra-index-url https://pypi.org/simple
 fi;
 
-printf "\nInstall test requirements\n" 
+echo "Installing test requirements ..."
 . /opt/venv/bin/activate
 pip install --upgrade pip
 pip install -r tests_requirements.txt
 pip check
 
-printf "\nExecute linting\n"
+echo "Linting ..."
 mypy src
-flake8 --max-line-length=120 src
+flake8 --max-line-length="${MAX_LINE_LENGTH}" src
 
-printf "\nExecute testing\n"
-mkdir -p build/test-results/test
-mkdir -p build/test-results/coverage
-PYTHONPATH=src python -m pytest --junitxml=build/test-results/test/report.xml -o junit_family=xunit2 --cov-report term-missing --cov-report xml:build/test-results/coverage/coverage.xml --cov=src -o testpaths=tests
+echo "Testing ..."
+rm report.xml coverage.xml &>/dev/null || true
+PYTHONPATH=src python -m pytest --junitxml=report.xml -o junit_family=xunit2 --cov-report term-missing --cov-report xml:coverage.xml --cov=src -o testpaths=tests
 
-# xunit test report
-mkdir -p .ods/artifacts/xunit-reports
-cat build/test-results/test/report.xml
-cp build/test-results/test/report.xml .ods/artifacts/xunit-reports/report.xml
+mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+cat report.xml
+cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+cat coverage.xml
+cp coverage.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
 
-# code coverage
-mkdir -p .ods/artifacts/code-coverage
-cat build/test-results/coverage/coverage.xml
-cp build/test-results/coverage/coverage.xml .ods/artifacts/code-coverage/coverage.xml
-
-printf "\nCopy src and requirements.txt to docker/app\n"
-cp -rv src docker/app
-cp -rv requirements.txt docker/app
+echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
+cp -rv src "${OUTPUT_DIR}/app"
+cp -rv requirements.txt "${OUTPUT_DIR}/app"

@@ -1,0 +1,52 @@
+# User Installation Guide
+
+This guide will show how to install `ods-pipeline` in an existing ODS project. It is possible to use the new Tekton pipelines approach and the classic Jenkins approach side by side.
+
+Note that at the moment, `ods-pipeline` is somewhat compatible with an existing ODS 3.x/4.x installation, but it is not integrated (yet). If `ods-pipeline` gets integrated into OpenDevStack in the future, then the installation guide as presented below may not be needed anymore as the setup process might be automated then. However, the executed steps will likely be similar.
+
+The guide will install the following required resources:
+
+* `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
+* Tekton Triggers related resources (e.g. `EventListener`, `TriggerTemplate`, etc.) including the ODS webhook interceptor, all of which allow to trigger pipelines in response to Bitbucket webhook requests
+
+## Prerequisites
+
+You'll need:
+
+* A namespace in an OpenShift cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`)
+* `git`, `oc` and `helm` installed locally
+* to be logged into OpenShift on the command line
+
+## Instructions
+
+1. Create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name.
+2. Clone the repository locally and make an initial commit.
+3. Use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `cd-namespace`.
+
+```
+pipelineGitRef=master
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
+git checkout ods-pipeline-$pipelineGitRef
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
+git checkout -
+git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
+```
+
+4. Change to the new folder `ods-pipeline`.
+5. Add a `values.foo-cd.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`.
+6. Run `./install.sh -n foo-cd -f values.foo-cd.yaml`. You may also use `--dry-run` to see the changes first.
+7. Run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL.
+
+Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories. See link:ods-configuration.adoc[ODS configuration] for more information on usage.
+
+## Updating
+
+You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
+```
+pipelineGitRef=master
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
+git checkout ods-pipeline-$pipelineGitRef
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
+git checkout -
+git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
+```

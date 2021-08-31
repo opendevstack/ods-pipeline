@@ -1,35 +1,66 @@
 package config
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"sigs.k8s.io/yaml"
 )
 
+type Stage string
+
+const (
+	Dev           Stage  = "dev"
+	QA                   = "qa"
+	Prod                 = "prod"
+	DefaultBranch string = "refs/heads/master"
+	ODSYMLFile    string = "ods.yml"
+	ODSYAMLFile   string = "ods.yaml"
+)
+
+var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
+
 type ODS struct {
-	Repositories []Repository `json:"repositories"`
-	Environments Environments `json:"environments"`
-
-	Phases Phases `json:"phases"`
+	Repositories               []Repository                 `json:"repositories"`
+	Environments               []Environment                `json:"environments"`
+	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping"`
+	Pipeline                   Pipeline                     `json:"pipeline"`
 }
 
+// Repository represents a Git repository.
 type Repository struct {
+	// Name of the Git repository (without host/organisation and trailing .git)
+	// Example: "foobar"
 	Name string `json:"name"`
-	URL  string `json:"url"`
+	// URL of Git repository (optional). If not given, the repository given by
+	// Name is assumed to be under the same organisation than the repository
+	// hosting the ods.y(a)ml file.
+	// Example: "https://acme.org/foo/bar.git"
+	URL string `json:"url"`
+	// Branch of Git repository (optional). If none is given, this defaults to
+	// the "master" branch.
+	// Example: "develop"
+	Branch string `json:"branch"`
 }
 
-type Environments struct {
-	DEV  Environment `json:"dev"`
-	QA   Environment `json:"qa"`
-	PROD Environment `json:"prod"`
+type BranchToEnvironmentMapping struct {
+	// Name of Git branch. May also be a prefix like "release/*"
+	Branch string `json:"branch"`
+	// Environment of the environment.
+	Environment string `json:"environment"`
 }
+
 type Environment struct {
-	Targets []Target `json:"targets"`
-}
-
-type Target struct {
 	// Name of the environment to deploy to. This is an arbitary name.
 	Name string `json:"name"`
 	// Kind of the environment to deploy to. One of "dev", "qa", "prod".
-	Kind string `json:"kind"`
+	Stage Stage `json:"stage"`
 	// API URL of the target cluster.
 	URL string `json:"url"`
 	// Hostname of the target registry. If not given, the registy of the source
@@ -46,11 +77,66 @@ type Target struct {
 	Config map[string]interface{} `json:"config"`
 }
 
-type Phases struct {
-	Init     []tekton.PipelineTask `json:"init"`
-	Build    []tekton.PipelineTask `json:"build"`
-	Deploy   []tekton.PipelineTask `json:"deploy"`
-	Test     []tekton.PipelineTask `json:"test"`
-	Release  []tekton.PipelineTask `json:"release"`
-	Finalize []tekton.PipelineTask `json:"finalize"`
+func (o *ODS) Validate() error {
+	for _, e := range o.Environments {
+		if err := e.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e Environment) Validate() error {
+	if len(e.Name) == 0 {
+		return errors.New("name of environment must not be blank")
+	}
+	switch e.Stage {
+	case Dev, QA, Prod:
+		return nil
+	default:
+		return fmt.Errorf("invalid stage value '%s' for environment %s", e.Stage, e.Name)
+	}
+}
+
+// Pipeline represents a Tekton pipeline.
+type Pipeline struct {
+	Tasks   []tekton.PipelineTask `json:"tasks"`
+	Finally []tekton.PipelineTask `json:"finally"`
+}
+
+// Read reads an ods config from given byte slice or errors.
+func Read(body []byte) (*ODS, error) {
+	var odsConfig *ODS
+	err := yaml.UnmarshalStrict(body, &odsConfig, func(dec *json.Decoder) *json.Decoder {
+		dec.DisallowUnknownFields()
+		return dec
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal config: %w", err)
+	}
+
+	if err = odsConfig.Validate(); err != nil {
+		return nil, err
+	}
+	return odsConfig, nil
+}
+
+// ReadFromFile reads an ods config from given filename or errors.
+func ReadFromFile(filename string) (*ODS, error) {
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file %s: %w", filename, err)
+	}
+	return Read(body)
+}
+
+// ReadFromDir reads an ods config file from given dir or errors.
+func ReadFromDir(dir string) (*ODS, error) {
+	for _, c := range ODSFileCandidates {
+		candidate := filepath.Join(dir, c)
+		if _, err := os.Stat(candidate); err == nil {
+			return ReadFromFile(candidate)
+		}
+	}
+	return nil, fmt.Errorf("no matching file in '%s', looked for: %s", dir, strings.Join(ODSFileCandidates, ", "))
 }

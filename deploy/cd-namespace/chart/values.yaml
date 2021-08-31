@@ -3,44 +3,90 @@
 # Declare variables to be passed into your templates.
 
 # General
+# Serviceaccount name to use for pipeline resources.
 serviceAccountName: 'pipeline'
+# Whether to enable debug mode
+debug: 'false'
 
 # Bitbucket
+# Bitbucket URL (including scheme). Example: https://bitbucket.example.com.
 bitbucketUrl: ''
+# Bitbucket username. Example: cd_user.
 bitbucketUsername: ''
+# Bitbucket personal access token (PAT) in clear text. This token needs to be
+# created in Bitbucket for the user identified by "bitbucketUsername".
+# The user requires write permissions in order to set build status or add code
+# insights on commits.
 bitbucketAccessToken: ''
+# Shared secret between webhooks in Bitbucket and the event listener. Create
+# a random secret and enter it here, then use it later on as the secret in any
+# webhook you setup. The value needs to be in clear text.
 bitbucketWebhookSecret: ''
 
 # Nexus
+# Nexus URL (including scheme). Example: https://nexus.example.com.
 nexusUrl: ''
+# Nexus username. Example: developer.
 nexusUsername: ''
+# Nexus password for the user identified by "nexusUsername" in clear text.
 nexusPassword: ''
+nexusTemporaryRepository: 'ods-temporary-artifacts'
+nexusPermanentRepository: 'ods-permanent-artifacts'
 
 # Sonar
+# SonarQube URL (including scheme). Example: https://sonarqube.example.com.
 sonarUrl: ''
+# SonarQube username. Example: developer.
 sonarUsername: ''
+# SonarQube password for the user identified by "sonarUsername" in clear text.
 sonarAuthToken: ''
 
+# Aqua
+# Aqua URL (including scheme). Example: https://aqua.example.com.
+# Leave empty when not using Aqua.
+aquaUrl: ''
+# Aqua registry name.
+# Leave empty when not using Aqua.
+aquaRegistry: ''
+# Aqua username. Example: developer.
+# Leave empty when not using Aqua.
+aquaUsername: ''
+# Aqua password for the user identified by "aquaUsername" in clear text.
+# Leave empty when not using Aqua.
+aquaPassword: ''
+
 # PVC
+# Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
 storageProvisioner: 'kubernetes.io/aws-ebs'
+# Storage class. On AWS backed clusters, use 'gp2'.
 storageClassName: 'gp2'
 
 # Cluster
+# URL (including scheme) of the OpenShift Web Console.
 consoleUrl: 'http://example.com'
 
 # Webhook Interceptor
 interceptor:
+  # API host (no scheme) of the OpenShift/K8s API.
   apiHost: 'openshift.default.svc.cluster.local'
+  # Number of replicas to run for the interceptor.
   replicaCount: 1
   image:
+    # Image registry from which to pull the webhook interceptor container image.
     registry: image-registry.openshift-image-registry.svc:5000
-    # Overrides the image namespace whose default is the release namespace.
+    # Namespace from which to pull the webhook interceptor container image.
+    # If not given, the image is pulled from the release namespace.
     namespace: ods
-    # Overrides the image repository whose default is the chart name.
+    # Repository (ImageStream) from which to pull the webhook interceptor
+    # container image.
+    # If not given, the image name equals the chart name.
     repository: ods-webhook-interceptor
+    # Pull policy.
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.
+    # Image tag to pull.
+    # If not given, defaults to the chart appVersion.
     # tag: "0.1.0"
+  # Deployment pod resources. Typically these settings should not need to change.
   resources:
     limits:
       cpu: 100m

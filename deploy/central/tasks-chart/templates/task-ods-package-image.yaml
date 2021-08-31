@@ -1,0 +1,116 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-package-image{{ .Values.taskSuffix }}
+spec:
+  description: |
+    Packages applications into container images using buildah.
+
+    buildah builds a container image from the `docker-dir` directory using the
+    provided `dockerfile`.
+
+    By default, the image is named after the component and pushed into the image
+    stream located in the namespace of the pipeline run.
+  params:
+    - name: registry
+      description: Image registry to push image to.
+      type: string
+      default: '{{ .Values.pushRegistry }}'
+    - name: image-stream
+      description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
+      type: string
+      default: ''
+    - name: storage-driver
+      description: Set buildah storage driver.
+      type: string
+      default: vfs
+    - name: dockerfile
+      description: Path to the Dockerfile to build (relative to `docker-dir`).
+      type: string
+      default: ./Dockerfile
+    - name: docker-dir
+      description: Path to the directory to use as Docker context.
+      type: string
+      default: docker
+    - name: format
+      description: 'The format of the built container, `oci` or `docker`.'
+      type: string
+      default: oci
+    - name: buildah-build-extra-args
+      description: Extra parameters passed for the build command when building images.
+      type: string
+      default: ''
+    - name: buildah-push-extra-args
+      description: Extra parameters passed for the push command when pushing images.
+      type: string
+      default: ''
+    - name: aqua-gate
+      description: Whether the Aqua security scan needs to pass for the task to succeed.
+      type: string
+      default: "false"
+  results:
+    - description: Digest of the image just built.
+      name: image-digest
+  steps:
+    - name: build-and-push-image
+      # Image is built from build/package/Dockerfile.buildah.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-buildah:{{ .Values.imageTag }}'
+      env:
+        - name: BITBUCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-bitbucket
+        - name: BITBUCKET_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-bitbucket-auth
+        - name: AQUA_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-aqua
+        - name: AQUA_REGISTRY
+          valueFrom:
+            configMapKeyRef:
+              key: registry
+              name: ods-aqua
+        - name: AQUA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-aqua-auth
+        - name: AQUA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-aqua-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+
+        #  ods-build-push-image is built from cmd/build-push-image/main.go.
+        ods-build-push-image \
+          -image-stream=$(params.image-stream) \
+          -registry=$(params.registry) \
+          -storage-driver=$(params.storage-driver) \
+          -format=$(params.format) \
+          -dockerfile=$(params.dockerfile) \
+          -context-dir=$(params.docker-dir) \
+          -buildah-build-extra-args=$(params.buildah-build-extra-args) \
+          -buildah-push-extra-args=$(params.buildah-push-extra-args) \
+          -aqua-gate=$(params.aqua-gate)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+  workspaces:
+    - name: source

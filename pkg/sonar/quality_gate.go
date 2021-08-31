@@ -5,6 +5,13 @@ import (
 	"fmt"
 )
 
+const (
+	QualityGateStatusOk    = "OK"
+	QualityGateStatusWarn  = "WARN"
+	QualityGateStatusError = "ERROR"
+	QualityGateStatusNone  = "NONE"
+)
+
 type QualityGate struct {
 	ProjectStatus QualityGateProjectStatus `json:"projectStatus"`
 }
@@ -22,7 +29,7 @@ func (c *Client) QualityGateGet(p QualityGateGetParams) (*QualityGate, error) {
 	urlPath := fmt.Sprintf("/api/qualitygates/project_status?projectKey=%s", p.Project)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return &QualityGate{ProjectStatus: QualityGateProjectStatus{Status: "UNKNOWN"}}, nil
+		return &QualityGate{ProjectStatus: QualityGateProjectStatus{Status: QualityGateStatusNone}}, nil
 	}
 	if statusCode != 200 {
 		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))

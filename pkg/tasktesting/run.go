@@ -2,7 +2,6 @@ package tasktesting
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,10 +13,6 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
-)
-
-const (
-	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 type TestOpts struct {
@@ -38,12 +33,11 @@ type TestCase struct {
 }
 
 type TaskRunContext struct {
-	Namespace     string
-	Clients       *kubernetes.Clients
-	Workspaces    map[string]string
-	Params        map[string]string
-	ODS           *pipelinectxt.ODSContext
-	CollectedLogs []byte
+	Namespace  string
+	Clients    *kubernetes.Clients
+	Workspaces map[string]string
+	Params     map[string]string
+	ODS        *pipelinectxt.ODSContext
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -85,11 +79,10 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	taskRun, collectedLogs, err := WatchTaskRunUntilDone(t, testOpts, tr)
+	taskRun, err := WatchTaskRunUntilDone(t, testOpts, tr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	testCaseContext.CollectedLogs = collectedLogs
 
 	// Show info from Task result
 	CollectTaskResultInfo(taskRun, t.Logf)
@@ -117,23 +110,17 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", testdataWorkspacePath, workspaceDir,
+		projectpath.Root, "test", TestdataWorkspacesPath, workspaceDir,
 	)
-
 	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-
-	tempDir, err := ioutil.TempDir(workspaceParentDirectory, "workspace-")
-	if err != nil {
-		return "", err
-	}
-
-	directory.Copy(workspaceSourceDirectory, tempDir)
-
-	return tempDir, nil
+	return directory.CopyToTempDir(
+		workspaceSourceDirectory,
+		workspaceParentDirectory,
+		"workspace-",
+	)
 }
 
-func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, []byte, error) {
-	collectedLogs := []byte{}
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, error) {
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
@@ -157,13 +144,12 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		podAdded,
 	)
 
-	podLogs := make(chan []byte)
 	for {
 		select {
 		case err := <-errs:
 			if err != nil {
 				cancel()
-				return nil, collectedLogs, err
+				return nil, err
 			}
 
 		case pod := <-podAdded:
@@ -173,16 +159,12 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					errs,
-					podLogs,
 				)
 			}
 
-		case l := <-podLogs:
-			collectedLogs = append(collectedLogs, l...)
-
 		case tr := <-taskRunDone:
 			cancel()
-			return tr, collectedLogs, nil
+			return tr, nil
 		}
 	}
 }

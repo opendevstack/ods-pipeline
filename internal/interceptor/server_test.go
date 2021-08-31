@@ -3,18 +3,16 @@ package interceptor
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"path"
-	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/testfile"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"sigs.k8s.io/yaml"
 )
 
 func TestRenderPipeline(t *testing.T) {
-	wantPipeline := ReadGoldenFile(t, "pipeline.yml")
+	wantPipeline := testfile.ReadGolden(t, "interceptor/pipeline.yaml")
 	data := PipelineData{
 		Name:            "bar-main",
 		Project:         "foo",
@@ -33,29 +31,29 @@ func TestRenderPipeline(t *testing.T) {
 		PullRequestBase: "",
 	}
 
-	// read ods.yml
-	conf := ReadFixtureFile(t, "ods.yml")
-	var odsConfig config.ODS
+	// read ods.yaml
+	conf := testfile.ReadFixture(t, "interceptor/ods.yaml")
+	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	phases := odsConfig.Phases
-	phasesList := []config.Phases{phases}
-	gotPipeline, err := renderPipeline(phasesList, data)
+	gotPipeline, err := renderPipeline(odsConfig, data, "-v0-1-0")
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
-		t.Errorf("renderPipeline() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
 	}
 }
 
 func TestExtensions(t *testing.T) {
-	bodyFixture := ReadFixtureFile(t, "payload.json")
-	wantBody := ReadGoldenFile(t, "payload.json")
+	bodyFixture := testfile.ReadFixture(t, "interceptor/payload.json")
+	wantBody := testfile.ReadGolden(t, "interceptor/payload.json")
 	data := PipelineData{
 		Name:            "bar-main",
 		Namespace:       "foo-cd",
 		Project:         "foo",
 		Repository:      "foo-bar",
 		Component:       "bar",
+		Environment:     "",
+		Version:         "",
 		GitRef:          "main",
 		GitFullRef:      "refs/heads/main",
 		GitSHA:          "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
@@ -77,7 +75,7 @@ func TestExtensions(t *testing.T) {
 	err = json.Unmarshal(gotBody, &gotPayload)
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPayload, gotPayload); diff != "" {
-		t.Errorf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
+		t.Fatalf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -102,35 +100,65 @@ func TestIsCiSkipInCommitMessage(t *testing.T) {
 	}
 }
 
+func TestSelectEnvironmentFromMapping(t *testing.T) {
+	tests := []struct {
+		mapping []config.BranchToEnvironmentMapping
+		branch  string
+		want    string
+	}{
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+		}, "developer", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "develop",
+				Environment: "dev",
+			},
+			{
+				Branch:      "develop",
+				Environment: "foo",
+			},
+		}, "develop", "dev"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release/1.0", "qa"},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "release/*",
+				Environment: "qa",
+			},
+		}, "release", ""},
+		{[]config.BranchToEnvironmentMapping{
+			{
+				Branch:      "*",
+				Environment: "dev",
+			},
+		}, "foo", "dev"},
+	}
+	for i, tc := range tests {
+		t.Run(fmt.Sprintf("mapping #%d", i), func(t *testing.T) {
+			got := selectEnvironmentFromMapping(tc.mapping, tc.branch)
+			if tc.want != got {
+				t.Fatalf("Got %v, want %v for branch '%s'", got, tc.want, tc.branch)
+			}
+		})
+	}
+}
+
 func fatalIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-// ReadFixtureFile returns the contents of the fixture file or fails.
-func ReadFixtureFile(t *testing.T, filename string) []byte {
-	return readFileOrFatal(t, "../../test/testdata/fixtures/interceptor/"+filename)
-}
-
-// ReadGoldenFile returns the contents of the golden file or fails.
-func ReadGoldenFile(t *testing.T, filename string) []byte {
-	return readFileOrFatal(t, "../../test/testdata/golden/interceptor/"+filename)
-}
-
-func readFileOrFatal(t *testing.T, name string) []byte {
-	b, err := readFile(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return b
-}
-
-func readFile(name string) ([]byte, error) {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		return []byte{}, fmt.Errorf("Could not get filename when looking for %s", name)
-	}
-	filepath := path.Join(path.Dir(filename), name)
-	return ioutil.ReadFile(filepath)
 }
