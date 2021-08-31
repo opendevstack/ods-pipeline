@@ -27,7 +27,7 @@ git checkout -
 git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
-Once this is done, change to the new folder `ods-pipeline`. In there, add a `values.foo-cd.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`. The secrets should be stored in a separate file, e.g. `secrets.foo-cd.yaml`. For this, you'll need a GPG keypair, which fingerprint needs to be recorded in `.sops.yaml`, e.g.:
+Once this is done, change to the new folder `ods-pipeline`. In there, add a `values.images.ods.yaml` file based on `images-chart/values.yaml` and a `values.tasks.ods.yaml` file based on `tasks-chart/values.yaml`. The secrets should be stored in a separate file, e.g. `secrets.images.ods.yaml`. For this, you'll need a GPG keypair, which fingerprint needs to be recorded in `.sops.yaml`, e.g.:
 
 ```
 creation_rules:
@@ -36,9 +36,9 @@ creation_rules:
 
 If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
 
-Then you can install the `images` chart via `./install.sh -n ods --chart=images --values=values.ods.yaml,secrets.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
+Then you can install the `images` chart via `./install.sh -n ods --chart=images --values=values.images.ods.yaml,secrets.images.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
 
-In the same way, you can install the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.ods.yaml,secrets.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
+In the same way, you can install the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
 
 Finally, start a build for each created `BuildConfig`.
 

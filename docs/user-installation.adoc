@@ -21,7 +21,7 @@ You'll need:
 
 First, create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
 
-Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `cd-namespace`.
+Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `ods-pipeline`.
 
 ```
 pipelineGitRef=master
@@ -33,6 +33,7 @@ git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
 Once this is done, change to the new folder `ods-pipeline`. In there, add a `values.foo-cd.yaml` file and fill in the variables. The values expected for those variables are explained in `chart/values.yaml`. The secrets should be stored in a separate file, e.g. `secrets.foo-cd.yaml`. For this, you'll need a GPG keypair, which fingerprint needs to be recorded in `.sops.yaml`, e.g.:
+
 ```
 creation_rules:
   - pgp: "A2F9 D4AF 800A 5499 3667 5C66 B92D F67B 0EF2 B057"
