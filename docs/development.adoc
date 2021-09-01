@@ -23,6 +23,7 @@ make help
 == Testing
 
 As mentioned above, `make test` will run all tests. You may also run only a subset of tests:
+
 * `make test-pkg` for the packages under `pkg`
 * `make test-internal` for the packages under `internal`
 * `make test-tasks` for the Tekton tasks
