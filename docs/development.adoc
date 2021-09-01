@@ -19,3 +19,17 @@ More fine-grained make targets are available, see:
 ```
 make help
 ```
+
+== Testing
+
+As mentioned above, `make test` will run all tests. You may also run only a subset of tests:
+* `make test-pkg` for the packages under `pkg`
+* `make test-internal` for the packages under `internal`
+* `make test-tasks` for the Tekton tasks
+
+Individual task test can be executed like this:
+```
+go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks -v -count=1
+```
+
+Be aware that depending on the test, some local services (e.g. Bitbucket) need to run. These are all started via `make prepare-local-env`, but more fine-grained control is possible too. Unfortunately these test dependencies are not expressed explicitly yet, see tracking issue https://github.com/opendevstack/ods-pipeline/issues/99.
