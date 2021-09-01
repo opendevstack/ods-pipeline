@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -34,7 +35,7 @@ func TestTaskODSFinish(t *testing.T) {
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
 				},
 			},
-			"set bitbucket build status to successful and artifacts are in Nexus": {
+			"set bitbucket build status to successful and upload artifacts to temporary Nexus repository": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -50,14 +51,49 @@ func TestTaskODSFinish(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
-					checkArtifactsAreInNexus(t, ctxt)
+					checkArtifactsAreInNexus(t, ctxt, nexus.TemporaryRepositoryDefault)
+				},
+			},
+			"set bitbucket build status to successful and upload artifacts to permanent Nexus repository": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
+					err := createFinishODSYML(wsDir)
+					if err != nil {
+						t.Fatal(err)
+					}
+					ctxt.Params = map[string]string{
+						"pipeline-run-name":      "foo",
+						"aggregate-tasks-status": "Succeeded",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
+					checkArtifactsAreInNexus(t, ctxt, nexus.PermanentRepositoryDefault)
 				},
 			},
 		},
 	)
 }
 
-func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+func createFinishODSYML(wsDir string) error {
+	o := &config.ODS{
+		Environments: []config.Environment{
+			{
+				Name:  "dev",  // use "dev" because that is set in the context, but ...
+				Stage: "prod", // set the stage to "prod" to simulate a production pipeline.
+			},
+		},
+	}
+	return createODSYML(wsDir, o)
+}
+
+func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, targetRepository string) {
 
 	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 
@@ -76,7 +112,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 		group := fmt.Sprintf("/%s/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir)
 
 		// The test is so fast that, when we reach this line, the artifacts could still being uploaded to Nexus
-		artifactURLs := waitForArtifacts(t, nexusClient, group, filesCountInSubDir, 5*time.Second)
+		artifactURLs := waitForArtifacts(t, nexusClient, targetRepository, group, filesCountInSubDir, 5*time.Second)
 		if len(artifactURLs) != filesCountInSubDir {
 			t.Fatalf("Got: %d artifacts in subdir %s, want: %d.", len(artifactURLs), artifactsMap[artifactsSubDir], filesCountInSubDir)
 		}
@@ -84,7 +120,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 		for _, file := range files {
 
 			// e.g. "http://localhost:8081/repository/ods-pipelines/ODSPIPELINETEST/workspace-866704509/b1415e831b4f5b24612abf24499663ddbff6babb/xunit-reports/report.xml"
-			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusClient.URL(), nexusClient.Repository(), ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
+			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusClient.URL(), targetRepository, ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
 
 			if !contains(artifactURLs, url) {
 				t.Fatalf("Artifact %s with URL %+v not found in Nexus under any of the following URLs: %v", file, url, artifactURLs)
@@ -94,14 +130,14 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 	}
 }
 
-func waitForArtifacts(t *testing.T, nexusClient *nexus.Client, group string, expectedArtifactsCount int, timeout time.Duration) []string {
+func waitForArtifacts(t *testing.T, nexusClient *nexus.Client, targetRepository, group string, expectedArtifactsCount int, timeout time.Duration) []string {
 
 	start := time.Now().UTC()
 	elapsed := time.Since(start)
 	artifactURLs := []string{}
 
 	for elapsed < timeout {
-		artifactURLs, err := nexusClient.Search(group)
+		artifactURLs, err := nexusClient.Search(targetRepository, group)
 		if err != nil {
 			t.Fatal(err)
 		}

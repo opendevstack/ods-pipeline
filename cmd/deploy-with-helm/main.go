@@ -87,7 +87,7 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
 	}
-	targetConfig, err := getTargetEnvironment(odsConfig, ctxt.Environment)
+	targetConfig, err := odsConfig.Environment(ctxt.Environment)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
 	}
@@ -386,18 +386,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(string(stdout))
-}
-
-func getTargetEnvironment(odsConfig *config.ODS, environment string) (*config.Environment, error) {
-	var envs []string
-	for _, e := range odsConfig.Environments {
-		if e.Name == environment {
-			return &e, nil
-		}
-		envs = append(envs, e.Name)
-	}
-
-	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
 }
 
 type helmChart struct {

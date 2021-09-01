@@ -10,6 +10,7 @@ import (
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
+	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
@@ -26,6 +27,20 @@ func TestTaskODSStart(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
 						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
 					)
+
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					groupBase := fmt.Sprintf("/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA)
+					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
+					// Upload artifact to permanent storage.
+					err := nexusClient.Upload(
+						nexus.PermanentRepositoryDefault,
+						groupBase+"/pipeline-runs",
+						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					ctxt.Params = map[string]string{
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
@@ -44,6 +59,10 @@ func TestTaskODSStart(t *testing.T) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
+					downloadedArtifact := filepath.Join(wsDir, pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json")
+					if _, err := os.Stat(downloadedArtifact); os.IsNotExist(err) {
+						t.Fatal(err)
+					}
 				},
 			},
 			"clones repo and configured subrepos": {
@@ -78,11 +97,19 @@ func TestTaskODSStart(t *testing.T) {
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					groupBase := fmt.Sprintf("/%s/%s/%s", subCtxt.Project, subCtxt.Repository, subCtxt.GitCommitSHA)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
-					err = nexusClient.Upload(groupBase+"/xunit-reports", filepath.Join(artifactsBaseDir, "xunit-reports", "report.xml"))
+					err = nexusClient.Upload(
+						nexus.TemporaryRepositoryDefault,
+						groupBase+"/xunit-reports",
+						filepath.Join(artifactsBaseDir, "xunit-reports", "report.xml"),
+					)
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = nexusClient.Upload(groupBase+"/pipeline-runs", filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"))
+					err = nexusClient.Upload(
+						nexus.TemporaryRepositoryDefault,
+						groupBase+"/pipeline-runs",
+						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
+					)
 					if err != nil {
 						t.Fatal(err)
 					}

@@ -7,6 +7,7 @@ import (
 	"path"
 )
 
+// Download requests given url and writes the output into outfile.
 func (c *Client) Download(url, outfile string) (int64, error) {
 	if len(outfile) == 0 {
 		outfile = path.Base(url)

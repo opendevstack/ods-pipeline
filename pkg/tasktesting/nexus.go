@@ -23,11 +23,10 @@ func NexusClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *n
 
 	nexusURL := strings.Replace(nexusConfigMap.Data["url"], "ods-test-nexus.kind", "localhost", 1)
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:    nexusURL,
-		Username:   string(nexusSecret.Data["username"]),
-		Password:   string(nexusSecret.Data["password"]),
-		Repository: nexusConfigMap.Data["temporaryRepository"],
-		Logger:     &logging.LeveledLogger{Level: logging.LevelDebug},
+		BaseURL:  nexusURL,
+		Username: string(nexusSecret.Data["username"]),
+		Password: string(nexusSecret.Data["password"]),
+		Logger:   &logging.LeveledLogger{Level: logging.LevelDebug},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -10,6 +10,11 @@ import (
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
+const (
+	TemporaryRepositoryDefault = "ods-temporary-artifacts"
+	PermanentRepositoryDefault = "ods-permanent-artifacts"
+)
+
 // Client represents a Nexus client, wrapping github.com/sonatype-nexus-community/gonexus/rm.RM
 type Client struct {
 	rm           nexusrm.RM
@@ -25,8 +30,6 @@ type ClientConfig struct {
 	Password string
 	// URL of Nexus instance.
 	BaseURL string
-	// Nexus repository name.
-	Repository string
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
 	// Timeout of HTTP client used to download assets.
@@ -67,11 +70,6 @@ func NewClient(clientConfig *ClientConfig) (*Client, error) {
 // URL returns the Nexus instance URL targeted by this client.
 func (c *Client) URL() string {
 	return c.clientConfig.BaseURL
-}
-
-// Repository returns the Nexus repository targeted by this client.
-func (c *Client) Repository() string {
-	return c.clientConfig.Repository
 }
 
 // Username returns the username used by this client.

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -46,13 +47,15 @@ func main() {
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.nexusTemporaryRepository, nexus.TemporaryRepositoryDefault, os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	flag.StringVar(&opts.nexusPermanentRepository, nexus.PermanentRepositoryDefault, os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
+	checkoutDir := "."
+
 	ctxt := &pipelinectxt.ODSContext{}
-	err := ctxt.ReadCache(".")
+	err := ctxt.ReadCache(checkoutDir)
 	if err != nil {
 		log.Fatalf(
 			"Unable to continue as pipeline context cannot be read: %s.\n"+
@@ -91,11 +94,10 @@ func main() {
 
 	fmt.Println("Handling artifacts ...")
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:    opts.nexusURL,
-		Username:   opts.nexusUsername,
-		Password:   opts.nexusPassword,
-		Repository: opts.nexusTemporaryRepository,
-		Logger:     logger,
+		BaseURL:  opts.nexusURL,
+		Username: opts.nexusUsername,
+		Password: opts.nexusPassword,
+		Logger:   logger,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -114,12 +116,29 @@ func main() {
 			log.Fatal(err)
 		}
 
+		// Use temporary storage for DEV stage and permanenet repository for
+		// QA and PROD stage environments.
+		nexusRepository := opts.nexusTemporaryRepository
+		if len(ctxt.Environment) > 0 {
+			odsConfig, err := config.ReadFromDir(checkoutDir)
+			if err != nil {
+				log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
+			}
+			env, err := odsConfig.Environment(ctxt.Environment)
+			if err != nil {
+				log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
+			}
+			if env.Stage != config.DevStage {
+				nexusRepository = opts.nexusPermanentRepository
+			}
+		}
+
 		for artifactsSubDir, files := range artifactsMap {
 			for _, filename := range files {
 				nexusGroup := fmt.Sprintf("/%s/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA, artifactsSubDir)
 				localFile := filepath.Join(pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
-				fmt.Printf("Uploading %s to Nexus group %s ...\n", localFile, nexusGroup)
-				err = nexusClient.Upload(nexusGroup, localFile)
+				fmt.Printf("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
+				err = nexusClient.Upload(nexusRepository, nexusGroup, localFile)
 				if err != nil {
 					log.Fatal(err)
 				}

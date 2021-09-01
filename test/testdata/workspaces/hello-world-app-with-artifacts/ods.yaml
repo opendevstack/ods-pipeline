@@ -1,0 +1,3 @@
+environments:
+- name: dev
+  stage: dev

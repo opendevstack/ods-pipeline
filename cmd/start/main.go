@@ -69,8 +69,8 @@ func main() {
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.nexusTemporaryRepository, nexus.TemporaryRepositoryDefault, os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	flag.StringVar(&opts.nexusPermanentRepository, nexus.PermanentRepositoryDefault, os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
@@ -199,23 +199,22 @@ func main() {
 	fmt.Println("Downloading any artifacts ...")
 	// If there are subrepos, then all of them need to have a successful pipeline run.
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:    opts.nexusURL,
-		Username:   opts.nexusUsername,
-		Password:   opts.nexusPassword,
-		Repository: opts.nexusTemporaryRepository,
-		Logger:     logger,
+		BaseURL:  opts.nexusURL,
+		Username: opts.nexusUsername,
+		Password: opts.nexusPassword,
+		Logger:   logger,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = downloadArtifacts(nexusClient, ctxt, pipelinectxt.ArtifactsPath)
+	err = downloadArtifacts(nexusClient, ctxt, opts, pipelinectxt.ArtifactsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(subrepoContexts) > 0 {
 		for _, src := range subrepoContexts {
 			artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
-			err = downloadArtifacts(nexusClient, src, artifactsDir)
+			err = downloadArtifacts(nexusClient, src, opts, artifactsDir)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -234,17 +233,33 @@ func main() {
 	}
 }
 
-func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext, artifactsDir string) error {
+func getNexusURLs(nexusClient *nexus.Client, repository, group string) ([]string, error) {
+	urls, err := nexusClient.Search(repository, group)
+	if err != nil {
+		return nil, err
+	}
+	if len(urls) > 0 {
+		fmt.Printf("Found artifacts in repository %s inside group %s, downloading ...\n", repository, group)
+	} else {
+		fmt.Printf("No artifacts found in repository %s inside group %s.\n", repository, group)
+	}
+	return urls, nil
+}
+
+func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext, opts options, artifactsDir string) error {
 	group := fmt.Sprintf("/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA)
-	// We want to target all artifacts underneath the group, hence the '*'.
-	urls, err := nexusClient.Search(group + "/*")
+	// We want to target all artifacts underneath the group, hence the trailing '*'.
+	nexusSearchGroup := fmt.Sprintf("%s/*", group)
+	urls, err := getNexusURLs(nexusClient, opts.nexusPermanentRepository, nexusSearchGroup)
 	if err != nil {
 		return err
 	}
-	if len(urls) > 0 {
-		fmt.Printf("Found artifacts in repository %s inside group %s, downloading ...\n", nexusClient.Repository(), group)
-	} else {
-		fmt.Printf("No artifacts found in repository %s inside group %s.\n", nexusClient.Repository(), group)
+	if len(urls) == 0 {
+		u, err := getNexusURLs(nexusClient, opts.nexusTemporaryRepository, nexusSearchGroup)
+		if err != nil {
+			return err
+		}
+		urls = u
 	}
 	for _, s := range urls {
 		u, err := url.Parse(s)
