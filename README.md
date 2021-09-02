@@ -41,6 +41,7 @@ This repository also hosts the design documents that describe ODS pipeline more 
 * [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
 * [Software Requirements](/docs/software-requirements.adoc)
+* [Relationship to Jenkins Shared Library](/docs/relationship-shared-library.adoc)
 
 ## Compatibility
 
