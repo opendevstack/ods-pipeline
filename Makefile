@@ -94,7 +94,7 @@ run-sonarqube:
 .PHONY: run-sonarqube
 
 ## Prepare local environment from scratch.
-prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube deploy-ods-tasks-kind
+prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube install-ods-tasks-kind
 .PHONY: prepare-local-env
 
 ## Stop local environment.
