@@ -18,7 +18,7 @@ The orchestration pipeline currently has fixed stages (`build`, `deploy`, `test`
 
 Further, each stage in the orchestration pipeline creates documents, sometimes at the beginning of the stage, sometimes before each repo, sometimes after each repo and sometimes at the end of the stage.
 
-The Tekton pipeline takes a different approach: all such functionality would be provided by one task. This task would download information from Jira, get the artifacts from the subrepos, and then assemble the full set of documents in one go.
+The Tekton pipeline takes a different approach: all such functionality would be provided by one or two tasks. These tasks would download information from Jira, get the artifacts from the subrepos, and then assemble the full set of documents. The tasks would be part of a regular pipeline.
 
 Following are some details on what that means practically:
 
