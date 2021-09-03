@@ -10,6 +10,21 @@ spec:
     - TODO
 
   params:
+    - name: working-dir
+      description: >-
+        TODO
+      type: string
+      default: ""
+    - name: gradle-additional-tasks
+      description: >-
+        TODO
+      type: string
+      default: ""
+    - name: gradle-options
+      description: >-
+        TODO
+      type: string
+      default: ""
     - name: output-dir
       description: >-
         Path to the directory to use as Docker context.
@@ -29,10 +44,12 @@ spec:
       image: build/package/Dockerfile.java-toolset
       resources: {}
       script: |
-
         # build-java is build/package/scripts/build-java.sh.
         build-java \
-          --output-dir=$(params.output-dir)
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --gradle-additional-tasks=$(params.gradle-additional-tasks) \
+          --gradle-options=$(params.gradle-options)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       image: build/package/Dockerfile.sonar

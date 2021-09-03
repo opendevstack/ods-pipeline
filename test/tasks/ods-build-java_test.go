@@ -13,8 +13,8 @@ func TestTaskODSBuildJava(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-java",
 		map[string]tasktesting.TestCase{
-			"task should build java/maven app": {
-				WorkspaceDirMapping: map[string]string{"source": "java-sample-app"},
+			"task should build java/gradle app": {
+				WorkspaceDirMapping: map[string]string{"source": "java-gradle-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
@@ -28,7 +28,7 @@ func TestTaskODSBuildJava(t *testing.T) {
 						"docker/Dockerfile",
 						"docker/app",
 						"build/test-results/test/report.xml",
-						"coverage.out",
+						"build/reports/jacoco/test/jacocoTestReport.xml",
 						"test-results.txt",
 						".ods/artifacts/xunit-reports/report.xml",
 						".ods/artifacts/code-coverage/coverage.out",
@@ -56,7 +56,7 @@ func TestTaskODSBuildJava(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
-						"java-image": "localhost:5000/ods/ods-java-toolset:latest",
+						"java-image":  "localhost:5000/ods/ods-java-toolset:latest",
 						"sonar-image": "localhost:5000/ods/ods-sonar:latest",
 					}
 				},
