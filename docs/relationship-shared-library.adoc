@@ -54,3 +54,32 @@ To create such a task, authors need to have:
 * some knowledge of Kubernetes and Tekton to write the task definition
 * enough knowledge of Go to supply an automated test using the test framework
 * some knowledge of any programming language to write the logic of the task. Go would be preferred here but is not required. If it is very little logic, bash will do fine as well.
+
+## Pro's / Con's and Limitations
+
+The following pro's and con's are from a platform perspective, not necessarily from an individual developer's perspective. Also, these are in relation to the existing shared library approach.
+
+### Pro
+
+* Tekton is very rigid compared to Jenkins: the task list is a simple array. No crazy scripting possible.
+* There is a very clear separation between "official" tasks at cluster scope and custom tasks which are at namespace scope only. Support teams can easily identify which parts of the pipeline use supported tasks and which don't.
+* Tekton tasks have a pretty clear interface (parameters and results). Updating between versions should be easy and predictable. However we need to be cautious not to depend to much on workspace state.
+* As pipelines cannot define inline tasks (only pipeline runs can), users cannot define how to build an application (e.g. if they want to run a linter or not). Instead users must choose from the official task catalog. This allows to control much better how applications are build and to improve on that process.
+* No long-running Jenkins instance which saves 5Gi memory per project
+* No complicated base images - the existing Jenkins solution is a bit brittle where many updates of the base images (be it Jenkins, Java, or something else) broke something down the road
+* Jenkins had only one agent image, which made it hard to use for monorepos using multiple technologies (e.g. TypeScript and Java). The Tekton approach should handle monorepos and multiple repos equally well.
+* The Tekton implementation can run in a pure Kubernetes cluster, allowing the test suite to be executed in GitHub Actions. Also the target cluster does not have to be OpenShift, allowing to deploy into EKS for example.
+* The artifact approach avoids the need to run all components in the release manager pipeline (speeding things up) while at the same time storing all relevant information which should be useful for GxP/SaMD.
+
+### Con
+
+* Tekton tasks are only customizable via paramters so many people might need to create their own tasks because the platform cannot cover all use cases.
+* Each task is one pod - this cause performance overhead as spinning up pods is a bit slow. Jenkins spins up only one pod and therefore is faster.
+* There is no way to install plugins or use the UI to e.g. see test execution trends.
+
+### Limitations
+
+* Pipeline users cannot specify task resources. This was possible in Jenkins and also used by many users. See issue https://github.com/opendevstack/ods-pipeline/issues/195. Currently support is not even on the Tekton roadmap. Only workaround: multiple tasks or high defaults. If that does not work, users must create their own copies of the tasks.
+* Pipeline users cannot specify sidecars. This was possible in Jenkins and also used by many users (e.g. to spin up a database for testing). See issue https://github.com/opendevstack/ods-pipeline/issues/135. Currently support is not even on the Tekton roadmap. Only workaround: multiple tasks. If that does not work (e.g. you need more than one sidecar), users must create their own copies of the tasks.
+* As tasks are pods, one needs a PVC to work on. Using a PVC has an effect on how many pipelines can run in parallel. See issue https://github.com/opendevstack/ods-pipeline/issues/160. It would be possible to implement support for one PVC per repo, or even one PVC per branch.
+
