@@ -147,10 +147,10 @@ a| The task shall upgrade (or install) a Helm chart.
 * The Helm chart is expected at the location identified by the `chartDir` parameter (defaulting to `chart`).
 * The task shall error if no chart can be found.
 * A diff shall be performed before the upgrade/install. If there are no differences, upgrade/install shall be skipped.
-* Any secrets shall be decrypted on the fly.
 * The upgrade/install shall wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful.
-* Any values files corresponding to the environment and stage shall be respected (`values.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`).
-* A values file containing the Git commit SHA shall be auto-generated and added to the Helm upgrade invocation.
+* Any values and secrets files corresponding to the environment and stage shall be respected (`values.yaml`, `secrets.yaml`, `values.<STAGE>.yaml`, `secrets.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`, `secrets.<ENVIRONMENT>.yaml`; in that order of specificity).
+* A values file containing the Git commit SHA shall be auto-generated and added to the Helm diff/upgrade invocation.
+* Any encrypted secrets files shall be decrypted on the fly, using the private key provided by the `Secret` identified by the `private-key-secret` parameter (defaulting to `helm-secrets-private-key`). The secret shall expose the private key under the `sops.asc` field.
 * The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
 * Charts in any of the respositories configured in `ods.y(a)ml` shall be packaged according to the same rules and added as a subchart.
 |===

@@ -11,13 +11,19 @@ spec:
 
     Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is performed
     before an upgrade is attempted. `helm-secrets` can be used to encrypt sensitive
-    values in the underlying Git repository.
+    values in the underlying Git repository. Secrets are decrypted on the fly if the secret
+    identified by the `private-key-secret` parameter exists and contains a private key
+    matching a fingerprint listed in `.sops.yaml`.
 
     Based on the target environment, some values files are added automatically to the
-    invocation of the `helm` command if they are present:
+    invocation of the `helm` command if they are present in the chart directory:
 
+    - `values.yaml`: the values file (automatically considered by Helm).
+    - `secrets.yaml`: a secrets file.
     - `values.<STAGE>.yaml`: a values file named after the stage (`dev`, `qa` or `prod`) of the target environment.
+    - `secrets.<STAGE>.yaml`: a secrets file named after the stage (`dev`, `qa` or `prod`) of the target environment.
     - `values.<ENVIRONMENT>.yaml`: a values file named after the name of the target environment.
+    - `secrets.<ENVIRONMENT>.yaml`: a secrets file named after the name of the target environment.
 
     Further, the task adds a `values.generated.yaml` file. This values file
     contains only one value, `gitCommitSha`, which contains the Git commit SHA being built. It is
@@ -30,6 +36,10 @@ spec:
 
     If the pipeline runs for a repository defining subrepos in its `ods.y(a)ml` file, then any charts in
     those subrepos are packaged as well, and added as dependencies to the top-most chart under `charts/`.
+    Note that values and secrets files are only collected from the repository for which the pipeline runs.
+    This means that if you use an umbrella repository to promote an application from a `dev` stage to `qa`
+    and `prod`, the umbrella repository needs to define the stage/environment specific values for
+    the subcomponents  for `qa`/`prod` instead of having those files in the subrepo.
   params:
     - name: chart-dir
       description: Helm chart directory that will be deployed
@@ -39,6 +49,12 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
+    - name: private-key-secret
+      description: |
+        Name of the secret containing the PGP private key to use for helm-secrets.
+        If the secret exists, it is expected to have a field named `sops.asc` with the private key as its content.
+      type: string
+      default: 'helm-secrets-private-key'
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
@@ -54,7 +70,8 @@ spec:
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
-          -release-name=$(params.release-name)
+          -release-name=$(params.release-name) \
+          -private-key-secret=$(params.private-key-secret)
       workingDir: $(workspaces.source.path)
   workspaces:
     - name: source
