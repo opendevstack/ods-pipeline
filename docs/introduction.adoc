@@ -133,11 +133,3 @@ image::trigger-architecture.png[Trigger Architecture]
 With the above in place, you do not need to manage pipelines manually. Every repository with an `ods.y(a)ml` file and a webhook configuration automatically manages and triggers pipelines based on the defined tasks.
 
 At this stage you know enough to get started using and modifying CI/CD pipelines with ODS.
-
-## FAQ
-
-### What is the relationship to the Jenkins shared library?
-
-ODS provides a Jenkins shared library which can be used in a `Jenkinsfile` to avoid repeating common tasks such as building a container image from a `Dockerfile` in the Git repository.
-
-In the approach chosen by `ods-pipeline`, the pipeline definition in the `ods.y(a)ml` file is a bit like the `Jenkinsfile`: it defines which steps happen in the CI pipeline. The Tekton tasks provided by `ods-pipeline` (such as `ods-deploy-helm`) are a bit like the stages provided by the shared library (such as `odsComponentPipelineRolloutOpenShiftDeployment`). The main difference between the Jenkins shared library and the Tekton-based approach is that users of Jenkins can script their CI pipeline in the `Jenkinsfile`, whereas Tekton pipelines are only a series of tasks defined in YAML, which is way less flexible. Another important difference is that the Jenkins shared library does not contain any language-specific instructions (such as how to build Java applications or how to build Python applications), in contrast to `ods-pipeline`, which provides one opinionated task per language (e.g. `ods-build-python`).
