@@ -7,7 +7,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-java-toolset:latest'
+      name: 'ods-java-toolset:{{ .Values.imageTag }}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -23,4 +23,7 @@ spec:
   postCommit: {}
   source:
     type: Git
+    git:
+      uri: '{{ .Values.odsPipelineGitRepoUri }}'
+      ref: '{{ .Values.odsPipelineGitRepoRef }}'
   runPolicy: Serial

@@ -33,3 +33,9 @@ RUN yum -y install unzip && \
 
 # Container support is now integrated in Java 11, the +UseCGroupMemoryLimitForHeap option has been pruned
 ENV JAVA_TOOL_OPTIONS="-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true"
+
+# Add scripts
+COPY build/package/scripts/build-java.sh /usr/local/bin/build-java
+RUN chmod +x /usr/local/bin/build-java
+
+WORKDIR ~

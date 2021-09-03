@@ -4,17 +4,55 @@ metadata:
   name: ods-build-java
 spec:
   description: |
-    Builds Java applications.
+    Builds Java Gradle applications.
 
     The following steps are executed:
-    - TODO
+    - build and test execution (using ./gradlew clean build)
+    - SonarQube quality scan
 
+    Tests exclude the vendor directory. Test results are converted into xUnit format.
+
+    Both xUnit report and coverage report are placed into .ods/artifacts.
+
+    To create a coverage report be sure that you add to 'gradle.properties' the required
+    configuration. E.g for enabling Jacoco you will need to:
+    - add 'jacoco' plugin
+    - add task 'jacocoTestReport':
+        jacocoTestReport {
+            reports {
+              xml.enabled true
+            }
+        }
+    - add 'finalizedBy jacocoTestReport' to the task 'test':
+        tasks.named('test') {
+            // Use JUnit Platform for unit tests.
+            useJUnitPlatform()
+            finalizedBy jacocoTestReport
+        }
+
+    After tests ran successfully, the application source code is scanned by SonarQube.
+
+    To configure SonarQube be sure to include the property file 'sonar-project.properties'
+    containing following properties:
+    - sonar.sources
+    - sonar.java.binaries
+    - sonar.junit.reportPaths
+    - sonar.coverage.jacoco.xmlReportPaths
+    Otherwise the SonarQube scan will fail.
+
+    When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
+    is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
+    The SonarQube scan will include parameters to perform a pull request analysis if
+    there is an open pull request for the branch being built. Pull request decoration
+    in Bitbucket is done automatically by SonarQube provided the ALM integration is setup
+    properly in SonarQube.
   params:
     - name: working-dir
-      description: >-
-        TODO
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
       type: string
-      default: ""
+      default: "."
     - name: gradle-additional-tasks
       description: >-
         TODO
@@ -27,8 +65,8 @@ spec:
       default: ""
     - name: output-dir
       description: >-
-        Path to the directory to use as Docker context.
-        The resulting Java Jar will be copied there.
+        Path to the directory into which the resulting Java application jar should be copied, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
       type: string
       default: docker
     - name: sonar-quality-gate
@@ -41,7 +79,14 @@ spec:
       default: "false"
   steps:
     - name: build-java-binary
-      image: build/package/Dockerfile.java-toolset
+      # Image is built from build/package/Dockerfile.java-toolset.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-java-toolset:{{ .Values.imageTag }}'
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
         # build-java is build/package/scripts/build-java.sh.
@@ -52,7 +97,8 @@ spec:
           --gradle-options=$(params.gradle-options)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
-      image: build/package/Dockerfile.sonar
+      # Image is built from build/package/Dockerfile.sonar.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-sonar:{{ .Values.imageTag }}'
       env:
         - name: SONAR_URL
           valueFrom:
@@ -64,6 +110,11 @@ spec:
             secretKeyRef:
               key: password
               name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
       resources: {}
       script: |
         if [ "$(params.sonar-skip)" = "true" ]; then
@@ -71,7 +122,11 @@ spec:
         else
           mkdir -p .ods/artifacts/sonarqube-analysis
           # sonar is built from cmd/sonar/main.go.
-          sonar -quality-gate=$(params.sonar-quality-gate)
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate) \
+            -sonar-java-source=$(params.sonar-java-source) \
+            -sonar-java-test-source=$(params.sonar-java-test-source)
         fi
       workingDir: $(workspaces.source.path)
   workspaces:
