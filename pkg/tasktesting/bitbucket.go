@@ -25,7 +25,7 @@ func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string
 		t.Fatalf("could not get Bitbucket config: %s", err)
 	}
 
-	bitbucketURL := strings.Replace(bitbucketConfigMap.Data["url"], "bitbucket-server-test.kind", "localhost", 1)
+	bitbucketURL := strings.Replace(bitbucketConfigMap.Data["url"], "ods-test-bitbucket-server.kind", "localhost", 1)
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: string(bitbucketSecret.Data["password"]),
 		BaseURL:  bitbucketURL,

@@ -17,12 +17,12 @@ esac; shift; done
 
 BITBUCKET_URL="http://localhost:${BITBUCKET_SERVER_HOST_PORT}"
 
-echo "Waiting up to 4 minutes for Bitbucket to start ..."
+echo "Waiting up to 5 minutes for Bitbucket to start ..."
 # https://confluence.atlassian.com/bitbucketserverkb/how-to-monitor-if-bitbucket-server-is-up-and-running-975014635.html
 n=0
 status="STARTING"
 set +e
-until [ $n -ge 24 ]; do
+until [ $n -ge 30 ]; do
     status=$(curl -s ${INSECURE} "${BITBUCKET_URL}/status" | jq -r .state)
     if [ "${status}" == "RUNNING" ]; then
         echo " success"

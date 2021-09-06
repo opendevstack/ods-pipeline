@@ -18,11 +18,11 @@ esac; shift; done
 
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
-echo "Waiting up to 4 minutes for SonarQube to start ..."
+echo "Waiting up to 5 minutes for SonarQube to start ..."
 n=0
 health="RED"
 set +e
-until [ $n -ge 24 ]; do
+until [ $n -ge 30 ]; do
     health=$(curl -s ${INSECURE} --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
         "${SONARQUBE_URL}/api/system/health" | jq -r .health)
     if [ "${health}" == "GREEN" ]; then

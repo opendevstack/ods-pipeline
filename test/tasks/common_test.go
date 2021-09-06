@@ -125,7 +125,7 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarP
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
 		APIToken:      sonarToken,
-		BaseURL:       "http://localhost:9000", // use localhost instead of sonarqubetest.kind!
+		BaseURL:       "http://localhost:9000", // use localhost instead of ods-test-sonarqube.kind!
 		ServerEdition: "community",
 	})
 
