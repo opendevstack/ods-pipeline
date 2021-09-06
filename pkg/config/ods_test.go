@@ -13,7 +13,7 @@ func TestReadFromDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	gotStage := ods.Environments[0].Stage
-	if gotStage != Prod {
+	if gotStage != ProdStage {
 		t.Fatalf("Got %s, want prod", gotStage)
 	}
 }
@@ -24,7 +24,7 @@ func TestReadFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	gotStage := ods.Environments[0].Stage
-	if gotStage != Prod {
+	if gotStage != ProdStage {
 		t.Fatalf("Got %s, want prod", gotStage)
 	}
 }
@@ -95,5 +95,27 @@ environments:
 				t.Fatalf("Want error: %s, got: %s", tc.WantError, err)
 			}
 		})
+	}
+}
+
+func TestEnvironment(t *testing.T) {
+	o := &ODS{
+		Environments: []Environment{
+			{
+				Name:  "a",
+				Stage: "dev",
+			},
+			{
+				Name:  "b",
+				Stage: "dev",
+			},
+		},
+	}
+	got, err := o.Environment("b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name != "b" {
+		t.Fatalf("Want env: b, got: %s", got.Name)
 	}
 }

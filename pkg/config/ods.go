@@ -16,9 +16,9 @@ import (
 type Stage string
 
 const (
-	Dev           Stage  = "dev"
-	QA                   = "qa"
-	Prod                 = "prod"
+	DevStage      Stage  = "dev"
+	QAStage              = "qa"
+	ProdStage            = "prod"
 	DefaultBranch string = "refs/heads/master"
 	ODSYMLFile    string = "ods.yml"
 	ODSYAMLFile   string = "ods.yaml"
@@ -91,11 +91,23 @@ func (e Environment) Validate() error {
 		return errors.New("name of environment must not be blank")
 	}
 	switch e.Stage {
-	case Dev, QA, Prod:
+	case DevStage, QAStage, ProdStage:
 		return nil
 	default:
 		return fmt.Errorf("invalid stage value '%s' for environment %s", e.Stage, e.Name)
 	}
+}
+
+func (o *ODS) Environment(environment string) (*Environment, error) {
+	var envs []string
+	for _, e := range o.Environments {
+		if e.Name == environment {
+			return &e, nil
+		}
+		envs = append(envs, e.Name)
+	}
+
+	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
 }
 
 // Pipeline represents a Tekton pipeline.
