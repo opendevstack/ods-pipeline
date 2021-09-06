@@ -11,7 +11,8 @@ ADMIN_PASSWORD=""
 DEVELOPER_USERNAME="developer"
 DEVELOPER_PASSWORD="s3cr3t"
 NEXUS_URL=
-CONTAINER_NAME="nexustest"
+IMAGE_NAME="ods-test-nexus"
+CONTAINER_NAME="ods-test-nexus"
 NEXUS_IMAGE_TAG="3.30.1"
 HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
 
@@ -28,9 +29,9 @@ esac; shift; done
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 cd ${SCRIPT_DIR}/nexus
-docker build -t nexustest .
+docker build -t ${IMAGE_NAME} .
 cd - &> /dev/null
-docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} nexustest
+docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
 
 if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
     docker logs ${CONTAINER_NAME}

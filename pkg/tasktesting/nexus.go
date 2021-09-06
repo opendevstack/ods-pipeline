@@ -21,7 +21,7 @@ func NexusClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *n
 		t.Fatalf("could not get Nexus config: %s", err)
 	}
 
-	nexusURL := strings.Replace(nexusConfigMap.Data["url"], "nexustest.kind", "localhost", 1)
+	nexusURL := strings.Replace(nexusConfigMap.Data["url"], "ods-test-nexus.kind", "localhost", 1)
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
 		BaseURL:    nexusURL,
 		Username:   string(nexusSecret.Data["username"]),

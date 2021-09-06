@@ -179,7 +179,7 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 	originURLWithKind := strings.Replace(
 		originURL,
 		"http://localhost",
-		"http://bitbucket-server-test.kind",
+		"http://ods-test-bitbucket-server.kind",
 		-1,
 	)
 	return originURLWithKind

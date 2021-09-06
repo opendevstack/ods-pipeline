@@ -3,12 +3,9 @@ set -ue
 
 # Restarts a Bitbucket instance with a timebomb license (3 hours).
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
-
 INSECURE=""
 BITBUCKET_SERVER_HOST_PORT="7990"
-BITBUCKET_SERVER_CONTAINER_NAME="bitbucket-server-test"
+BITBUCKET_SERVER_CONTAINER_NAME="ods-test-bitbucket-server"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
