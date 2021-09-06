@@ -269,6 +269,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
+	pData.Version = odsConfig.Version
 
 	rendered, err := renderPipeline(odsConfig, pData, s.TaskSuffix)
 	if err != nil {

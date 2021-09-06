@@ -24,11 +24,18 @@ type BranchPage struct {
 }
 
 type BranchListParams struct {
-	Base         string `json:"base"`
-	Details      bool   `json:"details"`
-	FilterText   string `json:"filterText"`
-	OrderBy      string `json:"orderBy"`
-	BoostMatches bool   `json:"boostMatches"`
+	// Base is the base branch or tag to compare each branch to (for the
+	// metadata providers that uses that information).
+	Base string `json:"base"`
+	// Details controls whether to retrieve plugin-provided metadata about each branch.
+	Details bool `json:"details"`
+	// FilterText is the the text to match on. The match seems to be a prefix match.
+	FilterText string `json:"filterText"`
+	// OrderBy determines ordering of refs.
+	// Either ALPHABETICAL (by name) or MODIFICATION (last updated).
+	OrderBy string `json:"orderBy"`
+	// BoostMatches controls whether exact and prefix matches will be boosted to the top
+	BoostMatches bool `json:"boostMatches"`
 }
 
 // BranchList retrieves the branches matching the supplied filterText param.

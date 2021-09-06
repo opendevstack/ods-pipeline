@@ -86,7 +86,7 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = createStartODSYML(wsDir, filepath.Base(tempDir))
+					err = createStartODSYMLWithSubrepo(wsDir, filepath.Base(tempDir))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -166,7 +166,7 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = createStartODSYML(wsDir, filepath.Base(tempDir))
+					err = createStartODSYMLWithSubrepo(wsDir, filepath.Base(tempDir))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -186,15 +186,136 @@ func TestTaskODSStart(t *testing.T) {
 				// TODO: check in post run func that failure is actually due to
 				// missing pipeline run artifact and not due to sth. else.
 			},
+			"handles QA stage": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					version := "1.0.0"
+					err := createStartODSYML(wsDir, config.QAStage)
+					if err != nil {
+						t.Fatal(err)
+					}
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
+
+					ctxt.Params = map[string]string{
+						"url":               ctxt.ODS.GitURL,
+						"git-full-ref":      "refs/heads/master",
+						"project":           ctxt.ODS.Project,
+						"environment":       ctxt.ODS.Environment,
+						"version":           version,
+						"pipeline-run-name": "foo",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					gotTag := checkForTag(t, ctxt, "v1.0.0-rc.1")
+					if gotTag.LatestCommit != ctxt.ODS.GitCommitSHA {
+						t.Fatal("not same SHA")
+					}
+				},
+			},
+			"handles PROD stage": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					version := "1.0.0"
+					err := createStartODSYML(wsDir, config.ProdStage)
+					if err != nil {
+						t.Fatal(err)
+					}
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
+
+					// pretend there is already an RC tag for the current commit
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					_, err = bitbucketClient.TagCreate(
+						ctxt.ODS.Project,
+						ctxt.ODS.Repository,
+						bitbucket.TagCreatePayload{
+							Name:       fmt.Sprintf("v%s-rc.1", version),
+							StartPoint: ctxt.ODS.GitCommitSHA,
+						},
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					ctxt.Params = map[string]string{
+						"url":               ctxt.ODS.GitURL,
+						"git-full-ref":      "refs/heads/master",
+						"project":           ctxt.ODS.Project,
+						"environment":       ctxt.ODS.Environment,
+						"version":           version,
+						"pipeline-run-name": "foo",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					gotTag := checkForTag(t, ctxt, "v1.0.0")
+					if gotTag.LatestCommit != ctxt.ODS.GitCommitSHA {
+						t.Fatalf(
+							"Checked out commit is %s, but created tag points to %s",
+							ctxt.ODS.GitCommitSHA,
+							gotTag.LatestCommit,
+						)
+					}
+				},
+			},
 		},
 	)
 }
 
-func createStartODSYML(wsDir, repo string) error {
+func checkForTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wantTag string) *bitbucket.Tag {
+	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	var gotTag *bitbucket.Tag
+	tagPage, err := bitbucketClient.TagList(
+		ctxt.ODS.Project,
+		ctxt.ODS.Repository,
+		bitbucket.TagListParams{
+			FilterText: wantTag,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tag := range tagPage.Values {
+		if tag.DisplayID == wantTag {
+			gotTag = &tag
+			break
+		}
+	}
+	if gotTag == nil {
+		t.Fatalf("Could not find tag %s", wantTag)
+	}
+	return gotTag
+}
+
+func createStartODSYMLWithSubrepo(wsDir, repo string) error {
 	o := &config.ODS{
+		Environments: []config.Environment{
+			{
+				Name:  "dev",
+				Stage: config.DevStage,
+			},
+		},
 		Repositories: []config.Repository{
 			{
 				Name: repo,
+			},
+		},
+	}
+	return createODSYML(wsDir, o)
+}
+
+func createStartODSYML(wsDir string, stage config.Stage) error {
+	o := &config.ODS{
+		Environments: []config.Environment{
+			{
+				Name:  "dev",
+				Stage: stage,
 			},
 		},
 	}

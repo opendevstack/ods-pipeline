@@ -22,7 +22,26 @@ func TestTagCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tag.ID != "release-2.0.0" {
-		t.Fatalf("got %s, want %s", tag.ID, "release-2.0.0")
+	if tag.DisplayID != "release-2.0.0" {
+		t.Fatalf("got %s, want %s", tag.DisplayID, "release-2.0.0")
+	}
+}
+
+func TestTagList(t *testing.T) {
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/myproject/repos/my-repo/tags",
+		200, "bitbucket/tag-list.json",
+	)
+
+	l, err := bitbucketClient.TagList("myproject", "my-repo", TagListParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.Size != 1 {
+		t.Fatalf("got %d, want %d", l.Size, 1)
 	}
 }

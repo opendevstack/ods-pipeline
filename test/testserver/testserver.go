@@ -91,6 +91,11 @@ func (ts *TestServer) LastRequest() (*http.Request, error) {
 	return ts.ObservedRequests[len(ts.ObservedRequests)-1], nil
 }
 
+func (ts *TestServer) Reset() {
+	ts.EnqueuedResponses = map[string][]RecordedResponse{}
+	ts.ObservedRequests = []*http.Request{}
+}
+
 func NewTestServer(l logging.SimpleLogger) (*TestServer, func()) {
 	ts := &TestServer{
 		EnqueuedResponses: make(map[string][]RecordedResponse),

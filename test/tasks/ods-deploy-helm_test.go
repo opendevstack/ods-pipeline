@@ -29,14 +29,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					// simulate empty environment
-					err := ioutil.WriteFile(
-						filepath.Join(wsDir, pipelinectxt.BaseDir, "environment"),
-						[]byte(""),
-						0644,
-					)
-					if err != nil {
-						t.Fatal(err)
-					}
+					writeContextFile(t, wsDir, "environment", "")
 				},
 				WantRunSuccess: true,
 			},
@@ -139,6 +132,15 @@ func TestTaskODSDeployHelm(t *testing.T) {
 
 // 	return releaseNamespace, err
 // }
+
+func writeContextFile(t *testing.T, wsDir, file, content string) {
+	err := ioutil.WriteFile(
+		filepath.Join(wsDir, pipelinectxt.BaseDir, file), []byte(content), 0644,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
 func createHelmODSYML(wsDir, releaseNamespace string) error {
 	o := &config.ODS{

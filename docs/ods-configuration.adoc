@@ -66,11 +66,12 @@ Once both `ods.yaml` and webhook configuration exist, any push in that repo will
 
 == Reference
 
-The configuration in `ods.yaml` allows four top-level fields:
+The configuration in `ods.yaml` allows five top-level fields:
 
 * `pipeline`
 * `environments`
 * `branchToEnvironmentMapping`
+* `version`
 * `repositories`
 
 === `pipeline`
@@ -158,6 +159,10 @@ branchToEnvironmentMapping:
 In this case, the `master` branch will be deployed to the environment with the name `development`.
 
 TIP: If you want to promote images between environments without rebuilding them, ensure that you are merging without merge commits (fast-forward, `--ff-only`).
+
+=== `version`
+
+`version` is an optional field that can specify a [SemVer](https://semver.org) version. Its value will be available in the pipeline context. The link:tasks/ods-start.adoc[`ods-start` task] requires a value to be present when the target environment is of stage `qa` or `prod`. When this is the case, the task applies Git tags (`v<VERSION>-rc.<NUMBER>` for `qa` and `v<VERSION>` for `prod`) to the repository and ensures that a pipeline run for a `qa` environment exist before allowing to proceed to a `prod` environment.
 
 === `repositories`
 

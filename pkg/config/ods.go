@@ -13,24 +13,36 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// Stage is a stage identifier. There are three stages: DEV, QA and PROD.
+// Note that stages are not environments but rather describe what kind of
+// constraints apply to a certain environment. For example, environments
+// of stage PROD are protected from deployment without a prior QA deployment.
 type Stage string
 
 const (
-	DevStage      Stage  = "dev"
-	QAStage              = "qa"
-	ProdStage            = "prod"
-	DefaultBranch string = "refs/heads/master"
-	ODSYMLFile    string = "ods.yml"
-	ODSYAMLFile   string = "ods.yaml"
+	DevStage      = "dev"
+	QAStage       = "qa"
+	ProdStage     = "prod"
+	DefaultBranch = "refs/heads/master"
+	ODSYMLFile    = "ods.yml"
+	ODSYAMLFile   = "ods.yaml"
 )
 
 var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
 
+// ODS represents the ODS pipeline configuration for one repository.
 type ODS struct {
-	Repositories               []Repository                 `json:"repositories"`
-	Environments               []Environment                `json:"environments"`
+	// Repositories specifies the subrepositores, making the current repository
+	// an "umbrella" repository.
+	Repositories []Repository `json:"repositories"`
+	// Environments allows you to specify target environments to deploy to.
+	Environments []Environment `json:"environments"`
+	// BranchToEnvironmentMapping configures which branch should be deployed to which environment.
 	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping"`
-	Pipeline                   Pipeline                     `json:"pipeline"`
+	// Pipeline allows to define the Tekton pipeline tasks.
+	Pipeline Pipeline `json:"pipeline"`
+	// Version is the application version and must follow SemVer.
+	Version string `json:"version"`
 }
 
 // Repository represents a Git repository.
