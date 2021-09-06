@@ -7,13 +7,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	k8s "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 )
 
 func TestTaskODSDeployHelm(t *testing.T) {
@@ -44,6 +47,15 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 
 					err := createHelmODSYML(wsDir, ctxt.Namespace)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					secret, err := readPrivateKeySecret()
+					if err != nil {
+						t.Fatal(err)
+					}
+					_, err = kubernetes.CreateSecret(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, secret)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -141,14 +153,28 @@ func createHelmODSYML(wsDir, releaseNamespace string) error {
 	return createODSYML(wsDir, o)
 }
 
-func checkDeployment(clientset *kubernetes.Clientset, namespace, name string) (*appsv1.Deployment, error) {
+func checkDeployment(clientset *k8s.Clientset, namespace, name string) (*appsv1.Deployment, error) {
 	return clientset.AppsV1().
 		Deployments(namespace).
 		Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func checkService(clientset *kubernetes.Clientset, namespace, name string) (*corev1.Service, error) {
+func checkService(clientset *k8s.Clientset, namespace, name string) (*corev1.Service, error) {
 	return clientset.CoreV1().
 		Services(namespace).
 		Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+func readPrivateKeySecret() (*corev1.Secret, error) {
+	bytes, err := ioutil.ReadFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/tasks/secret.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	var secretSpec corev1.Secret
+	err = yaml.Unmarshal(bytes, &secretSpec)
+	if err != nil {
+		return nil, err
+	}
+	return &secretSpec, nil
 }
