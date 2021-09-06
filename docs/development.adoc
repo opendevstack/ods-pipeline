@@ -34,3 +34,5 @@ go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks 
 ```
 
 Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too. Unfortunately these test dependencies are not expressed explicitly yet, see tracking issue https://github.com/opendevstack/ods-pipeline/issues/99.
+
+Also, if you make changes to the images backing the tasks (be it by changing the `Dockerfile` or by changing the scripts/commands installed there), make sure to rebuild and push the affected images to the KinD registry for your changes to take effect. You can do this e.g. through `./scripts/build-and-push-images.sh --image finish` (the name of the image flag is the suffix of the respective Dockerfile).
