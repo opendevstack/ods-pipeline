@@ -42,6 +42,8 @@ In the same way, you can install the `tasks` chart via `./install.sh -n ods --ch
 
 Finally, start a build for each created `BuildConfig`.
 
+Note that in ODS 4.0.0, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in your Nexus instance yet, you will need to create them manually. The repositories are of type "raw" and should not allow re-deployment of artifacts. It is recommended to have both backed up by their own blob stores. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
+
 Now your `ods` namespace is fully setup and users can start to utilize Tekton pipelines for their repositories.
 
 ## Updating
