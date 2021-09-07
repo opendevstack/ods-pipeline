@@ -52,7 +52,7 @@ spec:
         Working directory. The path must be relative to the root of the repository,
         without leading `./` and trailing `/`.
       type: string
-      default: "."
+      default: ""
     - name: gradle-additional-tasks
       description: >-
         TODO
@@ -124,9 +124,7 @@ spec:
           # sonar is built from cmd/sonar/main.go.
           sonar \
             -working-dir=$(params.working-dir) \
-            -quality-gate=$(params.sonar-quality-gate) \
-            -sonar-java-source=$(params.sonar-java-source) \
-            -sonar-java-test-source=$(params.sonar-java-test-source)
+            -quality-gate=$(params.sonar-quality-gate)
         fi
       workingDir: $(workspaces.source.path)
   workspaces:
