@@ -60,7 +60,7 @@ start-ods-central-builds:
 	oc start-build ods-buildah
 	oc start-build ods-finish
 	oc start-build ods-go-toolset
-	oc start-build ods-build-java
+	oc start-build ods-java-toolset
 	oc start-build ods-helm
 	oc start-build ods-python-toolset
 	oc start-build ods-sonar

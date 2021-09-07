@@ -49,11 +49,11 @@ fi
 cd "${WORKING_DIR}"
 echo "Working on Java/Gradle project in ${WORKING_DIR} ..."
 echo
-echo "... gladew version: "
+echo "... gladlew version: "
 ./gradlew -version
 
 echo
-echo "Note on Nexus: following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD are available and could be read by your gradle script"
+echo "Note on Nexus: following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD are available and should be read by your gradle script"
 echo
 echo "Building (Compile and Test) ..."
 # TODO decide if param odsPipelineOutputDir should be used or renamed!
@@ -67,8 +67,8 @@ if [ "$(ls -A ${UNIT_TEST_RESULT_DIR})" ]; then
 
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    echo "... copy unit test report: from ${UNIT_TEST_RESULT_DIR}/${ARTIFACT_PREFIX}*.xml to ${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
-    cp "${UNIT_TEST_RESULT_DIR}/${ARTIFACT_PREFIX}"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
+    echo "... copy unit test report: from ${UNIT_TEST_RESULT_DIR}/*.xml to ${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
+    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
     echo "... copied unit test report!"
     echo
 
@@ -82,8 +82,8 @@ COVERAGE_RESULT_DIR="${BUILD_DIR}/reports/jacoco/test"
 if [ "$(ls -A ${COVERAGE_RESULT_DIR})" ]; then
     CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
     mkdir -p "${CODE_COVERAGE_ARTIFACTS_DIR}"
-    echo "... copy unit test coverage report: from ${COVERAGE_RESULT_DIR}/${ARTIFACT_PREFIX}jacocoTestReport.xml to ${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
-    cp "${COVERAGE_RESULT_DIR}/${ARTIFACT_PREFIX}jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
+    echo "... copy unit test coverage report: from ${COVERAGE_RESULT_DIR}/jacocoTestReport.xml to ${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
+    cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
     echo "... copied unit test coverage report!"
     echo
 

@@ -1,41 +1,24 @@
-FROM registry.access.redhat.com/ubi8
+FROM adoptopenjdk/openjdk11:ubi
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Add adoptopenjdk repo
-COPY build/package/yum.repos.d/adoptopenjdk.repo /etc/yum.repos.d/adoptopenjdk.repo
-
-# Install Adoptopenjdk
-RUN yum install -y wget && \
-    INSTALL_PKGS="adoptopenjdk-16-hotspot" && \
-    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
-    yum clean all -y && \
-    exactVersion=$(ls -lah /usr/lib/jvm | grep "adoptopenjdk-16-hotspot" | awk '{print $NF}' | head -1) && \
-    alternatives --set java /usr/lib/jvm/${exactVersion}/bin/java && \
-    alternatives --set javac /usr/lib/jvm/${exactVersion}/bin/javac
-
-RUN java -version && javac -version
+ENV GRADLE_VERSION=7.1.1
 
 RUN cd /opt && \
-    wget https://www-eu.apache.org/dist/maven/maven-3/3.8.1/binaries/apache-maven-3.8.1-bin.tar.gz && \
+    curl -LO https://www-eu.apache.org/dist/maven/maven-3/3.8.1/binaries/apache-maven-3.8.1-bin.tar.gz && \
     tar xzf apache-maven-3.8.1-bin.tar.gz && \
     ln -s apache-maven-3.8.1 maven && \
     ln -s /opt/maven/bin/mvn /usr/local/bin/mvn && \
     mkdir -p $HOME/.m2 && \
-    mvn -version
-
-RUN yum -y install unzip && \
-    cd /opt && \
-    wget https://services.gradle.org/distributions/gradle-7.1.1-bin.zip -P /tmp && \
-    unzip -d /opt/gradle /tmp/gradle-7.1.1-bin.zip && \
-    ln -s /opt/gradle/gradle-7.1.1/bin/gradle /usr/local/bin/gradle && \
-    gradle -v
-
-# Container support is now integrated in Java 11, the +UseCGroupMemoryLimitForHeap option has been pruned
-ENV JAVA_TOOL_OPTIONS="-XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true"
+    mvn -version && \
+    rm apache-maven-3.8.1-bin.tar.gz && \
+    yum -y install unzip && \
+    curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip  && \
+    unzip -d /opt/gradle gradle-${GRADLE_VERSION}-bin.zip && \
+    ln -s /opt/gradle/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle && \
+    gradle -v && \
+    rm gradle-${GRADLE_VERSION}-bin.zip
 
 # Add scripts
 COPY build/package/scripts/build-java.sh /usr/local/bin/build-java
 RUN chmod +x /usr/local/bin/build-java
-
-WORKDIR ~
