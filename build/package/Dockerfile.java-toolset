@@ -5,13 +5,6 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV GRADLE_VERSION=7.1.1
 
 RUN cd /opt && \
-    curl -LO https://www-eu.apache.org/dist/maven/maven-3/3.8.1/binaries/apache-maven-3.8.1-bin.tar.gz && \
-    tar xzf apache-maven-3.8.1-bin.tar.gz && \
-    ln -s apache-maven-3.8.1 maven && \
-    ln -s /opt/maven/bin/mvn /usr/local/bin/mvn && \
-    mkdir -p $HOME/.m2 && \
-    mvn -version && \
-    rm apache-maven-3.8.1-bin.tar.gz && \
     yum -y install unzip && \
     curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip  && \
     unzip -d /opt/gradle gradle-${GRADLE_VERSION}-bin.zip && \
