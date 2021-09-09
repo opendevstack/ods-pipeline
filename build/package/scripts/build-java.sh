@@ -64,13 +64,20 @@ echo " NEXUS_* env vars:"
 echo " following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD"
 echo " are available and should be read by your gradle script."
 echo
+export ODS_OUTPUT_DIR=${OUTPUT_DIR}
+echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
+echo
 echo "Building (Compile and Test) ..."
 ./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 echo
-export ODS_OUTPUT_DIR=${OUTPUT_DIR}
-echo
-echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
-echo
+
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+  echo
+  echo "List content of ${OUTPUT_DIR}"
+  ls -lart "${OUTPUT_DIR}"
+  echo
+fi
 
 echo "Verifying unit test report was generated  ..."
 BUILD_DIR="build"
