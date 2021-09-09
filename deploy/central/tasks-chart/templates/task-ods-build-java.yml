@@ -6,6 +6,14 @@ spec:
   description: |
     Builds Java Gradle applications.
 
+    Note on build environment variables available:
+    - ODS_OUTPUT_DIR: this environment variable points to the folder
+    that this build expects generated application artifacts to be copied to.
+    The project gradle script should read this env var to copy all the
+    generated application artifacts.
+    - NEXUS_* env vars: following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD
+    are available and should be read by your gradle script.
+
     The following steps are executed:
     - build and test execution (using ./gradlew clean build)
     - SonarQube quality scan
@@ -13,6 +21,24 @@ spec:
     Tests exclude the vendor directory. Test results are converted into xUnit format.
 
     Both xUnit report and coverage report are placed into .ods/artifacts.
+
+    To copy the generated application artifact e.g within the project gradle script follow this steps:
+    - read the env var 'ODS_OUTPUT_DIR' in the buildscript section of the gradle script:
+    buildscript {
+        ext
+                {
+                  outputDir = System.getenv('ODS_OUTPUT_DIR')
+                }
+    }
+    - customize the jar tasks to set the destination directory
+    jar {
+        println("Set application jar name to 'app'")
+        archiveBaseName = 'app'
+        if (outputDir != null) {
+            println("Set destinationDirectory to '${projectDir}/${outputDir}'")
+            destinationDirectory = file("${projectDir}/${outputDir}")
+        }
+    }
 
     To create a coverage report be sure that you add to 'gradle.properties' the required
     configuration. E.g for enabling Jacoco you will need to:

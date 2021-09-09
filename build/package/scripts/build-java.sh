@@ -46,11 +46,6 @@ if [ "${DEBUG}" == "true" ]; then
   echo
 fi
 
-export ODS_OUTPUT_DIR=${OUTPUT_DIR}
-echo
-echo "Exported env var 'ODS_OUTPUT_DIR'. Value equal '${OUTPUT_DIR}'"
-echo
-
 cd "${WORKING_DIR}"
 echo "Working on Java/Gradle project in ${WORKING_DIR} ..."
 echo
@@ -58,17 +53,23 @@ echo "... gladlew version: "
 ./gradlew -version
 
 echo
-echo "IMPORTANT:"
-echo " the generated application jar file must be copied by the gradle build"
-echo " to the folder defined by the env var 'ODS_OUTPUT_DIR',"
-echo " otherwise the build will fail!"
+echo "Note on build environment variables available:"
 echo
-echo "Note on Nexus:"
+echo " ODS_OUTPUT_DIR: this environment variable points to the folder "
+echo " that this build expects generated application artifacts to be copied to."
+echo " The project gradle script should read this env var to copy all the "
+echo " generated application artifacts."
+echo
+echo " NEXUS_* env vars:"
 echo " following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD"
-echo " are available and should be read by your gradle script"
+echo " are available and should be read by your gradle script."
 echo
 echo "Building (Compile and Test) ..."
 ./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
+echo
+export ODS_OUTPUT_DIR=${OUTPUT_DIR}
+echo
+echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
 
 echo "Verifying unit test report was generated  ..."
