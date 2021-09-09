@@ -46,6 +46,11 @@ if [ "${DEBUG}" == "true" ]; then
   echo
 fi
 
+export ODS_OUTPUT_DIR=${OUTPUT_DIR}
+echo
+echo "Exported env var 'ODS_OUTPUT_DIR'. Value equal '${OUTPUT_DIR}'"
+echo
+
 cd "${WORKING_DIR}"
 echo "Working on Java/Gradle project in ${WORKING_DIR} ..."
 echo
@@ -53,25 +58,30 @@ echo "... gladlew version: "
 ./gradlew -version
 
 echo
-echo "Note on Nexus: following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD are available and should be read by your gradle script"
+echo "IMPORTANT:"
+echo " the generated application jar file must be copied by the gradle build"
+echo " to the folder defined by the env var 'ODS_OUTPUT_DIR',"
+echo " otherwise the build will fail!"
+echo
+echo "Note on Nexus:"
+echo " following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD"
+echo " are available and should be read by your gradle script"
 echo
 echo "Building (Compile and Test) ..."
-# TODO decide if param odsPipelineOutputDir should be used or renamed!
-./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS} "-PodsPipelineOutputDir=${OUTPUT_DIR}"
+./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 echo
+
 echo "Verifying unit test report was generated  ..."
 BUILD_DIR="build"
 UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 
 if [ "$(ls -A ${UNIT_TEST_RESULT_DIR})" ]; then
-
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
     echo "... copy unit test report: from ${UNIT_TEST_RESULT_DIR}/*.xml to ${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
     cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
     echo "... copied unit test report!"
     echo
-
 else
   echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
   exit 1
@@ -86,7 +96,6 @@ if [ "$(ls -A ${COVERAGE_RESULT_DIR})" ]; then
     cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
     echo "... copied unit test coverage report!"
     echo
-
 else
   echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
   exit 1

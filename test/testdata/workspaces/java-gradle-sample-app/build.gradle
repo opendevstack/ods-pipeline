@@ -8,8 +8,7 @@
 buildscript {
     ext
             {
-//                outputDir = System.getenv('OUTPUT_DIR')
-                outputDir = project.findProperty('odsPipelineOutputDir')
+                odsOutputDir = System.getenv('ODS_OUTPUT_DIR')
             }
 }
 
@@ -52,8 +51,8 @@ jacocoTestReport {
 jar {
     println("Set application jar name to 'app'")
     archiveBaseName = 'app'
-    if (outputDir != null) {
-        println("Set destinationDirectory to '${projectDir}/${outputDir}'")
-        destinationDirectory = file("${projectDir}/${outputDir}")
+    if (odsOutputDir != null) {
+        println("Set destinationDirectory to '${projectDir}/${odsOutputDir}'")
+        destinationDirectory = file("${projectDir}/${odsOutputDir}")
     }
 }
