@@ -1,14 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -175,9 +178,22 @@ func main() {
 					1,
 				)
 			}
-			subrepoGitFullRef := subrepo.Branch
-			if len(subrepoGitFullRef) == 0 {
-				subrepoGitFullRef = config.DefaultBranch
+			// Checkout subrepo at the following refs, in order of specifity:
+			// - release branch (if there is a version and the branch exists)
+			// - configured branch (if configured in ODS config file)
+			// - default branch
+			subrepoGitFullRef := config.DefaultBranch
+			if len(subrepo.Branch) > 0 {
+				subrepoGitFullRef = subrepo.Branch
+			}
+			if ctxt.Version == pipelinectxt.WIP {
+				releaseBranch, err := findReleaseBranch(bitbucketClient, ctxt.Project, subrepo.Name, ctxt.Version)
+				if err != nil {
+					log.Fatal(err)
+				}
+				if len(releaseBranch) > 0 {
+					subrepoGitFullRef = releaseBranch
+				}
 			}
 			subrepoCtxt, err := checkoutAndAssembleContext(
 				subrepoCheckoutDir,
@@ -193,6 +209,17 @@ func main() {
 				log.Fatal(err)
 			}
 			subrepoContexts = append(subrepoContexts, subrepoCtxt)
+		}
+	}
+
+	if len(ctxt.Environment) > 0 {
+		env, err := odsConfig.Environment(ctxt.Environment)
+		if err != nil {
+			log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
+		}
+		err = applyVersionTags(os.Stdout, bitbucketClient, ctxt, subrepoContexts, env)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -231,6 +258,155 @@ func main() {
 			}
 		}
 	}
+}
+
+func applyVersionTags(out io.Writer, bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, subrepoContexts []*pipelinectxt.ODSContext, env *config.Environment) error {
+	var tags []bitbucket.Tag
+	tagVersion := ctxt.Version
+	if env.Stage != config.DevStage {
+		fmt.Fprintln(out, "Applying version tags ...")
+		if tagVersion == pipelinectxt.WIP {
+			return errors.New("when stage != dev, you must provide a version")
+		}
+		t, err := bitbucketClient.TagList(
+			ctxt.Project,
+			ctxt.Repository,
+			bitbucket.TagListParams{
+				FilterText: fmt.Sprintf("v%s", tagVersion),
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("could not list tags in %s/%s: %w", ctxt.Project, ctxt.Repository, err)
+		}
+		tags = t.Values
+	}
+	if env.Stage == config.QAStage {
+		if tagListContainsFinalVersion(tags, tagVersion) {
+			fmt.Fprintln(out, "Final version tag exists already.")
+		} else {
+			_, num := latestReleaseCandidate(tags, tagVersion)
+			rcNum := num + 1
+			tagName := fmt.Sprintf("v%s-rc.%d", tagVersion, rcNum)
+			_, err := createTag(bitbucketClient, ctxt, tagName)
+			if err != nil {
+				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
+			}
+			// subrepos
+			for _, sctxt := range subrepoContexts {
+				_, err := createTag(bitbucketClient, sctxt, tagName)
+				if err != nil {
+					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
+				}
+			}
+		}
+	} else if env.Stage == config.ProdStage {
+		if tagListContainsFinalVersion(tags, tagVersion) {
+			fmt.Fprintln(out, "Final version tag exists already.")
+		} else {
+			err := checkProdTagRequirements(tags, ctxt, tagVersion)
+			if err != nil {
+				return fmt.Errorf("cannot proceed to prod stage: %w", err)
+			}
+			tagName := fmt.Sprintf("v%s", tagVersion)
+			_, err = createTag(bitbucketClient, ctxt, tagName)
+			if err != nil {
+				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
+			}
+			// subrepos
+			for _, sctxt := range subrepoContexts {
+				var subtags []bitbucket.Tag
+				t, err := bitbucketClient.TagList(
+					sctxt.Project,
+					sctxt.Repository,
+					bitbucket.TagListParams{
+						FilterText: tagName,
+					},
+				)
+				if err != nil {
+					return fmt.Errorf("could not list tags in %s/%s: %w", sctxt.Project, sctxt.Repository, err)
+				}
+				subtags = t.Values
+				err = checkProdTagRequirements(subtags, sctxt, tagVersion)
+				if err != nil {
+					return fmt.Errorf("cannot proceed to prod stage: %w", err)
+				}
+				_, err = createTag(bitbucketClient, sctxt, tagName)
+				if err != nil {
+					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// findReleaseBranch returns the full Git ref of the release branch corresponding
+// to given version. If none is found, it returns an empty string.
+func findReleaseBranch(bitbucketClient *bitbucket.Client, projectKey, repositorySlug, version string) (string, error) {
+	releaseBranch := fmt.Sprintf("release/%s", version)
+	branchPage, err := bitbucketClient.BranchList(projectKey, repositorySlug, bitbucket.BranchListParams{
+		FilterText:   fmt.Sprintf("release/%s", version),
+		BoostMatches: true,
+	})
+	if err != nil {
+		return "", err
+	}
+	for _, b := range branchPage.Values {
+		if b.DisplayId == releaseBranch {
+			return b.ID, nil
+		}
+	}
+	return "", nil
+}
+
+func checkProdTagRequirements(tags []bitbucket.Tag, ctxt *pipelinectxt.ODSContext, version string) error {
+	tag, _ := latestReleaseCandidate(tags, version)
+	if tag == nil {
+		return fmt.Errorf("no release candidate tag found for %s. Deploy to QA before deploying to Prod", version)
+	}
+	if tag.LatestCommit != ctxt.GitCommitSHA {
+		return fmt.Errorf("latest release candidate tag for %s does not point to checked out commit, cowardly refusing to deploy", version)
+	}
+	return nil
+}
+
+func tagListContainsFinalVersion(tags []bitbucket.Tag, version string) bool {
+	searchID := fmt.Sprintf("refs/tags/v%s", version)
+	for _, t := range tags {
+		if t.ID == searchID {
+			return true
+		}
+	}
+	return false
+}
+
+// latestReleaseCandidate returns the highest number of all tags of
+// format "v<VERSION>-rc.<NUMBER>".
+func latestReleaseCandidate(tags []bitbucket.Tag, version string) (*bitbucket.Tag, int) {
+	var highestNumber int
+	var latestTag *bitbucket.Tag
+	prefix := fmt.Sprintf("refs/tags/v%s-rc.", version)
+	for _, t := range tags {
+		if strings.HasPrefix(t.ID, prefix) {
+			i, err := strconv.Atoi(strings.TrimPrefix(t.ID, prefix))
+			if err == nil && i > highestNumber {
+				highestNumber = i
+				latestTag = &t
+			}
+		}
+	}
+	return latestTag, highestNumber
+}
+
+func createTag(bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, name string) (*bitbucket.Tag, error) {
+	return bitbucketClient.TagCreate(
+		ctxt.Project,
+		ctxt.Repository,
+		bitbucket.TagCreatePayload{
+			Name:       name,
+			StartPoint: ctxt.GitCommitSHA,
+		},
+	)
 }
 
 func getNexusURLs(nexusClient *nexus.Client, repository, group string) ([]string, error) {
