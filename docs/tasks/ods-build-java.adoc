@@ -4,29 +4,28 @@
 
 Builds Java Gradle applications.
 
-Note on build environment variables available:
-- ODS_OUTPUT_DIR: this environment variable points to the folder
-that this build expects generated application artifacts to be copied to.
-The project gradle script should read this env var to copy all the
-generated application artifacts.
-- NEXUS_* env vars: following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD
-are available and should be read by your gradle script.
-
-The following steps are executed:
-- build and test execution (using ./gradlew clean build)
-- SonarQube quality scan
-
 Tests exclude the vendor directory. Test results are converted into xUnit format.
 
 Both xUnit report and coverage report are placed into .ods/artifacts.
 
+Note on build environment variables available:
+- `ODS_OUTPUT_DIR`: this environment variable points to the folder
+that this build expects generated application artifacts to be copied to.
+The project gradle script should read this env var to copy all the
+generated application artifacts.
+- `NEXUS_* env vars`: following env vars `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+are available and should be read by your gradle script.
+
+The following steps are executed:
+- build and test execution (using `./gradlew clean build`)
+- SonarQube quality scan
+
 To copy the generated application artifact e.g within the project gradle script follow this steps:
-- read the env var 'ODS_OUTPUT_DIR' in the buildscript section of the gradle script:
+- read the env var `ODS_OUTPUT_DIR` in the buildscript section of the gradle script:
 buildscript {
-    ext
-            {
-              outputDir = System.getenv('ODS_OUTPUT_DIR')
-            }
+    ext {
+      outputDir = System.getenv('ODS_OUTPUT_DIR')
+      }
 }
 - customize the jar tasks to set the destination directory
 jar {
@@ -38,16 +37,16 @@ jar {
     }
 }
 
-To create a coverage report be sure that you add to 'gradle.properties' the required
+To create a coverage report be sure that you add to `gradle.properties` the required
 configuration. E.g for enabling Jacoco you will need to:
-- add 'jacoco' plugin
-- add task 'jacocoTestReport':
+- add `jacoco` plugin
+- add task `jacocoTestReport`:
     jacocoTestReport {
         reports {
           xml.enabled true
         }
     }
-- add 'finalizedBy jacocoTestReport' to the task 'test':
+- add `finalizedBy jacocoTestReport` to the task `test`:
     tasks.named('test') {
         // Use JUnit Platform for unit tests.
         useJUnitPlatform()
@@ -56,12 +55,12 @@ configuration. E.g for enabling Jacoco you will need to:
 
 After tests ran successfully, the application source code is scanned by SonarQube.
 
-To configure SonarQube be sure to include the property file 'sonar-project.properties'
-containing following properties:
-- sonar.sources
-- sonar.java.binaries
-- sonar.junit.reportPaths
-- sonar.coverage.jacoco.xmlReportPaths
+To configure SonarQube be sure to include the property file `sonar-project.properties`
+to define following required properties. Here an example with default values:
+- sonar.sources=src
+- sonar.java.binaries=build/classes
+- sonar.junit.reportPaths=build/test-results/test
+- sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
 Otherwise the SonarQube scan will fail.
 
 When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
@@ -87,12 +86,12 @@ without leading `./` and trailing `/`.
 
 | gradle-additional-tasks
 | 
-| TODO
+| Additional gradle tasks to be passed to the gradle build. (default tasks called are `clean` and `build`).
 
 
 | gradle-options
 | 
-| TODO
+| Options to be passed to the gradle build. (See ref: https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_debugging)
 
 
 | output-dir

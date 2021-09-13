@@ -30,28 +30,23 @@ while [[ "$#" -gt 0 ]]; do
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-if [ -z "${WORKING_DIR}" ]; then
+if [ "${WORKING_DIR}" != "." ]; then
   WORKING_DIR="${ROOT_DIR}"
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
 
 if [ "${DEBUG}" == "true" ]; then
   set -x
-  echo
-  echo "Debug mode enabled (DEBUG=true)"
-  echo "Generating debug logs ..."
-  echo "... current folder:"
-  pwd
-  echo "... folder content:"
-  ls -lart
-  echo
 fi
 
-cd "${WORKING_DIR}"
-echo "Working on Java/Gradle project in ${WORKING_DIR} ..."
+export GRADLE_USER_HOME=/root/.gradle
+echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
-echo "... gladlew version: "
+cd "${WORKING_DIR}"
+echo "Working on Java/Gradle project in '${WORKING_DIR}'..."
+echo
+echo "Gradlew version: "
 ./gradlew -version
-
 echo
 echo "Note on build environment variables available:"
 echo
@@ -60,10 +55,6 @@ echo " that this build expects generated application artifacts to be copied to."
 echo " The project gradle script should read this env var to copy all the "
 echo " generated application artifacts."
 echo
-echo " NEXUS_* env vars:"
-echo " following env vars NEXUS_HOST, NEXUS_USER and NEXUS_PASSWORD"
-echo " are available and should be read by your gradle script."
-echo
 export ODS_OUTPUT_DIR=${OUTPUT_DIR}
 echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
@@ -71,25 +62,14 @@ echo "Building (Compile and Test) ..."
 ./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 echo
 
-if [ "${DEBUG}" == "true" ]; then
-  set -x
-  echo
-  echo "List content of ${OUTPUT_DIR}"
-  ls -lart "${OUTPUT_DIR}"
-  echo
-fi
-
 echo "Verifying unit test report was generated  ..."
 BUILD_DIR="build"
 UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 
-if [ "$(ls -A ${UNIT_TEST_RESULT_DIR})" ]; then
+if [ "$(ls -d ${UNIT_TEST_RESULT_DIR})" ]; then
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    echo "... copy unit test report: from ${UNIT_TEST_RESULT_DIR}/*.xml to ${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
     cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
-    echo "... copied unit test report!"
-    echo
 else
   echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
   exit 1
@@ -97,16 +77,11 @@ fi
 
 echo "Verifying unit test coverage report was generated  ..."
 COVERAGE_RESULT_DIR="${BUILD_DIR}/reports/jacoco/test"
-if [ "$(ls -A ${COVERAGE_RESULT_DIR})" ]; then
+if [ "$(ls -d ${COVERAGE_RESULT_DIR})" ]; then
     CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
     mkdir -p "${CODE_COVERAGE_ARTIFACTS_DIR}"
-    echo "... copy unit test coverage report: from ${COVERAGE_RESULT_DIR}/jacocoTestReport.xml to ${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
     cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
-    echo "... copied unit test coverage report!"
-    echo
 else
   echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
   exit 1
 fi
-
-echo "... working on Java/Gradle project is done!"

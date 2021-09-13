@@ -6,10 +6,9 @@
  * User Manual available at https://docs.gradle.org/7.2/userguide/building_java_projects.html
  */
 buildscript {
-    ext
-            {
-                odsOutputDir = System.getenv('ODS_OUTPUT_DIR')
-            }
+    ext {
+        odsOutputDir = System.getenv('ODS_OUTPUT_DIR')
+    }
 }
 
 plugins {
