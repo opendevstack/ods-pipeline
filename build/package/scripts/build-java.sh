@@ -66,7 +66,7 @@ echo "Verifying unit test report was generated  ..."
 BUILD_DIR="build"
 UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 
-if [ "$(ls -d ${UNIT_TEST_RESULT_DIR})" ]; then
+if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
     cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
@@ -77,7 +77,7 @@ fi
 
 echo "Verifying unit test coverage report was generated  ..."
 COVERAGE_RESULT_DIR="${BUILD_DIR}/reports/jacoco/test"
-if [ "$(ls -d ${COVERAGE_RESULT_DIR})" ]; then
+if [ -d "${COVERAGE_RESULT_DIR}" ]; then
     CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
     mkdir -p "${CODE_COVERAGE_ARTIFACTS_DIR}"
     cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
