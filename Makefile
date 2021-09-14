@@ -131,6 +131,11 @@ test-tasks:
 	go test -v -count=1 ./test/tasks/...
 .PHONY: test-tasks
 
+## Clean cluster and docker images.
+clean-up-env:
+	cd scripts && ./clean-up-kind-cluster-and-docker-images.sh
+.PHONY: clean-up-cluster
+
 ## Clear temporary workspaces created in testruns.
 clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
