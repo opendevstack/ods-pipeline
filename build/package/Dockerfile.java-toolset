@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:ubi
+FROM registry.access.redhat.com/ubi8/openjdk-11
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -8,8 +8,9 @@ ARG GRADLE_DOWNLOAD_SHA256=f581709a9c35e9cb92e16f585d2c4bc99b2b1a5f85d2badbd3dc6
 
 ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=f581709a9c35e9cb92e16f585d2c4bc99b2b1a5f85d2badbd3dc6bff59e1e6dd
 
+USER root
+
 RUN cd /opt && \
-    yum -y install unzip && rm -rf /var/cache /var/log/dnf* /var/log/yum.* && \
     curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
     echo "Checking hash of downloaded gradle distribution" && \
     echo "${GRADLE_DOWNLOAD_SHA256} gradle-${GRADLE_VERSION}-bin.zip" | sha256sum -c - && \
@@ -20,7 +21,9 @@ RUN cd /opt && \
     echo "Loading gradle cache with gradlew  ${GRADLE_VERSION} distribution" && \
     mkdir -p /tmp/temp-gradle-app && cd /tmp/temp-gradle-app && touch settings.gradle && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
-    chmod -R 777 /root/.gradle
+    mkdir -p /home/gradle && \
+    ln -s /root/.gradle /home/gradle/.gradle && \
+    chmod -R 777 /home/gradle/.gradle
 
 # Add scripts
 COPY build/package/scripts/build-java.sh /usr/local/bin/build-java

@@ -39,7 +39,7 @@ if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
-export GRADLE_USER_HOME=/root/.gradle
+export GRADLE_USER_HOME=/home/gradle/.gradle
 echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
 cd "${WORKING_DIR}"
