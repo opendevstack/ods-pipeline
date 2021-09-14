@@ -104,12 +104,18 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			if testing.Short() && tc.ExcludeOnShort {
+				t.Skip()
+			}
+			if tc.Timeout == 0 {
+				tc.Timeout = 5 * time.Minute
+			}
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef:             taskKindRef, // could be read from task definition
 				TaskName:                taskName,    // could be read from task definition
 				Clients:                 c,
 				Namespace:               ns,
-				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
+				Timeout:                 tc.Timeout,
 				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
 			})
 		})

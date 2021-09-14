@@ -23,22 +23,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 # desired cluster name; default is "kind"
-KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
+KIND_CLUSTER_NAME="kind"
 RECREATE_KIND_CLUSTER="false"
+REGISTRY_PORT="5000"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
     -v|--verbose) set -x;;
 
+    --name) KIND_CLUSTER_NAME="$2"; shift;;
+    --name=*) KIND_CLUSTER_NAME="${1#*=}";;
+
     --recreate) RECREATE_KIND_CLUSTER="true";;
+
+    --registry-port) REGISTRY_PORT="$2"; shift;;
+    --registry-port=*) REGISTRY_PORT="${1#*=}";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 kind_version=$(kind version)
-reg_name='kind-registry'
-reg_port='5000'
+REGISTRY_NAME="${KIND_CLUSTER_NAME}-registry"
 reg_ip_selector='{{.NetworkSettings.Networks.kind.IPAddress}}'
 reg_network='kind'
 case "${kind_version}" in
@@ -49,15 +55,15 @@ case "${kind_version}" in
 esac
 
 # create registry container unless it already exists
-running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+running="$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null || true)"
 
 # If the registry already exists, but is in the wrong network, we have to
 # re-create it.
 if [ "${running}" = 'true' ]; then
-  reg_ip="$(docker inspect -f ${reg_ip_selector} "${reg_name}")"
+  reg_ip="$(docker inspect -f ${reg_ip_selector} "${REGISTRY_NAME}")"
   if [ "${reg_ip}" = '' ]; then
-    docker kill ${reg_name}
-    docker rm ${reg_name}
+    docker kill ${REGISTRY_NAME}
+    docker rm ${REGISTRY_NAME}
     running="false"
   fi
 fi
@@ -68,11 +74,11 @@ if [ "${running}" != 'true' ]; then
   fi
   
   docker run \
-    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" --net "${reg_network}" \
+    -d --restart=always -p "${REGISTRY_PORT}:5000" --name "${REGISTRY_NAME}" --net "${reg_network}" \
     registry:2
 fi
 
-reg_ip="$(docker inspect -f ${reg_ip_selector} "${reg_name}")"
+reg_ip="$(docker inspect -f ${reg_ip_selector} "${REGISTRY_NAME}")"
 if [ "${reg_ip}" = "" ]; then
     echo "Error creating registry: no IPAddress found at: ${reg_ip_selector}"
     exit 1
@@ -95,10 +101,10 @@ nodes:
     containerPath: /files
 containerdConfigPatches: 
 - |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
-    endpoint = ["http://${reg_ip}:${reg_port}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+    endpoint = ["http://${reg_ip}:${REGISTRY_PORT}"]
 EOF
 
 for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
-  kubectl annotate node "${node}" tilt.dev/registry=localhost:${reg_port};
+  kubectl annotate node "${node}" tilt.dev/registry=localhost:${REGISTRY_PORT};
 done

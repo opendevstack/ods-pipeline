@@ -73,8 +73,10 @@ type Environment struct {
 	Name string `json:"name"`
 	// Kind of the environment to deploy to. One of "dev", "qa", "prod".
 	Stage Stage `json:"stage"`
-	// API URL of the target cluster.
-	URL string `json:"url"`
+	// API server of the target cluster, including scheme.
+	APIServer string `json:"apiServer"`
+	// Name of the Secret resource holding the API user credentials.
+	APICredentialsSecret string `json:"apiCredentialsSecret"`
 	// Hostname of the target registry. If not given, the registy of the source
 	// image is used.
 	RegistryHost string `json:"registryHost"`
@@ -82,11 +84,13 @@ type Environment struct {
 	RegistryTLSVerify *bool `json:"registryVerify"`
 	// Target K8s namespace (OpenShift project) on the target cluster to deploy into.
 	Namespace string `json:"namespace"`
-	// Name of the Secret resource holding the API user credentials.
-	SecretRef string `json:"secretRef"`
 	// Additional configuration of the target. This may be used by tasks outside
 	// the ODS catalog.
 	Config map[string]interface{} `json:"config"`
+	// APIToken holds the token of the environment, if any.
+	// The value is retrieved from the "token" field in the secret referenced by APICredentialsSecret.
+	// Cannot be set from JSON.
+	APIToken string `json:"-"`
 }
 
 func (o *ODS) Validate() error {

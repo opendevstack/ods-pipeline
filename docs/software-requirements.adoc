@@ -209,6 +209,7 @@ a| The task shall push images into the target namespace.
 
 * The images that are pushed are determined by the artifacts in `.ods/artifacts/image-digests`. Each artifact contains information from where to get the images.
 * The target namespace is selected from the given `environment`.
+* The target registry may also be external to the cluster in which the pipeline runs. The registry shall be identified by the `registryHost` field of the environment configuration, and the credential token of `apiCredentialsSecret` shall be used to authenticate.
 
 | REQ-TASK-DEPLOY-HELM-3
 a| The task shall upgrade (or install) a Helm chart.
@@ -222,6 +223,7 @@ a| The task shall upgrade (or install) a Helm chart.
 * Any encrypted secrets files shall be decrypted on the fly, using the private key provided by the `Secret` identified by the `private-key-secret` parameter (defaulting to `helm-secrets-private-key`). The secret shall expose the private key under the `sops.asc` field.
 * The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
 * Charts in any of the respositories configured in `ods.y(a)ml` shall be packaged according to the same rules and added as a subchart.
+* The target namespace may also be external to the cluster in which the pipeline runs. The API server shall be identified by the `apiServer` field of the environment configuration, and the credential token of `apiCredentialsSecret` shall be used to authenticate.
 |===
 
 == Shared Task Requirements
