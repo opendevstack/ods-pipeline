@@ -42,7 +42,7 @@ type ODS struct {
 	// Pipeline allows to define the Tekton pipeline tasks.
 	Pipeline Pipeline `json:"pipeline"`
 	// Version is the application version and must follow SemVer.
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
 }
 
 // Repository represents a Git repository.
