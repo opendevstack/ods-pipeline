@@ -137,12 +137,10 @@ The value of `name` may freely be chosen. The `stage` must be one of `dev`, `qa`
 
 Environments may also be located external to the cluster in which the pipeline runs. In this case, an environment may specify further fields:
 
-* `url`: API URL of the target cluster
-* `secretRef`: Name of the Secret resource holding the API user credentials
+* `apiServer`: API server of the target cluster, including scheme
+* `apiCredentialsSecret`: Name of the Secret resource holding the API user credentials in field `token`
 * `registryHost`: Hostname of the target registry
 * `config`: Additional configuration of the target in the form of a map. This information may be used by custom tasks.
-
-WARNING: External environments are not implemented in `ods-deploy-helm` yet, see link:https://github.com/opendevstack/ods-pipeline/issues/63[issue #63].
 
 === `branchToEnvironmentMapping`
 
