@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -104,9 +105,12 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			if tc.TaskVariant != "" {
+				taskName = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
+			}
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             taskKindRef, // could be read from task definition
-				TaskName:                taskName,    // could be read from task definition
+				TaskKindRef:             taskKindRef,
+				TaskName:                taskName,
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
