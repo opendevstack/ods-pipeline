@@ -1,7 +1,7 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" .}}
 spec:
   params:
     - description: The PVC backing up the pipeline

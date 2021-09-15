@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-go{{ .Values.taskSuffix }}
+  name: ods-build-go{{.Values.taskSuffix}}
 spec:
   description: |
     Builds Go (module) applications.
@@ -64,7 +64,7 @@ spec:
   steps:
     - name: build-go-binary
       # Image is built from build/package/Dockerfile.go-toolset.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-go-toolset:{{ .Values.imageTag }}'
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-go-toolset:{{.Values.imageTag}}'
       env:
         - name: DEBUG
           valueFrom:
@@ -86,7 +86,7 @@ spec:
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-sonar:{{ .Values.imageTag }}'
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.imageTag}}'
       env:
         - name: SONAR_URL
           valueFrom:

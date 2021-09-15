@@ -3,6 +3,6 @@ apiVersion: v1
 metadata:
   name: ods-sonar
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" . | nindent 4}}
 data:
-  url: '{{ .Values.sonarUrl }}'
+  url: '{{.Values.sonarUrl}}'

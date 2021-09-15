@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" .}}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" . | nindent 4}}
 spec:
-  replicas: {{ .Values.interceptor.replicaCount }}
+  replicas: {{.Values.interceptor.replicaCount}}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- include "chart.selectorLabels" . | nindent 6}}
   template:
     metadata:
       labels:
-        {{- include "chart.selectorLabels" . | nindent 8 }}
+        {{- include "chart.selectorLabels" . | nindent 8}}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{.Chart.Name}}
           securityContext: {}
-          image: "{{ .Values.interceptor.image.registry }}/{{ .Values.interceptor.image.namespace | default .Release.Namespace }}/{{ .Values.interceptor.image.repository | default .Chart.Name }}:{{ .Values.interceptor.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.interceptor.image.pullPolicy }}
+          image: "{{.Values.interceptor.image.registry}}/{{.Values.interceptor.image.namespace | default .Release.Namespace}}/{{.Values.interceptor.image.repository | default .Chart.Name}}:{{.Values.interceptor.image.tag | default .Chart.AppVersion}}"
+          imagePullPolicy: {{.Values.interceptor.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 8080
@@ -35,7 +35,7 @@ spec:
                   key: password
                   name: ods-bitbucket-auth
             - name: API_HOST
-              value: '{{ .Values.interceptor.apiHost }}'
+              value: '{{.Values.interceptor.apiHost}}'
           readinessProbe:
             httpGet:
               path: /health
@@ -49,6 +49,6 @@ spec:
             failureThreshold: 20
             periodSeconds: 3
           resources:
-            {{- toYaml .Values.interceptor.resources | nindent 12 }}
-      serviceAccountName: '{{ .Values.serviceAccountName }}'
-      serviceAccount: '{{ .Values.serviceAccountName }}'
+            {{- toYaml .Values.interceptor.resources | nindent 12}}
+      serviceAccountName: '{{.Values.serviceAccountName}}'
+      serviceAccount: '{{.Values.serviceAccountName}}'

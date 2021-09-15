@@ -2,8 +2,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   annotations:
-    volume.beta.kubernetes.io/storage-provisioner: '{{ .Values.storageProvisioner }}'
-  name: {{ include "chart.fullname" . }}
+    volume.beta.kubernetes.io/storage-provisioner: '{{.Values.storageProvisioner}}'
+  name: {{ include "chart.fullname" .}}
   finalizers:
     - kubernetes.io/pvc-protection
 spec:
@@ -12,5 +12,5 @@ spec:
   resources:
     requests:
       storage: 2Gi
-  storageClassName: '{{ .Values.storageClassName }}'
+  storageClassName: '{{.Values.storageClassName}}'
   volumeMode: Filesystem

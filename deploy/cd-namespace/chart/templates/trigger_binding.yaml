@@ -1,7 +1,7 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" .}}
 spec:
   params:
     - name: pipeline-name

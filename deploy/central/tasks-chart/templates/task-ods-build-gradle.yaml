@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-gradle{{ .Values.taskSuffix }}
+  name: ods-build-gradle{{.Values.taskSuffix}}
 spec:
   description: |
 
@@ -126,7 +126,7 @@ spec:
   steps:
     - name: build-gradle-binary
       # Image is built from build/package/Dockerfile.gradle-toolset.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-gradle-toolset:{{ .Values.imageTag }}'
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-gradle-toolset:{{.Values.imageTag}}'
       env:
         - name: DEBUG
           valueFrom:
@@ -144,7 +144,7 @@ spec:
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-sonar:{{ .Values.imageTag }}'
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.imageTag}}'
       env:
         - name: SONAR_URL
           valueFrom:

@@ -3,8 +3,8 @@ apiVersion: v1
 metadata:
   name: ods-nexus
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" . | nindent 4}}
 data:
-  url: '{{ .Values.nexusUrl }}'
-  temporaryRepository: '{{ .Values.nexusTemporaryRepository }}'
-  permanentRepository: '{{ .Values.nexusPermanentRepository }}'
+  url: '{{.Values.nexusUrl}}'
+  temporaryRepository: '{{.Values.nexusTemporaryRepository}}'
+  permanentRepository: '{{.Values.nexusPermanentRepository}}'

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-start{{ .Values.taskSuffix }}
+  name: ods-start{{.Values.taskSuffix}}
 spec:
   description: |
     Starts the pipeline run.
@@ -116,7 +116,7 @@ spec:
   steps:
     - name: ods-start
       # Image is built from build/package/Dockerfile.start.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-start:{{ .Values.imageTag }}'
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-start:{{.Values.imageTag}}'
       env:
         - name: NEXUS_URL
           valueFrom:

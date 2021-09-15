@@ -7,7 +7,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-sonar:{{ .Values.imageTag }}'
+      name: 'ods-sonar:{{.Values.imageTag}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -20,13 +20,13 @@ spec:
         name: 'registry.redhat.io/ubi8/ubi-minimal'
       buildArgs:
         - name: sonarEdition
-          value: '{{ .Values.sonarEdition }}'
+          value: '{{.Values.sonarEdition}}'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
   source:
     type: Git
     git:
-      uri: '{{ .Values.odsPipelineGitRepoUri }}'
-      ref: '{{ .Values.odsPipelineGitRepoRef }}'
+      uri: '{{.Values.odsPipelineGitRepoUri}}'
+      ref: '{{.Values.odsPipelineGitRepoRef}}'
   runPolicy: Serial
