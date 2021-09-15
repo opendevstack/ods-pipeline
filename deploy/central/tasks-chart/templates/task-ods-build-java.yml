@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
-  name: ods-build-java{{ .Values.taskSuffix }}
+  name: ods-build-gradle{{ .Values.taskSuffix }}
 spec:
   description: |
     Builds Java Gradle applications.
@@ -104,9 +104,9 @@ spec:
       type: string
       default: "false"
   steps:
-    - name: build-java-binary
-      # Image is built from build/package/Dockerfile.java-toolset.
-      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-java-toolset:{{ .Values.imageTag }}'
+    - name: build-gradle-binary
+      # Image is built from build/package/Dockerfile.gradle-toolset.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-gradle-toolset:{{ .Values.imageTag }}'
       env:
         - name: DEBUG
           valueFrom:
@@ -115,8 +115,8 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
-        # build-java is build/package/scripts/build-java.sh.
-        build-java \
+        # build-gradle is build/package/scripts/build-gradle.sh.
+        build-gradle \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --gradle-additional-tasks=$(params.gradle-additional-tasks) \

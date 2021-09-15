@@ -1,20 +1,20 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: ods-java-toolset
+  name: ods-gradle-toolset
 spec:
   nodeSelector: null
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-java-toolset:{{ .Values.imageTag }}'
+      name: 'ods-gradle-toolset:{{ .Values.imageTag }}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
   strategy:
     type: Docker
     dockerStrategy:
-      dockerfilePath: build/package/Dockerfile.java-toolset
+      dockerfilePath: build/package/Dockerfile.gradle-toolset
       from:
         kind: DockerImage
         name: 'registry.redhat.io/ubi8'

@@ -26,5 +26,5 @@ RUN cd /opt && \
     microdnf install -y make && make --version
 
 # Add scripts
-COPY build/package/scripts/build-java.sh /usr/local/bin/build-java
-RUN chmod +x /usr/local/bin/build-java
+COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
+RUN chmod +x /usr/local/bin/build-gradle

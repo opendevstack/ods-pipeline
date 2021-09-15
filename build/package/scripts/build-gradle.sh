@@ -43,7 +43,7 @@ export GRADLE_USER_HOME=/home/gradle/.gradle
 echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
 cd "${WORKING_DIR}"
-echo "Working on Java/Gradle project in '${WORKING_DIR}'..."
+echo "Working on Gradle project in '${WORKING_DIR}'..."
 echo
 echo "Gradlew version: "
 ./gradlew -version

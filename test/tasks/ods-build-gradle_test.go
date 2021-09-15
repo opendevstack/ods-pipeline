@@ -9,12 +9,12 @@ import (
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
-func TestTaskODSBuildJava(t *testing.T) {
+func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-java",
+		"ods-build-gradle",
 		map[string]tasktesting.TestCase{
-			"task should build java gradle app": {
-				WorkspaceDirMapping: map[string]string{"source": "java-gradle-sample-app"},
+			"task should build gradle app": {
+				WorkspaceDirMapping: map[string]string{"source": "gradle-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)

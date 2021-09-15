@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "finish", "go-toolset", "java-toolset", "helm", "sonar", "start", "webhook-interceptor", "python-toolset", "typescript-toolset"]
+        image: ["buildah", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "webhook-interceptor", "python-toolset", "typescript-toolset"]
     steps:
       -
         name: Checkout
@@ -82,11 +82,11 @@ jobs:
           docker push localhost:5000/ods/ods-go-toolset:latest
           docker rmi localhost:5000/ods/ods-go-toolset:latest
       -
-        name: Push java-toolset image
+        name: Push gradle-toolset image
         run: |
-          docker load --input /tmp/buildx-image-ods-java-toolset/image-ods-java-toolset.tar
-          docker push localhost:5000/ods/ods-java-toolset:latest
-          docker rmi localhost:5000/ods/ods-java-toolset:latest
+          docker load --input /tmp/buildx-image-ods-gradle-toolset/image-ods-gradle-toolset.tar
+          docker push localhost:5000/ods/ods-gradle-toolset:latest
+          docker rmi localhost:5000/ods/ods-gradle-toolset:latest
       -
         name: Push helm image
         run: |

@@ -107,37 +107,37 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 
 |===
 
-=== `ods-build-java`
+=== `ods-build-gradle`
 
 [cols="1,3"]
 |===
-| REQ-TASK-BUILD-JAVA-1
-a| The task shall build a Java module that provides a gradle build script into `docker/app.jar`:
+| REQ-TASK-BUILD-GRADLE-1
+a| The task shall build a Gradle module that provides a gradle build script into `docker/app.jar`:
 
 * The destination directory shall be customizable by exporting the environment variable `ODS_OUTPUT_DIR`.
 
-| REQ-TASK-BUILD-JAVA-2
+| REQ-TASK-BUILD-GRADLE-2
 a| The task shall run `gradlew clean build` to build the Java module:
 
 * Options shall be passed to gradle
 
-| REQ-TASK-BUILD-JAVA-3
+| REQ-TASK-BUILD-GRADLE-3
 a| The task shall copy the generated unit test report into the folder `.ods/artifacts/xunit-reports`:
 
 * The artifacts shall be placed in the working directory (for SonarQube to pick them up) and in .ods/artifacts.
 
-| REQ-TASK-BUILD-JAVA-4
+| REQ-TASK-BUILD-GRADLE-4
 a| The task shall copy the generated unit test coverage report into the folder `.ods/artifacts/code-coverage`:
 
 * The artifacts shall be placed in the working directory (for SonarQube to pick them up) and in .ods/artifacts.
 
-| REQ-TASK-BUILD-JAVA-5
+| REQ-TASK-BUILD-GRADLE-5
 a| The task shall run `sonar-scanner` on the sources, communicating with the SonarQube server specified by the `ods-sonar` config map and the `ods-sonar-auth` secret:
 
 * The project name shall be fixed to `<PROJECT>-<COMPONENT>`
 * If the server edition supports it, the branch parameter shall be set, unless the branch being built belongs to an open PR, in which case PR analysis parameter shall be sent instead.
 
-| REQ-TASK-BUILD-JAVA-6
+| REQ-TASK-BUILD-GRADLE-6
 a| The task shall be able to run in a subdirectory of the checked out repository.
 
 * Generated artifacts shall be prefixed with `<SUBDIRECTORY>-`
