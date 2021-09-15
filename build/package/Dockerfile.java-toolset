@@ -23,7 +23,8 @@ RUN cd /opt && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
     mkdir -p /home/gradle && \
     ln -s /root/.gradle /home/gradle/.gradle && \
-    chmod -R 777 /home/gradle/.gradle
+    chmod -R 777 /home/gradle/.gradle && \
+    microdnf install -y make && make --version
 
 # Add scripts
 COPY build/package/scripts/build-java.sh /usr/local/bin/build-java
