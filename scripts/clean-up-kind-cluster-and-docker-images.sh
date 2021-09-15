@@ -14,8 +14,6 @@ while [[ "$#" -gt 0 ]]; do
 
     -v|--verbose) set -x;;
 
-    --recreate) RECREATE_KIND_CLUSTER="true";;
-
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
