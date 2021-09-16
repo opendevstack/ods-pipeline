@@ -1,0 +1,157 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: ods-build-gradle{{ .Values.taskSuffix }}
+spec:
+  description: |
+    Builds Java Gradle applications.
+
+    Tests exclude the vendor directory. Test results are converted into xUnit format.
+
+    Both xUnit report and coverage report are placed into .ods/artifacts.
+
+    Note on build environment variables available:
+    - `ODS_OUTPUT_DIR`: this environment variable points to the folder
+    that this build expects generated application artifacts to be copied to.
+    The project gradle script should read this env var to copy all the
+    generated application artifacts.
+    - `NEXUS_* env vars`: following env vars `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+    are available and should be read by your gradle script.
+
+    The following steps are executed:
+    - build and test execution (using `./gradlew clean build`)
+    - SonarQube quality scan
+
+    To copy the generated application artifact e.g within the project gradle script follow this steps:
+    - read the env var `ODS_OUTPUT_DIR` in the buildscript section of the gradle script:
+    buildscript {
+        ext {
+          outputDir = System.getenv('ODS_OUTPUT_DIR')
+          }
+    }
+    - customize the jar tasks to set the destination directory
+    jar {
+        println("Set application jar name to 'app'")
+        archiveBaseName = 'app'
+        if (outputDir != null) {
+            println("Set destinationDirectory to '${projectDir}/${outputDir}'")
+            destinationDirectory = file("${projectDir}/${outputDir}")
+        }
+    }
+
+    To create a coverage report be sure that you add to `gradle.properties` the required
+    configuration. E.g for enabling Jacoco you will need to:
+    - add `jacoco` plugin
+    - add task `jacocoTestReport`:
+        jacocoTestReport {
+            reports {
+              xml.enabled true
+            }
+        }
+    - add `finalizedBy jacocoTestReport` to the task `test`:
+        tasks.named('test') {
+            // Use JUnit Platform for unit tests.
+            useJUnitPlatform()
+            finalizedBy jacocoTestReport
+        }
+
+    After tests ran successfully, the application source code is scanned by SonarQube.
+
+    To configure SonarQube be sure to include the property file `sonar-project.properties`
+    to define following required properties. Here an example with default values:
+    - sonar.sources=src
+    - sonar.java.binaries=build/classes
+    - sonar.junit.reportPaths=build/test-results/test
+    - sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+    Otherwise the SonarQube scan will fail.
+
+    When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
+    is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
+    The SonarQube scan will include parameters to perform a pull request analysis if
+    there is an open pull request for the branch being built. Pull request decoration
+    in Bitbucket is done automatically by SonarQube provided the ALM integration is setup
+    properly in SonarQube.
+  params:
+    - name: working-dir
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
+      type: string
+      default: "."
+    - name: gradle-additional-tasks
+      description: >-
+        Additional gradle tasks to be passed to the gradle build. (default tasks called are `clean` and `build`).
+      type: string
+      default: ""
+    - name: gradle-options
+      description: >-
+        Options to be passed to the gradle build.
+        (See ref: https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_debugging)
+      type: string
+      default: ""
+    - name: output-dir
+      description: >-
+        Path to the directory into which the resulting Java application jar should be copied, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
+      type: string
+      default: docker
+    - name: sonar-quality-gate
+      description: Whether the SonarQube quality gate needs to pass for the task to succeed.
+      type: string
+      default: "false"
+    - name: sonar-skip
+      description: Whether to skip SonarQube analysis or not.
+      type: string
+      default: "false"
+  steps:
+    - name: build-gradle-binary
+      # Image is built from build/package/Dockerfile.gradle-toolset.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-gradle-toolset:{{ .Values.imageTag }}'
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+        # build-gradle is build/package/scripts/build-gradle.sh.
+        build-gradle \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --gradle-additional-tasks=$(params.gradle-additional-tasks) \
+          --gradle-options=$(params.gradle-options)
+      workingDir: $(workspaces.source.path)
+    - name: scan-with-sonar
+      # Image is built from build/package/Dockerfile.sonar.
+      image: '{{ .Values.registry }}/{{ .Values.namespace }}/ods-sonar:{{ .Values.imageTag }}'
+      env:
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          mkdir -p .ods/artifacts/sonarqube-analysis
+          # sonar is built from cmd/sonar/main.go.
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate)
+        fi
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

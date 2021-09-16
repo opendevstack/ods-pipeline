@@ -41,7 +41,7 @@ An ODS installation provides you with the following tasks, which are implemented
 
 * `ods-start`: Checkout repository and set Bitbucket build status
 * `ods-build-go`: Build a Go application (includes Sonar scan)
-* `ods-build-java`: Build a Java application (includes Sonar scan)
+* `ods-build-gradle`: Build a Java application (includes Sonar scan)
 * `ods-build-python`: Build a Python application (includes Sonar scan)
 * `ods-build-nodejs`: Build a TypeScript/JavaScript application (includes Sonar scan)
 * `ods-package-image`: Package application into container image (includes optional Aqua scan)
@@ -55,7 +55,7 @@ Let's look at the `ods-build-*` tasks in more detail to understand what such tas
 * Build Go binary (through running `go build`, `go test`, `golangci-lint run` etc.)
 * Run static analysis of Go application against SonarQube
 
-The other "language build tasks" like `ods-build-java` have the same steps, except that they make use of e.g. `gradle build` to build a JAR instead of a Go binary.
+The other "language build tasks" like `ods-build-gradle` have the same steps, except that they make use of e.g. `gradle build` to build a JAR instead of a Go binary.
 
 The `ods-package-image` tasks consist of the following steps:
 
