@@ -2,32 +2,40 @@
 
 = ods-build-gradle
 
-Builds Java Gradle applications.
 
-Tests exclude the vendor directory. Test results are converted into xUnit format.
-
-Both xUnit report and coverage report are placed into .ods/artifacts.
-
-Note on build environment variables available:
-- `ODS_OUTPUT_DIR`: this environment variable points to the folder
-that this build expects generated application artifacts to be copied to.
-The project gradle script should read this env var to copy all the
-generated application artifacts.
-- `NEXUS_* env vars`: following env vars `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
-are available and should be read by your gradle script.
+Builds Gradle applications.
 
 The following steps are executed:
-- build and test execution (using `./gradlew clean build`)
+
+- build gradle application, using `gradlew clean build`, which includes tests execution and coverage report generation
 - SonarQube quality scan
 
-To copy the generated application artifact e.g within the project gradle script follow this steps:
-- read the env var `ODS_OUTPUT_DIR` in the buildscript section of the gradle script:
+Notes:
+
+- tests exclude the vendor directory.
+- test results are converted into xUnit format.
+- both xUnit report and coverage report are placed into .ods/artifacts.
+
+Environment variables available:
+
+- `ODS_OUTPUT_DIR`: this environment variable points to the folder
+that this build expects generated application artifacts to be copied to.
+The gradle script should read it and copy there the generated artifacts.
+- `NEXUS_* env vars`: `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+are available and should be read by the gradle script.
+
+To enable the gradle script to copy the generated application artifacts script follow these steps:
+
+- read the environment variable `ODS_OUTPUT_DIR` in the buildscript section of the gradle script:
+```
 buildscript {
     ext {
       outputDir = System.getenv('ODS_OUTPUT_DIR')
-      }
+    }
 }
+```
 - customize the jar tasks to set the destination directory
+```
 jar {
     println("Set application jar name to 'app'")
     archiveBaseName = 'app'
@@ -36,32 +44,43 @@ jar {
         destinationDirectory = file("${projectDir}/${outputDir}")
     }
 }
+```
 
 To create a coverage report be sure that you add to `gradle.properties` the required
-configuration. E.g for enabling Jacoco you will need to:
-- add `jacoco` plugin
+configuration. For example to enable Jacoco coverage repot you will need to:
+
+- add `jacoco` plugin:
+```
+plugins {
+    id 'application'
+    id 'jacoco'
+}
+```
 - add task `jacocoTestReport`:
-    jacocoTestReport {
-        reports {
-          xml.enabled true
-        }
+```
+jacocoTestReport {
+    reports {
+      xml.enabled true
     }
+}
+```
 - add `finalizedBy jacocoTestReport` to the task `test`:
-    tasks.named('test') {
-        // Use JUnit Platform for unit tests.
-        useJUnitPlatform()
-        finalizedBy jacocoTestReport
-    }
+```
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+```
 
-After tests ran successfully, the application source code is scanned by SonarQube.
-
-To configure SonarQube be sure to include the property file `sonar-project.properties`
-to define following required properties. Here an example with default values:
-- sonar.sources=src
-- sonar.java.binaries=build/classes
-- sonar.junit.reportPaths=build/test-results/test
-- sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+To configure SonarQube the project has to include at the root folder of the project the property file `sonar-project.properties`.
 Otherwise the SonarQube scan will fail.
+Following example properties show default working values for a standard gradle project:
+```
+sonar.sources=src
+sonar.java.binaries=build/classes
+sonar.junit.reportPaths=build/test-results/test
+sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+```
 
 When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
 is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
