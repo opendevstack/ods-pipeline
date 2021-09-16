@@ -38,6 +38,7 @@ type TaskRunContext struct {
 	Workspaces map[string]string
 	Params     map[string]string
 	ODS        *pipelinectxt.ODSContext
+	Cleanup    func()
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -65,6 +66,10 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	if tc.PreRunFunc != nil {
 		tc.PreRunFunc(t, testCaseContext)
+	}
+
+	if testCaseContext.Cleanup != nil {
+		defer testCaseContext.Cleanup()
 	}
 
 	tr, err := CreateTaskRunWithParams(

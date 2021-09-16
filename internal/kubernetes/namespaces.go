@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// TODO: return error
 func CreateNamespace(clientset *kubernetes.Clientset, namespace string) {
 	log.Printf("Create namespace %s to deploy to", namespace)
 	if _, err := clientset.CoreV1().Namespaces().Create(context.TODO(),
