@@ -83,9 +83,6 @@ if [ -s go-lint-report.txt ]; then
   exit $exitcode
 fi
 
-echo "Building ..."
-go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"
-
 if [ -n "${PRE_TEST_SCRIPT}" ]; then
   echo "Executing pre-test script ..."
   ./${PRE_TEST_SCRIPT}
@@ -120,5 +117,10 @@ else
     echo "No code coverage found"
     exit 1
   fi
-  exit $exitcode
+  if [ $exitcode != 0 ]; then
+    exit $exitcode
+  fi
 fi
+
+echo "Building ..."
+go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"

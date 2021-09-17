@@ -79,20 +79,20 @@ a| The task shall store context information under `.ods` for each checked out re
 | The task shall run golanglint-ci and fail if there are any findings.
 
 | REQ-TASK-BUILD-GO-3
-a| The task shall build a Go module based Go binary into `docker/app`:
-
-* The destination directory shall be customizable
-* Paths in stack traces shall be trimmed
-* The target operating system (`GOOS`) and architecture (`GOARCH`) shall be customizable
-* CGO shall be disabled by default but shall be enablable by parameter.
-
-| REQ-TASK-BUILD-GO-4
 a| The task shall run `go test`, creating code coverage and xUnit report.
 
 * A shell script shall be executed prior to the tests if specified by the `pre-test-script` task parameter.
 * All packages except vendored ones shall be tested.
 * The artifacts shall be placed in the working directory (for SonarQube to pick them up) and in `.ods/artifacts`.
 * If tests already ran for the commit being built, testing shall be skipped and the existing artifacts shall be copied into the working directory.
+
+| REQ-TASK-BUILD-GO-4
+a| The task shall build a Go module based Go binary into `docker/app`:
+
+* The destination directory shall be customizable
+* Paths in stack traces shall be trimmed
+* The target operating system (`GOOS`) and architecture (`GOARCH`) shall be customizable
+* CGO shall be disabled by default but shall be enablable by parameter.
 
 | REQ-TASK-BUILD-GO-5
 | See REQ-TASK-SHARED-1.
