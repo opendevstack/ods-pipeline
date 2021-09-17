@@ -27,6 +27,11 @@ without leading `./` and trailing `/`.
 | Maximum line length.
 
 
+| pre-test-script
+| 
+| Script to execute before running tests, relative to the working directory.
+
+
 | sonar-quality-gate
 | false
 | Whether quality gate needs to pass.

@@ -7,6 +7,7 @@ GO_ARCH=""
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
+PRE_TEST_SCRIPT=""
 DEBUG="false"
 
 while [[ "$#" -gt 0 ]]; do
@@ -26,6 +27,9 @@ while [[ "$#" -gt 0 ]]; do
 
     --output-dir) OUTPUT_DIR="$2"; shift;;
     --output-dir=*) OUTPUT_DIR="${1#*=}";;
+
+    --pre-test-script) PRE_TEST_SCRIPT="$2"; shift;;
+    --pre-test-script=*) PRE_TEST_SCRIPT="${1#*=}";;
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
@@ -79,8 +83,10 @@ if [ -s go-lint-report.txt ]; then
   exit $exitcode
 fi
 
-echo "Building ..."
-go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"
+if [ -n "${PRE_TEST_SCRIPT}" ]; then
+  echo "Executing pre-test script ..."
+  ./${PRE_TEST_SCRIPT}
+fi
 
 echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
@@ -111,5 +117,10 @@ else
     echo "No code coverage found"
     exit 1
   fi
-  exit $exitcode
+  if [ $exitcode != 0 ]; then
+    exit $exitcode
+  fi
 fi
+
+echo "Building ..."
+go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"

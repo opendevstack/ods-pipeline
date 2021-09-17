@@ -21,6 +21,10 @@ spec:
       description: Maximum line length.
       type: string
       default: "120"
+    - name: pre-test-script
+      description: Script to execute before running tests, relative to the working directory.
+      type: string
+      default: ""
     - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
       type: string
@@ -61,6 +65,7 @@ spec:
         build-python \
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
+          --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
       workingDir: $(workspaces.source.path)

@@ -49,6 +49,10 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: pre-test-script
+      description: Script to execute before running tests, relative to the working directory.
+      type: string
+      default: ""
     - name: sonar-quality-gate
       description: Whether the SonarQube quality gate needs to pass for the task to succeed.
       type: string
@@ -76,6 +80,7 @@ spec:
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
+          --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
       workingDir: $(workspaces.source.path)

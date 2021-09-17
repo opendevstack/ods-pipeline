@@ -146,5 +146,25 @@ func TestTaskODSBuildGo(t *testing.T) {
 					checkFileContent(t, wsDir, ".ods/artifacts/lint-reports/report.txt", wantLintReportContent)
 				},
 			},
+			"build go app with pre-test script": {
+				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"sonar-skip":      "true",
+						"pre-test-script": "pre-test-script.sh",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					wantFile := "docker/test.txt"
+					if _, err := os.Stat(filepath.Join(wsDir, wantFile)); os.IsNotExist(err) {
+						t.Fatalf("Want %s, but got nothing", wantFile)
+					}
+				},
+			},
 		})
 }

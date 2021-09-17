@@ -57,6 +57,11 @@ without leading `./` and trailing `/`.
 | Path to the directory into which the resulting Go binary should be copied, relative to `working-dir`. This directory may then later be used as Docker context for example.
 
 
+| pre-test-script
+| 
+| Script to execute before running tests, relative to the working directory.
+
+
 | sonar-quality-gate
 | false
 | Whether the SonarQube quality gate needs to pass for the task to succeed.
