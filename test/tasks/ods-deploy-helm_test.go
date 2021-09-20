@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
@@ -58,14 +61,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					secret, err := readPrivateKeySecret()
-					if err != nil {
-						t.Fatal(err)
-					}
-					_, err = kubernetes.CreateSecret(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, secret)
-					if err != nil {
-						t.Fatal(err)
-					}
+					createSampleAppPrivateKeySecret(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -115,8 +111,133 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					}
 				},
 			},
+			"external deployment": {
+				ExcludeOnShort:      true,
+				Timeout:             10 * time.Minute,
+				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					t.Log("Starting separate KinD cluster to deploy to")
+					stdout, stderr, err := command.Run(
+						projectpath.Root+"/scripts/kind-with-registry.sh",
+						[]string{"--name=ext", "--registry-port=5001", "--recreate"},
+					)
+					if err != nil {
+						t.Log(string(stderr))
+						t.Fatal(err)
+					}
+					t.Log(string(stdout))
+					stdout, stderr, err = command.Run("kind",
+						[]string{"export", "kubeconfig"},
+					)
+					if err != nil {
+						t.Log(string(stderr))
+						t.Fatal(err)
+					}
+					t.Log(string(stdout))
+
+					t.Log("Ensure to shut down the external cluster after the test")
+					ctxt.Cleanup = func() {
+						stdout, stderr, err = command.Run("kind",
+							[]string{"delete", "cluster", "--name=ext"})
+						if err != nil {
+							t.Log(string(stderr))
+							t.Fatal(err)
+						}
+						t.Log(string(stdout))
+					}
+
+					t.Log("Create private key secret for sample app")
+					createSampleAppPrivateKeySecret(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+
+					t.Log("Get token of serviceaccount in external cluser (waiting 10s)")
+					time.Sleep(10 * time.Second)
+					token, err := getServiceaccountToken()
+					if err != nil {
+						t.Fatal(err)
+					}
+					secret, err := kubernetes.CreateSecret(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, &corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{Name: "ext"},
+						Data: map[string][]byte{
+							"token": token,
+						},
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					t.Log("Write ods.yaml with proper environment info")
+					stdout, stderr, err = command.Run("kubectl",
+						[]string{
+							"--context=kind-ext",
+							"--namespace=default", "get", "endpoints", "kubernetes",
+							"-ojsonpath=https://{.subsets[0].addresses[0].ip}:{.subsets[0].ports[0].port}",
+						},
+					)
+					if err != nil {
+						t.Log(string(stderr))
+						t.Fatal(err)
+					}
+					t.Log(string(stdout))
+					ipAddress := strings.TrimSpace(string(stdout))
+					o := &config.ODS{
+						Environments: []config.Environment{
+							{
+								Name:                 "dev",
+								Stage:                config.DevStage,
+								Namespace:            "default",
+								APIServer:            ipAddress,
+								APICredentialsSecret: secret.Name,
+								RegistryHost:         "ext-registry.kind",
+							},
+						},
+					}
+					err = createODSYML(wsDir, o)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+
+					// TODO
+					// - ensure images are promoted across
+					// - check if resources exist
+				},
+				WantRunSuccess: true,
+			},
 		},
 	)
+}
+
+func createSampleAppPrivateKeySecret(t *testing.T, clientset *k8s.Clientset, ctxtNamespace string) {
+	secret, err := readPrivateKeySecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = kubernetes.CreateSecret(clientset, ctxtNamespace, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func getServiceaccountToken() ([]byte, error) {
+	stdout, stderr, err := command.Run(
+		"kubectl",
+		[]string{"--context=kind-ext", "get", "serviceaccount/default", "-ojsonpath={.secrets[0].name}"},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not get secret name: %s, err: %w", strings.TrimSpace(string(stderr)), err)
+	}
+	secretName := string(stdout)
+	stdout, stderr, err = command.Run(
+		"kubectl",
+		[]string{"--context=kind-ext", "get", "secret/" + secretName, "-ojsonpath={.data.token}"},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not get token: %s, err: %w", strings.TrimSpace(string(stderr)), err)
+	}
+	return stdout, nil
 }
 
 func createReleaseNamespace(clientset *k8s.Clientset, ctxtNamespace string) (string, error) {
