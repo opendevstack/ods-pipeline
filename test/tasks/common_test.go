@@ -108,9 +108,6 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 			if tc.TaskVariant != "" {
 				taskName = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
 			}
-			if testing.Short() && tc.ExcludeOnShort {
-				t.Skip()
-			}
 			if tc.Timeout == 0 {
 				tc.Timeout = 5 * time.Minute
 			}

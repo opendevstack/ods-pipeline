@@ -166,14 +166,18 @@ func main() {
 				)
 			}
 			imageStream := imageArtifact.Name
-			fmt.Println("copying image", imageStream)
+			fmt.Printf("Copying image %s ...\n", imageStream)
 			srcImageURL := imageArtifact.Image
-			// TODO: At least for OpenShift image streams, we want to autocreate
-			// the destination if it does not exist yet.
 			var destImageURL string
 			// If the source registry should be TLS verified, the destination
 			// should be verified by default as well.
 			destRegistryTLSVerify := opts.srcRegistryTLSVerify
+			srcRegistryTLSVerify := opts.srcRegistryTLSVerify
+			// TLS verification of the KinD registry is not possible at the moment as
+			// requests error out with "server gave HTTP response to HTTPS client".
+			if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
+				srcRegistryTLSVerify = false
+			}
 			if len(targetConfig.RegistryHost) > 0 {
 				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
 				if targetConfig.RegistryTLSVerify != nil {
@@ -188,10 +192,10 @@ func main() {
 			// matches the SHA referenced by the Git commit tag.
 			skopeoCopyArgs := []string{
 				"copy",
-				fmt.Sprintf("--src-tls-verify=%v", opts.srcRegistryTLSVerify),
+				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
 			}
-			if opts.srcRegistryTLSVerify {
+			if srcRegistryTLSVerify {
 				skopeoCopyArgs = append(skopeoCopyArgs, fmt.Sprintf("--src-cert-dir=%v", opts.certDir))
 			}
 			if destRegistryTLSVerify {

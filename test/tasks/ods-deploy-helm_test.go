@@ -58,14 +58,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					secret, err := readPrivateKeySecret()
-					if err != nil {
-						t.Fatal(err)
-					}
-					_, err = kubernetes.CreateSecret(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, secret)
-					if err != nil {
-						t.Fatal(err)
-					}
+					createSampleAppPrivateKeySecret(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -117,6 +110,17 @@ func TestTaskODSDeployHelm(t *testing.T) {
 			},
 		},
 	)
+}
+
+func createSampleAppPrivateKeySecret(t *testing.T, clientset *k8s.Clientset, ctxtNamespace string) {
+	secret, err := readPrivateKeySecret()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = kubernetes.CreateSecret(clientset, ctxtNamespace, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func createReleaseNamespace(clientset *k8s.Clientset, ctxtNamespace string) (string, error) {

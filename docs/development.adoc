@@ -36,3 +36,30 @@ go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks 
 Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too. Unfortunately these test dependencies are not expressed explicitly yet, see tracking issue https://github.com/opendevstack/ods-pipeline/issues/99.
 
 Also, if you make changes to the images backing the tasks (be it by changing the `Dockerfile` or by changing the scripts/commands installed there), make sure to rebuild and push the affected images to the KinD registry for your changes to take effect. You can do this e.g. through `./scripts/build-and-push-images.sh --image finish` (the name of the image flag is the suffix of the respective Dockerfile).
+
+=== Testing deployment to external cluster
+
+The `ods-deploy-helm` task is able to deploy to external clusters. This functionality is covered by tests as well, but they are hidden behind the `external` build flag by default. To run those tests, you must run `go test` with `--tags=external`, and provide information about the external cluster to use as the test does not setup the external cluster automatically.
+
+First, you need to create a ODS configuration file containing one environment describing the external cluster you want to use, e.g.:
+
+.ods.external.yaml
+[source,yaml]
+----
+environments:
+- name: dev
+  stage: dev
+  namespace: foo-dev
+  apiServer: https://api.example.openshiftapps.com:6443
+  registryHost: default-route-openshift-image-registry.apps.example.openshiftapps.com
+----
+
+If you place this file in the root of the `ods-pipeline` repository, it will automtically be ignored by Git. Note that the `namespace` specified will be used to deploy the Helm release into. As the Helm release name is set to the random workspace name, clashes with existing resources is unlikely. Nonetheless, it is always recommended to use an empty namespace setup solely for the purpose of testing.
+
+Finally, you need to run the tests, passing the configuration created earlier and the token of a serviceaccount with enough permissions in the target namespace:
+
+```
+go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/pipeline/test/tasks -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
+```
+
+The above command runs only the external deployment test, but you may also remove this limitation (by removing `-run ^TestTaskODSDeployHelmExternal$`) and run the whole test suite including the external deployment test.

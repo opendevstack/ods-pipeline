@@ -34,13 +34,13 @@ var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
 type ODS struct {
 	// Repositories specifies the subrepositores, making the current repository
 	// an "umbrella" repository.
-	Repositories []Repository `json:"repositories"`
+	Repositories []Repository `json:"repositories,omitempty"`
 	// Environments allows you to specify target environments to deploy to.
 	Environments []Environment `json:"environments"`
 	// BranchToEnvironmentMapping configures which branch should be deployed to which environment.
-	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping"`
+	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping,omitempty"`
 	// Pipeline allows to define the Tekton pipeline tasks.
-	Pipeline Pipeline `json:"pipeline"`
+	Pipeline Pipeline `json:"pipeline,omitempty"`
 	// Version is the application version and must follow SemVer.
 	Version string `json:"version,omitempty"`
 }
@@ -81,16 +81,22 @@ type Environment struct {
 	// image is used.
 	RegistryHost string `json:"registryHost"`
 	// Whether to verify TLS for the target registry.
-	RegistryTLSVerify *bool `json:"registryVerify"`
+	RegistryTLSVerify *bool `json:"registryVerify,omitempty"`
 	// Target K8s namespace (OpenShift project) on the target cluster to deploy into.
 	Namespace string `json:"namespace"`
 	// Additional configuration of the target. This may be used by tasks outside
 	// the ODS catalog.
-	Config map[string]interface{} `json:"config"`
+	Config map[string]interface{} `json:"config,omitempty"`
 	// APIToken holds the token of the environment, if any.
 	// The value is retrieved from the "token" field in the secret referenced by APICredentialsSecret.
 	// Cannot be set from JSON.
 	APIToken string `json:"-"`
+}
+
+// Pipeline represents a Tekton pipeline.
+type Pipeline struct {
+	Tasks   []tekton.PipelineTask `json:"tasks,omitempty"`
+	Finally []tekton.PipelineTask `json:"finally,omitempty"`
 }
 
 func (o *ODS) Validate() error {
@@ -124,12 +130,6 @@ func (o *ODS) Environment(environment string) (*Environment, error) {
 	}
 
 	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
-}
-
-// Pipeline represents a Tekton pipeline.
-type Pipeline struct {
-	Tasks   []tekton.PipelineTask `json:"tasks"`
-	Finally []tekton.PipelineTask `json:"finally"`
 }
 
 // Read reads an ods config from given byte slice or errors.
