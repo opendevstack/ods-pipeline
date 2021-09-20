@@ -20,6 +20,7 @@ import (
 )
 
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
+var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
 
 const (
 	taskKindRef = "ClusterTask"
@@ -92,6 +93,8 @@ func getFileContentLean(filename string) (string, error) {
 }
 
 func runTaskTestCases(t *testing.T, taskName string, testCases map[string]tasktesting.TestCase) {
+	tasktesting.CheckCluster(t, *outsideKindFlag)
+
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{
 			SourceDir:        tasktesting.StorageSourceDir,
