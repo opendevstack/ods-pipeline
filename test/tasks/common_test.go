@@ -105,12 +105,13 @@ func runTaskTestCases(t *testing.T, taskName string, testCases map[string]taskte
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			tn := taskName
 			if tc.TaskVariant != "" {
-				taskName = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
+				tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
 			}
 			tasktesting.Run(t, tc, tasktesting.TestOpts{
 				TaskKindRef:             taskKindRef,
-				TaskName:                taskName,
+				TaskName:                tn,
 				Clients:                 c,
 				Namespace:               ns,
 				Timeout:                 5 * time.Minute, // depending on  the task we may need to increase or decrease it
