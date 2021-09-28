@@ -129,16 +129,20 @@ func main() {
 		log.Fatalf("could not create Kubernetes client: %s", err)
 	}
 
+	if targetConfig.APIServer != "" {
+		token, err := tokenFromSecret(clientset, ctxt.Namespace, targetConfig.APICredentialsSecret)
+		if err != nil {
+			log.Fatalf("could not get token from secret %s: %s", targetConfig.APICredentialsSecret, err)
+		}
+		targetConfig.APIToken = token
+	}
+
 	// Copy images into release namespace if there are any image artifacts.
 	if len(files) > 0 {
 		// Get destination registry token from secret or file in pod.
 		var destRegistryToken string
-		if len(targetConfig.SecretRef) > 0 {
-			token, err := tokenFromSecret(clientset, releaseNamespace, targetConfig.SecretRef)
-			if err != nil {
-				log.Fatalf("could not get token from secret %s: %s", targetConfig.SecretRef, err)
-			}
-			destRegistryToken = token
+		if targetConfig.APIToken != "" {
+			destRegistryToken = targetConfig.APIToken
 		} else {
 			token, err := getTrimmedFileContent(tokenFile)
 			if err != nil {
@@ -162,14 +166,18 @@ func main() {
 				)
 			}
 			imageStream := imageArtifact.Name
-			fmt.Println("copying image", imageStream)
+			fmt.Printf("Copying image %s ...\n", imageStream)
 			srcImageURL := imageArtifact.Image
-			// TODO: At least for OpenShift image streams, we want to autocreate
-			// the destination if it does not exist yet.
 			var destImageURL string
 			// If the source registry should be TLS verified, the destination
 			// should be verified by default as well.
 			destRegistryTLSVerify := opts.srcRegistryTLSVerify
+			srcRegistryTLSVerify := opts.srcRegistryTLSVerify
+			// TLS verification of the KinD registry is not possible at the moment as
+			// requests error out with "server gave HTTP response to HTTPS client".
+			if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
+				srcRegistryTLSVerify = false
+			}
 			if len(targetConfig.RegistryHost) > 0 {
 				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
 				if targetConfig.RegistryTLSVerify != nil {
@@ -184,10 +192,10 @@ func main() {
 			// matches the SHA referenced by the Git commit tag.
 			skopeoCopyArgs := []string{
 				"copy",
-				fmt.Sprintf("--src-tls-verify=%v", opts.srcRegistryTLSVerify),
+				fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
 				fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
 			}
-			if opts.srcRegistryTLSVerify {
+			if srcRegistryTLSVerify {
 				skopeoCopyArgs = append(skopeoCopyArgs, fmt.Sprintf("--src-cert-dir=%v", opts.certDir))
 			}
 			if destRegistryTLSVerify {
@@ -326,7 +334,7 @@ func main() {
 			context.TODO(), opts.privateKeySecret, metav1.GetOptions{},
 		)
 		if err != nil {
-			fmt.Printf("No secret %s found, skipping.", opts.privateKeySecret)
+			fmt.Printf("No secret %s found, skipping.\n", opts.privateKeySecret)
 		} else {
 			stdout, stderr, err = importPrivateKey(secret, opts.privateKeySecretField)
 			if err != nil {
@@ -347,15 +355,11 @@ func main() {
 		"--detailed-exitcode",
 		"--no-color",
 	}
-	if opts.debug {
-		helmDiffArgs = append(helmDiffArgs, "--debug")
-	}
 	for _, vf := range valuesFiles {
 		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
 	}
 	helmDiffArgs = append(helmDiffArgs, releaseName, helmArchive)
-	fmt.Println(helmBin, strings.Join(helmDiffArgs, " "))
-	stdout, stderr, err = command.Run(helmBin, helmDiffArgs)
+	stdout, stderr, err = runHelmCmd(helmDiffArgs, targetConfig, opts.debug)
 
 	if err == nil {
 		fmt.Println("no diff ...")
@@ -372,15 +376,11 @@ func main() {
 		"--wait",
 		"--install",
 	}
-	if opts.debug {
-		helmUpgradeArgs = append(helmUpgradeArgs, "--debug")
-	}
 	for _, vf := range valuesFiles {
 		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
 	}
 	helmUpgradeArgs = append(helmUpgradeArgs, releaseName, helmArchive)
-	fmt.Println(helmBin, strings.Join(helmUpgradeArgs, " "))
-	stdout, stderr, err = command.Run(helmBin, helmUpgradeArgs)
+	stdout, stderr, err = runHelmCmd(helmUpgradeArgs, targetConfig, opts.debug)
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
@@ -428,6 +428,31 @@ func importPrivateKey(secret *corev1.Secret, privateKeySecretField string) (outB
 	outBytes = stdout.Bytes()
 	errBytes = stderr.Bytes()
 	return outBytes, errBytes, err
+}
+
+func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (outBytes, errBytes []byte, err error) {
+	if debug {
+		args = append([]string{"--debug"}, args...)
+	}
+	printableArgs := args
+	if targetConfig.APIServer != "" {
+		printableArgs = append(
+			[]string{
+				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
+				"--kube-token=***",
+			},
+			args...,
+		)
+		args = append(
+			[]string{
+				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
+				fmt.Sprintf("--kube-token=%s", targetConfig.APIToken),
+			},
+			args...,
+		)
+	}
+	fmt.Println(helmBin, strings.Join(printableArgs, " "))
+	return command.Run(helmBin, args)
 }
 
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {

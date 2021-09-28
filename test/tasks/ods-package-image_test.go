@@ -33,7 +33,8 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					buildAndPushImageWithLabel(t, ctxt, wsDir)
+					tag := getDockerImageTag(t, ctxt, wsDir)
+					buildAndPushImageWithLabel(t, ctxt, tag, wsDir)
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -52,8 +53,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 // will pick up the existing image.
 // The image is labelled with "tasktestrun=true" so that it is possible to
 // verify that the image has not been rebuild in the task.
-func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
-	tag := getDockerImageTag(t, ctxt, wsDir)
+func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, tag, wsDir string) {
 	t.Logf("Build image %s ahead of taskrun", tag)
 	_, stderr, err := command.Run("docker", []string{
 		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),

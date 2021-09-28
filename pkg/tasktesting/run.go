@@ -34,6 +34,7 @@ type TestCase struct {
 	WantRunSuccess      bool
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
+	Timeout             time.Duration
 }
 
 type TaskRunContext struct {

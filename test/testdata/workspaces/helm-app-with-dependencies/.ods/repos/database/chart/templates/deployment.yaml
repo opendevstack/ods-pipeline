@@ -19,8 +19,6 @@ spec:
           securityContext: {}
           image: "{{.Values.image.registry}}/{{.Values.image.namespace | default .Release.Namespace}}/{{.Values.image.repository | default .Chart.Name}}:{{.Values.image.tag | default .Chart.AppVersion}}"
           imagePullPolicy: {{.Values.image.pullPolicy}}
-          command: ["/bin/sh"]
-          args: ["-c", "{{.Values.bootCommand}}"]
           ports:
             - name: http
               containerPort: 8080

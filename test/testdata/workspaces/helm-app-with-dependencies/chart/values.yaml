@@ -7,12 +7,12 @@ replicaCount: 1
 image:
   registry: index.docker.io
   # Overrides the image namespace whose default is the release namespace.
-  namespace: library
+  namespace: crccheck
   # Overrides the image repository whose default is the chart name.
-  repository: nginx
+  repository: hello-world
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.21-alpine"
+  tag: "latest"
 
 nameOverride: ""
 fullnameOverride: ""

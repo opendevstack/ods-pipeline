@@ -98,6 +98,13 @@ run-sonarqube:
 prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube install-ods-tasks-kind
 .PHONY: prepare-local-env
 
+## Recreate KinD cluster including Tekton tasks.
+recreate-kind-cluster:
+	cd scripts && ./kind-with-registry.sh --recreate
+	cd scripts && ./install-tekton-pipelines.sh
+	cd scripts && ./install-ods-tasks-kind.sh
+.PHONY: recreate-kind-cluster
+
 ## Stop local environment.
 stop-local-env:
 	cd scripts && ./stop-local-env.sh
