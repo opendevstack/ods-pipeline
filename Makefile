@@ -108,6 +108,11 @@ start-local-env:
 	cd scripts && ./start-local-env.sh
 .PHONY: start-local-env
 
+## Render sidecar task variants.
+sidecar-tasks:
+	go run cmd/sidecar-tasks/main.go
+.PHONY: sidecar-tasks
+
 ## Render documentation for tasks.
 docs:
 	go run cmd/docs/main.go

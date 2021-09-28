@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" .}}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" . | nindent 4}}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{.Values.replicaCount}}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- include "chart.selectorLabels" . | nindent 6}}
   template:
     metadata:
       labels:
-        {{- include "chart.selectorLabels" . | nindent 8 }}
+        {{- include "chart.selectorLabels" . | nindent 8}}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{.Chart.Name}}
           securityContext: {}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.namespace | default .Release.Namespace }}/{{ .Values.image.repository | default .Chart.Name }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{.Values.image.registry}}/{{.Values.image.namespace | default .Release.Namespace}}/{{.Values.image.repository | default .Chart.Name}}:{{.Values.image.tag | default .Chart.AppVersion}}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
           command: ["/bin/sh"]
-          args: ["-c", "{{ .Values.bootCommand }}"]
+          args: ["-c", "{{.Values.bootCommand}}"]
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12}}

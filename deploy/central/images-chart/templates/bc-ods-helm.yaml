@@ -7,7 +7,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-helm:{{ .Values.imageTag }}'
+      name: 'ods-helm:{{.Values.imageTag}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -24,6 +24,6 @@ spec:
   source:
     type: Git
     git:
-      uri: '{{ .Values.odsPipelineGitRepoUri }}'
-      ref: '{{ .Values.odsPipelineGitRepoRef }}'
+      uri: '{{.Values.odsPipelineGitRepoUri}}'
+      ref: '{{.Values.odsPipelineGitRepoRef}}'
   runPolicy: Serial

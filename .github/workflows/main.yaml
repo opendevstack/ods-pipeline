@@ -158,6 +158,9 @@ jobs:
         with:
           go-version: 1.16
       -
+        name: Check if sidecar tasks are up-to-date
+        run: ./.github/workflows/check-sidecar-tasks.sh
+      -
         name: Check if docs are up-to-date
         run: ./.github/workflows/check-docs.sh
       -
