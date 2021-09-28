@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
@@ -23,7 +24,10 @@ import (
 	"knative.dev/pkg/apis"
 )
 
+var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
+
 func TestWebhookInterceptor(t *testing.T) {
+	tasktesting.CheckCluster(t, *outsideKindFlag)
 
 	// Setup namespace to run tests in.
 	c, ns := tasktesting.Setup(t,
