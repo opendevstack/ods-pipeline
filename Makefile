@@ -129,6 +129,11 @@ docs:
 test: test-internal test-pkg test-tasks
 .PHONY: test
 
+## Run testsuite of cmd packages.
+test-cmd:
+	go test -v ./cmd/...
+.PHONY: test-cmd
+
 ## Run testsuite of internal packages.
 test-internal:
 	go test -v ./internal/...
