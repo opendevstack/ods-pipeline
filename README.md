@@ -30,6 +30,7 @@ The documentation provided by ODS pipeline has three audiences:
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)
 * [Debugging](/docs/debugging.adoc)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
+* [Example Project](/docs/example-project.adoc)
 
 **Developer Guide**
 * [Repository Layout](/docs/repository-layout.adoc)
