@@ -78,9 +78,21 @@ environments:
   stage: qa`),
 			WantError: "name of environment must not be blank",
 		},
+		"invalid name - extra characters": {
+			Fixture: []byte(`environments:
+- name: "Hello World!"
+  stage: dev`),
+			WantError: "name of environment must match ^[a-z-]*$",
+		},
+		"invalid name - uppercase": {
+			Fixture: []byte(`environments:
+- name: "DEVenv"
+  stage: dev`),
+			WantError: "name of environment must match ^[a-z-]*$",
+		},
 		"valid": {
 			Fixture: []byte(`environments:
-- name: foo
+- name: foo-qa
   stage: qa`),
 			WantError: "",
 		},
@@ -91,8 +103,10 @@ environments:
 			_, err := Read(tc.Fixture)
 			if len(tc.WantError) == 0 && err != nil {
 				t.Fatal(err)
-			} else if len(tc.WantError) > 0 && tc.WantError != err.Error() {
-				t.Fatalf("Want error: %s, got: %s", tc.WantError, err)
+			} else if len(tc.WantError) > 0 {
+				if err == nil || tc.WantError != err.Error() {
+					t.Fatalf("Want error: %s, got: %s", tc.WantError, err)
+				}
 			}
 		})
 	}

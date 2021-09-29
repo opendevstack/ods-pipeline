@@ -367,6 +367,10 @@ func main() {
 	}
 	fmt.Println(string(stdout))
 	fmt.Println(string(stderr))
+	err = writeDeploymentArtifact(stdout, "diff", opts.chartDir, targetConfig.Name)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
 	helmUpgradeArgs := []string{
@@ -386,6 +390,10 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(string(stdout))
+	err = writeDeploymentArtifact(stdout, "release", opts.chartDir, targetConfig.Name)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type helmChart struct {
@@ -412,6 +420,23 @@ func getChartVersion(contextVersion string, hc *helmChart) string {
 		return contextVersion
 	}
 	return hc.Version
+}
+
+func artifactFilename(filename, chartDir, targetEnv string) string {
+	trimmedChartDir := strings.TrimPrefix(chartDir, "./")
+	if trimmedChartDir != "chart" {
+		filename = fmt.Sprintf("%s-%s", strings.Replace(trimmedChartDir, "/", "-", -1), filename)
+	}
+	return fmt.Sprintf("%s-%s", filename, targetEnv)
+}
+
+func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv string) error {
+	err := os.MkdirAll(pipelinectxt.DeploymentsPath, 0755)
+	if err != nil {
+		return err
+	}
+	f := artifactFilename(filename, chartDir, targetEnv) + ".txt"
+	return ioutil.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
 }
 
 func importPrivateKey(secret *corev1.Secret, privateKeySecretField string) (outBytes, errBytes []byte, err error) {

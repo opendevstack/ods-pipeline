@@ -28,6 +28,8 @@ const (
 	XUnitReportsPath  = ArtifactsPath + "/" + XUnitReportsDir
 	LintReportsDir    = "lint-reports"
 	LintReportsPath   = ArtifactsPath + "/" + LintReportsDir
+	DeploymentsDir    = "deployments"
+	DeploymentsPath   = ArtifactsPath + "/" + DeploymentsDir
 )
 
 // WriteJsonArtifact marshals given "in" struct and writes it into "artifactsPath" as "filename".

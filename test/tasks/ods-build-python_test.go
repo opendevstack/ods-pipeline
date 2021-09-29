@@ -57,7 +57,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, "\n", "")
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
-					checkFileContentContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
+					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
 					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},

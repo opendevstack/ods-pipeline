@@ -62,6 +62,26 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkFileContentContains(
+						t, wsDir,
+						filepath.Join(pipelinectxt.DeploymentsPath, "diff-dev.txt"),
+						"Release was not present in Helm.  Diff will show entire contents as new.",
+						"Deployment (apps) has been added",
+						"# Source: helm-sample-app/templates/deployment.yaml",
+						"Secret (v1) has been added",
+						"# Source: helm-sample-app/templates/secret.yaml",
+						"Service (v1) has been added",
+						"# Source: helm-sample-app/templates/service.yaml",
+					)
+					checkFileContentContains(
+						t, wsDir,
+						filepath.Join(pipelinectxt.DeploymentsPath, "release-dev.txt"),
+						"Installing it now.",
+						fmt.Sprintf("NAMESPACE: %s", separateReleaseNamespace),
+						"STATUS: deployed",
+						"REVISION: 1",
+					)
 					resourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-sample-app")
 					_, err := checkService(ctxt.Clients.KubernetesClientSet, separateReleaseNamespace, resourceName)
 					if err != nil {
