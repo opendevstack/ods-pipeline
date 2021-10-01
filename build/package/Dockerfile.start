@@ -43,9 +43,12 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/start && CGO_ENABLED=0 go build -o /usr/local/bin/ods-start
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-RUN microdnf install git openssh-clients && microdnf clean all
+ENV GIT_VERSION=2.27 \
+    OPENSSH_CLIENTS_VERSION=8.0
+
+RUN microdnf install git-${GIT_VERSION}* openssh-clients-${OPENSSH_CLIENTS_VERSION}* && microdnf clean all
 
 COPY --from=builder /usr/local/bin/ods-start /usr/local/bin/ods-start
 

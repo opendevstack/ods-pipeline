@@ -10,6 +10,8 @@ ODS provides CI/CD pipeline support based on OpenShift Pipelines. This repositor
 
 The [ODS Pipeline Introduction](/docs/introduction.adoc) describes what ODS pipeline is and how it works. It is important to understand this before looking at further documentation or any other repository content.
 
+ODS Pipeline is well suited for regulated development (e.g. medical device software development) and many trade-offs and design decisions have been made to support this.
+
 ## Documentation
 
 The documentation provided by ODS pipeline has three audiences:
@@ -39,10 +41,12 @@ The documentation provided by ODS pipeline has three audiences:
 
 This repository also hosts the design documents that describe ODS pipeline more formally. Those design documents provide more detail and background on goals, requirements and architecture decisions and may be useful for all audiences.
 
-* [Goals and Non-Goals](/docs/goals-and-nongoals.adoc)
+* [Goals and Non-Goals](/docs/design/goals-and-nongoals.adoc)
 * [Architecture Decision Records](/docs/adr)
-* [Software Requirements](/docs/software-requirements.adoc)
-* [Relationship to Jenkins Shared Library](/docs/relationship-shared-library.adoc)
+* [Software Architecture](/docs/design/software-architecture.adoc)
+* [Software Requirements Specification](/docs/design/software-requirements-specification.adoc)
+* [Software Design Specification](/docs/design/software-design-specification.adoc)
+* [Relationship to Jenkins Shared Library](/docs/design/relationship-shared-library.adoc)
 
 ## Compatibility
 
@@ -50,5 +54,5 @@ This repository also hosts the design documents that describe ODS pipeline more 
 
  | ods-pipeline | OpenShift Pipelines | ODS Core/Quickstarters |
  |---|---|---|
- | [0.1](https://github.com/opendevstack/ods-pipeline/milestone/1) (to be released early September 2021) | 1.5 | 4.0.0 |
+ | [0.1](https://github.com/opendevstack/ods-pipeline/milestone/1) (to be released late September 2021) | 1.5 | 4.0.0 |
  | [0.2](https://github.com/opendevstack/ods-pipeline/milestone/2) (to be released TBD) | 1.5 | 4.0.0 |

@@ -36,13 +36,16 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 ENV HELM_PLUGIN_DIFF_VERSION=3.1.3 \
     HELM_PLUGIN_SECRETS_VERSION=3.5.0 \
-    HELM_PLUGINS=/usr/local/helm/plugins
+    HELM_PLUGINS=/usr/local/helm/plugins \
+    SKOPEO_VERSION=1.3 \
+    TAR_VERSION=1.30 \
+    GIT_VERSION=2.27
 
-RUN microdnf install skopeo git tar && microdnf clean all
+RUN microdnf install skopeo-${SKOPEO_VERSION}* git-${GIT_VERSION}* tar-${TAR_VERSION}* && microdnf clean all
 
 COPY --from=builder /usr/local/bin/deploy-with-helm /usr/local/bin/deploy-with-helm
 COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm

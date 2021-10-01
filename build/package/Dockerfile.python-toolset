@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -6,9 +6,10 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     PIP_NO_CACHE_DIR=off \
     HOME=/app \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    TAR_VERSION=1.30
 
-RUN microdnf install -y make python38 tar
+RUN microdnf install -y python38 tar-${TAR_VERSION}*
 
 RUN pip3 config set global.cert /etc/ssl/certs/ca-bundle.crt
 

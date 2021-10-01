@@ -1,0 +1,160 @@
+= Software Architecture
+:sectnums:
+:toc:
+
+== Purpose
+
+The purpose of this document is to describe the architecture of the software system. It shall provide a graphical overview of the software system, its structure and interfaces to internal and external components.
+
+== Scope
+
+The following software architecture will provide the architecture of ODS pipeline version 0.1.
+
+== Definitions and Abbreviations
+
+=== Abbreviations
+
+[cols="1,5"]
+|===
+| Abbreviation | Description
+
+| ODS
+| OpenDevStack
+|===
+
+== References
+
+N/A
+
+== {doctitle}
+
+=== Software System Overview
+
+ODS Pipeline is used alongside an existing ODS Core installation. It is a replacement for Jenkins as the CI/CD engine. The following diagram illustrates the relationship of ODS Pipeline to external systems:
+
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/system-context.puml[System Context]
+
+The following diagram illustrates in more detail how the various components interact:
+
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/container-system.puml[Software System]
+
+As the diagram above shows, the ODS Pipeline installation is made up of two containers, one centrally installed by the cluster admin, and one locally installed by project admins (once per project). The following diagram shows more detail about the central installation:
+
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-central.puml[Central Installation]
+
+The following diagram shows more detail about the local installation:
+
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-local.puml[Local Installation]
+
+=== Interfaces
+
+|===
+|Source |Action |Protocol |Destination |Comment
+
+| Bitbucket
+| Webhook Trigger
+| HTTP POST request
+| Local ODS Pipeline Installation
+| Endpoint is an exposed event listener.
+
+| Task `ods-start`
+| Checkout repository
+| Git
+| Bitbucket
+|
+
+| Task `ods-start`
+| Set build status
+| HTTP / JSON API
+| Bitbucket
+|
+
+| Task `ods-start`
+| Download existing artifacts
+| HTTP / JSON API
+| Nexus
+|
+
+| Task `ods-build-go`, task `ods-build-python`, task `ods-build-typescript`, task `ods-build-gradle`
+| Analyze source code
+| HTTP / JSON API
+| SonarQube
+|
+
+| Task `ods-build-python`, task `ods-build-typescript`, task `ods-build-gradle`
+| Download dependencies
+| HTTP
+| Nexus
+| Nexus serves as a proxy for third party dependencies (e.g. hosted on NPM), and serves private dependencies hosted in Nexus as well.
+
+| Task `ods-package-image`
+| Scan for vulnerabilities
+| HTTP / JSON API
+| Aqua
+|
+
+| Task `ods-package-image`
+| Push image
+| HTTP
+| OpenShift ImageStream
+|
+
+| Task `ods-deploy-helm`
+| Copy image
+| HTTP
+| OpenShift ImageStream
+|
+
+| Task `ods-deploy-helm`
+| Install/Upgrade release
+| HTTP / JSON API
+| OpenShift project
+|
+
+| Task `ods-finish`
+| Set build status
+| HTTP / JSON API
+| Bitbucket
+|
+
+| Task `ods-finish`
+| Upload artifacts
+| HTTP / JSON API
+| Nexus
+|
+
+
+|===
+
+=== Hosting Environment
+
+ODS Pipeline runs on Redhat OpenShift Container Platform, and is embedded into an installation of OpenDevStack.
+
+== Deployment
+
+The are two main deployments of the system:
+
+* a central installation managed by a cluster administrator
+* many local installation managed by project administrators
+
+The central installation provides the tasks that projects can consume as `ClusterTask` resources. The local installation (in `<project>-cd` namespaces) allow to trigger pipelines in response to Bitbucket events.
+
+Both deployments are described as Helm charts: the central installation is based on `deploy/central` and the local installation is based on `cd-namespace/central`. See the link:docs/admin-installation.adoc[Admin Installation Guide] and the link:docs/user-installation.adoc[User Installation Guide].
+
+== Appendix
+
+N/A
+
+== Document History
+
+The following table provides the history of the document.
+
+[cols="1,1,1,3"]
+|===
+| Version | Date | Author | Change
+
+| 0.1
+| 2021-10-01
+| Michael Sauter
+| Initial version.
+|===

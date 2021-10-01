@@ -1,11 +1,10 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11
+FROM registry.access.redhat.com/ubi8/openjdk-11:1.10
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV GRADLE_VERSION=7.2
 
 ARG GRADLE_DOWNLOAD_SHA256=f581709a9c35e9cb92e16f585d2c4bc99b2b1a5f85d2badbd3dc6bff59e1e6dd
-
 ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=f581709a9c35e9cb92e16f585d2c4bc99b2b1a5f85d2badbd3dc6bff59e1e6dd
 
 USER root
@@ -22,8 +21,7 @@ RUN cd /opt && \
     mkdir -p /tmp/temp-gradle-app && cd /tmp/temp-gradle-app && touch settings.gradle && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
     mkdir -p /home/gradle && \
-    ln -s /root/.gradle /home/gradle/.gradle && \
-    microdnf install -y make && make --version
+    ln -s /root/.gradle /home/gradle/.gradle
 
 # Add scripts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
