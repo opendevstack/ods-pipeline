@@ -59,7 +59,7 @@ If you place this file in the root of the `ods-pipeline` repository, it will aut
 Finally, you need to run the tests, passing the configuration created earlier and the token of a serviceaccount with enough permissions in the target namespace:
 
 ```
-go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/pipeline/test/tasks -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
+go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/pipeline/test/tasks -count=1 -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
 ```
 
 The above command runs only the external deployment test, but you may also remove this limitation (by removing `-run ^TestTaskODSDeployHelmExternal$`) and run the whole test suite including the external deployment test.

@@ -69,13 +69,26 @@ func trimmedFileContentOrFatal(t *testing.T, filename string) string {
 	return c
 }
 
-func checkFileContentContains(t *testing.T, wsDir, filename, wantContains string) {
+func checkFileContentContains(t *testing.T, wsDir, filename string, wantContains ...string) {
+	content, err := ioutil.ReadFile(filepath.Join(wsDir, filename))
+	got := string(content)
+	if err != nil {
+		t.Fatalf("could not read %s: %s", filename, err)
+	}
+	for _, w := range wantContains {
+		if !strings.Contains(got, w) {
+			t.Fatalf("got '%s', want '%s' contained in file %s", got, w, filename)
+		}
+	}
+}
+
+func checkFileContentLeanContains(t *testing.T, wsDir, filename string, wantContains string) {
 	got, err := getFileContentLean(filepath.Join(wsDir, filename))
 	if err != nil {
 		t.Fatalf("could not read %s: %s", filename, err)
 	}
 	if !strings.Contains(got, wantContains) {
-		t.Fatalf("got '%s', wantContains '%s' in file %s", got, wantContains, filename)
+		t.Fatalf("got '%s', want '%s' contained in file %s", got, wantContains, filename)
 	}
 }
 

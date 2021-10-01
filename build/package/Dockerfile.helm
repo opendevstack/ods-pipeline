@@ -53,4 +53,4 @@ RUN mkdir -p $HELM_PLUGINS \
     && ls -lah $HELM_PLUGINS \
     && sops --version
 
-WORKDIR /go
+USER 1001
