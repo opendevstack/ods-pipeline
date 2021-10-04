@@ -4,7 +4,6 @@
 ' uncomment the following line and comment the first to use locally
 ' !include C4_Container.puml
 
-LAYOUT_WITH_LEGEND()
 LAYOUT_LEFT_RIGHT()
 
 Container_Boundary(c1, "Local ODS Pipeline Installation"){
