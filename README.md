@@ -54,5 +54,5 @@ This repository also hosts the design documents that describe ODS pipeline more 
 
  | ods-pipeline | OpenShift Pipelines | ODS Core/Quickstarters |
  |---|---|---|
- | [0.1](https://github.com/opendevstack/ods-pipeline/milestone/1) (to be released late September 2021) | 1.5 | 4.0.0 |
+ | [0.1](https://github.com/opendevstack/ods-pipeline/milestone/1) (to be released early October 2021) | 1.5 | 4.0.0 |
  | [0.2](https://github.com/opendevstack/ods-pipeline/milestone/2) (to be released TBD) | 1.5 | 4.0.0 |
