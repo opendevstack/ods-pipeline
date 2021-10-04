@@ -1,0 +1,24 @@
+@startuml "system-context"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+' uncomment the following line and comment the first to use locally
+' !include C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+
+Person(developer, "Developer")
+
+System(pipeline, "ODS Pipeline")
+
+System_Ext(core, "ODS Core Installation")
+
+System_Ext(atlassian, "Atlassian")
+
+System_Ext(openshift_namespace, "OpenShift Target Project")
+
+Rel(pipeline, core, "makes use of")
+Rel(pipeline, atlassian, "checks out source code")
+Rel(pipeline, openshift_namespace, "deploys to")
+Rel(atlassian, pipeline, "triggers")
+Rel(developer, atlassian, "pushes")
+
+@enduml

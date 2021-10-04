@@ -7,11 +7,12 @@ ARG sonarEdition=community
 ENV SONAR_SCANNER_VERSION=3.1.0.1141 \
     CNES_REPORT_VERSION=3.2.2 \
     GO_VERSION=1.16 \
+    GIT_VERSION=2.27 \
     SONAR_EDITION=$sonarEdition
 
 USER root
 
-RUN microdnf install -y git
+RUN microdnf install -y git-${GIT_VERSION}*
 
 RUN cd /tmp && \
     curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
@@ -48,7 +49,7 @@ COPY internal /etc/go/internal
 COPY pkg /etc/go/pkg
 RUN cd /etc/go/cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
 

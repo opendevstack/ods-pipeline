@@ -1,0 +1,284 @@
+= Software Requirements Specification
+:sectnums:
+:toc:
+
+== Purpose
+
+The purpose of this document is to describe the software system, including all functional and non-functional requirements. It states what is needed in terms of features, functions, performance, constraints, and quality.
+
+== Scope
+
+The following software requirements specification will provide the requirements for ODS pipeline version 0.1.
+
+== Definitions and Abbreviations
+
+=== Abbreviations
+
+[cols="1,5"]
+|===
+| Abbreviation | Description
+
+| ODS
+| OpenDevStack
+
+| CI
+| Continuous Integration
+
+| CD
+| Continuous Delivery
+
+| SQ
+| SonarQube
+|===
+
+== References
+
+N/A
+
+== {doctitle}
+
+=== Software Description
+
+ODS Pipeline shall provide CI/CD tooling within a Kubernetes cluster such as OpenShift. It shall interface with an ODS core installation (specifically, the Atlassian suite, Nexus, SonarQube and Aqua). ODS Pipeline shall provide a library of tasks which work on one or more Git repositories and:
+
+* test applications,
+* build applications,
+* package applications and
+* deploy applications.
+
+The tasks shall create artifacts of their work. Those artifacts shall be stored in Nexus and are intended to be used as evidence in technical documentation.
+
+=== Webhook Interceptor Requirements
+
+[cols="1,3"]
+|===
+| SRS-INTERCEPTOR-1
+| The interceptor shall be able to respond to `repo:refs_changed` and `pr:opened` events.
+
+| SRS-INTERCEPTOR-2
+| The interceptor shall not trigger pipelines for Git commits which message instructs to skip CI.
+
+| SRS-INTERCEPTOR-3
+| The interceptor shall create or update a pipeline corresponding to the Git branch received in the webhook request. The tasks (including finally tasks) of the pipline shall be read from the ODS config file in the repository.
+|===
+
+=== Task Requirements
+
+==== Task `ods-start`
+
+[cols="1,3"]
+|===
+| SRS-TASK-START-1
+a| The task shall check out a fresh copy of a Git repository If child repositories are configured, those shall be checked out as well. The checkouts must support Git submodules.
+
+| SRS-TASK-START-2
+a| The task shall store context information for each checked out repository (such as project and component key, Git commit SHA, target environment, etc.)
+
+| SRS-TASK-START-3
+| The task shall discover artifacts connected to the checked out commit and make them available to subsequent tasks.
+
+| SRS-TASK-START-4
+| The task shall set the Bitbucket build status of the checked out commit being to "in progress". The build status shall link back to the pipeline run.
+
+| SRS-TASK-START-5
+| The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
+|===
+
+==== Task `ods-finish`
+
+[cols="1,3"]
+|===
+| SRS-TASK-FINISH-1
+| The task shall set the Bitbucket build status to "failed" or "successful", depending on whether all tasks succeeded or not. The build status shall link back to the pipeline run.
+
+| SRS-TASK-FINISH-2
+| The task shall create an artifact representing the pipeline run provided that all tasks succeeded.
+
+| SRS-TASK-FINISH-3
+| The task shall upload all artifacts to Nexus, associating them with the checked out commit, provided that all tasks succeeded.
+|===
+
+==== Task `ods-build-go`
+
+[cols="1,3"]
+|===
+| SRS-TASK-BUILD-GO-1
+| The task shall ensure that all Go files are formatted.
+
+| SRS-TASK-BUILD-GO-2
+| The task shall lint all Go files.
+
+| SRS-TASK-BUILD-GO-3
+a| The task shall run Go tests, creating code coverage and xUnit report.
+
+* The user shall be able to run a script prior to tests.
+* Vendored packages shall be excluded from the tests.
+* Artifacts shall be made available to SonarQube and designated for upload to Nexus.
+* If tests already ran for the commit being built, testing shall be skipped.
+
+| SRS-TASK-BUILD-GO-4
+a| The task shall build a Go module based Go binary.
+
+* Destination directory shall be customizable
+* Paths in stack traces shall be trimmed
+* Target operating system and architecture shall be customizable
+* CGO shall be disabled by default but possible to enable.
+
+| SRS-TASK-BUILD-GO-5
+| See SRS-TASK-SHARED-1.
+
+| SRS-TASK-BUILD-GO-6
+| See SRS-TASK-SHARED-2.
+
+|===
+
+==== Task `ods-build-gradle`
+
+[cols="1,3"]
+|===
+| SRS-TASK-BUILD-GRADLE-1
+a| The task shall build a Gradle module.
+
+* Destination directory shall be customizable
+* Gradle options shall be customizable
+* Additional Gradle tasks shall be configurable
+
+| SRS-TASK-BUILD-GRADLE-2
+a| The task shall run tests, creating code coverage and xUnit report.
+
+* Artifacts shall be made available to SonarQube and designated for upload to Nexus.
+
+| SRS-TASK-BUILD-GRADLE-3
+| See SRS-TASK-SHARED-1.
+
+| SRS-TASK-BUILD-GRADLE-4
+| See SRS-TASK-SHARED-2.
+
+|===
+
+==== Task `ods-build-python`
+
+[cols="1,3"]
+|===
+| SRS-TASK-BUILD-PYTHON-1
+| The task shall lint all Python files.
+
+| SRS-TASK-BUILD-PYTHON-2
+a| The task shall run test, creating code coverage and xUnit reports.
+
+* The user shall be able to run a script prior to tests.
+* Artifacts shall be made available to SonarQube and designated for upload to Nexus.
+
+| SRS-TASK-BUILD-PYTHON-3
+a| The task shall build a Python application.
+
+* Destination directory shall be customizable
+
+| SRS-TASK-BUILD-PYTHON-4
+| See SRS-TASK-SHARED-1.
+
+| SRS-TASK-BUILD-PYTHON-5
+| See SRS-TASK-SHARED-2.
+
+|===
+
+==== Task `ods-build-typescript`
+
+[cols="1,3"]
+|===
+| SRS-TASK-BUILD-TYPESCRIPT-1
+a| The task shall run test, creating code coverage and xUnit reports.
+
+* Artifacts shall be made available to SonarQube and designated for upload to Nexus.
+
+| SRS-TASK-BUILD-TYPESCRIPT-2
+a| The task shall build a TypeScript application.
+
+* Destination directory shall be customizable
+
+| SRS-TASK-BUILD-TYPESCRIPT-3
+| See SRS-TASK-SHARED-1.
+
+| SRS-TASK-BUILD-TYPESCRIPT-4
+| See SRS-TASK-SHARED-2.
+
+|===
+
+
+==== Task `ods-package-image`
+
+[cols="1,3"]
+|===
+| SRS-TASK-PACKAGE-IMAGE-1
+| The task shall build a container image unless the image tag already exists.
+
+* The Docker context directory and Dockerfile shall be customizable.
+* The resulting image name and SHA shall be recorded in an artifact.
+
+| SRS-TASK-PACKAGE-IMAGE-2
+| The task shall push the image to the target registry.
+
+| SRS-TASK-PACKAGE-IMAGE-3
+| If the Aqua scanner is installed in the base image, the pushed image shall be scanned.
+
+* The resulting report shall be saved an artifact and attached as a code insight to Bitbucket.
+|===
+
+==== Task `ods-deploy-helm`
+
+[cols="1,3"]
+|===
+| SRS-TASK-DEPLOY-HELM-1
+| The task shall skip when no environment is given.
+
+| SRS-TASK-DEPLOY-HELM-2
+| The task shall push images built for the checked out commit into the target namespace, which may also be external to the cluster in which the pipeline runs.
+
+| SRS-TASK-DEPLOY-HELM-3
+a| The task shall upgrade (or install) a Helm chart.
+
+* The location of the chart shall be customizable.
+* Changes (diff) shall be reported in the log output.
+* Value files corresponding with the target environment and stage shall be respected.
+* Encrypted secret files shall be decrypted on the fly and respected.
+* The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
+* Charts in any subrespositories shall be added as a subchart.
+* The target namespace may also be external to the cluster in which the pipeline runs.
+|===
+
+==== Shared Requirements
+
+Tasks above may refer to these shared requirements.
+
+[cols="1,3"]
+|===
+| SRS-TASK-SHARED-1
+a| The task shall analyze the source code statically using SonarQube.
+
+* The SQ project name shall be fixed by the task to avoid name clashes between projects.
+* Branch and pull request analysis shall be performed if the server edition supports it.
+
+| SRS-TASK-SHARED-2
+a| The task shall be able to run in a subdirectory of the checked out repository.
+
+* Artifacts and SonarQube project names shall reflect the subdirectory to avoid name clashes.
+
+|===
+
+== Appendix
+
+N/A
+
+== Document History
+
+The following table provides the history of the document.
+
+[cols="1,1,1,3"]
+|===
+| Version | Date | Author | Change
+
+| 0.1
+| 2021-10-01
+| Michael Sauter
+| Initial version.
+|===

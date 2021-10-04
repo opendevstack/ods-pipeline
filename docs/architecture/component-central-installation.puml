@@ -1,0 +1,60 @@
+@startuml "central-installation"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+' !include C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_LEFT_RIGHT()
+
+Container_Boundary(c1, "Central ODS Pipeline Installation"){
+    Component(task_build_go, "ods-build-go", "ClusterTask", "Builds Go (module) applications")
+    Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go 1.16, golangci-lint, build script")
+
+    Component(task_build_typescript, "ods-build-typescript", "ClusterTask", "Builds TypeScript applications")
+    Component(image_typescript_toolset, "ods/typescript-toolset", "Container Image", "TypeScript 3, build script")
+
+    Component(task_build_python, "ods-build-python", "ClusterTask", "Builds TypeScript applications")
+    Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python 3, build script")
+
+    Component(task_build_gradle, "ods-build-gradle", "ClusterTask", "Builds TypeScript applications")
+    Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
+
+    Component(task_package_image, "ods-package-image", "ClusterTask", "Packages container images")
+    Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Aqua scanner")
+
+    Component(task_deploy_helm, "ods-deploy-helm", "ClusterTask", "Builds TypeScript applications")
+    Component(image_helm, "ods/helm", "Container Image", "Helm, Skopeo, deploy script")
+
+    Component(task_start, "ods-start", "ClusterTask", "Builds TypeScript applications")
+    Component(image_start, "ods/start", "Container Image", "Git, start script")
+
+    Component(task_finish, "ods-finish", "ClusterTask", "Builds TypeScript applications")
+    Component(image_finish, "ods/finish", "Container Image", "Finish script")
+
+    Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
+
+    Component(image_sonar, "ods/webhook-interceptor", "Container Image", "Tekton Triggers Webhook Interceptor")
+}
+
+Rel(task_build_go, image_go_toolset, "uses")
+Rel(task_build_go, image_sonar, "uses")
+
+Rel(task_build_typescript, image_typescript_toolset, "uses")
+Rel(task_build_typescript, image_sonar, "uses")
+
+Rel(task_build_python, image_python_toolset, "uses")
+Rel(task_build_python, image_sonar, "uses")
+
+Rel(task_build_gradle, image_gradle_toolset, "uses")
+Rel(task_build_gradle, image_sonar, "uses")
+
+Rel(task_package_image, image_buildah, "uses")
+
+Rel(task_deploy_helm, image_helm, "uses")
+
+Rel(task_start, image_start, "uses")
+
+Rel(task_finish, image_finish, "uses")
+
+@enduml
