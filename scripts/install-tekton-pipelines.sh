@@ -8,7 +8,7 @@ KUBECTL_BIN="kubectl $KUBE_CONTEXT"
 # See https://docs.openshift.com/container-platform/4.8/cicd/pipelines/op-release-notes.html.
 TKN_VERSION="v0.24.0"
 TKN_DASHBOARD_VERSION="v0.17.0"
-TKN_TRIGGERS="v0.14.0"
+TKN_TRIGGERS="v0.12.0" # should be v0.14.0
 
 INSTALL_TKN_DASHBOARD="false"
 
@@ -36,7 +36,7 @@ if ! $KUBECTL_BIN get namespace tekton-pipelines &> /dev/null; then
 
     echo "Installing Tekton Triggers ..."
     $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TKN_TRIGGERS}/release.yaml
-    $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TKN_TRIGGERS}/interceptors.yaml
+    # $KUBECTL_BIN apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TKN_TRIGGERS}/interceptors.yaml
 
     if [ "${INSTALL_TKN_DASHBOARD}" != "false" ]; then
         echo "Installing Tekton Dashboard..."
