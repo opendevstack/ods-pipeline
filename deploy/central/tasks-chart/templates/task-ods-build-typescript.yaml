@@ -30,6 +30,8 @@ spec:
       # Image is built from build/package/Dockerfile.typescript-toolset.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-typescript-toolset:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: NEXUS_URL
           valueFrom:
             configMapKeyRef:
@@ -63,6 +65,8 @@ spec:
       # Image is built from build/package/Dockerfile.sonar.
       image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.imageTag}}'
       env:
+        - name: HOME
+          value: '/tekton/home'
         - name: SONAR_URL
           valueFrom:
             configMapKeyRef:

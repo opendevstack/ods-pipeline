@@ -19,6 +19,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
 	"knative.dev/pkg/apis"
@@ -152,11 +153,16 @@ func TestWebhookInterceptor(t *testing.T) {
 func waitForServiceToBeReady(t *testing.T, clientset *k8s.Clientset, ns, name string, timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	svc, err := clientset.CoreV1().Services(ns).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+	var svc *corev1.Service
 	for {
+		if svc == nil {
+			s, err := clientset.CoreV1().Services(ns).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				time.Sleep(time.Second)
+				continue
+			}
+			svc = s
+		}
 		time.Sleep(2 * time.Second)
 		ready, reason, err := kubernetes.ServiceHasReadyPods(clientset, svc)
 		if err != nil {

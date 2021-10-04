@@ -44,11 +44,14 @@ spec:
     name: sidecar-image
     type: string
   sidecars:
-  - image: $(params.sidecar-image)
+  - Workspaces: null
+    image: $(params.sidecar-image)
     name: sidecar
     resources: {}
   steps:
   - env:
+    - name: HOME
+      value: /tekton/home
     - name: NEXUS_URL
       valueFrom:
         configMapKeyRef:
@@ -83,6 +86,8 @@ spec:
         --debug=${DEBUG}
     workingDir: $(workspaces.source.path)
   - env:
+    - name: HOME
+      value: /tekton/home
     - name: SONAR_URL
       valueFrom:
         configMapKeyRef:
