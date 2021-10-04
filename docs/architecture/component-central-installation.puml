@@ -34,7 +34,7 @@ Container_Boundary(c1, "Central ODS Pipeline Installation"){
 
     Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
 
-    Component(image_sonar, "ods/webhook-interceptor", "Container Image", "Tekton Triggers Webhook Interceptor")
+    Component(image_webhook_interceptor, "ods/webhook-interceptor", "Container Image", "Tekton Triggers Webhook Interceptor")
 }
 
 Rel(task_build_go, image_go_toolset, "uses")
