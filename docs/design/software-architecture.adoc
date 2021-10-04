@@ -40,11 +40,11 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 
 As the diagram above shows, the ODS Pipeline installation is made up of two containers, one centrally installed by the cluster admin, and one locally installed by project admins (once per project). The following diagram shows more detail about the central installation:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-central.puml[Central Installation]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-central-installation.puml[Central Installation]
 
 The following diagram shows more detail about the local installation:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-local.puml[Local Installation]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-local-installation.puml[Local Installation]
 
 === Interfaces
 
