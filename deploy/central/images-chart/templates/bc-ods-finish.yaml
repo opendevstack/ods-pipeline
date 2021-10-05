@@ -17,7 +17,7 @@ spec:
       dockerfilePath: build/package/Dockerfile.finish
       from:
         kind: DockerImage
-        name: 'registry.redhat.io/ubi8/ubi-minimal'
+        name: 'registry.redhat.io/ubi8/ubi-minimal:8.4'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}

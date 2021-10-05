@@ -17,7 +17,7 @@ spec:
       dockerfilePath: build/package/Dockerfile.buildah
       from:
         kind: DockerImage
-        name: 'registry.redhat.io/ubi8'
+        name: 'registry.redhat.io/ubi8:8.4'
       buildArgs:
         - name: aquasecScannerUrl
           value: '{{.Values.aquasecScannerUrl}}'
