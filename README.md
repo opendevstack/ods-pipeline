@@ -23,10 +23,10 @@ The documentation provided by ODS pipeline has three audiences:
 * **Developers** contribute to the ODS pipeline project itself, for example by improving existing tasks, adding new ones, updating documentation, etc.
 
 **Admin Guide**
-* [Installation](/docs/admin-installation.adoc)
+* [Installation & Updating](/docs/admin-installation.adoc)
 
 **User Guide**
-* [Installation](/docs/user-installation.adoc)
+* [Installation & Updating](/docs/user-installation.adoc)
 * [ODS configuration](/docs/ods-configuration.adoc)
 * [Task Reference](/docs/tasks)
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)

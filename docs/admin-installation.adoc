@@ -1,4 +1,5 @@
 # Admin Installation Guide
+:toc:
 
 This guide will show how to install `ods-pipeline` in an existing ODS cluster. Note this is a one-time installation done by a cluster admin and does not need to be repeated for every project that wants to use `ods-pipeline`.
 
@@ -57,3 +58,7 @@ git subtree split --squash --prefix=deploy/central -b subtree-split-branch-$pipe
 git checkout -
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
+
+Then you can update the `images` chart via `./install.sh -n ods --chart=images --values=values.images.ods.yaml,secrets.images.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
+
+In the same way, you can update the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
