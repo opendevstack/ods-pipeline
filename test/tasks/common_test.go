@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
@@ -183,15 +182,4 @@ func createODSYML(wsDir string, o *config.ODS) error {
 	}
 	filename := filepath.Join(wsDir, "ods.yaml")
 	return ioutil.WriteFile(filename, y, 0644)
-}
-
-func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
-	buildStatus, err := c.BuildStatusGet(gitCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if buildStatus.State != wantBuildStatus {
-		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
-	}
-
 }

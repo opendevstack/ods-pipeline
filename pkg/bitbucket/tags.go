@@ -16,11 +16,11 @@ type Tag struct {
 }
 
 type TagPage struct {
-	Size       int  `json:"size"`
-	Limit      int  `json:"limit"`
-	IsLastPage bool `json:"isLastPage"`
-	Values     []Tag
-	Start      int `json:"start"`
+	Size       int   `json:"size"`
+	Limit      int   `json:"limit"`
+	IsLastPage bool  `json:"isLastPage"`
+	Values     []Tag `json:"values"`
+	Start      int   `json:"start"`
 }
 
 type TagCreatePayload struct {

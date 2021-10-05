@@ -33,3 +33,18 @@ func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string
 	})
 	return bitbucketClient
 }
+
+func CheckBitbucketBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
+	buildStatusPage, err := c.BuildStatusList(gitCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buildStatusPage == nil || len(buildStatusPage.Values) == 0 {
+		t.Fatal("no build status found")
+	}
+	buildStatus := buildStatusPage.Values[0]
+	if buildStatus.State != wantBuildStatus {
+		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
+	}
+
+}

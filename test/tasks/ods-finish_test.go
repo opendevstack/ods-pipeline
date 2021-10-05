@@ -34,7 +34,7 @@ func TestTaskODSFinish(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
+					tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
 				},
 			},
 			"set bitbucket build status to successful and upload artifacts to temporary Nexus repository": {
@@ -83,7 +83,7 @@ func TestTaskODSFinish(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
+					tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt, nexus.TemporaryRepositoryDefault)
 
 					wantLogMsg := "Artifact coverage.out is already present in Nexus repository"
@@ -111,7 +111,7 @@ func TestTaskODSFinish(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
+					tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt, nexus.PermanentRepositoryDefault)
 				},
 			},

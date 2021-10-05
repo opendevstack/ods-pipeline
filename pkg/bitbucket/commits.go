@@ -27,13 +27,13 @@ type Commit struct {
 }
 
 type CommitPage struct {
-	Size        int  `json:"size"`
-	Limit       int  `json:"limit"`
-	IsLastPage  bool `json:"isLastPage"`
-	Values      []Commit
-	Start       int `json:"start"`
-	AuthorCount int `json:"authorCount"`
-	TotalCount  int `json:"totalCount"`
+	Size        int      `json:"size"`
+	Limit       int      `json:"limit"`
+	IsLastPage  bool     `json:"isLastPage"`
+	Values      []Commit `json:"values"`
+	Start       int      `json:"start"`
+	AuthorCount int      `json:"authorCount"`
+	TotalCount  int      `json:"totalCount"`
 }
 
 type PullRequestPage struct {

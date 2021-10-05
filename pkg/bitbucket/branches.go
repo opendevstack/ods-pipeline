@@ -16,11 +16,11 @@ type Branch struct {
 }
 
 type BranchPage struct {
-	Size       int  `json:"size"`
-	Limit      int  `json:"limit"`
-	IsLastPage bool `json:"isLastPage"`
-	Values     []Branch
-	Start      int `json:"start"`
+	Size       int      `json:"size"`
+	Limit      int      `json:"limit"`
+	IsLastPage bool     `json:"isLastPage"`
+	Values     []Branch `json:"values"`
+	Start      int      `json:"start"`
 }
 
 type BranchListParams struct {
