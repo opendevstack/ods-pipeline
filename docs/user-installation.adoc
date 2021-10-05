@@ -25,7 +25,7 @@ First, create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything
 Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `ods-pipeline`.
 
 ```
-pipelineGitRef=master
+pipelineGitRef=v0.1.0
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
 git checkout ods-pipeline-$pipelineGitRef
 git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
@@ -50,7 +50,7 @@ Now your cd namespace is fully setup and you can start to utilize Tekton pipelin
 
 You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 ```
-pipelineGitRef=master
+pipelineGitRef=v0.1.0
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
 git checkout ods-pipeline-$pipelineGitRef
 git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
