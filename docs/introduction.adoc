@@ -43,11 +43,9 @@ An ODS installation provides you with the following tasks, which are implemented
 * `ods-build-go`: Build a Go application (includes Sonar scan)
 * `ods-build-gradle`: Build a Java application (includes Sonar scan)
 * `ods-build-python`: Build a Python application (includes Sonar scan)
-* `ods-build-nodejs`: Build a TypeScript/JavaScript application (includes Sonar scan)
+* `ods-build-typescript`: Build a TypeScript/JavaScript application (includes Sonar scan)
 * `ods-package-image`: Package application into container image (includes optional Aqua scan)
 * `ods-deploy-helm`: Deploy a Helm chart
-* `ods-test-geb`: Run Geb/Spock tests
-* `ods-test-cypress`: Run Cypress tests
 * `ods-finish`: Set Bitbucket build status and upload artifacts to Nexus
 
 Let's look at the `ods-build-*` tasks in more detail to understand what such tasks provide. The `ods-build-go` tasks consist of the following steps:
@@ -60,8 +58,8 @@ The other "language build tasks" like `ods-build-gradle` have the same steps, ex
 The `ods-package-image` tasks consist of the following steps:
 
 * Build container image with Buildah
-* Scan image with Trivy / Aqua
 * Push container image to image stream
+* (Optionally) scan image with Aqua
 
 The produced images are tagged with the Git commit SHA being built. If the task detects this image tag to be already present in the image stream, all steps are skipped.
 
@@ -79,57 +77,49 @@ While using this approach is possible, it has a few drawbacks:
 
 To solve these problems (and a few more that will become apparent later), ODS ships with another component alluded to earlier, the ODS webhook interceptor. Together with the functionality that *Tekton Triggers* provides out of the box, this interceptor allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
 
-To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.y(a)ml` file in the root of your repository. The `ods.y(a)ml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.y(a)ml` file for our Go repository:
+To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yaml` file in the root of your repository. The `ods.yaml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.yaml` file for our Go repository:
 
 ```yml
 pipeline:
   tasks:
-  - name: backend-build-go
+  - name: build-go
     taskRef:
       kind: ClusterTask
       name: ods-build-go-v0-1-0
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: backend-package-image
+  - name: package-image
     taskRef:
       kind: ClusterTask
       name: ods-package-image-v0-1-0
     runAfter:
-    - backend-build-go
-    params:
-    - name: image-stream
-      value: backend
+    - build-go
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: backend-deploy
+  - name: deploy-helm
     taskRef:
       kind: ClusterTask
       name: ods-deploy-helm-v0-1-0
     runAfter:
-    - backend-package-image
-    params:
-    - name: release-name
-      value: backend
+    - package-image
     workspaces:
     - name: source
       workspace: shared-workspace
 ```
 
-You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially.
+You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially due to the usage of `runAfter`.
 
-In a repository created through ODS quickstarter provisioning, you already have an `ods.y(a)ml` file with task definitions, and when a commit is pushed to Bitbucket, a pipeline reflecting those tasks will start automatically. However, any repository can gain this functionality by adding an `ods.y(a)ml` file and setting a webhook firing on every push in the Bitbucket repository.
-
-The following will describe what happens once this webhook fires. A payload with information about the pushed Git commit is sent to a route connected to an event listener in OpenShift. The event listener is a small service provided by *Tekton Triggers*, running in your OpenShift namespace. However, before the payload arrives at the event listener, it is sent through interceptors. In the case of an ODS project, two interceptors are configured:
+In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to an event listener in OpenShift. The event listener is a small service provided by *Tekton Triggers*, running in your OpenShift namespace. When the webhook fires, a payload with information about the pushed commit is sent. However, before that payload arrives at the event listener pod, it is sent through interceptors. In the case of an ODS project, two interceptors are configured:
 
 1. A Bitbucket interceptor. This interceptor is provided by *Tekton Triggers* and checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?)
 2. A custom ODS interceptor.
 
-This custom ODS interceptor is a small service, provided by ODS, and running in your OpenShift namespace. When it receives the request, it retrieves the `ods.y(a)ml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the interceptor checks if a pipeline with that name already exists, and either creates a new pipeline or updates an existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows to see pipeline duration trends easily. Finally, the interceptor adds the name of that pipeline to the webhook request payload, and the standard *Tekton Triggers* flow continues. This means that the amended request is forwarded to the event listener, which handles the event using a trigger binding and a trigger template. The trigger binding extracts values from the request payload to pass as parameters to the pipeline, and the trigger templates instantiates a pipeline run for the pipeline name passed from the ODS interceptor with the parameters provided by the trigger binding. The following illustrates this flow:
+This custom ODS interceptor is a small service, provided by ODS, and running in your OpenShift namespace. When it receives the request, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the interceptor checks if a pipeline with that name already exists, and either creates a new pipeline or updates an existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows to see pipeline duration trends easily. Finally, the interceptor adds the name of that pipeline to the webhook request payload, and the standard *Tekton Triggers* flow continues. This means that the amended request is forwarded to the event listener, which handles the event using a trigger binding and a trigger template. The trigger binding extracts values from the request payload to pass as parameters to the pipeline, and the trigger templates instantiates a pipeline run for the pipeline name passed from the ODS interceptor with the parameters provided by the trigger binding. The following illustrates this flow:
 
 image::trigger-architecture.png[Trigger Architecture]
 
-With the above in place, you do not need to manage pipelines manually. Every repository with an `ods.y(a)ml` file and a webhook configuration automatically manages and triggers pipelines based on the defined tasks.
+With the above in place, you do not need to manage pipelines manually. Every repository with an `ods.yaml` file and a webhook configuration automatically manages and triggers pipelines based on the defined tasks.
 
 At this stage you know enough to get started using and modifying CI/CD pipelines with ODS.
