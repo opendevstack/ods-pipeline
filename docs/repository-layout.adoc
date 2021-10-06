@@ -1,6 +1,6 @@
 = Repository layout
 
-The repo follows the [Standard Go Project Layout](https://github.com/golang-standards/project-layout). While this layout is not actually a Go standard, it is used in many projects and is well suited for situations where there are lots of other things beside Go code, which is the case for `ods-pipeline`.
+The repo follows the https://github.com/golang-standards/project-layout[Standard Go Project Layout]. While this layout is not actually a Go standard, it is used in many projects and is well suited for situations where there are lots of other things beside Go code, which is the case for `ods-pipeline`.
 
 The most important pieces are:
 
