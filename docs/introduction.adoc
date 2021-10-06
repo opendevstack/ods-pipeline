@@ -75,7 +75,7 @@ While using this approach is possible, it has a few drawbacks:
 * You would need to manage the pipelines in the UI
 * You would need to start the pipeline manually after each commit
 
-To solve these problems (and a few more that will become apparent later), ODS ships with another component alluded to earlier, the ODS webhook interceptor. Together with the functionality that *Tekton Triggers* provides out of the box, this interceptor allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
+To solve these problems (and a few more ...), ODS ships with another component alluded to earlier, the ODS webhook interceptor. Together with the functionality that *Tekton Triggers* provides out of the box, this interceptor allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
 
 To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yaml` file in the root of your repository. The `ods.yaml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.yaml` file for our Go repository:
 
