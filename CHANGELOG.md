@@ -6,8 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Fixed link in Repository Layout Docs ([233](https://github.com/opendevstack/ods-pipeline/pull/233))
-
 ## [0.1.0] - 2021-10-05
 
 Initial version.
