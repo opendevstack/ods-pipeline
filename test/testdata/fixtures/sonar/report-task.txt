@@ -1,0 +1,7 @@
+projectKey=XXXX-python
+serverUrl=https://sonarqube-ods.XXXX.com
+serverVersion=8.2.0.32929
+branch=dummy
+dashboardUrl=https://sonarqube-ods.XXXX.com/dashboard?id=XXXX-python&branch=dummy
+ceTaskId=AVAn5RKqYwETbXvgas-I
+ceTaskUrl=https://sonarqube-ods.XXXX.com/api/ce/task?id=AVAn5RKqYwETbXvgas-I

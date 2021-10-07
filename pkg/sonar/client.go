@@ -11,6 +11,14 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
+type ClientInterface interface {
+	Scan(sonarProject, branch, commit string, pr *PullRequest) (string, error)
+	QualityGateGet(p QualityGateGetParams) (*QualityGate, error)
+	GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) (string, error)
+	ExtractComputeEngineTaskID(filename string) (string, error)
+	ComputeEngineTaskGet(p ComputeEngineTaskGetParams) (*ComputeEngineTask, error)
+}
+
 // Loosely based on https://github.com/brandur/wanikaniapi.
 type Client struct {
 	httpClient   *http.Client

@@ -2,7 +2,6 @@
 
 = ods-build-gradle
 
-
 Builds Gradle applications.
 
 The following steps are executed:
@@ -85,9 +84,9 @@ sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.
 When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
 is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
 The SonarQube scan will include parameters to perform a pull request analysis if
-there is an open pull request for the branch being built. Pull request decoration
-in Bitbucket is done automatically by SonarQube provided the ALM integration is setup
-properly in SonarQube.
+there is an open pull request for the branch being built. If the
+link:https://docs.sonarqube.org/latest/analysis/bitbucket-integration/[ALM integration]
+is setup properly, pull request decoration in Bitbucket is done automatically.
 
 
 == Parameters

@@ -9,6 +9,11 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- Generating a SonarQube report fails when PR exists for scanned branch ([#227](https://github.com/opendevstack/ods-pipeline/issues/227))
+- Generating a SonarQube report fails when background task does not finish immediately ([#227](https://github.com/opendevstack/ods-pipeline/issues/227))
+
 ## [0.1.0] - 2021-10-05
 
 Initial version.

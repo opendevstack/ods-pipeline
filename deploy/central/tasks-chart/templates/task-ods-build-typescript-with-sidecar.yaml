@@ -6,7 +6,15 @@ metadata:
   name: ods-build-typescript-with-sidecar{{.Values.taskSuffix}}
 spec:
   description: |-
-    ODS Build Typescript applications
+    Builds Typescript applications.
+
+    When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
+    is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
+    The SonarQube scan will include parameters to perform a pull request analysis if
+    there is an open pull request for the branch being built. If the
+    link:https://docs.sonarqube.org/latest/analysis/bitbucket-integration/[ALM integration]
+    is setup properly, pull request decoration in Bitbucket is done automatically.
+
     **Sidecar variant!** Use this task if you need to run a container next to the build task.
     For example, this could be used to run a database to allow for integration tests.
     The sidecar image to must be supplied via `sidecar-image`.

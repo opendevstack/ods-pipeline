@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -18,12 +19,18 @@ type options struct {
 	sonarURL       string
 	sonarEdition   string
 	workingDir     string
+	rootPath       string
 	qualityGate    bool
 	debug          bool
 }
 
 func main() {
-	opts := options{}
+	rootPath, err := filepath.Abs(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	opts := options{rootPath: rootPath}
 	flag.StringVar(&opts.sonarAuthToken, "sonar-auth-token", os.Getenv("SONAR_AUTH_TOKEN"), "sonar-auth-token")
 	flag.StringVar(&opts.sonarURL, "sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
 	flag.StringVar(&opts.sonarEdition, "sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
@@ -35,24 +42,19 @@ func main() {
 	var logger logging.LeveledLoggerInterface
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
 	ctxt := &pipelinectxt.ODSContext{}
-	err := ctxt.ReadCache(".")
+	err = ctxt.ReadCache(".")
 	if err != nil {
 		log.Fatal(err)
 	}
-	rootPath, err := filepath.Abs(".")
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	err = os.Chdir(opts.workingDir)
 	if err != nil {
 		log.Fatal(err)
-	}
-	artifactPrefix := ""
-	if opts.workingDir != "." {
-		artifactPrefix = strings.Replace(opts.workingDir, "/", "-", -1) + "-"
 	}
 
 	sonarClient := sonar.NewClient(&sonar.ClientConfig{
@@ -63,61 +65,127 @@ func main() {
 		Logger:        logger,
 	})
 
+	err = sonarScan(logger, opts, ctxt, sonarClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func sonarScan(
+	logger logging.LeveledLoggerInterface,
+	opts options,
+	ctxt *pipelinectxt.ODSContext,
+	sonarClient sonar.ClientInterface) error {
+	artifactPrefix := ""
+	if opts.workingDir != "." {
+		artifactPrefix = strings.Replace(opts.workingDir, "/", "-", -1) + "-"
+	}
+
 	sonarProject := sonar.ProjectKey(ctxt, artifactPrefix)
 
-	fmt.Println("Scanning with sonar-scanner ...")
+	logger.Infof("Scanning with sonar-scanner ...")
 	var prInfo *sonar.PullRequest
 	if len(ctxt.PullRequestKey) > 0 && ctxt.PullRequestKey != "0" && len(ctxt.PullRequestBase) > 0 {
+		logger.Infof("Pull request (ID %s) detected.", ctxt.PullRequestKey)
 		prInfo = &sonar.PullRequest{
 			Key:    ctxt.PullRequestKey,
 			Branch: ctxt.GitRef,
 			Base:   ctxt.PullRequestBase,
 		}
 	}
-	stdout, err := sonarClient.Scan(
+	scanStdout, err := sonarClient.Scan(
 		sonarProject,
 		ctxt.GitRef,
 		ctxt.GitCommitSHA,
 		prInfo,
 	)
 	if err != nil {
-		fmt.Println(stdout)
-		fmt.Println(err)
-		os.Exit(1)
+		logger.Infof(scanStdout)
+		return fmt.Errorf("scan failed: %w", err)
 	}
-	fmt.Println(stdout)
+	logger.Infof(scanStdout)
 
-	fmt.Println("Generating reports ...")
-	stdout, err = sonarClient.GenerateReports(
-		sonarProject,
-		"OpenDevStack",
-		ctxt.GitRef,
-		rootPath,
-		artifactPrefix,
-	)
+	logger.Infof("Wait until compute engine task finishes ...")
+	err = waitUntilComputeEngineTaskIsSuccessful(logger, sonarClient)
 	if err != nil {
-		fmt.Println(stdout)
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf("background task did not finish successfully: %w", err)
 	}
-	fmt.Println(stdout)
+
+	if prInfo == nil {
+		logger.Infof("Generating reports ...")
+		reportStdout, err := sonarClient.GenerateReports(
+			sonarProject,
+			"OpenDevStack",
+			ctxt.GitRef,
+			opts.rootPath,
+			artifactPrefix,
+		)
+		if err != nil {
+			logger.Infof(reportStdout)
+			logger.Infof(err.Error())
+			os.Exit(1)
+		}
+		logger.Infof(reportStdout)
+	} else {
+		logger.Infof("No reports are generated for pull request scans.")
+	}
 
 	if opts.qualityGate {
-		fmt.Println("Checking quality gate ...")
+		logger.Infof("Checking quality gate ...")
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)
 		if err != nil {
-			log.Fatalln(err)
+			return fmt.Errorf("quality gate could not be retrieved: %w", err)
 		}
 		actualStatus := qualityGateResult.ProjectStatus.Status
 		if actualStatus != sonar.QualityGateStatusOk {
-			log.Fatalf(
-				"Quality gate status is '%s', not '%s'\n",
+			return fmt.Errorf(
+				"quality gate status is '%s', not '%s'",
 				actualStatus, sonar.QualityGateStatusOk,
 			)
 		} else {
-			fmt.Println("Quality gate passed")
+			logger.Infof("Quality gate passed.")
 		}
 	}
+
+	return nil
+}
+
+// waitUntilComputeEngineTaskIsSuccessful reads the scanner report file and
+// extracts the task ID. It then waits until the corresponding background task
+// in SonarQube succeeds. If the tasks fails or the timeout is reached, an
+// error is returned.
+func waitUntilComputeEngineTaskIsSuccessful(logger logging.LeveledLoggerInterface, sonarClient sonar.ClientInterface) error {
+	reportTaskID, err := sonarClient.ExtractComputeEngineTaskID(sonar.ReportTaskFile)
+	if err != nil {
+		return fmt.Errorf("cannot read task ID: %w", err)
+	}
+	params := sonar.ComputeEngineTaskGetParams{ID: reportTaskID}
+	attempts := 8 // allows for over 4min task runtime
+	sleep := time.Second
+	for i := 0; i < attempts; i++ {
+		logger.Infof("Waiting %s before checking task status ...", sleep)
+		time.Sleep(sleep)
+		sleep *= 2
+		task, err := sonarClient.ComputeEngineTaskGet(params)
+		if err != nil {
+			logger.Infof("cannot get status of task: %w", err)
+			continue
+		}
+		switch task.Status {
+		case sonar.TaskStatusInProgress:
+			logger.Infof("Background task %s has not finished yet", reportTaskID)
+		case sonar.TaskStatusPending:
+			logger.Infof("Background task %s has not started yet", reportTaskID)
+		case sonar.TaskStatusFailed:
+			return fmt.Errorf("background task %s has failed", reportTaskID)
+		case sonar.TaskStatusSuccess:
+			logger.Infof("Background task %s has finished successfully", reportTaskID)
+			return nil
+		default:
+			logger.Infof("Background task %s has unknown status %s", reportTaskID, task.Status)
+		}
+	}
+	return fmt.Errorf("background task %s did not succeed within timeout", reportTaskID)
 }
