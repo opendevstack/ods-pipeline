@@ -15,7 +15,7 @@ The guide will install the following required resources:
 You'll need:
 
 * A namespace in an OpenShift cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`)
-* `git`, `oc` and `helm` installed locally
+* `git`, `oc` and `helm` (with plugins link:https://github.com/databus23/helm-diff[`helm-diff`] and link:https://github.com/jkroepke/helm-secrets[`helm-secrets`]) installed locally
 * to be logged into OpenShift on the command line
 
 ## Instructions
@@ -25,11 +25,12 @@ First, create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything
 Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `ods-pipeline`.
 
 ```
-pipelineGitRef=v0.1.0
-git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
-git checkout ods-pipeline-$pipelineGitRef
-git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
-git checkout -
+pipelineGitRef=v0.1.0 # Pick the version you want to install
+
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
+git checkout ods-pipeline-$pipelineGitRef && \
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
+git checkout - && \
 git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
@@ -40,21 +41,26 @@ creation_rules:
   - pgp: "A2F9 D4AF 800A 5499 3667 5C66 B92D F67B 0EF2 B057"
 ```
 
+To create the `secrets.foo-cd.yaml` file, it is best to use `helm secrets edit secrets.foo-cd.yaml` which allows you to insert the secrets in plain text in an editor in your terminal, and then encrypts the values when saving.
+
 Then you can install the resources via `./install.sh -n foo-cd -f values.foo-cd.yaml,secrets.foo-cd.yaml`. You may also use `--dry-run` to see the changes first.
 
-Finally, run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket.
+Finally, run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket (together with the webhook secret that is stored in the `Secret/ods-bitbucket-webhook` resource).
 
-Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories. See link:ods-configuration.adoc[ODS configuration] for more information on usage.
+Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories. Please note that the `pipeline` serviceaccount in your `foo-cd` namespace needs at `edit` or even `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
+
+See link:ods-configuration.adoc[ODS configuration] for more information on usage.
 
 ## Updating
 
 You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 ```
-pipelineGitRef=v0.1.0
-git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef
-git checkout ods-pipeline-$pipelineGitRef
-git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef
-git checkout -
+pipelineGitRef=v0.1.0 # Pick the version you want to install
+
+git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
+git checkout ods-pipeline-$pipelineGitRef && \
+git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
+git checkout - && \
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
 
