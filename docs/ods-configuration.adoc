@@ -1,72 +1,8 @@
 :toc:
 
-= ODS Configuration
+= `ODS.YAML` Reference
 
-This guide will explain how to use and configure pipelines for your repositories. It is assumed you have already installed link:user-installation.adoc[`ods-pipeline`] in a namespace you own.
-
-== Overview
-
-In order to trigger pipelines from a repository, you'll need:
-
-* a `ods.yaml` or `ods.yml` file at the root of the repository
-* a webhook configuration that points to the event listener route of your ODS pipeline installation
-
-An example `ods.yaml` looks like this:
-
-.ods.yaml
-[source,yaml]
-----
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: foo-dev
-  stage: dev
-
-pipeline:
-  tasks:
-  - name: backend-build-go
-    taskRef:
-      kind: ClusterTask
-      name: ods-build-go-v0-1-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-package-image
-    taskRef:
-      kind: ClusterTask
-      name: ods-package-image-v0-1-0
-    runAfter:
-    - backend-build-go
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-deploy
-    taskRef:
-      kind: ClusterTask
-      name: ods-deploy-helm-v0-1-0
-    runAfter:
-    - backend-package-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-----
-
-To setup a webhook, go to "Repository Settings > Webhooks" and create a new webhook:
-
-* "Name": choose any name you wish, e.g. `ods-pipeline`
-* "URL": enter the URL of the route of your event listener
-* "Secret": enter the value of the `secret` field in the OpenShift `ods-bitbucket-webhook` Secret.
-
-Select the "Push" event and save the configuration.
-
-Once both `ods.yaml` and webhook configuration exist, any push in that repo will trigger the pipeline described in `ods.yaml`.
-
-== Reference
-
-The configuration in `ods.yaml` allows five top-level fields:
+This guide will explain how to configure pipelines for your repositories in an `ods.yaml` file. The configuration in `ods.yaml` allows five top-level fields:
 
 * `pipeline`
 * `environments`
@@ -74,7 +10,7 @@ The configuration in `ods.yaml` allows five top-level fields:
 * `version`
 * `repositories`
 
-=== `pipeline`
+== `pipeline`
 
 The pipeline field allows to define the pipeline tasks. Normal tasks may be specified under `tasks`. Example:
 
@@ -121,7 +57,7 @@ pipeline:
 
 Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
 
-=== `environments`
+== `environments`
 
 The `environments` field allows you to specify target environments to deploy to. Each environment must have a `name` and a `stage` field. Example:
 
@@ -142,7 +78,7 @@ Environments may also be located external to the cluster in which the pipeline r
 * `registryHost`: Hostname of the target registry
 * `config`: Additional configuration of the target in the form of a map. This information may be used by custom tasks.
 
-=== `branchToEnvironmentMapping`
+== `branchToEnvironmentMapping`
 
 In order for the pipeline to select an environment to deploy to, you have to configure which branch should be deployed to which environment. This can be done via `branchToEnvironmentMapping`. Example:
 
@@ -158,11 +94,11 @@ In this case, the `master` branch will be deployed to the environment with the n
 
 TIP: If you want to promote images between environments without rebuilding them, ensure that you are merging without merge commits (fast-forward, `--ff-only`).
 
-=== `version`
+== `version`
 
 `version` is an optional field that can specify a link:https://semver.org[SemVer] version. Its value will be available in the pipeline context. The link:tasks/ods-start.adoc[`ods-start` task] requires a value to be present when the target environment is of stage `qa` or `prod`. When this is the case, the task applies Git tags (`v<VERSION>-rc.<NUMBER>` for `qa` and `v<VERSION>` for `prod`) to the repository and ensures that a pipeline run for a `qa` environment exist before allowing to proceed to a `prod` environment.
 
-=== `repositories`
+== `repositories`
 
 If your application is made out of multiple components, you may want to have one "umbrella" repository that ties all those components together and deploys the whole application together. In this case, the umbrella repository can specify the subrepositores via the `repositories` field. Example:
 
@@ -179,7 +115,3 @@ repositories:
 If the repository does not specify a URL, the repository is assumed to be under the same organisation than the repository hosting the `ods.yaml` file. If no branch is given, `master` is used as a default.
 
 Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.
-
-== Example
-
-To understand how the configuration described above can be used in a concrete example, have a look at the link:example-project.adoc[Example Project].
