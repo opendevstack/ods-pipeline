@@ -17,7 +17,7 @@ You'll need:
 
 First, create a repository in Bitbucket, e.g. `ods`. The name can be anything, but since the repository will define the resources in namespace `ods` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
 
-Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/central`) from the `opendestack/ods-pipeline` repository at the given revision (`master`) into your new local repository at the path `ods-pipeline`.
+Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/central`) from the `opendestack/ods-pipeline` repository at the given revision (e.g. `master`) into your new local repository at the path `ods-pipeline`.
 
 ```
 pipelineGitRef=v0.1.0 # Pick the version you want to install
@@ -29,20 +29,25 @@ git checkout - && \
 git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
-Once this is done, change to the new folder `ods-pipeline`. In there, add a `values.images.ods.yaml` file based on `images-chart/values.yaml` and a `values.tasks.ods.yaml` file based on `tasks-chart/values.yaml`. The secrets should be stored in a separate file, e.g. `secrets.images.ods.yaml`. For this, you'll need a link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/generating-a-new-gpg-key[GPG keypair], which fingerprint needs to be recorded in `.sops.yaml`, e.g.:
+Once this is done, change to the new folder `ods-pipeline` to configure the values and secrets to use for the installation. It is recommended to encrypt the secrets at rest, therefore the following describes how to use the `helm-secrets` plugin to edit the secrets. For this, you'll need a link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/generating-a-new-gpg-key[GPG keypair], which fingerprint needs to be recorded in a `.sops.yaml`, e.g.:
 
 ```
 creation_rules:
   - pgp: "A2F9 D4AF 800A 5499 3667 5C66 B92D F67B 0EF2 B057"
 ```
 
+Now copy the default values files:
+```
+cp images-chart/values.yaml values.images.yaml
+cat images-chart/secrets.yaml | helm secrets edit secrets.images.yaml
+cp tasks-chart/values.yaml values.tasks.yaml
+```
+
 If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
 
-Then you can install the `images` chart via `./install.sh -n ods --chart=images --values=values.images.ods.yaml,secrets.images.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
+Then you can install the `images` chart via `./install.sh -n ods --chart=images --values=values.images.yaml,secrets.images.yaml` (make sure to replace the namespace). You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources - start a build for each created `BuildConfig`.
 
-In the same way, you can install the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
-
-Finally, start a build for each created `BuildConfig`.
+In the same way, you can install the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
 
 Note that in ODS 4.0.0, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in your Nexus instance yet, you will need to create them manually. The repositories are of type "raw" and should not allow re-deployment of artifacts. It is recommended to have both backed up by their own blob stores. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
 
@@ -60,6 +65,8 @@ git subtree split --squash --prefix=deploy/central -b subtree-split-branch-$pipe
 git checkout - && \
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
+
+Now, compare if any new values have been introduced and update the values and secrets file accordingly.
 
 Then you can update the `images` chart via `./install.sh -n ods --chart=images --values=values.images.ods.yaml,secrets.images.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
 

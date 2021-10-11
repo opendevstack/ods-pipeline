@@ -1,10 +1,13 @@
-# Default values for chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
+# Tasks
+# Image tag to use for images referenced by tasks.
 imageTag: 0.1.0
+# Suffix to append to the task name.
 taskSuffix: -v0-1-0
+
+# Git
 odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
 odsPipelineGitRepoRef: v0.1.0
-aquasecScannerUrl: ''
+
+# Sonar
+# Edition of SonarQube server. One of "community", "developer", "enterprise" or "datacenter".
 sonarEdition: 'community'
