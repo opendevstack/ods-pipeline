@@ -55,7 +55,7 @@ Finally, run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service lis
 
 Now your cd namespace is fully setup and you can start to utilize Tekton pipelines for your repositories. Please note that the `pipeline` serviceaccount in your `foo-cd` namespace needs at `edit` or even `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
 
-See the link:ods-configuration.adoc[ODS.YAML reference] for more information on usage.
+See the link:getting-started.adoc[Getting Started] guide for more information on usage.
 
 ## Updating
 

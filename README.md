@@ -27,6 +27,7 @@ The documentation provided by ODS pipeline has three audiences:
 
 **User Guide**
 * [Installation & Updating](/docs/user-installation.adoc)
+* [Getting Started](/docs/getting-started.adoc)
 * [ODS.YAML Reference](/docs/ods-configuration.adoc)
 * [Task Reference](/docs/tasks)
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)
