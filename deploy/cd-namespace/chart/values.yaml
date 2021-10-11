@@ -1,7 +1,3 @@
-# Default values for chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 # General
 # Serviceaccount name to use for pipeline resources.
 serviceAccountName: 'pipeline'
@@ -13,24 +9,15 @@ debug: 'false'
 bitbucketUrl: ''
 # Bitbucket username. Example: cd_user.
 bitbucketUsername: ''
-# Bitbucket personal access token (PAT) in clear text. This token needs to be
-# created in Bitbucket for the user identified by "bitbucketUsername".
-# The user requires write permissions in order to set build status or add code
-# insights on commits.
-bitbucketAccessToken: ''
-# Shared secret between webhooks in Bitbucket and the event listener. Create
-# a random secret and enter it here, then use it later on as the secret in any
-# webhook you setup. The value needs to be in clear text.
-bitbucketWebhookSecret: ''
 
 # Nexus
 # Nexus URL (including scheme). Example: https://nexus.example.com.
 nexusUrl: ''
 # Nexus username. Example: developer.
 nexusUsername: ''
-# Nexus password for the user identified by "nexusUsername" in clear text.
-nexusPassword: ''
+# Nexus repository for temporary artifacts (stage = dev)
 nexusTemporaryRepository: 'ods-temporary-artifacts'
+# Nexus repository for permanent artifacts (stage = qa|prod)
 nexusPermanentRepository: 'ods-permanent-artifacts'
 
 # Sonar
@@ -38,8 +25,6 @@ nexusPermanentRepository: 'ods-permanent-artifacts'
 sonarUrl: ''
 # SonarQube username. Example: developer.
 sonarUsername: ''
-# SonarQube password for the user identified by "sonarUsername" in clear text.
-sonarAuthToken: ''
 
 # Aqua
 # Aqua URL (including scheme). Example: https://aqua.example.com.
@@ -51,9 +36,6 @@ aquaRegistry: ''
 # Aqua username. Example: developer.
 # Leave empty when not using Aqua.
 aquaUsername: ''
-# Aqua password for the user identified by "aquaUsername" in clear text.
-# Leave empty when not using Aqua.
-aquaPassword: ''
 
 # PVC
 # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
