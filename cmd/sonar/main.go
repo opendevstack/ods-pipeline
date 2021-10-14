@@ -113,7 +113,7 @@ func sonarScan(
 
 	if prInfo == nil {
 		logger.Infof("Generating reports ...")
-		reportStdout, err := sonarClient.GenerateReports(
+		err := sonarClient.GenerateReports(
 			sonarProject,
 			"OpenDevStack",
 			ctxt.GitRef,
@@ -121,11 +121,9 @@ func sonarScan(
 			artifactPrefix,
 		)
 		if err != nil {
-			logger.Infof(reportStdout)
-			logger.Infof(err.Error())
+			logger.Errorf(err.Error())
 			os.Exit(1)
 		}
-		logger.Infof(reportStdout)
 	} else {
 		logger.Infof("No reports are generated for pull request scans.")
 	}

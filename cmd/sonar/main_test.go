@@ -30,9 +30,9 @@ func (c *fakeClient) QualityGateGet(p sonar.QualityGateGetParams) (*sonar.Qualit
 	return &sonar.QualityGate{ProjectStatus: sonar.QualityGateProjectStatus{Status: status}}, nil
 }
 
-func (c *fakeClient) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) (string, error) {
+func (c *fakeClient) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error {
 	c.reportGenerated = true
-	return "", nil
+	return nil
 }
 
 func (c *fakeClient) ExtractComputeEngineTaskID(filename string) (string, error) {

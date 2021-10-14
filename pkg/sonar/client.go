@@ -14,7 +14,7 @@ import (
 type ClientInterface interface {
 	Scan(sonarProject, branch, commit string, pr *PullRequest) (string, error)
 	QualityGateGet(p QualityGateGetParams) (*QualityGate, error)
-	GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) (string, error)
+	GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error
 	ExtractComputeEngineTaskID(filename string) (string, error)
 	ComputeEngineTaskGet(p ComputeEngineTaskGetParams) (*ComputeEngineTask, error)
 }
