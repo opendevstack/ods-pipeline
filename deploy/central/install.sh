@@ -44,6 +44,9 @@ done
 if [ -z "${CHART}" ]; then
     echo "--chart is required"
     exit 1
+elif [ -z "${NAMESPACE}" ]; then
+    echo "--namespace is required"
+    exit 1
 elif [ "${CHART}" == "tasks" ]; then
     CHART_DIR="./tasks-chart"
     # Add the taskSuffix into the Helm release name so that we get one Helm
@@ -54,10 +57,6 @@ elif [ "${CHART}" == "tasks" ]; then
 elif [ "${CHART}" == "images" ]; then
     CHART_DIR="./images-chart"
     RELEASE_NAME="ods-pipeline-images"
-    if [ -z "${NAMESPACE}" ]; then
-        echo "--namespace is required"
-        exit 1
-    fi
 else
     echo "--chart is not valid. Use 'tasks' or 'images'."
     exit 1
