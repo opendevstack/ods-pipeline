@@ -45,11 +45,15 @@ if [ -z "${CHART}" ]; then
     echo "--chart is required"
     exit 1
 elif [ "${CHART}" == "tasks" ]; then
-    RELEASE_NAME="ods-pipeline-tasks"
     CHART_DIR="./tasks-chart"
+    # Add the taskSuffix into the Helm release name so that we get one Helm
+    # release per version, which avoids deleting old tasks when new ones are
+    # installed.
+    RELEASE_SUFFIX=$(grep "taskSuffix:" "${CHART_DIR}/values.yaml" | awk '{print $NF}' | tr -d "'\"")
+    RELEASE_NAME="ods-pipeline-tasks${RELEASE_SUFFIX}"
 elif [ "${CHART}" == "images" ]; then
-    RELEASE_NAME="ods-pipeline-images"
     CHART_DIR="./images-chart"
+    RELEASE_NAME="ods-pipeline-images"
     if [ -z "${NAMESPACE}" ]; then
         echo "--namespace is required"
         exit 1
