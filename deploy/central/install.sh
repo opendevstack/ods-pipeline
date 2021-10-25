@@ -52,7 +52,11 @@ elif [ "${CHART}" == "tasks" ]; then
     # Add the taskSuffix into the Helm release name so that we get one Helm
     # release per version, which avoids deleting old tasks when new ones are
     # installed.
-    RELEASE_SUFFIX=$(grep "taskSuffix:" "${CHART_DIR}/values.yaml" | awk '{print $NF}' | tr -d "'\"")
+    greppedFile="${CHART_DIR}/values.yaml"
+    if [ -f values.tasks.yaml ]; then
+        greppedFile="values.tasks.yaml"
+    fi
+    RELEASE_SUFFIX=$(grep "taskSuffix:" "${greppedFile}" | awk '{print $NF}' | tr -d "'\"")
     RELEASE_NAME="ods-pipeline-tasks${RELEASE_SUFFIX}"
 elif [ "${CHART}" == "images" ]; then
     CHART_DIR="./images-chart"

@@ -66,8 +66,8 @@ git checkout - && \
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
 
-Now, compare if any new values have been introduced and update the values and secrets file accordingly.
+Now, compare if any new values have been introduced and update the values and secrets file accordingly. Make sure that the version-related information matches the checked out Git ref.
 
-Then you can update the `images` chart via `./install.sh -n ods --chart=images --values=values.images.ods.yaml,secrets.images.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
+Then you can update the `images` chart via `./install.sh -n ods --chart=images --values=values.images.yaml,secrets.images.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
 
-In the same way, you can update the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.ods.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
+In the same way, you can update the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
