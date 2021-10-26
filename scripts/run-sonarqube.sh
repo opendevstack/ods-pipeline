@@ -47,4 +47,4 @@ token=$(echo "${tokenResponse}" | jq -r .token)
 
 echo "sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'" >> ${HELM_VALUES_FILE}
 echo "sonarUsername: '${SONAR_USERNAME}'" >> ${HELM_VALUES_FILE}
-echo "sonarPassword: '${token}'" >> ${HELM_VALUES_FILE}
+echo "sonarAuthToken: '${token}'" >> ${HELM_VALUES_FILE}
