@@ -71,9 +71,13 @@ func ProjectKey(ctxt *pipelinectxt.ODSContext, artifactPrefix string) string {
 	return sonarProject
 }
 
+func (c *Client) logger() logging.LeveledLoggerInterface {
+	return c.clientConfig.Logger
+}
+
 func (c *Client) get(urlPath string) (int, []byte, error) {
 	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("GET %s", u)
+	c.logger().Debugf("GET %s", u)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)

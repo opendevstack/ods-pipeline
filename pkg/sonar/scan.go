@@ -62,7 +62,10 @@ func (c *Client) Scan(sonarProject, branch, commit string, pr *PullRequest) (str
 		}
 	}
 
-	fmt.Printf("scan params: %v", scannerParams)
+	c.logger().Debugf("Scan params: %v", scannerParams)
+	// The authentication token of a SonarQube user with "Execute Analysis"
+	// permission on the project is passed as "sonar.login" for authentication,
+	// see https://docs.sonarqube.org/latest/analysis/analysis-parameters/.
 	scannerParams = append(scannerParams, fmt.Sprintf("-Dsonar.login=%s", c.clientConfig.APIToken))
 	stdout, stderr, err := command.Run("sonar-scanner", scannerParams)
 	if err != nil {

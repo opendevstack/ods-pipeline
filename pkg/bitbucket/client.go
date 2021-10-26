@@ -60,7 +60,7 @@ func (c *Client) put(urlPath string, payload []byte) (int, []byte, error) {
 
 func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []byte, error) {
 	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("%s %s", method, u)
+	c.logger().Debugf("%s %s", method, u)
 	var requestBody io.Reader
 	if payload != nil {
 		requestBody = bytes.NewReader(payload)
@@ -72,6 +72,10 @@ func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []b
 
 	req.Header.Set("Content-Type", "application/json")
 	return c.doRequest(req)
+}
+
+func (c *Client) logger() logging.LeveledLoggerInterface {
+	return c.clientConfig.Logger
 }
 
 func (c *Client) doRequest(req *http.Request) (int, []byte, error) {
