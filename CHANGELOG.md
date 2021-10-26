@@ -8,6 +8,9 @@ Note that changes which ONLY affect documentation or the testsuite will not be
 listed in the changelog.
 
 ## [Unreleased]
+### Fixed
+
+- Incorrect ods-gradle-toolset base image in BuildConfig ([#250](https://github.com/opendevstack/ods-pipeline/issues/250))
 
 ## [0.1.0] - 2021-10-05
 
