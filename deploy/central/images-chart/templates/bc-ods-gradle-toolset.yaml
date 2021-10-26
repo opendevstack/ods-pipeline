@@ -17,7 +17,7 @@ spec:
       dockerfilePath: build/package/Dockerfile.gradle-toolset
       from:
         kind: DockerImage
-        name: 'registry.redhat.io/ubi8:8.4'
+        name: 'registry.redhat.io/ubi8/openjdk-11:1.10'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
