@@ -11,9 +11,6 @@ listed in the changelog.
 ### Fixed
 
 - Incorrect ods-gradle-toolset base image in BuildConfig ([#250](https://github.com/opendevstack/ods-pipeline/issues/250))
-
-### Fixed
-
 - Generating a SonarQube report fails when PR exists for scanned branch ([#227](https://github.com/opendevstack/ods-pipeline/issues/227))
 - Generating a SonarQube report fails when background task does not finish immediately ([#227](https://github.com/opendevstack/ods-pipeline/issues/227))
 - Quality Gate check fails due to incorrect API authentication (detected while working on #227)
