@@ -6,6 +6,7 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 INSECURE=""
 HOST_PORT="9000"
+IMAGE_NAME="ods-test-sonarqube"
 CONTAINER_NAME="ods-test-sonarqube"
 SONAR_VERSION="8.4"
 SONAR_USERNAME="admin"
@@ -24,19 +25,12 @@ while [[ "$#" -gt 0 ]]; do
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-# TODO: Set forceAuthentication to mirror actual settings.
-# echo "Build image"
-# docker build \
-#     -t "${CONTAINER_IMAGE}" \
-#     --build-arg sonarDistributionUrl="${SONAR_DISTRIBUTION_URL}" \
-#     --build-arg sonarVersion="${SONAR_VERSION}" \
-#     --build-arg sonarEdition="${SONAR_EDITION}" \
-#     --build-arg idpDns="" \
-#     ./docker
-
 echo "Run container using image tag ${SONAR_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
-docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" sonarqube:${SONAR_IMAGE_TAG}
+cd ${SCRIPT_DIR}/sonarqube
+docker build -t ${IMAGE_NAME} .
+cd - &> /dev/null
+docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" ${IMAGE_NAME}
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
 if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
@@ -53,4 +47,4 @@ token=$(echo "${tokenResponse}" | jq -r .token)
 
 echo "sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'" >> ${HELM_VALUES_FILE}
 echo "sonarUsername: '${SONAR_USERNAME}'" >> ${HELM_VALUES_FILE}
-echo "sonarPassword: '${token}'" >> ${HELM_VALUES_FILE}
+echo "sonarAuthToken: '${token}'" >> ${HELM_VALUES_FILE}

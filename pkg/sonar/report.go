@@ -12,7 +12,7 @@ import (
 
 // GenerateReports generates SonarQube reports using cnesreport.
 // See https://github.com/cnescatlab/sonar-cnes-report.
-func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) (string, error) {
+func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error {
 	reportParams := []string{
 		"-jar", "/usr/local/cnes/cnesreport.jar",
 		"-s", c.clientConfig.BaseURL,
@@ -23,16 +23,19 @@ func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifac
 	}
 	stdout, stderr, err := command.Run("java", reportParams)
 	if err != nil {
-		return string(stdout), fmt.Errorf("report generation failed: %w, stderr: %s", err, string(stderr))
+		return fmt.Errorf(
+			"report generation failed: %w, stderr: %s, stdout: %s",
+			err, string(stderr), string(stdout),
+		)
 	}
 
 	artifactsPath := filepath.Join(rootPath, pipelinectxt.SonarAnalysisPath)
 	err = copyReportFiles(sonarProject, artifactsPath, artifactPrefix)
 	if err != nil {
-		return "", fmt.Errorf("copying report to artifacts failed: %w", err)
+		return fmt.Errorf("copying report to artifacts failed: %w", err)
 	}
 
-	return string(stdout), nil
+	return nil
 }
 
 func copyReportFiles(project, destinationDir, artifactPrefix string) error {

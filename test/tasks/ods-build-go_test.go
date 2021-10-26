@@ -166,6 +166,25 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 				},
 			},
+			"build go app in PR": {
+				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					writeContextFile(t, wsDir, "pr-key", "3")
+					writeContextFile(t, wsDir, "pr-key", "master")
+					ctxt.Params = map[string]string{
+						"go-os":              runtime.GOOS,
+						"go-arch":            runtime.GOARCH,
+						"sonar-quality-gate": "true",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+				},
+			},
 			"build go app with redis sidecar": {
 				TaskVariant:         "with-sidecar",
 				WorkspaceDirMapping: map[string]string{"source": "go-redis"},

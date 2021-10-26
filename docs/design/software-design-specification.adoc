@@ -36,7 +36,7 @@ As described in the architecture, the system is split into two main containers: 
 
 | SDS-SHARED-2
 | `sonar` binary
-a| Logic of SQ scanning. It runs `sonar-scanner` (SDS-EXT-7) on the sources, communicating with the SonarQube server specified by the `ods-sonar` config map and the `ods-sonar-auth` secret. After scanning, reports a generated using `cnes-report` (SDS-EXT-8).
+a| Logic of SQ scanning. It runs `sonar-scanner` (SDS-EXT-7) on the sources, communicating with the SonarQube server specified by the `ods-sonar` config map and the `ods-sonar-auth` secret. After scanning, reports a generated using `cnes-report` (SDS-EXT-8) unless the scan is against a pull request. `cnes-report` is not compatible with PR scans, and reports are not needed for pull requests anyway as the evidence they provide is only needed for long-lived branches.
 
 The project name is fixed to `<PROJECT>-<COMPONENT>`.
 

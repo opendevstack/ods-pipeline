@@ -1,6 +1,7 @@
 package sonar
 
 import (
+	b64 "encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +11,14 @@ import (
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
+
+type ClientInterface interface {
+	Scan(sonarProject, branch, commit string, pr *PullRequest) (string, error)
+	QualityGateGet(p QualityGateGetParams) (*QualityGate, error)
+	GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error
+	ExtractComputeEngineTaskID(filename string) (string, error)
+	ComputeEngineTaskGet(p ComputeEngineTaskGetParams) (*ComputeEngineTask, error)
+}
 
 // Loosely based on https://github.com/brandur/wanikaniapi.
 type Client struct {
@@ -62,9 +71,13 @@ func ProjectKey(ctxt *pipelinectxt.ODSContext, artifactPrefix string) string {
 	return sonarProject
 }
 
+func (c *Client) logger() logging.LeveledLoggerInterface {
+	return c.clientConfig.Logger
+}
+
 func (c *Client) get(urlPath string) (int, []byte, error) {
 	u := c.clientConfig.BaseURL + urlPath
-	c.clientConfig.Logger.Debugf("GET %s", u)
+	c.logger().Debugf("GET %s", u)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
@@ -81,7 +94,11 @@ func (c *Client) get(urlPath string) (int, []byte, error) {
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
+	// The user token is sent via the login field of HTTP basic authentication,
+	// without any password. See https://docs.sonarqube.org/latest/extend/web-api/.
+	credentials := fmt.Sprintf("%s:", c.clientConfig.APIToken)
+	basicAuth := b64.StdEncoding.EncodeToString([]byte(credentials))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.clientConfig.APIToken)
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth))
 	return c.httpClient.Do(req)
 }

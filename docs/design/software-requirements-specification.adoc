@@ -257,6 +257,7 @@ a| The task shall analyze the source code statically using SonarQube.
 
 * The SQ project name shall be fixed by the task to avoid name clashes between projects.
 * Branch and pull request analysis shall be performed if the server edition supports it.
+* Reports shall be generated unless the scan is against a pull request.
 
 | SRS-TASK-SHARED-2
 a| The task shall be able to run in a subdirectory of the checked out repository.
