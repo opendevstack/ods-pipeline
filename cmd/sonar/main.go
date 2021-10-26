@@ -168,7 +168,7 @@ func waitUntilComputeEngineTaskIsSuccessful(logger logging.LeveledLoggerInterfac
 		sleep *= 2
 		task, err := sonarClient.ComputeEngineTaskGet(params)
 		if err != nil {
-			logger.Infof("cannot get status of task: %w", err)
+			logger.Infof("cannot get status of task: %s", err)
 			continue
 		}
 		switch task.Status {

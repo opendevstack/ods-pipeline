@@ -1,6 +1,7 @@
 package sonar
 
 import (
+	b64 "encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -89,7 +90,11 @@ func (c *Client) get(urlPath string) (int, []byte, error) {
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
+	// The user token is sent via the login field of HTTP basic authentication,
+	// without any password. See https://docs.sonarqube.org/latest/extend/web-api/.
+	credentials := fmt.Sprintf("%s:", c.clientConfig.APIToken)
+	basicAuth := b64.StdEncoding.EncodeToString([]byte(credentials))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.clientConfig.APIToken)
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuth))
 	return c.httpClient.Do(req)
 }
