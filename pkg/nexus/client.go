@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
@@ -75,6 +76,18 @@ func (c *Client) URL() string {
 // Username returns the username used by this client.
 func (c *Client) Username() string {
 	return c.clientConfig.Username
+}
+
+// ArtifactGroupBase returns the group base in which aritfacts are stored for
+// the given ODS pipeline context.
+func ArtifactGroupBase(ctxt *pipelinectxt.ODSContext) string {
+	return fmt.Sprintf("/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA)
+}
+
+// ArtifactGroup returns the group in which aritfacts are stored for the given
+// ODS pipeline context and the subdir.
+func ArtifactGroup(ctxt *pipelinectxt.ODSContext, subdir string) string {
+	return ArtifactGroupBase(ctxt) + "/" + subdir
 }
 
 func (c *Client) logger() logging.LeveledLoggerInterface {

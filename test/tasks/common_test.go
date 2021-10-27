@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -50,6 +51,12 @@ func checkFileContent(t *testing.T, wsDir, filename, want string) {
 	}
 	if got != want {
 		t.Fatalf("got '%s', want '%s' in file %s", got, want, filename)
+	}
+}
+
+func checkFileExists(t *testing.T, filename string) {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		t.Fatal(err)
 	}
 }
 
