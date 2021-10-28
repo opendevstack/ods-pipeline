@@ -108,14 +108,14 @@ pipeline:
   - name: backend-build-go
     taskRef:
       kind: ClusterTask
-      name: ods-build-go-v0-1-0
+      name: ods-build-go-v0-1-1
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: backend-package-image
     taskRef:
       kind: ClusterTask
-      name: ods-package-image-v0-1-0
+      name: ods-package-image-v0-1-1
     runAfter:
     - backend-build-go
     workspaces:
@@ -124,7 +124,7 @@ pipeline:
   - name: backend-deploy
     taskRef:
       kind: ClusterTask
-      name: ods-deploy-helm-v0-1-0
+      name: ods-deploy-helm-v0-1-1
     runAfter:
     - backend-package-image
     workspaces:
@@ -132,11 +132,11 @@ pipeline:
       workspace: shared-workspace
 ----
 
-What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-1-0` task. The task continues to use the existing `sonar-project.properties`, which does not need to be modified. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
+What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-1-1` task. The task continues to use the existing `sonar-project.properties`, which does not need to be modified. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
 
-Building the container image is now done in `ods-package-image-v0-1-0` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:tasks/ods-build-go.adoc[`ods-build-go` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
+Building the container image is now done in `ods-package-image-v0-1-1` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:tasks/ods-build-go.adoc[`ods-build-go` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
 
-Finally, the application is deployed in `ods-deploy-helm-v0-1-0` as opposed to `odsComponentStageRolloutOpenShiftDeployment`.
+Finally, the application is deployed in `ods-deploy-helm-v0-1-1` as opposed to `odsComponentStageRolloutOpenShiftDeployment`.
 Let's look at this deployment piece in detail. The new Tekton task makes use of Helm to define and deploy the Kubernetes resources to use. Your existing repository might not define Kubernetes resources at all (this is the default), or they might be expressed as OpenShift templates (in a folder named `openshift`) and applied with link:https://github.com/opendevstack/tailor[Tailor]. ODS pipeline only supports Helm at the moment, and requires the Kuberenetes resources (the Helm "chart") to be under version control as described below in the <<helm-chart,Helm Chart>> section.
 
 After the `ods.yaml` and the Helm `chart` are added to the repository, the final step is to create a Bitbucket webhook pointing to the ODS pipeline installation. Disable the existing Jenkins webhook setting before creating a new one as described below in the <<webhook-configuration,Webhook Configuration>> section.
@@ -164,14 +164,14 @@ pipeline:
   - name: backend-build-go
     taskRef:
       kind: ClusterTask
-      name: ods-build-go-v0-1-0
+      name: ods-build-go-v0-1-1
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: backend-package-image
     taskRef:
       kind: ClusterTask
-      name: ods-package-image-v0-1-0
+      name: ods-package-image-v0-1-1
     runAfter:
     - backend-build-go
     workspaces:
@@ -180,7 +180,7 @@ pipeline:
   - name: backend-deploy
     taskRef:
       kind: ClusterTask
-      name: ods-deploy-helm-v0-1-0
+      name: ods-deploy-helm-v0-1-1
     runAfter:
     - backend-package-image
     workspaces:
@@ -188,7 +188,7 @@ pipeline:
       workspace: shared-workspace
 ----
 
-The `ods-package-image-v0-1-0` task assumes the Docker context in `docker`, and the `Dockerfile` located inside that folder. Therefore, create a folder `docker` and create a `Dockerfile` inside like this one:
+The `ods-package-image-v0-1-1` task assumes the Docker context in `docker`, and the `Dockerfile` located inside that folder. Therefore, create a folder `docker` and create a `Dockerfile` inside like this one:
 
 .Dockerfile
 [source]
@@ -220,7 +220,7 @@ sonar.sourceEncoding=UTF-8
 sonar.go.coverage.reportPaths=coverage.out
 ----
 
-The `ods-deploy-helm-v0-1-0` requires a Helm chart to be present to deploy the Kubernetes resources for the application. Add it as described below in the <<helm-chart,Helm Chart>> section.
+The `ods-deploy-helm-v0-1-1` requires a Helm chart to be present to deploy the Kubernetes resources for the application. Add it as described below in the <<helm-chart,Helm Chart>> section.
 
 Finally, setup a Bitbucket webhook pointing to the ODS pipeline installation as described below in the <<webhook-configuration,Webhook Configuration>> section.
 

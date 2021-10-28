@@ -4,6 +4,6 @@
 
 registry: image-registry.openshift-image-registry.svc:5000
 namespace: ods
-imageTag: 0.1.0
+imageTag: 0.1.1
 taskSuffix: ''
 pushRegistry: image-registry.openshift-image-registry.svc:5000
