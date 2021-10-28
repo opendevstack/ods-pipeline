@@ -3,6 +3,7 @@ package tasks
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -42,6 +43,37 @@ func TestTaskODSFinish(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
 						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
 					)
+					// Pretend there is alredy a coverage report in Nexus
+					// this assures the safeguard is working to avoid duplicate upload.
+					// TODO: assure the safeguard is actually invoked by checking the logs.
+					t.Log("Uploading coverage artifact to Nexus and writing manifest")
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					err := nexusClient.Upload(
+						nexus.TemporaryRepositoryDefault,
+						nexus.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
+						filepath.Join(wsDir, pipelinectxt.CodeCoveragesPath, "coverage.out"),
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+					am := pipelinectxt.ArtifactsManifest{
+						SourceRepository: nexus.TemporaryRepositoryDefault,
+						Artifacts: []pipelinectxt.ArtifactInfo{
+							{
+								Directory: pipelinectxt.CodeCoveragesDir,
+								Name:      "coverage.out",
+							},
+						},
+					}
+					err = pipelinectxt.WriteJsonArtifact(
+						am,
+						filepath.Join(wsDir, pipelinectxt.ArtifactsPath),
+						pipelinectxt.ArtifactsManifestFilename,
+					)
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					ctxt.Params = map[string]string{
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "Succeeded",
@@ -99,8 +131,9 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, ta
 
 	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{
-		pipelinectxt.XUnitReportsDir:  {"report.xml"},
-		pipelinectxt.CodeCoveragesDir: {"coverage.out"},
+		pipelinectxt.XUnitReportsDir: {"report.xml"},
+		// exclude coverage as we pretend it has been uploaded earlier already
+		// pipelinectxt.CodeCoveragesDir: {"coverage.out"},
 		pipelinectxt.SonarAnalysisDir: {"analysis-report.md", "issues-report.csv"},
 	}
 
@@ -109,7 +142,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, ta
 		filesCountInSubDir := len(artifactsMap[artifactsSubDir])
 
 		// e.g: "/ODSPIPELINETEST/workspace-190880007/935e5229b084dd60d44a5eddd2d023720ec153c1/xunit-reports"
-		group := fmt.Sprintf("/%s/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir)
+		group := nexus.ArtifactGroup(ctxt.ODS, artifactsSubDir)
 
 		// The test is so fast that, when we reach this line, the artifacts could still being uploaded to Nexus
 		artifactURLs := waitForArtifacts(t, nexusClient, targetRepository, group, filesCountInSubDir, 5*time.Second)
@@ -120,7 +153,8 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, ta
 		for _, file := range files {
 
 			// e.g. "http://localhost:8081/repository/ods-pipelines/ODSPIPELINETEST/workspace-866704509/b1415e831b4f5b24612abf24499663ddbff6babb/xunit-reports/report.xml"
-			url := fmt.Sprintf("%s/repository/%s/%s/%s/%s/%s/%s", nexusClient.URL(), targetRepository, ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA, artifactsSubDir, file)
+			// note that the "group" value already has a leading slash!
+			url := fmt.Sprintf("%s/repository/%s%s/%s", nexusClient.URL(), targetRepository, group, file)
 
 			if !contains(artifactURLs, url) {
 				t.Fatalf("Artifact %s with URL %+v not found in Nexus under any of the following URLs: %v", file, url, artifactURLs)

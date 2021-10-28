@@ -29,12 +29,11 @@ func TestTaskODSStart(t *testing.T) {
 					)
 
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					groupBase := fmt.Sprintf("/%s/%s/%s", ctxt.ODS.Project, ctxt.ODS.Repository, ctxt.ODS.GitCommitSHA)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					// Upload artifact to permanent storage.
 					err := nexusClient.Upload(
 						nexus.PermanentRepositoryDefault,
-						groupBase+"/pipeline-runs",
+						nexus.ArtifactGroup(ctxt.ODS, pipelinectxt.PipelineRunsDir),
 						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
 					)
 					if err != nil {
@@ -59,10 +58,8 @@ func TestTaskODSStart(t *testing.T) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
-					downloadedArtifact := filepath.Join(wsDir, pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json")
-					if _, err := os.Stat(downloadedArtifact); os.IsNotExist(err) {
-						t.Fatal(err)
-					}
+					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json"))
+					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
 				},
 			},
 			"clones repo and configured subrepos": {
@@ -95,20 +92,19 @@ func TestTaskODSStart(t *testing.T) {
 					)
 
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					groupBase := fmt.Sprintf("/%s/%s/%s", subCtxt.Project, subCtxt.Repository, subCtxt.GitCommitSHA)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
-						groupBase+"/xunit-reports",
-						filepath.Join(artifactsBaseDir, "xunit-reports", "report.xml"),
+						nexus.ArtifactGroup(subCtxt, pipelinectxt.XUnitReportsDir),
+						filepath.Join(artifactsBaseDir, pipelinectxt.XUnitReportsDir, "report.xml"),
 					)
 					if err != nil {
 						t.Fatal(err)
 					}
 					err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
-						groupBase+"/pipeline-runs",
-						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
+						nexus.ArtifactGroup(subCtxt, pipelinectxt.PipelineRunsDir),
+						filepath.Join(artifactsBaseDir, pipelinectxt.PipelineRunsDir, "foo-zh9gt0.json"),
 					)
 					if err != nil {
 						t.Fatal(err)
@@ -129,6 +125,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					// Check .ods directory contents of main repo
 					checkODSContext(t, wsDir, ctxt.ODS)
+					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
 
 					// Check .ods directory contents of subrepo
 					subrepoDir := filepath.Join(wsDir, pipelinectxt.SubreposPath, subrepoContext.Repository)
@@ -140,6 +137,7 @@ func TestTaskODSStart(t *testing.T) {
 					xUnitContent := trimmedFileContentOrFatal(t, filepath.Join(sourceArtifactsBaseDir, xUnitFileSource))
 					destinationArtifactsBaseDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
 					checkFileContent(t, destinationArtifactsBaseDir, xUnitFileSource, xUnitContent)
+					checkFileExists(t, filepath.Join(destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename))
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)

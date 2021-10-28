@@ -9,28 +9,74 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/file"
+	"sigs.k8s.io/yaml"
 )
 
 const (
-	ArtifactsDir      = "artifacts"
-	ArtifactsPath     = BaseDir + "/" + ArtifactsDir
-	PipelineRunsDir   = "pipeline-runs"
-	PipelineRunsPath  = ArtifactsPath + "/" + PipelineRunsDir
-	ImageDigestsDir   = "image-digests"
-	ImageDigestsPath  = ArtifactsPath + "/" + ImageDigestsDir
-	SonarAnalysisDir  = "sonarqube-analysis"
-	SonarAnalysisPath = ArtifactsPath + "/" + SonarAnalysisDir
-	AquaScansDir      = "aquasec-scans"
-	AquaScansPath     = ArtifactsPath + "/" + AquaScansDir
-	CodeCoveragesDir  = "code-coverage"
-	CodeCoveragesPath = ArtifactsPath + "/" + CodeCoveragesDir
-	XUnitReportsDir   = "xunit-reports"
-	XUnitReportsPath  = ArtifactsPath + "/" + XUnitReportsDir
-	LintReportsDir    = "lint-reports"
-	LintReportsPath   = ArtifactsPath + "/" + LintReportsDir
-	DeploymentsDir    = "deployments"
-	DeploymentsPath   = ArtifactsPath + "/" + DeploymentsDir
+	ArtifactsDir              = "artifacts"
+	ArtifactsPath             = BaseDir + "/" + ArtifactsDir
+	PipelineRunsDir           = "pipeline-runs"
+	PipelineRunsPath          = ArtifactsPath + "/" + PipelineRunsDir
+	ImageDigestsDir           = "image-digests"
+	ImageDigestsPath          = ArtifactsPath + "/" + ImageDigestsDir
+	SonarAnalysisDir          = "sonarqube-analysis"
+	SonarAnalysisPath         = ArtifactsPath + "/" + SonarAnalysisDir
+	AquaScansDir              = "aquasec-scans"
+	AquaScansPath             = ArtifactsPath + "/" + AquaScansDir
+	CodeCoveragesDir          = "code-coverage"
+	CodeCoveragesPath         = ArtifactsPath + "/" + CodeCoveragesDir
+	XUnitReportsDir           = "xunit-reports"
+	XUnitReportsPath          = ArtifactsPath + "/" + XUnitReportsDir
+	LintReportsDir            = "lint-reports"
+	LintReportsPath           = ArtifactsPath + "/" + LintReportsDir
+	DeploymentsDir            = "deployments"
+	DeploymentsPath           = ArtifactsPath + "/" + DeploymentsDir
+	ArtifactsManifestFilename = "manifest.json"
 )
+
+// ArtifactsManifest represents all downloaded artifacts.
+type ArtifactsManifest struct {
+	// SourceRepository identifies the repository artifacts where downloaded from
+	SourceRepository string         `json:"sourceRepository"`
+	Artifacts        []ArtifactInfo `json:"artifacts"`
+}
+
+// ArtifactInfo represents one artifact.
+type ArtifactInfo struct {
+	URL       string `json:"url"`
+	Directory string `json:"directory"`
+	Name      string `json:"name"`
+}
+
+// ReadArtifactsManifestFromFile reads an artifact manifest from given filename or errors.
+func ReadArtifactsManifestFromFile(filename string) (*ArtifactsManifest, error) {
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file %s: %w", filename, err)
+	}
+	var am *ArtifactsManifest
+	err = yaml.UnmarshalStrict(body, &am, func(dec *json.Decoder) *json.Decoder {
+		dec.DisallowUnknownFields()
+		return dec
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal manifest: %w", err)
+	}
+	return am, nil
+}
+
+// Contains checks whether given directory/name is already present in repository.
+func (am *ArtifactsManifest) Contains(repository, directory, name string) bool {
+	if repository != am.SourceRepository {
+		return false
+	}
+	for _, a := range am.Artifacts {
+		if a.Directory == directory && a.Name == name {
+			return true
+		}
+	}
+	return false
+}
 
 // WriteJsonArtifact marshals given "in" struct and writes it into "artifactsPath" as "filename".
 func WriteJsonArtifact(in interface{}, artifactsPath, filename string) error {
@@ -54,12 +100,17 @@ func CopyArtifact(sourceFile, artifactsPath string) error {
 	return file.Copy(sourceFile, filepath.Join(artifactsPath, filepath.Base(sourceFile)))
 }
 
+// ReadArtifactsDir reads all artifacts in ArtifactsPath.
+// Only files in subdirectories are considered as artifacts.
+// Example: [
+//	"xunit-reports": ["report.xml"]
+//	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
+// ]
 func ReadArtifactsDir() (map[string][]string, error) {
 
-	artifactsDir := filepath.Join(BaseDir, ArtifactsDir)
 	artifactsMap := map[string][]string{}
 
-	items, err := ioutil.ReadDir(artifactsDir)
+	items, err := ioutil.ReadDir(ArtifactsPath)
 	if err != nil {
 		return artifactsMap, fmt.Errorf("%w", err)
 	}
@@ -67,7 +118,7 @@ func ReadArtifactsDir() (map[string][]string, error) {
 	for _, item := range items {
 		if item.IsDir() {
 			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := ioutil.ReadDir(filepath.Join(artifactsDir, item.Name()))
+			subitems, err := ioutil.ReadDir(filepath.Join(ArtifactsPath, item.Name()))
 			if err != nil {
 				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
 			}
@@ -75,7 +126,6 @@ func ReadArtifactsDir() (map[string][]string, error) {
 			for _, subitem := range subitems {
 				if !subitem.IsDir() {
 					// artifact file here, e.g. "report.xml"
-					log.Println(item.Name() + "/" + subitem.Name())
 					filesInSubDir = append(filesInSubDir, subitem.Name())
 				}
 			}
@@ -83,14 +133,6 @@ func ReadArtifactsDir() (map[string][]string, error) {
 			artifactsMap[item.Name()] = filesInSubDir
 		}
 	}
-
-	log.Println("artifactsMap: ", artifactsMap)
-
-	// map of directories and files under .ods/artifacts, e.g
-	// [
-	//	"xunit-reports": ["report.xml"]
-	//	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
-	// ]
 
 	return artifactsMap, nil
 }

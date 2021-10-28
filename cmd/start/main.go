@@ -423,14 +423,19 @@ func getNexusURLs(nexusClient *nexus.Client, repository, group string) ([]string
 }
 
 func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext, opts options, artifactsDir string) error {
-	group := fmt.Sprintf("/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA)
+	group := nexus.ArtifactGroupBase(ctxt)
 	// We want to target all artifacts underneath the group, hence the trailing '*'.
 	nexusSearchGroup := fmt.Sprintf("%s/*", group)
+	am := pipelinectxt.ArtifactsManifest{
+		SourceRepository: opts.nexusPermanentRepository,
+		Artifacts:        []pipelinectxt.ArtifactInfo{},
+	}
 	urls, err := getNexusURLs(nexusClient, opts.nexusPermanentRepository, nexusSearchGroup)
 	if err != nil {
 		return err
 	}
 	if len(urls) == 0 {
+		am.SourceRepository = opts.nexusTemporaryRepository
 		u, err := getNexusURLs(nexusClient, opts.nexusTemporaryRepository, nexusSearchGroup)
 		if err != nil {
 			return err
@@ -444,7 +449,9 @@ func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext,
 		}
 		urlPathParts := strings.Split(u.Path, group)
 		fileWithSubPath := urlPathParts[1] // e.g. "/pipeline-runs/foo-zh9gt0.json"
-		artifactsSubPath := filepath.Join(artifactsDir, path.Dir(fileWithSubPath))
+		aritfactName := path.Base(fileWithSubPath)
+		artifactDir := path.Dir(fileWithSubPath)
+		artifactsSubPath := filepath.Join(artifactsDir, artifactDir)
 		if _, err := os.Stat(artifactsSubPath); os.IsNotExist(err) {
 			if err := os.MkdirAll(artifactsSubPath, 0755); err != nil {
 				return fmt.Errorf("failed to create directory: %s, error: %w", artifactsSubPath, err)
@@ -455,8 +462,13 @@ func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext,
 		if err != nil {
 			return err
 		}
+		am.Artifacts = append(am.Artifacts, pipelinectxt.ArtifactInfo{
+			URL:       s,
+			Directory: artifactDir,
+			Name:      aritfactName,
+		})
 	}
-	return nil
+	return pipelinectxt.WriteJsonArtifact(am, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
 }
 
 func checkoutAndAssembleContext(checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string, baseCtxt *pipelinectxt.ODSContext) (*pipelinectxt.ODSContext, error) {
