@@ -43,6 +43,7 @@ The documentation provided by ODS pipeline has three audiences:
 
 This repository also hosts the design documents that describe ODS pipeline more formally. Those design documents provide more detail and background on goals, requirements and architecture decisions and may be useful for all audiences.
 
+* [Stakeholder Requirements](/docs/design/stakeholder-requirements.adoc)
 * [Software Architecture](/docs/design/software-architecture.adoc)
 * [Software Requirements Specification](/docs/design/software-requirements-specification.adoc)
 * [Software Design Specification](/docs/design/software-design-specification.adoc)
