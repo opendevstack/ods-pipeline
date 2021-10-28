@@ -66,7 +66,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | The pipeline tasks shall be defined in the Git repository triggering the pipeline run.
 
 | SHR-9
-| The pipeline tasks shall provide feedback about its status to users.
+| The pipeline shall provide feedback about its status to users.
 |===
 
 == Appendix
