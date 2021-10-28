@@ -85,14 +85,14 @@ pipeline:
   - name: build-go
     taskRef:
       kind: ClusterTask
-      name: ods-build-go-v0-1-0
+      name: ods-build-go-v0-1-1
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package-image
     taskRef:
       kind: ClusterTask
-      name: ods-package-image-v0-1-0
+      name: ods-package-image-v0-1-1
     runAfter:
     - build-go
     workspaces:
@@ -101,7 +101,7 @@ pipeline:
   - name: deploy-helm
     taskRef:
       kind: ClusterTask
-      name: ods-deploy-helm-v0-1-0
+      name: ods-deploy-helm-v0-1-1
     runAfter:
     - package-image
     workspaces:

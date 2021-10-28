@@ -131,7 +131,7 @@ spec:
   description: Custom Go (module) applications build task.
   steps:
     - name: build-go-binary
-      image: '{{.Values.registry}}/ods/ods-go-toolset:v0.1.0'
+      image: '{{.Values.registry}}/ods/ods-go-toolset:v0.1.1'
       env:
         - name: HOME
           value: '/tekton/home'
