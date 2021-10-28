@@ -14,19 +14,67 @@ func TestRawGet(t *testing.T) {
 	defer cleanup()
 	bitbucketClient := testClient(srv.Server.URL)
 
-	srv.EnqueueResponse(
-		t, "/projects/PRJ/repos/my-repo/raw/example.txt",
-		200, "bitbucket/example.txt",
-	)
-
-	r, err := bitbucketClient.RawGet(
-		"PRJ", "my-repo", "example.txt", at,
-	)
-	if err != nil {
-		t.Fatal(err)
+	tests := map[string]struct {
+		EnqueuedPath       string
+		EnqueuedStatusCode int
+		EnqueuedFixture    string
+		TestProject        string
+		TestRepository     string
+		TestFile           string
+		WantError          bool
+		WantBody           string
+	}{
+		"example.txt": {
+			EnqueuedPath:       "/projects/PRJ/repos/my-repo/raw/example.txt",
+			EnqueuedStatusCode: 200,
+			EnqueuedFixture:    "bitbucket/example.txt",
+			TestProject:        "PRJ",
+			TestRepository:     "my-repo",
+			TestFile:           "example.txt",
+			WantError:          false,
+			WantBody:           "hello world",
+		},
+		"wrong file": {
+			EnqueuedPath:       "/projects/PRJ/repos/my-repo/raw/example.txt",
+			EnqueuedStatusCode: 200,
+			EnqueuedFixture:    "bitbucket/example.txt",
+			TestProject:        "PRJ",
+			TestRepository:     "my-repo",
+			TestFile:           "foo.txt",
+			WantError:          true,
+			WantBody:           "",
+		},
+		"wrong auth": {
+			EnqueuedPath: "/projects/PRJ/repos/my-repo/raw/blank.txt",
+			// Bitbucket actually returns 302 redirect to login when authentication
+			// is incorrect but srv.EnqueueResponse does not allow us to set
+			// headers, so we fake this case with a 401.
+			EnqueuedStatusCode: 401,
+			EnqueuedFixture:    "bitbucket/blank.txt",
+			TestProject:        "PRJ",
+			TestRepository:     "my-repo",
+			TestFile:           "blank.txt",
+			WantError:          true,
+			WantBody:           "",
+		},
 	}
-	got := strings.TrimSpace(string(r))
-	if got != "hello world" {
-		t.Fatalf("got %s, want %s", got, "hello world")
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			srv.EnqueueResponse(t, tc.EnqueuedPath, tc.EnqueuedStatusCode, tc.EnqueuedFixture)
+
+			r, err := bitbucketClient.RawGet(
+				tc.TestProject, tc.TestRepository, tc.TestFile, at,
+			)
+			if (err == nil) == tc.WantError {
+				t.Fatalf("got err %v, want err: %v", err, tc.WantError)
+			}
+			if tc.WantBody != "" {
+				got := strings.TrimSpace(string(r))
+				if got != tc.WantBody {
+					t.Fatalf("got %s, want %s", got, tc.WantBody)
+				}
+			}
+		})
 	}
 }
