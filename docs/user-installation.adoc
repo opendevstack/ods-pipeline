@@ -73,3 +73,5 @@ git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --s
 Now, compare if any new values have been introduced and update the values and secrets file accordingly.
 
 Afterwards you can update the resources via `./install.sh -n foo-cd -f values.yaml,secrets.yaml`. You may also use `--dry-run` to see the changes first.
+
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-1-0` to `ods-build-go-v0-1-1`.
