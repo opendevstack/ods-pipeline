@@ -32,6 +32,13 @@ func NewClient(clientConfig *ClientConfig) *Client {
 	if httpClient == nil {
 		httpClient = &http.Client{}
 	}
+	// Never follow redirects. Some endpoints (e.g. the one accessed by RawGet)
+	// redirect to the login page when authentication is not successful. This
+	// behaviour would lead to misleading errors, see e.g.
+	// https://github.com/opendevstack/ods-pipeline/issues/254.
+	httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 	if clientConfig.Timeout > 0 {
 		httpClient.Timeout = clientConfig.Timeout
 	} else {
