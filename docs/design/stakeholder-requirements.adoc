@@ -1,0 +1,88 @@
+= Stakeholder Requirements
+:sectnums:
+:toc:
+
+== Purpose
+
+The purpose of this document is to describe the high-level stakeholder requirements.
+
+== Scope
+
+The following requirements apply for ODS pipeline version 0.1.
+
+== Definitions and Abbreviations
+
+=== Abbreviations
+
+[cols="1,5"]
+|===
+| Abbreviation | Description
+
+| ODS
+| OpenDevStack
+
+| CI
+| Continuous Integration
+
+| CD
+| Continuous Delivery
+
+| SQ
+| SonarQube
+|===
+
+== References
+
+N/A
+
+== {doctitle}
+
+Stakeholder requirements describe what the tool shall be able to accomplish and what properties it shall possess at a high level.
+
+[cols="1,3"]
+|===
+| SHR-1
+| The pipeline shall build high-quality, tested Go applications.
+
+| SHR-2
+| The pipeline shall build high-quality, tested JDK-based applications.
+
+| SHR-3
+| The pipeline shall build high-quality, tested Python applications.
+
+| SHR-4
+| The pipeline shall build high-quality, tested TypeScript applications.
+
+| SHR-5
+| The pipeline shall package all applications in secure container images.
+
+| SHR-6
+| The pipeline shall deploy Helm charts into Kubernetes namespaces, which may be located in external clusters.
+
+| SHR-7
+| The pipeline shall retain artifacts of important activities.
+
+| SHR-8
+| The pipeline tasks shall be defined in the Git repository triggering the pipeline run.
+
+| SHR-9
+| The pipeline tasks shall provide feedback about its status to users.
+|===
+
+== Appendix
+
+N/A
+
+== Document History
+
+The following table provides the history of the document.
+
+[cols="1,1,1,3"]
+|===
+| Version | Date | Author | Change
+
+| 0.1
+| 2021-10-28
+| Michael Sauter
+| Initial version.
+|===
