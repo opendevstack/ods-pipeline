@@ -8,6 +8,9 @@ Note that changes which ONLY affect documentation or the testsuite will not be
 listed in the changelog.
 
 ## [Unreleased]
+### Changed
+
+- Automatically roll webhook interceptor deployment when related config map or secret changes ([#252](https://github.com/opendevstack/ods-pipeline/issues/252))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
