@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/directory"
@@ -181,8 +182,14 @@ func TestTaskODSStart(t *testing.T) {
 					}
 				},
 				WantRunSuccess: false,
-				// TODO: check in post run func that failure is actually due to
-				// missing pipeline run artifact and not due to sth. else.
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					want := "Pipeline runs with subrepos require a successful pipeline run " +
+						"for all checked out subrepo commits, however no such run was found"
+
+					if !strings.Contains(string(ctxt.CollectedLogs), want) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", want, string(ctxt.CollectedLogs))
+					}
+				},
 			},
 			"handles QA stage": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
