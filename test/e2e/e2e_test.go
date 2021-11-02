@@ -148,6 +148,10 @@ func TestWebhookInterceptor(t *testing.T) {
 		t.Log(logs)
 		t.Fatal()
 	}
+	t.Log("Pipeline run succeeded.")
+	t.Log("Sleeping for 2s to make it work - unsure why needed ...")
+	time.Sleep(2 * time.Second)
+	tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 }
 
 func waitForServiceToBeReady(t *testing.T, clientset *k8s.Clientset, ns, name string, timeout time.Duration) error {

@@ -57,7 +57,7 @@ func TestTaskODSStart(t *testing.T) {
 					checkODSContext(t, wsDir, ctxt.ODS)
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
+					tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json"))
 					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
@@ -141,7 +141,7 @@ func TestTaskODSStart(t *testing.T) {
 					checkFileExists(t, filepath.Join(destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename))
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
+					tasktesting.CheckBitbucketBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 				},
 			},
