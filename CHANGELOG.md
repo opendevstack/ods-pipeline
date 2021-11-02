@@ -11,6 +11,7 @@ listed in the changelog.
 ### Changed
 
 - Automatically roll webhook interceptor deployment when related config map or secret changes ([#252](https://github.com/opendevstack/ods-pipeline/issues/252))
+- Hide confusing error message in Helm output ([#262](https://github.com/opendevstack/ods-pipeline/issues/262))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
