@@ -1,6 +1,7 @@
 package tasktesting
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -38,12 +39,13 @@ type TestCase struct {
 }
 
 type TaskRunContext struct {
-	Namespace  string
-	Clients    *kubernetes.Clients
-	Workspaces map[string]string
-	Params     map[string]string
-	ODS        *pipelinectxt.ODSContext
-	Cleanup    func()
+	Namespace     string
+	Clients       *kubernetes.Clients
+	Workspaces    map[string]string
+	Params        map[string]string
+	ODS           *pipelinectxt.ODSContext
+	Cleanup       func()
+	CollectedLogs []byte
 }
 
 func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
@@ -89,9 +91,13 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	taskRun, err := WatchTaskRunUntilDone(t, testOpts, tr)
+	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if collectedLogsBuffer.Len() > 0 {
+		testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
 	}
 
 	// Show info from Task result
@@ -130,10 +136,12 @@ func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	)
 }
 
-func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, error) {
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, bytes.Buffer, error) {
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
+	collectedLogsChan := make(chan []byte)
+	var collectedLogsBuffer bytes.Buffer
 
 	ctx, cancel := context.WithTimeout(context.TODO(), testOpts.Timeout)
 	go waitForTaskRunDone(
@@ -159,7 +167,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		case err := <-errs:
 			if err != nil {
 				cancel()
-				return nil, err
+				return nil, collectedLogsBuffer, err
 			}
 
 		case pod := <-podAdded:
@@ -168,13 +176,17 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 					ctx,
 					testOpts.Clients.KubernetesClientSet,
 					pod,
+					collectedLogsChan,
 					errs,
 				)
 			}
 
+		case b := <-collectedLogsChan:
+			collectedLogsBuffer.Write(b)
+
 		case tr := <-taskRunDone:
 			cancel()
-			return tr, nil
+			return tr, collectedLogsBuffer, nil
 		}
 	}
 }
