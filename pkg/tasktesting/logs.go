@@ -1,12 +1,10 @@
 package tasktesting
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,59 +62,32 @@ func streamContainerLogs(
 		return fmt.Errorf("error watching pods: %s", err)
 	}
 
-	containerState := "waiting"
-	var logStream io.ReadCloser
 	for {
-		select {
-		case ev := <-w.ResultChan():
-			if cs, ok := containerFromEvent(ev, podName, containerName); ok {
-				if cs.State.Running != nil {
-					if containerState == "waiting" {
-						log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
-						req := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
-							Follow:    true,
-							Container: containerName,
-						})
-						ls, err := req.Stream(context.Background())
-						if err != nil {
-							return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
-						}
-						logStream = ls
-						defer logStream.Close()
-					}
-					containerState = "running"
-				}
-				if containerState != "waiting" && cs.State.Terminated != nil {
-					// read reminder of the log stream
-					logs, err := ioutil.ReadAll(logStream)
-					if err != nil {
-						return fmt.Errorf("could not read log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
-					}
-					fmt.Println(string(logs))
-					return nil
-				}
-			}
-
-		default:
-			// if log stream has started, read some bytes
-			if logStream != nil {
-				buf := make([]byte, 100)
-
-				numBytes, err := logStream.Read(buf)
-				if numBytes == 0 {
-					continue
-				}
-				if err == io.EOF {
-					log.Printf("logs for %s ended\n", containerName)
-					return nil
-				}
+		ev := <-w.ResultChan()
+		if cs, ok := containerFromEvent(ev, podName, containerName); ok {
+			if cs.State.Running != nil {
+				log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
+				// Set up log stream using a new ctx so that it's not cancelled
+				// when the task is done before all logs have been read.
+				ls, err := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
+					Follow:    true,
+					Container: containerName,
+				}).Stream(context.Background())
 				if err != nil {
-					return fmt.Errorf("error in reading log stream: %w", err)
+					return fmt.Errorf("could not create log stream for pod %s in namespace %s: %w", podName, podNamespace, err)
 				}
-
-				fmt.Print(string(buf[:numBytes]))
-			} else {
-				time.Sleep(time.Second)
+				defer ls.Close()
+				reader := bufio.NewScanner(ls)
+				for reader.Scan() {
+					select {
+					case <-ctx.Done():
+						fmt.Println(reader.Text())
+						return nil
+					default:
+						fmt.Println(reader.Text())
+					}
+				}
+				return reader.Err()
 			}
 		}
 	}
