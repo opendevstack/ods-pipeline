@@ -140,6 +140,9 @@ func (o *ODS) Environment(environment string) (*Environment, error) {
 
 // Read reads an ods config from given byte slice or errors.
 func Read(body []byte) (*ODS, error) {
+	if len(body) == 0 {
+		return nil, errors.New("config is empty")
+	}
 	var odsConfig *ODS
 	err := yaml.UnmarshalStrict(body, &odsConfig, func(dec *json.Decoder) *json.Decoder {
 		dec.DisallowUnknownFields()
