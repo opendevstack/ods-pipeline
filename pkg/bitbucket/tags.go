@@ -39,6 +39,12 @@ type TagListParams struct {
 	OrderBy string `json:"orderBy"`
 }
 
+type TagClientInterface interface {
+	TagList(projectKey string, repositorySlug string, params TagListParams) (*TagPage, error)
+	TagGet(projectKey string, repositorySlug string, name string) (*Tag, error)
+	TagCreate(projectKey string, repositorySlug string, payload TagCreatePayload) (*Tag, error)
+}
+
 // TagList retrieves the tags matching the supplied filterText param.
 // The authenticated user must have REPO_READ permission for the context repository to call this resource.
 // https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp396

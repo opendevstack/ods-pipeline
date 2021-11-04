@@ -38,6 +38,10 @@ type BranchListParams struct {
 	BoostMatches bool `json:"boostMatches"`
 }
 
+type BranchClientInterface interface {
+	BranchList(projectKey string, repositorySlug string, params BranchListParams) (*BranchPage, error)
+}
+
 // BranchList retrieves the branches matching the supplied filterText param.
 // The authenticated user must have REPO_READ permission for the specified repository to call this resource.
 // https://docs.atlassian.com/bitbucket-server/rest/7.14.0/bitbucket-rest.html#idp211
