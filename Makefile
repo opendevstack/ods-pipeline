@@ -131,17 +131,17 @@ test: test-internal test-pkg test-tasks
 
 ## Run testsuite of cmd packages.
 test-cmd:
-	go test -v ./cmd/...
+	go test -cover ./cmd/...
 .PHONY: test-cmd
 
 ## Run testsuite of internal packages.
 test-internal:
-	go test -v ./internal/...
+	go test -cover ./internal/...
 .PHONY: test-internal
 
 ## Run testsuite of public packages.
 test-pkg:
-	go test -v ./pkg/...
+	go test -cover ./pkg/...
 .PHONY: test-pkg
 
 ## Run testsuite of Tekton tasks.
