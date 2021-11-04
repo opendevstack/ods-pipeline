@@ -8,7 +8,7 @@ import (
 
 type Branch struct {
 	ID              string `json:"id"`
-	DisplayId       string `json:"displayId"`
+	DisplayID       string `json:"displayId"`
 	Type            string `json:"type"`
 	LatestCommit    string `json:"latestCommit"`
 	LatestChangeset string `json:"latestChangeset"`
@@ -16,11 +16,11 @@ type Branch struct {
 }
 
 type BranchPage struct {
-	Size       int  `json:"size"`
-	Limit      int  `json:"limit"`
-	IsLastPage bool `json:"isLastPage"`
-	Values     []Branch
-	Start      int `json:"start"`
+	Size       int      `json:"size"`
+	Limit      int      `json:"limit"`
+	IsLastPage bool     `json:"isLastPage"`
+	Values     []Branch `json:"values"`
+	Start      int      `json:"start"`
 }
 
 type BranchListParams struct {
