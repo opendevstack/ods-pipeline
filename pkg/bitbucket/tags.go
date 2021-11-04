@@ -66,6 +66,29 @@ func (c *Client) TagList(projectKey string, repositorySlug string, params TagLis
 	return &tagPage, nil
 }
 
+// TagGet retrieves a tag in the specified repository..
+// The authenticated user must have REPO_READ permission for the context repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp398
+func (c *Client) TagGet(projectKey string, repositorySlug string, name string) (*Tag, error) {
+
+	urlPath := fmt.Sprintf(
+		"/rest/api/1.0/projects/%s/repos/%s/tags/%s",
+		projectKey,
+		repositorySlug,
+		name,
+	)
+	_, response, err := c.get(urlPath)
+	if err != nil {
+		return nil, err
+	}
+	var tag Tag
+	err = json.Unmarshal(response, &tag)
+	if err != nil {
+		return nil, err
+	}
+	return &tag, nil
+}
+
 // TagCreate creates a tag in the specified repository.
 // The authenticated user must have an effective REPO_WRITE permission to call this resource.
 //

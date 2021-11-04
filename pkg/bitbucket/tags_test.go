@@ -45,3 +45,22 @@ func TestTagList(t *testing.T) {
 		t.Fatalf("got %d, want %d", l.Size, 1)
 	}
 }
+
+func TestTagGet(t *testing.T) {
+	srv, cleanup := testserver.NewTestServer(t)
+	defer cleanup()
+	bitbucketClient := testClient(srv.Server.URL)
+
+	srv.EnqueueResponse(
+		t, "/rest/api/1.0/projects/myproject/repos/my-repo/tags/release-2.0.0",
+		200, "bitbucket/tag-get.json",
+	)
+
+	tag, err := bitbucketClient.TagGet("myproject", "my-repo", "release-2.0.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tag.Type != "TAG" {
+		t.Fatalf("got %s, want %s", tag.Type, "TAG")
+	}
+}
