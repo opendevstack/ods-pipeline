@@ -9,6 +9,7 @@ import (
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/test/testserver"
 )
@@ -159,7 +160,8 @@ func TestApplyVersionTags(t *testing.T) {
 				tc.prepareServer(t, srv, clonedCtxt)
 			}
 			var stdout bytes.Buffer
-			err := applyVersionTags(&stdout, bitbucketClient, clonedCtxt, nil, tc.env)
+			logger := &logging.LeveledLogger{Level: logging.LevelDebug, StdoutOverride: &stdout}
+			err := applyVersionTags(logger, bitbucketClient, clonedCtxt, nil, tc.env)
 			if len(tc.wantError) > 0 {
 				if err == nil {
 					t.Fatalf("want err: %s, got none", tc.wantError)

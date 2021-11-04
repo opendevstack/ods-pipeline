@@ -96,6 +96,8 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 	return nil
 }
 
+// Assemble builds an ODS context based on given wsDir directory.
+// The information is gathered from the .git directory.
 func (o *ODSContext) Assemble(wsDir string) error {
 	if len(o.Namespace) == 0 {
 		ns, err := getTrimmedFileContent(namespaceFile)

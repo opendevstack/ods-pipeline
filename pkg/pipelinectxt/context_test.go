@@ -4,16 +4,25 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/gittest"
 )
 
 func TestAssemble(t *testing.T) {
 	c := &ODSContext{
-		Namespace:    "foo-cd",
-		GitFullRef:   "refs/heads/master",
-		GitURL:       "https://example.bitbucket.com/scm/ODS/ods-pipeline.git",
-		GitCommitSHA: "abcdef",
+		Namespace: "foo-cd",
 	}
-	err := c.Assemble(".")
+
+	dir, cleanup, err := gittest.CreateFakeGitRepoDir(
+		"https://example.bitbucket.com/scm/ODS/ods-pipeline.git",
+		"master",
+		"7f96ec9fcf097e5b21687d402bc70370ac247d8a",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	err = c.Assemble(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +31,7 @@ func TestAssemble(t *testing.T) {
 		Project:         "ods",
 		Repository:      "ods-pipeline",
 		Component:       "pipeline",
-		GitCommitSHA:    "abcdef",
+		GitCommitSHA:    "7f96ec9fcf097e5b21687d402bc70370ac247d8a",
 		GitFullRef:      "refs/heads/master",
 		GitRef:          "master",
 		GitURL:          "https://example.bitbucket.com/scm/ODS/ods-pipeline.git",

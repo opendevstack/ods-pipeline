@@ -16,11 +16,11 @@ type Tag struct {
 }
 
 type TagPage struct {
-	Size       int  `json:"size"`
-	Limit      int  `json:"limit"`
-	IsLastPage bool `json:"isLastPage"`
-	Values     []Tag
-	Start      int `json:"start"`
+	Size       int   `json:"size"`
+	Limit      int   `json:"limit"`
+	IsLastPage bool  `json:"isLastPage"`
+	Values     []Tag `json:"values"`
+	Start      int   `json:"start"`
 }
 
 type TagCreatePayload struct {
@@ -37,6 +37,12 @@ type TagListParams struct {
 	// OrderBy determines ordering of refs.
 	// Either ALPHABETICAL (by name) or MODIFICATION (last updated).
 	OrderBy string `json:"orderBy"`
+}
+
+type TagClientInterface interface {
+	TagList(projectKey string, repositorySlug string, params TagListParams) (*TagPage, error)
+	TagGet(projectKey string, repositorySlug string, name string) (*Tag, error)
+	TagCreate(projectKey string, repositorySlug string, payload TagCreatePayload) (*Tag, error)
 }
 
 // TagList retrieves the tags matching the supplied filterText param.
@@ -64,6 +70,29 @@ func (c *Client) TagList(projectKey string, repositorySlug string, params TagLis
 		return nil, err
 	}
 	return &tagPage, nil
+}
+
+// TagGet retrieves a tag in the specified repository..
+// The authenticated user must have REPO_READ permission for the context repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp398
+func (c *Client) TagGet(projectKey string, repositorySlug string, name string) (*Tag, error) {
+
+	urlPath := fmt.Sprintf(
+		"/rest/api/1.0/projects/%s/repos/%s/tags/%s",
+		projectKey,
+		repositorySlug,
+		name,
+	)
+	_, response, err := c.get(urlPath)
+	if err != nil {
+		return nil, err
+	}
+	var tag Tag
+	err = json.Unmarshal(response, &tag)
+	if err != nil {
+		return nil, err
+	}
+	return &tag, nil
 }
 
 // TagCreate creates a tag in the specified repository.

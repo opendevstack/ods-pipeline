@@ -4,17 +4,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -72,8 +69,8 @@ func main() {
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.nexusTemporaryRepository, nexus.TemporaryRepositoryDefault, os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	flag.StringVar(&opts.nexusPermanentRepository, nexus.PermanentRepositoryDefault, os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
+	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
@@ -82,9 +79,11 @@ func main() {
 	var logger logging.LeveledLoggerInterface
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	fmt.Println("Cleaning checkout directory ...")
+	logger.Infof("Cleaning checkout directory ...")
 	err := deleteDirectoryContents(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
@@ -126,13 +125,14 @@ func main() {
 		opts.submodules,
 		opts.depth,
 		baseCtxt,
+		logger,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Assembled pipeline context: %+v\n", ctxt)
+	logger.Infof("Assembled pipeline context: %+v", ctxt)
 
-	fmt.Println("Setting Bitbucket build status to 'in progress' ...")
+	logger.Infof("Setting Bitbucket build status to 'in progress' ...")
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
@@ -155,14 +155,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Reading configuration from ods.y(a)ml ...")
+	logger.Infof("Reading configuration from ods.y(a)ml ...")
 	odsConfig, err := config.ReadFromDir(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	subrepoContexts := []*pipelinectxt.ODSContext{}
 	if len(odsConfig.Repositories) > 0 {
-		fmt.Println("Detected subrepos, checking out subrepos ...")
+		logger.Infof("Detected subrepos, checking out subrepos ...")
 		for _, subrepo := range odsConfig.Repositories {
 			subrepoCheckoutDir := filepath.Join(pipelinectxt.SubreposPath, subrepo.Name)
 			err = os.MkdirAll(subrepoCheckoutDir, 0755)
@@ -178,23 +178,7 @@ func main() {
 					1,
 				)
 			}
-			// Checkout subrepo at the following refs, in order of specifity:
-			// - release branch (if there is a version and the branch exists)
-			// - configured branch (if configured in ODS config file)
-			// - default branch
-			subrepoGitFullRef := config.DefaultBranch
-			if len(subrepo.Branch) > 0 {
-				subrepoGitFullRef = subrepo.Branch
-			}
-			if ctxt.Version == pipelinectxt.WIP {
-				releaseBranch, err := findReleaseBranch(bitbucketClient, ctxt.Project, subrepo.Name, ctxt.Version)
-				if err != nil {
-					log.Fatal(err)
-				}
-				if len(releaseBranch) > 0 {
-					subrepoGitFullRef = releaseBranch
-				}
-			}
+			subrepoGitFullRef := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
 			subrepoCtxt, err := checkoutAndAssembleContext(
 				subrepoCheckoutDir,
 				subrepoURL,
@@ -204,6 +188,7 @@ func main() {
 				opts.submodules,
 				opts.depth,
 				baseCtxt,
+				logger,
 			)
 			if err != nil {
 				log.Fatal(err)
@@ -217,13 +202,13 @@ func main() {
 		if err != nil {
 			log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
 		}
-		err = applyVersionTags(os.Stdout, bitbucketClient, ctxt, subrepoContexts, env)
+		err = applyVersionTags(logger, bitbucketClient, ctxt, subrepoContexts, env)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	fmt.Println("Downloading any artifacts ...")
+	logger.Infof("Downloading any artifacts ...")
 	// If there are subrepos, then all of them need to have a successful pipeline run.
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
 		BaseURL:  opts.nexusURL,
@@ -234,14 +219,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = downloadArtifacts(nexusClient, ctxt, opts, pipelinectxt.ArtifactsPath)
+	err = downloadArtifacts(logger, nexusClient, ctxt, opts, pipelinectxt.ArtifactsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(subrepoContexts) > 0 {
 		for _, src := range subrepoContexts {
 			artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
-			err = downloadArtifacts(nexusClient, src, opts, artifactsDir)
+			err = downloadArtifacts(logger, nexusClient, src, opts, artifactsDir)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -260,11 +245,11 @@ func main() {
 	}
 }
 
-func applyVersionTags(out io.Writer, bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, subrepoContexts []*pipelinectxt.ODSContext, env *config.Environment) error {
+func applyVersionTags(logger logging.LeveledLoggerInterface, bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, subrepoContexts []*pipelinectxt.ODSContext, env *config.Environment) error {
 	var tags []bitbucket.Tag
 	tagVersion := ctxt.Version
 	if env.Stage != config.DevStage {
-		fmt.Fprintln(out, "Applying version tags ...")
+		logger.Infof("Applying version tags ...")
 		if tagVersion == pipelinectxt.WIP {
 			return errors.New("when stage != dev, you must provide a version")
 		}
@@ -281,34 +266,34 @@ func applyVersionTags(out io.Writer, bitbucketClient *bitbucket.Client, ctxt *pi
 		tags = t.Values
 	}
 	if env.Stage == config.QAStage {
-		if tagListContainsFinalVersion(tags, tagVersion) {
-			fmt.Fprintln(out, "Final version tag exists already.")
+		if repository.TagListContainsFinalVersion(tags, tagVersion) {
+			logger.Infof("Final version tag exists already.")
 		} else {
-			_, num := latestReleaseCandidate(tags, tagVersion)
+			_, num := repository.LatestReleaseCandidate(tags, tagVersion)
 			rcNum := num + 1
 			tagName := fmt.Sprintf("v%s-rc.%d", tagVersion, rcNum)
-			_, err := createTag(bitbucketClient, ctxt, tagName)
+			_, err := repository.CreateTag(bitbucketClient, ctxt, tagName)
 			if err != nil {
 				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
 			}
 			// subrepos
 			for _, sctxt := range subrepoContexts {
-				_, err := createTag(bitbucketClient, sctxt, tagName)
+				_, err := repository.CreateTag(bitbucketClient, sctxt, tagName)
 				if err != nil {
 					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
 				}
 			}
 		}
 	} else if env.Stage == config.ProdStage {
-		if tagListContainsFinalVersion(tags, tagVersion) {
-			fmt.Fprintln(out, "Final version tag exists already.")
+		if repository.TagListContainsFinalVersion(tags, tagVersion) {
+			logger.Infof("Final version tag exists already.")
 		} else {
 			err := checkProdTagRequirements(tags, ctxt, tagVersion)
 			if err != nil {
 				return fmt.Errorf("cannot proceed to prod stage: %w", err)
 			}
 			tagName := fmt.Sprintf("v%s", tagVersion)
-			_, err = createTag(bitbucketClient, ctxt, tagName)
+			_, err = repository.CreateTag(bitbucketClient, ctxt, tagName)
 			if err != nil {
 				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
 			}
@@ -330,7 +315,7 @@ func applyVersionTags(out io.Writer, bitbucketClient *bitbucket.Client, ctxt *pi
 				if err != nil {
 					return fmt.Errorf("cannot proceed to prod stage: %w", err)
 				}
-				_, err = createTag(bitbucketClient, sctxt, tagName)
+				_, err = repository.CreateTag(bitbucketClient, sctxt, tagName)
 				if err != nil {
 					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
 				}
@@ -340,27 +325,8 @@ func applyVersionTags(out io.Writer, bitbucketClient *bitbucket.Client, ctxt *pi
 	return nil
 }
 
-// findReleaseBranch returns the full Git ref of the release branch corresponding
-// to given version. If none is found, it returns an empty string.
-func findReleaseBranch(bitbucketClient *bitbucket.Client, projectKey, repositorySlug, version string) (string, error) {
-	releaseBranch := fmt.Sprintf("release/%s", version)
-	branchPage, err := bitbucketClient.BranchList(projectKey, repositorySlug, bitbucket.BranchListParams{
-		FilterText:   fmt.Sprintf("release/%s", version),
-		BoostMatches: true,
-	})
-	if err != nil {
-		return "", err
-	}
-	for _, b := range branchPage.Values {
-		if b.DisplayId == releaseBranch {
-			return b.ID, nil
-		}
-	}
-	return "", nil
-}
-
 func checkProdTagRequirements(tags []bitbucket.Tag, ctxt *pipelinectxt.ODSContext, version string) error {
-	tag, _ := latestReleaseCandidate(tags, version)
+	tag, _ := repository.LatestReleaseCandidate(tags, version)
 	if tag == nil {
 		return fmt.Errorf("no release candidate tag found for %s. Deploy to QA before deploying to Prod", version)
 	}
@@ -370,113 +336,34 @@ func checkProdTagRequirements(tags []bitbucket.Tag, ctxt *pipelinectxt.ODSContex
 	return nil
 }
 
-func tagListContainsFinalVersion(tags []bitbucket.Tag, version string) bool {
-	searchID := fmt.Sprintf("refs/tags/v%s", version)
-	for _, t := range tags {
-		if t.ID == searchID {
-			return true
-		}
-	}
-	return false
-}
-
-// latestReleaseCandidate returns the highest number of all tags of
-// format "v<VERSION>-rc.<NUMBER>".
-func latestReleaseCandidate(tags []bitbucket.Tag, version string) (*bitbucket.Tag, int) {
-	var highestNumber int
-	var latestTag *bitbucket.Tag
-	prefix := fmt.Sprintf("refs/tags/v%s-rc.", version)
-	for _, t := range tags {
-		if strings.HasPrefix(t.ID, prefix) {
-			i, err := strconv.Atoi(strings.TrimPrefix(t.ID, prefix))
-			if err == nil && i > highestNumber {
-				highestNumber = i
-				latestTag = &t
-			}
-		}
-	}
-	return latestTag, highestNumber
-}
-
-func createTag(bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, name string) (*bitbucket.Tag, error) {
-	return bitbucketClient.TagCreate(
-		ctxt.Project,
-		ctxt.Repository,
-		bitbucket.TagCreatePayload{
-			Name:       name,
-			StartPoint: ctxt.GitCommitSHA,
-		},
-	)
-}
-
-func getNexusURLs(nexusClient *nexus.Client, repository, group string) ([]string, error) {
-	urls, err := nexusClient.Search(repository, group)
-	if err != nil {
-		return nil, err
-	}
-	if len(urls) > 0 {
-		fmt.Printf("Found artifacts in repository %s inside group %s, downloading ...\n", repository, group)
-	} else {
-		fmt.Printf("No artifacts found in repository %s inside group %s.\n", repository, group)
-	}
-	return urls, nil
-}
-
-func downloadArtifacts(nexusClient *nexus.Client, ctxt *pipelinectxt.ODSContext, opts options, artifactsDir string) error {
+func downloadArtifacts(
+	logger logging.LeveledLoggerInterface,
+	nexusClient *nexus.Client,
+	ctxt *pipelinectxt.ODSContext,
+	opts options,
+	artifactsDir string) error {
 	group := nexus.ArtifactGroupBase(ctxt)
-	// We want to target all artifacts underneath the group, hence the trailing '*'.
-	nexusSearchGroup := fmt.Sprintf("%s/*", group)
-	am := pipelinectxt.ArtifactsManifest{
-		SourceRepository: opts.nexusPermanentRepository,
-		Artifacts:        []pipelinectxt.ArtifactInfo{},
-	}
-	urls, err := getNexusURLs(nexusClient, opts.nexusPermanentRepository, nexusSearchGroup)
+	am, err := nexusClient.DownloadGroup(
+		[]string{opts.nexusPermanentRepository, opts.nexusTemporaryRepository},
+		group,
+		artifactsDir,
+	)
 	if err != nil {
 		return err
 	}
-	if len(urls) == 0 {
-		am.SourceRepository = opts.nexusTemporaryRepository
-		u, err := getNexusURLs(nexusClient, opts.nexusTemporaryRepository, nexusSearchGroup)
-		if err != nil {
-			return err
-		}
-		urls = u
-	}
-	for _, s := range urls {
-		u, err := url.Parse(s)
-		if err != nil {
-			return err
-		}
-		urlPathParts := strings.Split(u.Path, group)
-		fileWithSubPath := urlPathParts[1] // e.g. "/pipeline-runs/foo-zh9gt0.json"
-		aritfactName := path.Base(fileWithSubPath)
-		artifactDir := path.Dir(fileWithSubPath)
-		artifactsSubPath := filepath.Join(artifactsDir, artifactDir)
-		if _, err := os.Stat(artifactsSubPath); os.IsNotExist(err) {
-			if err := os.MkdirAll(artifactsSubPath, 0755); err != nil {
-				return fmt.Errorf("failed to create directory: %s, error: %w", artifactsSubPath, err)
-			}
-		}
-		outfile := filepath.Join(artifactsDir, fileWithSubPath)
-		_, err = nexusClient.Download(s, outfile)
-		if err != nil {
-			return err
-		}
-		am.Artifacts = append(am.Artifacts, pipelinectxt.ArtifactInfo{
-			URL:       s,
-			Directory: artifactDir,
-			Name:      aritfactName,
-		})
-	}
 	return pipelinectxt.WriteJsonArtifact(am, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
+
 }
 
-func checkoutAndAssembleContext(checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string, baseCtxt *pipelinectxt.ODSContext) (*pipelinectxt.ODSContext, error) {
+func checkoutAndAssembleContext(
+	checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string,
+	baseCtxt *pipelinectxt.ODSContext,
+	logger logging.LeveledLoggerInterface) (*pipelinectxt.ODSContext, error) {
 	absCheckoutDir, err := filepath.Abs(checkoutDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Checking out %s@%s into %s ...\n", url, gitFullRef, absCheckoutDir)
+	logger.Infof("Checking out %s@%s into %s ...", url, gitFullRef, absCheckoutDir)
 	stdout, stderr, err := command.Run("/ko-app/git-init", []string{
 		"-url", url,
 		"-revision", gitFullRef,
@@ -487,10 +374,10 @@ func checkoutAndAssembleContext(checkoutDir, url, gitFullRef, gitRefSpec, sslVer
 		"-depth", depth,
 	})
 	if err != nil {
-		log.Println(string(stderr))
+		logger.Errorf(string(stderr))
 		log.Fatal(err)
 	}
-	fmt.Println(string(stdout))
+	logger.Infof(string(stdout))
 
 	// write ODS cache
 	sha, err := getCommitSHA(absCheckoutDir)

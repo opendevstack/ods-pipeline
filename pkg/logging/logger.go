@@ -45,8 +45,8 @@ type LeveledLogger struct {
 	Level Level
 
 	// Internal testing use only.
-	stderrOverride io.Writer
-	stdoutOverride io.Writer
+	StderrOverride io.Writer
+	StdoutOverride io.Writer
 }
 
 // Debugf logs a debug message using Printf conventions.
@@ -79,16 +79,16 @@ func (l *LeveledLogger) Warnf(format string, v ...interface{}) {
 }
 
 func (l *LeveledLogger) stderr() io.Writer {
-	if l.stderrOverride != nil {
-		return l.stderrOverride
+	if l.StderrOverride != nil {
+		return l.StderrOverride
 	}
 
 	return os.Stderr
 }
 
 func (l *LeveledLogger) stdout() io.Writer {
-	if l.stdoutOverride != nil {
-		return l.stdoutOverride
+	if l.StdoutOverride != nil {
+		return l.StdoutOverride
 	}
 
 	return os.Stdout

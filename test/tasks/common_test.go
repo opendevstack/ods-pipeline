@@ -186,7 +186,8 @@ func createODSYML(wsDir string, o *config.ODS) error {
 }
 
 func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
-	buildStatus, err := c.BuildStatusGet(gitCommit)
+	buildStatusPage, err := c.BuildStatusList(gitCommit)
+	buildStatus := buildStatusPage.Values[0]
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,6 +5,10 @@ import (
 	"net/url"
 )
 
+type RawClientInterface interface {
+	RawGet(project, repository, filename, gitFullRef string) ([]byte, error)
+}
+
 // RawGet retrieves the raw content for a file path at a specified revision.
 // The authenticated user must have REPO_READ permission for the specified repository to call this resource.
 // https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp359

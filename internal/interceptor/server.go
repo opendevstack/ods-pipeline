@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	intrepo "github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -237,24 +238,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	pData.PullRequestKey = prInfo.ID
 	pData.PullRequestBase = prInfo.Base
 
-	log.Println(requestID, fmt.Sprintf("%+v", pData))
-
-	extendedBody, err := extendBodyWithExtensions(body, pData)
-	if err != nil {
-		msg := "cannot extend body"
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-	_, err = w.Write(extendedBody)
-	if err != nil {
-		msg := "cannot write body"
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	odsConfig, err := getODSConfig(
+	odsConfig, err := intrepo.GetODSConfig(
 		s.BitbucketClient,
 		pData.Project,
 		pData.Repository,
@@ -294,6 +278,21 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, createStatusCode)
 		return
 	}
+
+	log.Println(requestID, fmt.Sprintf("%+v", pData))
+
+	extendedBody, err := extendBodyWithExtensions(body, pData)
+	if err != nil {
+		msg := "cannot extend body"
+		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(extendedBody)
+	if err != nil {
+		log.Println(requestID, fmt.Sprintf("cannot write body: %s", err))
+		return
+	}
 }
 
 func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
@@ -321,29 +320,6 @@ func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFul
 		return "", fmt.Errorf("could not get commit list: %w", err)
 	}
 	return commitList.Values[0].ID, nil
-}
-
-func getODSConfig(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (*config.ODS, error) {
-	var body []byte
-	var getErr error
-	for _, c := range config.ODSFileCandidates {
-		b, err := bitbucketClient.RawGet(project, repository, c, gitFullRef)
-		if err == nil {
-			body = b
-			getErr = nil
-			break
-		}
-		getErr = err
-	}
-	if getErr != nil {
-		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, getErr)
-	}
-
-	if body == nil {
-		log.Printf("no ODS config located in repo %s", repository)
-		return nil, nil
-	}
-	return config.Read(body)
 }
 
 func determineProject(serverProject string, projectParam string) string {

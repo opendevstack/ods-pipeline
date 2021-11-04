@@ -41,25 +41,26 @@ func (c *Client) BuildStatusCreate(gitCommit string, payload BuildStatusCreatePa
 	return nil
 }
 
-type BuildStatusPage struct {
-	Size        int           `json:"size"`
-	Limit       int           `json:"limit"`
-	Islastpage  bool          `json:"isLastPage"`
-	BuildStatus []BuildStatus `json:"values"`
-	Start       int           `json:"start"`
-}
 type BuildStatus struct {
 	State       string `json:"state"`
 	Key         string `json:"key"`
 	Name        string `json:"name"`
 	URL         string `json:"url"`
 	Description string `json:"description"`
-	Dateadded   int64  `json:"dateAdded"`
+	DateAdded   int64  `json:"dateAdded"`
 }
 
-// BuildStatusGet gets the build statuses associated with a commit.
+type BuildStatusPage struct {
+	Size       int           `json:"size"`
+	Limit      int           `json:"limit"`
+	IsLastPage bool          `json:"isLastPage"`
+	Values     []BuildStatus `json:"values"` // newest build status appears first
+	Start      int           `json:"start"`
+}
+
+// BuildStatusList gets the build statuses associated with a commit.
 // https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-build-rest.html#idp8
-func (c *Client) BuildStatusGet(gitCommit string) (*BuildStatus, error) {
+func (c *Client) BuildStatusList(gitCommit string) (*BuildStatusPage, error) {
 	urlPath := fmt.Sprintf("/rest/build-status/1.0/commits/%s", gitCommit)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
@@ -68,14 +69,14 @@ func (c *Client) BuildStatusGet(gitCommit string) (*BuildStatus, error) {
 
 	switch statusCode {
 	case 200:
-		var BuildStatusPage BuildStatusPage
-		err = json.Unmarshal(response, &BuildStatusPage)
+		var buildStatusPage BuildStatusPage
+		err = json.Unmarshal(response, &buildStatusPage)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
 			)
 		}
-		return &BuildStatusPage.BuildStatus[0], nil // return the newest by default
+		return &buildStatusPage, nil
 	case 401:
 		return nil, fmt.Errorf("you are not permitted to get the build status of git commit %s", gitCommit)
 	default:
