@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/installation"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	kclient "k8s.io/client-go/kubernetes"
@@ -12,24 +12,17 @@ import (
 
 const (
 	BitbucketProjectKey = "ODSPIPELINETEST"
+	BitbucketKinDHost   = "ods-test-bitbucket-server.kind"
 )
 
 // BitbucketClientOrFatal returns a Bitbucket client, configured based on ConfigMap/Secret in the given namespace.
 func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string) *bitbucket.Client {
-	bitbucketSecret, err := kubernetes.GetSecret(c, namespace, "ods-bitbucket-auth")
+	bcc, err := installation.NewBitbucketClientConfig(
+		c, namespace, &logging.LeveledLogger{Level: logging.LevelDebug},
+	)
 	if err != nil {
-		t.Fatalf("could not get Bitbucket secret: %s", err)
+		t.Fatalf("could not create Bitbucket client config: %s", err)
 	}
-	bitbucketConfigMap, err := kubernetes.GetConfigMap(c, namespace, "ods-bitbucket")
-	if err != nil {
-		t.Fatalf("could not get Bitbucket config: %s", err)
-	}
-
-	bitbucketURL := strings.Replace(bitbucketConfigMap.Data["url"], "ods-test-bitbucket-server.kind", "localhost", 1)
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: string(bitbucketSecret.Data["password"]),
-		BaseURL:  bitbucketURL,
-		Logger:   &logging.LeveledLogger{Level: logging.LevelDebug},
-	})
-	return bitbucketClient
+	bcc.BaseURL = strings.Replace(bcc.BaseURL, BitbucketKinDHost, "localhost", 1)
+	return bitbucket.NewClient(bcc)
 }
