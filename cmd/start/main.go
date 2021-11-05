@@ -178,7 +178,10 @@ func main() {
 					1,
 				)
 			}
-			subrepoGitFullRef := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
+			subrepoGitFullRef, err := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
+			if err != nil {
+				log.Fatal(err)
+			}
 			subrepoCtxt, err := checkoutAndAssembleContext(
 				subrepoCheckoutDir,
 				subrepoURL,
