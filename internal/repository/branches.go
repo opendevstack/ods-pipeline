@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
@@ -16,7 +15,7 @@ import (
 // - release branch (if there is a non-WIP version and the branch exists)
 // - configured branch (if configured)
 // - global default branch
-func BestMatchingBranch(bitbucketClient bitbucket.BranchClientInterface, project string, subrepo config.Repository, version string) string {
+func BestMatchingBranch(bitbucketClient bitbucket.BranchClientInterface, project string, subrepo config.Repository, version string) (string, error) {
 	subrepoGitFullRef := config.DefaultBranch
 	if len(subrepo.Branch) > 0 {
 		subrepoGitFullRef = subrepo.Branch
@@ -25,20 +24,20 @@ func BestMatchingBranch(bitbucketClient bitbucket.BranchClientInterface, project
 		}
 	}
 	if version != pipelinectxt.WIP {
-		releaseBranch, err := FindReleaseBranch(bitbucketClient, project, subrepo.Name, version)
+		releaseBranch, err := findReleaseBranch(bitbucketClient, project, subrepo.Name, version)
 		if err != nil {
-			log.Fatal(err)
+			return "", fmt.Errorf("could not detect release branches: %w", err)
 		}
 		if releaseBranch != "" {
 			subrepoGitFullRef = releaseBranch
 		}
 	}
-	return subrepoGitFullRef
+	return subrepoGitFullRef, nil
 }
 
-// FindReleaseBranch returns the full Git ref of the release branch corresponding
+// findReleaseBranch returns the full Git ref of the release branch corresponding
 // to given version. If none is found, it returns an empty string.
-func FindReleaseBranch(bitbucketClient bitbucket.BranchClientInterface, projectKey, repositorySlug, version string) (string, error) {
+func findReleaseBranch(bitbucketClient bitbucket.BranchClientInterface, projectKey, repositorySlug, version string) (string, error) {
 	releaseBranch := fmt.Sprintf("release/%s", version)
 	branchPage, err := bitbucketClient.BranchList(projectKey, repositorySlug, bitbucket.BranchListParams{
 		FilterText:   fmt.Sprintf("release/%s", version),

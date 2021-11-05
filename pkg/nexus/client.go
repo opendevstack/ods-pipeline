@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
@@ -37,6 +36,12 @@ type ClientConfig struct {
 	Timeout time.Duration
 	// HTTP client used to download assets.
 	HTTPClient *http.Client
+}
+
+type ClientInterface interface {
+	Download(url, outfile string) (int64, error)
+	Search(repository, group string) ([]string, error)
+	Upload(repository, group, file string) error
 }
 
 // NewClient initializes a Nexus client.
@@ -80,14 +85,14 @@ func (c *Client) Username() string {
 
 // ArtifactGroupBase returns the group base in which aritfacts are stored for
 // the given ODS pipeline context.
-func ArtifactGroupBase(ctxt *pipelinectxt.ODSContext) string {
-	return fmt.Sprintf("/%s/%s/%s", ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA)
+func ArtifactGroupBase(project, repository, gitCommitSHA string) string {
+	return fmt.Sprintf("/%s/%s/%s", project, repository, gitCommitSHA)
 }
 
 // ArtifactGroup returns the group in which aritfacts are stored for the given
 // ODS pipeline context and the subdir.
-func ArtifactGroup(ctxt *pipelinectxt.ODSContext, subdir string) string {
-	return ArtifactGroupBase(ctxt) + "/" + subdir
+func ArtifactGroup(project, repository, gitCommitSHA, subdir string) string {
+	return ArtifactGroupBase(project, repository, gitCommitSHA) + "/" + subdir
 }
 
 func (c *Client) logger() logging.LeveledLoggerInterface {

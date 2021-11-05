@@ -178,7 +178,10 @@ func main() {
 					1,
 				)
 			}
-			subrepoGitFullRef := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
+			subrepoGitFullRef, err := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
+			if err != nil {
+				log.Fatal(err)
+			}
 			subrepoCtxt, err := checkoutAndAssembleContext(
 				subrepoCheckoutDir,
 				subrepoURL,
@@ -342,11 +345,13 @@ func downloadArtifacts(
 	ctxt *pipelinectxt.ODSContext,
 	opts options,
 	artifactsDir string) error {
-	group := nexus.ArtifactGroupBase(ctxt)
-	am, err := nexusClient.DownloadGroup(
+	group := pipelinectxt.ArtifactGroupBase(ctxt)
+	am, err := pipelinectxt.DownloadGroup(
+		nexusClient,
 		[]string{opts.nexusPermanentRepository, opts.nexusTemporaryRepository},
 		group,
 		artifactsDir,
+		logger,
 	)
 	if err != nil {
 		return err

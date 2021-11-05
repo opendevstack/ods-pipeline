@@ -51,7 +51,7 @@ func TestTaskODSFinish(t *testing.T) {
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					err := nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
-						nexus.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
+						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
 						filepath.Join(wsDir, pipelinectxt.CodeCoveragesPath, "coverage.out"),
 					)
 					if err != nil {
@@ -165,7 +165,7 @@ func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, ta
 		filesCountInSubDir := len(artifactsMap[artifactsSubDir])
 
 		// e.g: "/ODSPIPELINETEST/workspace-190880007/935e5229b084dd60d44a5eddd2d023720ec153c1/xunit-reports"
-		group := nexus.ArtifactGroup(ctxt.ODS, artifactsSubDir)
+		group := pipelinectxt.ArtifactGroup(ctxt.ODS, artifactsSubDir)
 
 		// The test is so fast that, when we reach this line, the artifacts could still being uploaded to Nexus
 		artifactURLs := waitForArtifacts(t, nexusClient, targetRepository, group, filesCountInSubDir, 5*time.Second)

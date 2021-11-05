@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/opendevstack/pipeline/internal/file"
+	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/nexus"
 	"sigs.k8s.io/yaml"
 )
 
@@ -135,4 +140,87 @@ func ReadArtifactsDir() (map[string][]string, error) {
 	}
 
 	return artifactsMap, nil
+}
+
+// ArtifactGroupBase returns the group base in which aritfacts are stored for
+// the given ODS pipeline context.
+func ArtifactGroupBase(ctxt *ODSContext) string {
+	return nexus.ArtifactGroupBase(ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA)
+}
+
+// ArtifactGroup returns the group in which aritfacts are stored for the given
+// ODS pipeline context and the subdir.
+func ArtifactGroup(ctxt *ODSContext, subdir string) string {
+	return nexus.ArtifactGroup(ctxt.Project, ctxt.Repository, ctxt.GitCommitSHA, subdir)
+}
+
+// DownloadGroup searches given repositories in order for assets in given group.
+// As soon as one repository has any asset in the group, the search is stopped
+// and all fond artifacts are downloaded into artifactsDir.
+// An artifacts manifest is returned describing the downloaded files.
+// When none of the given repositories contains any artifacts under the group,
+// no artifacts are downloaded and no error is returned.
+func DownloadGroup(nexusClient nexus.ClientInterface, repositories []string, group, artifactsDir string, logger logging.LeveledLoggerInterface) (*ArtifactsManifest, error) {
+	// We want to target all artifacts underneath the group, hence the trailing '*'.
+	nexusSearchGroup := fmt.Sprintf("%s/*", group)
+	am := &ArtifactsManifest{
+		Artifacts: []ArtifactInfo{},
+	}
+	sourceRepo, urls, err := searchForAssets(nexusClient, nexusSearchGroup, repositories, logger)
+	if err != nil {
+		return nil, err
+	}
+	am.SourceRepository = sourceRepo
+
+	for _, s := range urls {
+		u, err := url.Parse(s)
+		if err != nil {
+			return nil, err
+		}
+		urlPathParts := strings.Split(u.Path, fmt.Sprintf("%s/", group))
+		if len(urlPathParts) != 2 {
+			return nil, fmt.Errorf("unexpected URL path (must contain two parts after group): %s", u.Path)
+		}
+		fileWithSubPath := urlPathParts[1] // e.g. "pipeline-runs/foo-zh9gt0.json"
+		if !strings.Contains(fileWithSubPath, "/") {
+			return nil, fmt.Errorf("unexpected URL path (must contain a subfolder after the commit SHA): %s", fileWithSubPath)
+		}
+		aritfactName := path.Base(fileWithSubPath) // e.g. "pipeline-runs"
+		artifactType := path.Dir(fileWithSubPath)  // e.g. "foo-zh9gt0.json"
+		artifactsSubPath := filepath.Join(artifactsDir, artifactType)
+		if _, err := os.Stat(artifactsSubPath); os.IsNotExist(err) {
+			if err := os.MkdirAll(artifactsSubPath, 0755); err != nil {
+				return nil, fmt.Errorf("failed to create directory: %s, error: %w", artifactsSubPath, err)
+			}
+		}
+		outfile := filepath.Join(artifactsDir, fileWithSubPath)
+		_, err = nexusClient.Download(s, outfile)
+		if err != nil {
+			return nil, err
+		}
+		am.Artifacts = append(am.Artifacts, ArtifactInfo{
+			URL:       s,
+			Directory: artifactType,
+			Name:      aritfactName,
+		})
+	}
+	return am, nil
+}
+
+// searchForAssets looks for assets in searchGroup for each repository in order.
+// Once some assets are found, the repository and the found URLs are returned,
+// skipping any further repositories that are given.
+func searchForAssets(nexusClient nexus.ClientInterface, searchGroup string, repositories []string, logger logging.LeveledLoggerInterface) (string, []string, error) {
+	for _, r := range repositories {
+		urls, err := nexusClient.Search(r, searchGroup)
+		if err != nil {
+			return "", nil, err
+		}
+		if len(urls) > 0 {
+			logger.Infof("Found artifacts in repository %s inside group %s ...", r, searchGroup)
+			return r, urls, nil
+		}
+		logger.Infof("No artifacts found in repository %s inside group %s.", r, searchGroup)
+	}
+	return "", []string{}, nil
 }
