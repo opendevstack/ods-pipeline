@@ -345,11 +345,13 @@ func downloadArtifacts(
 	ctxt *pipelinectxt.ODSContext,
 	opts options,
 	artifactsDir string) error {
-	group := nexus.ArtifactGroupBase(ctxt)
-	am, err := nexusClient.DownloadGroup(
+	group := pipelinectxt.ArtifactGroupBase(ctxt)
+	am, err := pipelinectxt.DownloadGroup(
+		nexusClient,
 		[]string{opts.nexusPermanentRepository, opts.nexusTemporaryRepository},
 		group,
 		artifactsDir,
+		logger,
 	)
 	if err != nil {
 		return err

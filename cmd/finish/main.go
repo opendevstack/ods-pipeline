@@ -144,7 +144,7 @@ func main() {
 				if am.Contains(nexusRepository, artifactsSubDir, filename) {
 					log.Printf("Artifact %s is already present in Nexus repository %s.", filename, nexusRepository)
 				} else {
-					nexusGroup := nexus.ArtifactGroup(ctxt, artifactsSubDir)
+					nexusGroup := pipelinectxt.ArtifactGroup(ctxt, artifactsSubDir)
 					localFile := filepath.Join(pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
 					fmt.Printf("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
 					err = nexusClient.Upload(nexusRepository, nexusGroup, localFile)
