@@ -1,0 +1,52 @@
+= Accessing artifacts
+
+ODS Pipeline creates and retains artifacts recording information related to a pipeline run. Those artifacts can be test reports, scan results, image digests, deployment records, etc. They are created during a pipeline run, associated with the commit being built and stored in Nexus. This document will describe how you can access the artifacts later on. A typical use case for this is attaching artifacts to verification reports for your (medical device) software.
+
+== Artifact Storage
+
+Artifacts are stored in Nexus. Nexus is setup with two `raw` repositories, one for temporary storage (named `ods-temporary-artifacts` by default), and one for permanent storage (named `ods-permanent-artifacts` by default). When a pipeline runs, the selected target environment determines where artifacts are stored:
+
+* temporary: no environment or environment of stage `dev`
+* permanent: environment of stage `qa` or `prod`
+
+The permanent repository should have no cleanup policy or one that matches the overall retention policy required by the software product you are building. In contrast, the temporary repository might have a cleanup policy that is much shorter (however cleanup is neither enforced nor expected by ODS pipeline).
+
+== Downloading Artifacts
+
+While artifacts are plain Nexus assets and can therefore be downloaded via standard means (e.g. via `curl` or in the Nexus web interface), this would be very time consuming when there are many artifacts. To make it fast and easy to download all artifacts related to a certain version in one go, ODS pipelines ships with the `artifact-download` binary. This binary can be built from this repository via `make build-artifact-download` or simply downloaded pre-built from the GitHub release page.
+
+Usage is simple:
+```
+artifact-download \
+  --namespace my-project-cd \
+  --project my-project \
+  --repository my-repo \
+  --tag v1.0.0
+```
+
+The binary will then fetch artifacts for repository `bar` in Bitbucket project `foo`, as well as for any subrepositories that might be configured, and download them into `artifacts-out`. Example:
+
+```
+artifacts-out/
+├─ v1.0.0/
+│  ├─ my-repo/
+│  │  ├─ xunit-reports/
+│  │  │  ├─ report.xml
+│  │  │  ├─ index.html
+│  │  ├─ sonarqube-analysis/
+│  │  │  ├─ analysis-report.md
+│  │  │  ├─ issues-report.csv
+│  ├─ my-subrepo/
+│  │  ├─ xunit-reports/
+│  │  │  ├─ report.xml
+│  │  │  ├─ index.html
+│  │  ├─ sonarqube-analysis/
+│  │  │  ├─ analysis-report.md
+│  │  │  ├─ issues-report.csv
+```
+
+IMPORTANT: Using `artifact-download` requires to be logged into your cluster (`oc login ...`) in the terminal. The binary fetches all required credentials (e.g. to access Bitbucket) from the specified namespace.
+
+See `artifact-download --help` for all options, e.g. how to specify another output directory.
+
+TIP: While the primary use case of `artifact-download` is to download artifacts for final versions, it may also be used to look at the latest artifacts of a checked out repository. From inside a Git repository, run `artifact-download --namespace foo-cd --tag=WIP`.

@@ -266,6 +266,17 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 
 |===
 
+=== Aritfact Download Requirements
+
+[cols="1,3"]
+|===
+| SRS-DLD-1
+a| The binary shall download all artifacts belonging to one repository/version.
+
+* If the repository configures subrepositories, those shall be downloaded as well.
+
+|===
+
 == Appendix
 
 N/A

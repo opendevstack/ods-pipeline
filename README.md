@@ -31,6 +31,7 @@ The documentation provided by ODS pipeline has three audiences:
 * [ODS.YAML Reference](/docs/ods-configuration.adoc)
 * [Task Reference](/docs/tasks)
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)
+* [Accessing artifacts](/docs/accessing-artifacts.adoc)
 * [Debugging](/docs/debugging.adoc)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
 * [Example Project](/docs/example-project.adoc)

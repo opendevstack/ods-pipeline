@@ -159,6 +159,11 @@ clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
 
+## Build artifact-download binary.
+build-artifact-download:
+	cd cmd/artifact-download && CGO_ENABLED=0 go build -o ../../artifact-download
+.PHONY: build-artifact-download
+
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.
 help:

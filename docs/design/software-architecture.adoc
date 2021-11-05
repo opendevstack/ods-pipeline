@@ -123,6 +123,24 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | Nexus
 |
 
+| Binary `artifact-download`
+| Retrieve configuration and secrets
+| HTTP / JSON API
+| OpenShift
+|
+
+| Binary `artifact-download`
+| Retrieve Git revisions
+| HTTP / JSON API
+| Bitbucket
+|
+
+| Binary `artifact-download`
+| Download artifacts
+| HTTP / JSON API
+| Nexus
+|
+
 
 |===
 
