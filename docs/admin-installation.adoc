@@ -3,6 +3,8 @@
 
 This guide will show how to install `ods-pipeline` in an existing ODS cluster. Note this is a one-time installation done by a cluster admin and does not need to be repeated for every project that wants to use `ods-pipeline`.
 
+NOTE: If you are not a cluster admin but still want to give ODS pipeline a try, there is a way to install it in your own namespace only, see <<namespaced-installation,Namespaced installation>>.
+
 Centrally installed resources are `BuildConfig` and `ImageStream` resources to produce images required by the ODS tasks, as well as the `ClusterTask` resources themselves.
 
 ## Prerequisites
@@ -43,15 +45,28 @@ cat images-chart/secrets.yaml | helm secrets edit secrets.images.yaml
 cp tasks-chart/values.yaml values.tasks.yaml
 ```
 
-If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
+CAUTION: If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
 
 Then you can install the `images` chart via `./install.sh -n ods --chart=images --values=values.images.yaml,secrets.images.yaml` (make sure to replace the namespace). You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources - start a build for each created `BuildConfig`.
 
 In the same way, you can install the `tasks` chart via `./install.sh -n ods --chart=tasks --values=values.tasks.yaml`. You may also use `--dry-run` to see the changes first. This will install the ODS tasks in cluster scope.
 
-Note that in ODS 4.0.0, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in your Nexus instance yet, you will need to create them manually. The repositories are of type "raw" and should not allow re-deployment of artifacts. It is recommended to have both backed up by their own blob stores. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
+IMPORTANT: In ODS 4.0.0, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in your Nexus instance yet, you will need to create them manually. The repositories are of type "raw" and should not allow re-deployment of artifacts. It is recommended to use blob stores for both. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
 
 Now your `ods` namespace is fully setup and users can start to utilize Tekton pipelines for their repositories.
+
+## Namespaced installation
+
+If you are not cluster admin and still want to use ODS pipeline, you may also install ODS pipeline in your own namespace. In this case, both the "admin installation" and the "user installation" are in the same namespace.
+
+WARNING: This type of installation is not recommended and should only be used when a central installation is not possible. Installing in your own namespace means you need to maintain Tekton tasks and container images yourself.
+
+The installation procedure is the same as described above, with the following amendments:
+
+* Instead of the `ods` namespace, pick your own namespace, such as `foo-cd`
+* In `values.images.yaml` and `values.tasks.yaml` add `taskKind: Task`
+
+IMPORTANT: Don't forget to refer to your tasks in `ods.yaml` with `kind: Task` instead of `kind: ClusterTask`
 
 ## Updating
 
@@ -66,7 +81,7 @@ git checkout - && \
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
 
-Now, compare if any new values have been introduced and update the values and secrets file accordingly. Make sure that the version-related information matches the checked out Git ref.
+IMPORTANT: Compare if any new values have been introduced and update the values and secrets file accordingly. Make sure that the version-related information matches the checked out Git ref.
 
 Then you can update the `images` chart via `./install.sh -n ods --chart=images --values=values.images.yaml,secrets.images.yaml`. You may also use `--dry-run` to see the changes first. This will install `BuildConfig` and `ImageStream` resources in the `ods` namespace.
 
