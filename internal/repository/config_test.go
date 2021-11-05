@@ -1,28 +1,16 @@
 package repository
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 )
 
-type fakeRawClient struct {
-	// files contains byte slices for filenames
-	files map[string][]byte
-}
-
-func (c *fakeRawClient) RawGet(project, repository, filename, gitFullRef string) ([]byte, error) {
-	if f, ok := c.files[filename]; ok {
-		return f, nil
-	}
-	return nil, fmt.Errorf("%s not found", filename)
-}
-
 func TestGetODSConfig(t *testing.T) {
-	bitbucketClient := &fakeRawClient{}
+	bitbucketClient := &bitbucket.TestClient{}
 
 	tests := map[string]struct {
 		files   map[string][]byte
@@ -65,7 +53,7 @@ func TestGetODSConfig(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			bitbucketClient.files = tc.files
+			bitbucketClient.Files = tc.files
 			// As context is read from fake Bitbucket, dir value is unused.
 			got, err := GetODSConfig(bitbucketClient, "foo", "bar", "refs/heads/master")
 			if tc.wantErr == "" && err != nil {

@@ -1,7 +1,6 @@
 package pipelinectxt
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,29 +12,8 @@ import (
 	"github.com/opendevstack/pipeline/pkg/nexus"
 )
 
-type fakeNexusClient struct {
-	// urls contains URLs per repository
-	urls map[string][]string
-}
-
-// Download writes a dummy string into outfile.
-func (c *fakeNexusClient) Download(url, outfile string) (int64, error) {
-	return 0, ioutil.WriteFile(outfile, []byte("test"), 0644)
-}
-
-// Search responds with pre-registered URLs for repository.
-// group is ignored.
-func (c *fakeNexusClient) Search(repository, group string) ([]string, error) {
-	return c.urls[repository], nil
-}
-
-// Upload is not needed for the test cases below.
-func (c *fakeNexusClient) Upload(repository, group, file string) error {
-	return errors.New("not implemented")
-}
-
 func TestDownloadGroup(t *testing.T) {
-	nexusClient := &fakeNexusClient{}
+	nexusClient := &nexus.TestClient{}
 	repositories := []string{nexus.PermanentRepositoryDefault, nexus.TemporaryRepositoryDefault}
 	group := "/my-project/my-repo/20d69cffd00080e20fa2f1419026a301cd0eecac"
 	artifactType := "my-type"
@@ -88,7 +66,7 @@ func TestDownloadGroup(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nexusClient.urls = tc.urls
+			nexusClient.URLs = tc.urls
 			am, err := DownloadGroup(nexusClient, repositories, group, artifactsDir, logger)
 			if err != nil {
 				t.Fatal(err)
