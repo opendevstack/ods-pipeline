@@ -1,5 +1,5 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
   name: ods-build-python{{.Values.taskSuffix}}
 spec:

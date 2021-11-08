@@ -20,6 +20,8 @@ const (
 	apiHostDefault   = "openshift.default.svc.cluster.local"
 	repoBaseEnvVar   = "REPO_BASE"
 	tokenEnvVar      = "ACCESS_TOKEN"
+	taskKindEnvVar   = "ODS_TASK_KIND"
+	taskKindDefault  = "ClusterTask"
 	taskSuffixEnvVar = "ODS_TASK_SUFFIX"
 )
 
@@ -45,6 +47,17 @@ func serve() error {
 	token := os.Getenv(tokenEnvVar)
 	if len(token) == 0 {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
+	}
+
+	taskKind := os.Getenv(taskKindEnvVar)
+	if len(taskKind) == 0 {
+		taskKind = taskKindDefault
+		log.Println(
+			"INFO:",
+			taskKindEnvVar,
+			"not set, using default value:",
+			taskKindDefault,
+		)
 	}
 
 	taskSuffix := os.Getenv(taskSuffixEnvVar)
@@ -79,7 +92,14 @@ func serve() error {
 		return fmt.Errorf("%w", err)
 	}
 
-	server := interceptor.NewServer(client, namespace, project, repoBase, token, taskSuffix)
+	server := interceptor.NewServer(client, interceptor.ServerConfig{
+		Namespace:  namespace,
+		Project:    project,
+		RepoBase:   repoBase,
+		Token:      token,
+		TaskKind:   taskKind,
+		TaskSuffix: taskSuffix,
+	})
 
 	log.Println("Ready to accept requests")
 

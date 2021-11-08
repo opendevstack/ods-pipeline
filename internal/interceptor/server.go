@@ -21,10 +21,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	taskKind = "ClusterTask"
-)
-
 // Server represents this service, and is a global.
 type Server struct {
 	OpenShiftClient Client
@@ -32,8 +28,26 @@ type Server struct {
 	Project         string
 	RepoBase        string
 	Token           string
+	TaskKind        tekton.TaskKind
 	TaskSuffix      string
 	BitbucketClient *bitbucket.Client
+}
+
+// ServerConfig configures a server.
+type ServerConfig struct {
+	// Namespace is the Kubernetes namespace in which the server runs.
+	Namespace string
+	// Project is the Bitbucket project to which this server corresponds.
+	Project string
+	// RepoBase is the common URL base of all repositories on Bitbucket.
+	RepoBase string
+	// Token is the Bitbucket personal access token.
+	Token string
+	// TaskKind is the Tekton resource kind for tassks.
+	// Either "ClusterTask" or "Task".
+	TaskKind string
+	// TaskSuffic is the suffix applied to tasks (version information).
+	TaskSuffix string
 }
 
 type PipelineData struct {
@@ -62,18 +76,19 @@ func init() {
 }
 
 // NewServer returns a new server.
-func NewServer(client Client, namespace, project, repoBase, token, taskSuffix string) *Server {
+func NewServer(client Client, serverConfig ServerConfig) *Server {
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: token,
-		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
+		APIToken: serverConfig.Token,
+		BaseURL:  strings.TrimSuffix(serverConfig.RepoBase, "/scm"),
 	})
 	return &Server{
 		OpenShiftClient: client,
-		Namespace:       namespace,
-		Project:         project,
-		RepoBase:        repoBase,
-		Token:           token,
-		TaskSuffix:      taskSuffix,
+		Namespace:       serverConfig.Namespace,
+		Project:         serverConfig.Project,
+		RepoBase:        serverConfig.RepoBase,
+		Token:           serverConfig.Token,
+		TaskKind:        tekton.TaskKind(serverConfig.TaskKind),
+		TaskSuffix:      serverConfig.TaskSuffix,
 		BitbucketClient: bitbucketClient,
 	}
 }
@@ -255,7 +270,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
 	pData.Version = odsConfig.Version
 
-	rendered, err := renderPipeline(odsConfig, pData, s.TaskSuffix)
+	rendered, err := renderPipeline(odsConfig, pData, s.TaskKind, s.TaskSuffix)
 	if err != nil {
 		msg := "Could not render pipeline definition"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
@@ -375,7 +390,7 @@ func makePipelineName(component string, branch string) string {
 	return pipeline
 }
 
-func renderPipeline(odsConfig *config.ODS, data PipelineData, taskSuffix string) ([]byte, error) {
+func renderPipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.TaskKind, taskSuffix string) ([]byte, error) {
 
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
