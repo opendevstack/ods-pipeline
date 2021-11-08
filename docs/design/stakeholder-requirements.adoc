@@ -70,6 +70,9 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 
 | SHR-10
 | ODS pipeline shall provide easy access to artifacts of each version.
+
+| SHR-11
+| ODS pipeline shall support applications stored in either multiple repositories or a monorepo.
 |===
 
 == Appendix
