@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
@@ -90,6 +91,16 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					_, err = checkDeployment(ctxt.Clients.KubernetesClientSet, separateReleaseNamespace, resourceName)
 					if err != nil {
 						t.Fatal(err)
+					}
+
+					// Verify log output massaging
+					doNotWantLogMsg := "/usr/local/helm/plugins/helm-secrets/scripts/commands/helm.sh: line 34: xargs: command not found"
+					if strings.Contains(string(ctxt.CollectedLogs), doNotWantLogMsg) {
+						t.Fatalf("Do not want:\n%s\n\nGot:\n%s", doNotWantLogMsg, string(ctxt.CollectedLogs))
+					}
+					wantLogMsg := "plugin \"diff\" identified at least one change"
+					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
 				},
 			},
