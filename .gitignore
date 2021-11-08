@@ -1,3 +1,4 @@
 .vscode/
 test/testdata/workspaces/workspace-*
 ods.external.yaml
+/artifact-download

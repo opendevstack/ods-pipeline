@@ -319,6 +319,24 @@ For Git commits which message instructs to skip CI, no pipelines are triggererd.
 A pipeline is created or updated corresponding to the Git branch received in the webhook request. The pipeline name is made out of the component and the sanitized branch. A maximum of 63 characters is respected. Tasks (including `finally` tasks) of the pipline are read from the ODS config file in the repository.
 |===
 
+===== Artifact Download
+
+[cols="1,1,3"]
+|===
+| SDS-DLD-1
+| `artifact-download` binary
+a| The binary receives flags from the user identifying:
+
+* OpenShift namespace
+* Git repository (project/repository)
+* Git tag
+
+The OpenShift namespace is used to retrieve configuration and secrets required to communicate with Bitbucket and Nexus. The `ods.yaml` of the Git repository is retrieved at given Git tag to detect any subrepositories. If the given tag is `WIP`, the repository information is not retrieved from Bitbucket but located from the `.git` directory in the working directory.
+
+For all repositories in scope, the artifacts in the corresponding groups in Nexus are downloaded to the local host. The files are placed into `artifacts-out/<TAG>` (customizable via `--output`).
+|===
+
+
 === Third-party components
 
 [cols="1,1,1,2,1"]

@@ -67,6 +67,9 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 
 | SHR-9
 | The pipeline shall provide feedback about its status to users.
+
+| SHR-10
+| ODS pipeline shall provide easy access to artifacts of each version.
 |===
 
 == Appendix
