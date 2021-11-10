@@ -447,7 +447,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-18
 | Buildah
-| 1.21
+| 1.22
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 
@@ -492,7 +492,7 @@ The following table provides the history of the document.
 | 0.2
 | 2021-11-10
 | Michael Sauter
-| Updated gcc and skopeo.
+| Updated gcc, skopeo and buildah.
 
 | 0.1
 | 2021-10-01
