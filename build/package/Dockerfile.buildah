@@ -27,8 +27,8 @@ FROM registry.access.redhat.com/ubi8:8.4
 
 ARG aquasecScannerUrl
 
-ENV BUILDAH_VERSION=1.21 \
-    SKOPEO_VERSION=1.3
+ENV BUILDAH_VERSION=1.22 \
+    SKOPEO_VERSION=1.4
 
 COPY --from=builder /usr/local/bin/ods-build-push-image /usr/local/bin/ods-build-push-image
 

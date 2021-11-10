@@ -375,7 +375,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-6
 | gcc/gcc-c++
-| 8.4
+| 8.5
 | Optimizing compiler supporting various programming languages, required for CGO.
 | https://foo
 
@@ -441,13 +441,13 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-17
 | Skopeo
-| 1.3
+| 1.4
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
 | SDS-EXT-18
 | Buildah
-| 1.21
+| 1.22
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 
@@ -488,6 +488,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.2
+| 2021-11-10
+| Michael Sauter
+| Updated gcc, skopeo and buildah.
 
 | 0.1
 | 2021-10-01
