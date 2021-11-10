@@ -1,8 +1,9 @@
 package nexus
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
+	"path/filepath"
 )
 
 type TestClient struct {
@@ -23,5 +24,10 @@ func (c *TestClient) Search(repository, group string) ([]string, error) {
 
 // Upload is not needed for the test cases below.
 func (c *TestClient) Upload(repository, group, file string) error {
-	return errors.New("not implemented")
+	filename := filepath.Base(file)
+	c.URLs[repository] = append(
+		c.URLs[repository],
+		fmt.Sprintf("%s/%s", group, filename),
+	)
+	return nil
 }

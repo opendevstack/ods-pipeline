@@ -105,17 +105,16 @@ func CopyArtifact(sourceFile, artifactsPath string) error {
 	return file.Copy(sourceFile, filepath.Join(artifactsPath, filepath.Base(sourceFile)))
 }
 
-// ReadArtifactsDir reads all artifacts in ArtifactsPath.
+// ReadArtifactsDir reads all artifacts in checkoutDir/ArtifactsPath.
 // Only files in subdirectories are considered as artifacts.
 // Example: [
 //	"xunit-reports": ["report.xml"]
 //	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
 // ]
-func ReadArtifactsDir() (map[string][]string, error) {
-
+func ReadArtifactsDir(artifactsDir string) (map[string][]string, error) {
 	artifactsMap := map[string][]string{}
 
-	items, err := ioutil.ReadDir(ArtifactsPath)
+	items, err := ioutil.ReadDir(artifactsDir)
 	if err != nil {
 		return artifactsMap, fmt.Errorf("%w", err)
 	}
@@ -123,7 +122,7 @@ func ReadArtifactsDir() (map[string][]string, error) {
 	for _, item := range items {
 		if item.IsDir() {
 			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := ioutil.ReadDir(filepath.Join(ArtifactsPath, item.Name()))
+			subitems, err := ioutil.ReadDir(filepath.Join(artifactsDir, item.Name()))
 			if err != nil {
 				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
 			}
