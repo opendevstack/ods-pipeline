@@ -17,6 +17,7 @@ listed in the changelog.
 
 - Automatically roll webhook interceptor deployment when related config map or secret changes ([#252](https://github.com/opendevstack/ods-pipeline/issues/252))
 - Hide confusing error message in Helm output ([#262](https://github.com/opendevstack/ods-pipeline/issues/262))
+- Update gcc (from 8.4 to 8.5) skopeo (from 1.3 to 1.4) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
 
 ### Fixed
 
