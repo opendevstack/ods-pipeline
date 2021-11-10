@@ -37,7 +37,7 @@ The tasks are so easy to exchange and compose as Tekton tasks have clearly defin
 
 ## Which tasks does ODS provide?
 
-An ODS installation provides you with the following tasks, which are implemented as `ClusterTask` resources, allowing you to use them in any namespace:
+An ODS pipeline installation provides you with the following tasks, which are implemented as `ClusterTask` resources, allowing you to use them in any namespace:
 
 * `ods-start`: Checkout repository and set Bitbucket build status
 * `ods-build-go`: Build a Go application (includes Sonar scan)
