@@ -375,7 +375,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-6
 | gcc/gcc-c++
-| 8.4
+| 8.5
 | Optimizing compiler supporting various programming languages, required for CGO.
 | https://foo
 
@@ -488,6 +488,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.2
+| 2021-11-10
+| Michael Sauter
+| Updated gcc from 8.4 to 8.5.
 
 | 0.1
 | 2021-10-01
