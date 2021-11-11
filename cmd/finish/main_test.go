@@ -20,10 +20,10 @@ func TestUploadArtifacts(t *testing.T) {
 		URLs: map[string][]string{},
 	}
 	tempWorkingDir, cleanup, err := prepareTempWorkingDir(nexusRepo)
+	defer cleanup()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
 	ctxt := &pipelinectxt.ODSContext{
 		Version:      "1.0.0",
 		Project:      "my-project",
@@ -57,10 +57,10 @@ func TestHandleArtifacts(t *testing.T) {
 		URLs: map[string][]string{},
 	}
 	tempWorkingDir, cleanup, err := prepareTempWorkingDir(nexusRepo)
+	defer cleanup()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
 	ctxt := &pipelinectxt.ODSContext{
 		Version:      "1.0.0",
 		Project:      "my-project",
