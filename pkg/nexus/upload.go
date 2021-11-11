@@ -8,7 +8,8 @@ import (
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
-// Upload a file to a repository group
+// Upload a file to a repository group. The filename used inside the group is
+// the last element of given file.
 func (c *Client) Upload(repository, group, file string) error {
 
 	filename := filepath.Base(file)

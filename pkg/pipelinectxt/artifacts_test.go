@@ -12,6 +12,34 @@ import (
 	"github.com/opendevstack/pipeline/pkg/nexus"
 )
 
+func TestReadArtifactsDir(t *testing.T) {
+	artifactsDir, err := ioutil.TempDir(".", "test-artifacts-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(artifactsDir)
+	artifactsSubDir := filepath.Join(artifactsDir, PipelineRunsDir)
+	err = os.MkdirAll(artifactsSubDir, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifactsFile := filepath.Join(artifactsSubDir, "foo.txt")
+	err = ioutil.WriteFile(artifactsFile, []byte("test"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := ReadArtifactsDir(artifactsDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m) != 1 {
+		t.Fatalf("want 1 entry, got: %v", m)
+	}
+	if m[PipelineRunsDir][0] != "foo.txt" {
+		t.Fatalf("want foo.txt, got: %v", m)
+	}
+}
+
 func TestDownloadGroup(t *testing.T) {
 	nexusClient := &nexus.TestClient{}
 	repositories := []string{nexus.PermanentRepositoryDefault, nexus.TemporaryRepositoryDefault}

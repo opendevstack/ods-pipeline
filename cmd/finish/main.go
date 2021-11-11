@@ -36,6 +36,8 @@ type options struct {
 }
 
 func main() {
+	checkoutDir := "."
+
 	opts := options{}
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
@@ -52,7 +54,12 @@ func main() {
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
-	checkoutDir := "."
+	var logger logging.LeveledLoggerInterface
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+	}
 
 	ctxt := &pipelinectxt.ODSContext{}
 	err := ctxt.ReadCache(checkoutDir)
@@ -64,12 +71,7 @@ func main() {
 		)
 	}
 
-	var logger logging.LeveledLoggerInterface
-	if opts.debug {
-		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
-	}
-
-	fmt.Println("Setting Bitbucket build status ...")
+	logger.Infof("Setting Bitbucket build status ...")
 	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
@@ -92,7 +94,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Handling artifacts ...")
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
 		BaseURL:  opts.nexusURL,
 		Username: opts.nexusUsername,
@@ -102,70 +103,119 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = handleArtifacts(logger, nexusClient, opts, checkoutDir, ctxt)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
+// handleArtifacts figures out what to do with the artifacts stored underneath
+// the checkout dir. If the previous Tekton tasks succeeded, then the artifacts
+// are uploaded. The target repository is determined by the environment stage.
+func handleArtifacts(
+	logger logging.LeveledLoggerInterface,
+	nexusClient nexus.ClientInterface,
+	opts options,
+	checkoutDir string,
+	ctxt *pipelinectxt.ODSContext) error {
+	logger.Infof("Handling artifacts ...")
 	if tasksSuccessful(opts.aggregateTasksStatus) {
-		fmt.Println("Creating artifact of pipeline run ...")
-		err := createPipelineRunArtifact(opts.pipelineRunName, opts.aggregateTasksStatus)
+		logger.Infof("Creating artifact of pipeline run ...")
+		err := createPipelineRunArtifact(checkoutDir, opts.pipelineRunName, opts.aggregateTasksStatus)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot create pipeline run artifact: %w", err)
 		}
 
-		fmt.Println("Uploading artifacts to Nexus ...")
-		artifactsMap, err := pipelinectxt.ReadArtifactsDir()
+		odsConfig, err := config.ReadFromDir(checkoutDir)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot read ods config: %w", err)
 		}
 
+		logger.Infof("Uploading artifacts to Nexus ...")
 		// Use temporary storage for DEV stage and permanenet repository for
 		// QA and PROD stage environments.
 		nexusRepository := opts.nexusTemporaryRepository
 		if len(ctxt.Environment) > 0 {
-			odsConfig, err := config.ReadFromDir(checkoutDir)
-			if err != nil {
-				log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
-			}
 			env, err := odsConfig.Environment(ctxt.Environment)
 			if err != nil {
-				log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
+				return fmt.Errorf("cannot determine environment: %w", err)
 			}
+			logger.Debugf("Selected environment %s.", env.Name)
 			if env.Stage != config.DevStage {
+				logger.Debugf(
+					"Setting target Nexus repository to %s as environment is not a dev stage environment.",
+					opts.nexusPermanentRepository,
+				)
 				nexusRepository = opts.nexusPermanentRepository
 			}
 		}
-
-		am, err := pipelinectxt.ReadArtifactsManifestFromFile(
-			filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename),
-		)
+		err = uploadArtifacts(logger, nexusClient, nexusRepository, checkoutDir, ctxt)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot upload artifacts of main repository: %w", err)
 		}
-		for artifactsSubDir, files := range artifactsMap {
-			for _, filename := range files {
-				if am.Contains(nexusRepository, artifactsSubDir, filename) {
-					log.Printf("Artifact %s is already present in Nexus repository %s.", filename, nexusRepository)
-				} else {
-					nexusGroup := pipelinectxt.ArtifactGroup(ctxt, artifactsSubDir)
-					localFile := filepath.Join(pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
-					fmt.Printf("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
-					err = nexusClient.Upload(nexusRepository, nexusGroup, localFile)
-					if err != nil {
-						log.Fatal(err)
-					}
+		if len(odsConfig.Repositories) > 0 {
+			for _, subrepo := range odsConfig.Repositories {
+				subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepo.Name)
+				subrepoCtxt := &pipelinectxt.ODSContext{}
+				err := subrepoCtxt.ReadCache(subrepoCheckoutDir)
+				if err != nil {
+					return fmt.Errorf("cannot read cache of subrepository %s: %w", subrepo.Name, err)
+				}
+				err = uploadArtifacts(logger, nexusClient, nexusRepository, subrepoCheckoutDir, subrepoCtxt)
+				if err != nil {
+					return fmt.Errorf("cannot upload artifacts of subrepository %s: %w", subrepo.Name, err)
 				}
 			}
 		}
 	} else {
-		log.Println("No artifacts are uploaded to Nexus as one or more tasks failed.")
+		logger.Warnf("No artifacts are uploaded to Nexus as one or more tasks failed.")
 	}
-
+	return nil
 }
 
-func createPipelineRunArtifact(pipelineRunName, aggregateTasksStatus string) error {
+// uploadArtifacts uploads artifacts stored in checkoutDir to given nexusRepository.
+func uploadArtifacts(
+	logger logging.LeveledLoggerInterface,
+	nexusClient nexus.ClientInterface,
+	nexusRepository, checkoutDir string,
+	ctxt *pipelinectxt.ODSContext) error {
+	logger.Infof("Handling artifacts in %s ...\n", checkoutDir)
+	artifactsDir := filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath)
+	artifactsMap, err := pipelinectxt.ReadArtifactsDir(artifactsDir)
+	if err != nil {
+		return err
+	}
+	am, err := pipelinectxt.ReadArtifactsManifestFromFile(
+		filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename),
+	)
+	if err != nil {
+		return err
+	}
+	for artifactsSubDir, files := range artifactsMap {
+		for _, filename := range files {
+			if am.Contains(nexusRepository, artifactsSubDir, filename) {
+				logger.Infof("Artifact %s is already present in Nexus repository %s.", filename, nexusRepository)
+			} else {
+				nexusGroup := pipelinectxt.ArtifactGroup(ctxt, artifactsSubDir)
+				localFile := filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
+				logger.Infof("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
+				err = nexusClient.Upload(nexusRepository, nexusGroup, localFile)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func createPipelineRunArtifact(checkoutDir string, pipelineRunName, aggregateTasksStatus string) error {
 	pra := PipelineRunArtifact{
 		Name:                pipelineRunName,
 		AggregateTaskStatus: aggregateTasksStatus,
 	}
-	return pipelinectxt.WriteJsonArtifact(pra, pipelinectxt.PipelineRunsPath, pra.Name+".json")
+	writeDir := filepath.Join(checkoutDir, pipelinectxt.PipelineRunsPath)
+	return pipelinectxt.WriteJsonArtifact(pra, writeDir, pra.Name+".json")
 }
 
 // getBitbucketBuildStatus returns a build status for use with Bitbucket based
