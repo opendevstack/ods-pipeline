@@ -29,9 +29,9 @@ pipelineGitRef=v0.1.1 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
-git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
+git subtree split --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
 git checkout - && \
-git subtree add --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
+git subtree add --squash --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
 Once this is done, change to the new folder `ods-pipeline` to configure the values and secrets to use for the installation. It is recommended to encrypt the secrets at rest, therefore the following describes how to use the `helm-secrets` plugin to edit the secrets. For this, you'll need a link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/generating-a-new-gpg-key[GPG keypair], which fingerprint needs to be recorded in a `.sops.yaml`, e.g.:
