@@ -13,22 +13,22 @@ Container_Boundary(c1, "Central ODS Pipeline Installation"){
     Component(task_build_typescript, "ods-build-typescript", "ClusterTask", "Builds TypeScript applications")
     Component(image_typescript_toolset, "ods/typescript-toolset", "Container Image", "TypeScript 3, build script")
 
-    Component(task_build_python, "ods-build-python", "ClusterTask", "Builds TypeScript applications")
+    Component(task_build_python, "ods-build-python", "ClusterTask", "Builds Python applications")
     Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python 3, build script")
 
-    Component(task_build_gradle, "ods-build-gradle", "ClusterTask", "Builds TypeScript applications")
+    Component(task_build_gradle, "ods-build-gradle", "ClusterTask", "Builds Gradle-based applications")
     Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
 
     Component(task_package_image, "ods-package-image", "ClusterTask", "Packages container images")
     Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Aqua scanner")
 
-    Component(task_deploy_helm, "ods-deploy-helm", "ClusterTask", "Builds TypeScript applications")
+    Component(task_deploy_helm, "ods-deploy-helm", "ClusterTask", "Deploys Helm charts")
     Component(image_helm, "ods/helm", "Container Image", "Helm, Skopeo, deploy script")
 
-    Component(task_start, "ods-start", "ClusterTask", "Builds TypeScript applications")
+    Component(task_start, "ods-start", "ClusterTask", "Starts pipeline run (checkout repository, set build status, download artifacts, ...)")
     Component(image_start, "ods/start", "Container Image", "Git, start script")
 
-    Component(task_finish, "ods-finish", "ClusterTask", "Builds TypeScript applications")
+    Component(task_finish, "ods-finish", "ClusterTask", "Finishes pipeline run (set build status, upload artifacts, ...)")
     Component(image_finish, "ods/finish", "Container Image", "Finish script")
 
     Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
