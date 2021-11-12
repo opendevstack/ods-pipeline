@@ -29,7 +29,7 @@ until [ $n -ge 30 ]; do
         break
     else
         echo -n "."
-        sleep 10s
+        sleep 10
         n=$((n+1))
     fi
 done
