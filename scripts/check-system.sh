@@ -12,9 +12,16 @@ for exe in go docker jq kind kubectl helm; do
     fi
 done
 
+if which docker &> /dev/null; then
+    docker_host_memory=$(docker info --format "{{.MemTotal}}")
+    if [ ${docker_host_memory} -gt $((8 * 10 ** 9)) ]; then
+        ok="false"
+        echo "The Docker host must have at least 8GB of memory."
+    fi
+fi
+
+
 if [ "${ok}" == 'true' ]; then
-    echo "Please make sure that the Docker host has at least 8GB memory (no automated check exists for this yet)."
-    echo ""
 
     if ! which k9s &> /dev/null; then
         echo "Note: k9s is recommended."
