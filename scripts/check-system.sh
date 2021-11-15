@@ -14,7 +14,7 @@ done
 
 if which docker &> /dev/null; then
     docker_host_memory=$(docker info --format "{{.MemTotal}}")
-    if [ ${docker_host_memory} -gt $((8 * 10 ** 9)) ]; then
+    if [ ! ${docker_host_memory} -gt $((8 * 10 ** 9)) ]; then
         ok="false"
         echo "The Docker host must have at least 8GB of memory."
     fi
