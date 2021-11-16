@@ -10,7 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 SKIP_BUILD="false"
-IMAGES="buildah finish go-toolset gradle-toolset helm sonar start webhook-interceptor python-toolset"
 http_proxy="${http_proxy:-}"
 https_proxy="${https_proxy:-}"
 
@@ -29,7 +28,8 @@ esac; shift; done
 
 cd $ODS_PIPELINE_DIR
 
-for image in $IMAGES; do
+for file in build/package/Dockerfile.*; do
+    image=${file##*Dockerfile.}
     odsImage="ods-$image"
     if [ "${SKIP_BUILD}" != "true" ]; then
         echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
