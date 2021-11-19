@@ -34,22 +34,49 @@ git checkout - && \
 git subtree add --squash --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef
 ```
 
-Once this is done, change to the new folder `ods-pipeline` to configure the values and secrets to use for the installation. It is recommended to encrypt the secrets at rest, therefore the following describes how to use the `helm-secrets` plugin to edit the secrets. For this, you'll need a link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/generating-a-new-gpg-key[GPG keypair], which fingerprint needs to be recorded in a `.sops.yaml`, e.g.:
+Once this is done, change to the new folder `ods-pipeline` to configure the values and secrets to use for the installation.
 
-```
-creation_rules:
-  - pgp: "A2F9 D4AF 800A 5499 3667 5C66 B92D F67B 0EF2 B057"
-```
-
-Now copy the default values files:
-
+For the values, just run:
 ```
 cp chart/values.yaml values.yaml
-cat chart/secrets.yaml | helm secrets edit secrets.yaml
+```
+
+Regarding the secrets, it is recommended to encrypt them at rest, therefore the following describes how to first encrypt them, but also how to edit them using the `helm-secrets` plugin.
+
+For this, you'll need to install `link:https://github.com/mozilla/sops[sops]` and `link:https://github.com/FiloSottile/age[age]` for en-/decryption of the `secrets.yaml` file.
+
+As described in the `sops` link:https://github.com/mozilla/sops#22encrypting-using-age[documentation], when decrypting
+using `age`, `sops` will look for a text file name `keys.txt` located in a `sops subdirectory` of your user
+configuration directory. On Linux, this would be `$XDG_CONFIG_HOME/sops/age/keys.txt` (if `$XDG_CONFIG_HOME` is not set,
+it is usually `$HOME/.config`). On macOS, this would be`$HOME/Library/Application Support/sops/age/keys.txt`. On Windows,
+this would be `%AppData%\sops\age\keys.txt`. You can specify the location of this file manually by setting the
+environment variable `SOPS_AGE_KEY_FILE`. We will refer to this user configuration directory as `<your_user_config_dir>`.
+
+Knowing this, we create a key pair for encryption by running:
+
+```
+mkdir -p <your_user_config_dir>/sops/age
+age-keygen -o <your_user_config_dir>/sops/age/keys.txt
+```
+
+This prints as a result the public key (alternatively you can find it in the `keys.txt`) which looks similar to this:
+```
+Public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+```
+
+Take the public key and use it to create an encrypted version of your `secrets.yaml`:
+
+```
+sops --encrypt --age age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p chart/secrets.yaml > secrets.yaml
+```
+
+You can edit the secrets with:
+```
+helm secrets edit secrets.yaml
 ```
 
 
-Now fill in the variables as described in the comments in both files. Then you can install the resources via `./install.sh -n foo-cd -f values.yaml,secrets.yaml` (make sure to replace the namespace). You may also use `--dry-run` to see the changes first.
+Now fill in the variables as described in the comments in both (values.yaml and secrets.yaml) files. Then you can install the resources via `./install.sh -n foo-cd -f values.yaml,secrets.yaml` (make sure to replace the namespace). You may also use `--dry-run` to see the changes first.
 
 Finally, run `oc -n foo-cd expose svc el-ods-pipeline` to expose the service listener. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket (together with the webhook secret that is stored in the `Secret/ods-bitbucket-webhook` resource).
 
