@@ -34,7 +34,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -79,6 +78,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-lcov.info", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
