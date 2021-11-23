@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 SKIP_BUILD="false"
+IMAGES=""
 http_proxy="${http_proxy:-}"
 https_proxy="${https_proxy:-}"
 
@@ -26,20 +27,30 @@ while [[ "$#" -gt 0 ]]; do
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-cd $ODS_PIPELINE_DIR
+cd "$ODS_PIPELINE_DIR"
 
-for file in build/package/Dockerfile.*; do
-    image=${file##*Dockerfile.}
+build_and_push_image() {
     odsImage="ods-$image"
     if [ "${SKIP_BUILD}" != "true" ]; then
         echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
         docker build \
-            --build-arg http_proxy=$http_proxy \
-            --build-arg https_proxy=$https_proxy \
-            --build-arg HTTP_PROXY=$http_proxy \
-            --build-arg HTTPS_PROXY=$https_proxy  \
-            -f build/package/Dockerfile.$image -t $REGISTRY/$NAMESPACE/$odsImage .
+            --build-arg http_proxy="$http_proxy" \
+            --build-arg https_proxy="$https_proxy" \
+            --build-arg HTTP_PROXY="$http_proxy" \
+            --build-arg HTTPS_PROXY="$https_proxy"  \
+            -f build/package/Dockerfile."$image" -t $REGISTRY/$NAMESPACE/"$odsImage" .
     fi
     echo "Pushing image to $REGISTRY/$NAMESPACE/$odsImage ..."
     docker push "$REGISTRY/$NAMESPACE/$odsImage"
-done
+}
+
+if [ -z "$IMAGES" ]; then
+    for file in build/package/Dockerfile.*; do
+        image=${file##*Dockerfile.}
+        build_and_push_image
+    done
+else
+    for image in $IMAGES; do
+        build_and_push_image
+    done
+fi

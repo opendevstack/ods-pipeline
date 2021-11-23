@@ -29,6 +29,7 @@ listed in the changelog.
 - `Directory` values in the artifact manifest (`.ods/artifacts/manifest.json`) contain an erronous leading slash. This should only be an issue if you relied on this value in a custom task. ([#269](https://github.com/opendevstack/ods-pipeline/pull/269))
 - `ods-finish` does not upload artifacts of subrepos ([#257](https://github.com/opendevstack/ods-pipeline/issues/257))
 - Waitfor-...sh scripts are not waiting for the expected 5 minutes ([#280](https://github.com/opendevstack/ods-pipeline/issues/280))
+- Specifying images to be build and pushed is not working anymore due to changes made in [#287](https://github.com/opendevstack/ods-pipeline/pull/287) ([#299](https://github.com/opendevstack/ods-pipeline/issues/299))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
