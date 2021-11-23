@@ -3,7 +3,7 @@ apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
   creationTimestamp: null
-  name: ods-build-python-with-sidecar{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-build-python-with-sidecar{{.Values.taskSuffix}}'
 spec:
   description: |-
     Builds Python applications.

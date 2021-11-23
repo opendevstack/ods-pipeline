@@ -3,7 +3,7 @@ apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
   creationTimestamp: null
-  name: ods-build-gradle-with-sidecar{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-build-gradle-with-sidecar{{.Values.taskSuffix}}'
 spec:
   description: |-
     Builds Gradle applications.

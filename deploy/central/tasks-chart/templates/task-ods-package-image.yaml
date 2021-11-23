@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
-  name: ods-package-image{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-package-image{{.Values.taskSuffix}}'
 spec:
   description: |
     Packages applications into container images using buildah.
