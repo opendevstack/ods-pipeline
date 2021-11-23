@@ -25,4 +25,9 @@ RUN cd /opt && \
 
 # Add scripts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
-RUN chmod +x /usr/local/bin/build-gradle
+COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
+RUN chmod +x /usr/local/bin/build-gradle && \
+    chmod +x /usr/local/bin/supply-sonar-project-properties-default
+
+# Add sonar-project.properties
+COPY build/package/sonar-project.properties.d/gradle.properties /usr/local/default-sonar-project.properties

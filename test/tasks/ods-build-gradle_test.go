@@ -3,6 +3,7 @@ package tasks
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -45,6 +46,11 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
 							t.Fatalf("Want %s, but got nothing", wf)
 						}
+					}
+
+					wantLogMsg := "No sonar-project.properties present, using default:"
+					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
 				},
 			},

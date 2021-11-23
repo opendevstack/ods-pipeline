@@ -66,6 +66,11 @@ func TestTaskODSBuildPython(t *testing.T) {
 					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
 					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+
+					wantLogMsg := "No sonar-project.properties present, using default:"
+					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+					}
 				},
 			},
 			"build python fastapi app in subdirectory": {

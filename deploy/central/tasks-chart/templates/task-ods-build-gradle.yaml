@@ -73,16 +73,9 @@ spec:
     }
     ```
 
-    To configure SonarQube the project has to include at the root folder of the project the property file `sonar-project.properties`.
-    Otherwise the SonarQube scan will fail.
-    Following example properties show default working values for a standard gradle project:
-    ```
-    sonar.sources=src
-    sonar.java.binaries=build/classes
-    sonar.junit.reportPaths=build/test-results/test
-    sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
-    ```
-
+    After tests ran successfully, the application source code is scanned by SonarQube.
+    Default SonarQube project properties are provided unless `sonar-project.properties`
+    is present.
     When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
     is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
     The SonarQube scan will include parameters to perform a pull request analysis if
