@@ -14,6 +14,7 @@ listed in the changelog.
 - Allow namespaced installation. This provides a way to give ODS pipeline a try without requiring the buy-in from a cluster admin. The OpenShift Pipelines operator is still required though. See [#263](https://github.com/opendevstack/ods-pipeline/issues/263).
 - Automated check if the Docker host has enough memory ([#283](https://github.com/opendevstack/ods-pipeline/issues/283))
 - Create SonarQube quality gate artifact ([#273](https://github.com/opendevstack/ods-pipeline/issues/273))
+- Make task prefix customizable ([#289](https://github.com/opendevstack/ods-pipeline/issues/289))
 
 ### Changed
 

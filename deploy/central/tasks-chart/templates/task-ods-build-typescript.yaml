@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
-  name: ods-build-typescript{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-build-typescript{{.Values.taskSuffix}}'
 spec:
   description: |
     Builds Typescript applications.

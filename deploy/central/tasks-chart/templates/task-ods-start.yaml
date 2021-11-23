@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
-  name: ods-start{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-start{{.Values.taskSuffix}}'
 spec:
   description: |
     Starts the pipeline run.
