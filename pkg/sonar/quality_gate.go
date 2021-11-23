@@ -17,8 +17,26 @@ type QualityGate struct {
 }
 
 type QualityGateProjectStatus struct {
-	Status            string `json:"status"`
-	IgnoredConditions bool   `json:"ignoredConditions"`
+	Status            string                 `json:"status"`
+	IgnoredConditions bool                   `json:"ignoredConditions"`
+	Conditions        []QualityGateCondition `json:"conditions"`
+	Periods           []QualityGatePeriod    `json:"periods"`
+}
+
+type QualityGateCondition struct {
+	Status         string `json:"status"`
+	MetricKey      string `json:"metricKey"`
+	Comparator     string `json:"comparator"`
+	PeriodIndex    int    `json:"periodIndex"`
+	ErrorThreshold string `json:"errorThreshold,omitempty"`
+	ActualValue    string `json:"actualValue"`
+}
+
+type QualityGatePeriod struct {
+	Index     int    `json:"index"`
+	Mode      string `json:"mode"`
+	Date      string `json:"date"`
+	Parameter string `json:"parameter"`
 }
 
 type QualityGateGetParams struct {
