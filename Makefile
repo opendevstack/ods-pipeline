@@ -12,10 +12,19 @@ fmt:
 	gofmt -w .
 .PHONY: fmt
 
-## Run golangci-lint.
-lint:
-	golangci-lint run
+## Run all linters.
+lint: lint-go lint-shell
 .PHONY: lint
+
+## Run golangci-lint.
+lint-go:
+	golangci-lint run
+.PHONY: lint-go
+
+## Run shellcheck.
+lint-shell:
+	shellcheck scripts/*.sh build/package/scripts/*.sh deploy/*/*.sh
+.PHONY: lint-shell
 
 ## Check if system meets prerequisites.
 check-system:
