@@ -43,7 +43,7 @@ RUN mkdir -p /tmp/sops \
     && cd /tmp/sops \
     && curl -LO https://github.com/mozilla/sops/releases/download/v${SOPS_VERSION}/sops-${SOPS_VERSION}-1.x86_64.rpm \
     && yum install -y sops-${SOPS_VERSION}-1.x86_64.rpm \
-    && sops -v \
+    && sops --version \
     && rm -rf /tmp/sops
 
 # Add age
@@ -72,6 +72,8 @@ RUN mkdir -p $HELM_PLUGINS \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/databus23/helm-diff --version v${HELM_PLUGIN_DIFF_VERSION} \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/jkroepke/helm-secrets --version v${HELM_PLUGIN_SECRETS_VERSION} \
     && ls -lah $HELM_PLUGINS \
-    && sops --version
+    && sops --version \
+    && age --version \
+    && age-keygen --version
 
 USER 1001
