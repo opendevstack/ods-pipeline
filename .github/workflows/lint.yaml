@@ -21,4 +21,4 @@ jobs:
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
-          ignore: test/testdata/workspaces
+          ignore_paths: test/testdata/workspaces
