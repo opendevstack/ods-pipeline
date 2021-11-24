@@ -126,6 +126,8 @@ func (e Environment) Validate() error {
 	}
 }
 
+// Environment searches the list of configured environments for an environment
+// with name environment. The first match is returned, or else an error.
 func (o *ODS) Environment(environment string) (*Environment, error) {
 	var envs []string
 	for _, e := range o.Environments {
