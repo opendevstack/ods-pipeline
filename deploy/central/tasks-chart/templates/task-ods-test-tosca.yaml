@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1beta1
+kind: '{{default "ClusterTask" .Values.taskKind}}'
+metadata:
+  name: '{{default "ods" .Values.taskPrefix}}-test-tosca{{.Values.taskSuffix}}'
+spec:
+  description: |
+    Executes Tosca tests.
+  params:
+    - name: app-url
+      description: URL of application under test.
+      type: string
+    - name: suite
+      description: Name of test suite.
+      type: string
+  steps:
+    - name: run-tosca-test
+      # Image is built from build/package/Dockerfile.tosca.
+      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-tosca:{{.Values.imageTag}}'
+      env:
+        - name: HOME
+          value: '/tekton/home'
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+
+        toscactl run \
+            --suite-parameter URL="$(params.app-url)" \
+            $(params.suite)
+
+        # archiveArtifacts artifacts: "build/Test/**/Reports/**", allowEmptyArchive: true
+        # archiveArtifacts artifacts: "build/Test/**/Artifacts/**", allowEmptyArchive: true
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+  workspaces:
+    - name: source
