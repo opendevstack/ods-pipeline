@@ -85,7 +85,7 @@ fi
 
 if [ -n "${PRE_TEST_SCRIPT}" ]; then
   echo "Executing pre-test script ..."
-  ./${PRE_TEST_SCRIPT}
+  ./"${PRE_TEST_SCRIPT}"
 fi
 
 echo "Testing ..."
@@ -98,7 +98,7 @@ else
   GOPKGS=$(go list ./... | grep -v /vendor)
   set +e
   rm coverage.out test-results.txt report.xml &>/dev/null
-  go test -v -coverprofile=coverage.out $GOPKGS 2>&1 > test-results.txt
+  go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
   exitcode=$?
   set -e
   if [ -f test-results.txt ]; then

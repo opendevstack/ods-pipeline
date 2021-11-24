@@ -9,4 +9,4 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 # and the install.sh script is under deploy/cd-namespace so that the whole
 # deployment is self-contained within that folder, making it easy for consumers
 # to pull in the deployment logic into their repositories via "git subtree".
-${ODS_PIPELINE_DIR}/deploy/cd-namespace/install.sh "$@"
+"${ODS_PIPELINE_DIR}"/deploy/cd-namespace/install.sh "$@"

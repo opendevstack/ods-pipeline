@@ -28,7 +28,7 @@ esac; shift; done
 
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
-cd ${SCRIPT_DIR}/nexus
+cd "${SCRIPT_DIR}"/nexus
 docker build -t ${IMAGE_NAME} .
 cd - &> /dev/null
 docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
@@ -49,12 +49,12 @@ function runJsonScript {
     curl ${INSECURE} -X POST -sSf \
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
         --header 'Content-Type: application/json' \
-        "${NEXUS_URL}/service/rest/v1/script" -d @${SCRIPT_DIR}/nexus/"${jsonScriptName}".json
+        "${NEXUS_URL}/service/rest/v1/script" -d @"${SCRIPT_DIR}"/nexus/"${jsonScriptName}".json
     echo "running ${jsonScriptName}"
     curl ${INSECURE} -X POST -sSf \
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
         --header 'Content-Type: text/plain' \
-        "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}/run" ${runParams} > /dev/null
+        "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}/run" "${runParams}" > /dev/null
     echo "deleting ${jsonScriptName}"
     curl ${INSECURE} -X DELETE -sSf \
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
@@ -78,10 +78,12 @@ echo "Setup developer role"
 runJsonScript "createRole" "-d @${SCRIPT_DIR}/nexus/developer-role.json"
 
 echo "Setup developer user"
-sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" ${SCRIPT_DIR}/nexus/developer-user.json > ${SCRIPT_DIR}/nexus/developer-user-with-password.json
+sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" "${SCRIPT_DIR}"/nexus/developer-user.json > "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
 runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password.json"
-rm ${SCRIPT_DIR}/nexus/developer-user-with-password.json
+rm "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
 
-echo "nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'" >> ${HELM_VALUES_FILE}
-echo "nexusUsername: '${DEVELOPER_USERNAME}'" >> ${HELM_VALUES_FILE}
-echo "nexusPassword: '${DEVELOPER_PASSWORD}'" >> ${HELM_VALUES_FILE}
+{
+    echo "nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'";
+    echo "nexusUsername: '${DEVELOPER_USERNAME}'";
+    echo "nexusPassword: '${DEVELOPER_PASSWORD}'";
+} >> "${HELM_VALUES_FILE}"

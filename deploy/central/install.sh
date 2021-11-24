@@ -33,9 +33,9 @@ while [[ "$#" -gt 0 ]]; do
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-cd ${SCRIPT_DIR}
+cd "${SCRIPT_DIR}"
 
-VALUES_FILES=$(echo $VALUES_FILE | tr "," "\n")
+VALUES_FILES=$(echo "$VALUES_FILE" | tr "," "\n")
 VALUES_ARGS=""
 for valueFile in ${VALUES_FILES}; do
     VALUES_ARGS="${VALUES_ARGS} --values=${valueFile}"
@@ -72,27 +72,27 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-DIFF_UPGRADE_ARGS="diff upgrade"
-UPGRADE_ARGS="upgrade"
+DIFF_UPGRADE_ARGS=("diff upgrade")
+UPGRADE_ARGS=("upgrade")
 if helm plugin list | grep secrets &> /dev/null; then
-    DIFF_UPGRADE_ARGS="secrets diff upgrade"
-    UPGRADE_ARGS="secrets upgrade"
+    DIFF_UPGRADE_ARGS=("secrets diff upgrade")
+    UPGRADE_ARGS=("secrets upgrade")
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
-    if helm -n ${NAMESPACE} \
-            ${DIFF_UPGRADE_ARGS} --install --detailed-exitcode \
-            ${VALUES_ARGS} \
+    if helm -n "${NAMESPACE}" \
+            "${DIFF_UPGRADE_ARGS[@]}" --install --detailed-exitcode \
+            "${VALUES_ARGS}" \
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."
     else
         if [ "${DRY_RUN}" == "true" ]; then
             echo "(skipping in dry-run)"
         else
-            helm -n ${NAMESPACE} \
-                ${UPGRADE_ARGS} --install \
-                ${VALUES_ARGS} \
+            helm -n "${NAMESPACE}" \
+                "${UPGRADE_ARGS[@]}" --install \
+                "${VALUES_ARGS}" \
                 ${RELEASE_NAME} ${CHART_DIR}
         fi
     fi
@@ -104,9 +104,9 @@ else
         if [ -n "${NAMESPACE}" ]; then
             NAMESPACE_FLAG="-n ${NAMESPACE}"
         fi
-        helm ${NAMESPACE_FLAG} \
-            ${UPGRADE_ARGS} --install \
-            ${VALUES_ARGS} \
+        helm "${NAMESPACE_FLAG}" \
+            "${UPGRADE_ARGS[@]}" --install \
+            "${VALUES_ARGS}" \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
 fi

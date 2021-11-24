@@ -27,7 +27,7 @@ esac; shift; done
 echo "Run Postgres container"
 docker rm -f ${BITBUCKET_POSTGRES_CONTAINER_NAME} || true
 docker run  --name ${BITBUCKET_POSTGRES_CONTAINER_NAME} \
-  -v ${ODS_PIPELINE_DIR}/test/testdata/bitbucket-sql:/docker-entrypoint-initdb.d \
+  -v "${ODS_PIPELINE_DIR}"/test/testdata/bitbucket-sql:/docker-entrypoint-initdb.d \
   -e POSTGRES_PASSWORD=jellyfish -e POSTGRES_USER=bitbucketuser -e POSTGRES_DB=bitbucket \
   -d --net kind -p "${BITBUCKET_POSTGRES_HOST_PORT}:5432" \
   postgres:${BITBUCKET_POSTGRES_IMAGE_TAG}
@@ -49,7 +49,9 @@ if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
 fi 
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
-echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> ${HELM_VALUES_FILE}
-echo "bitbucketUsername: 'admin'" >> ${HELM_VALUES_FILE}
-echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'" >> ${HELM_VALUES_FILE}
-echo "bitbucketWebhookSecret: 's3cr3t'" >> ${HELM_VALUES_FILE}
+{
+  echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'"
+  echo "bitbucketUsername: 'admin'"
+  echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"]
+  echo "bitbucketWebhookSecret: 's3cr3t'"
+} >> "${HELM_VALUES_FILE}"
