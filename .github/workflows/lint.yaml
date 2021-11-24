@@ -19,4 +19,4 @@ jobs:
           version: v1.41.1
           args: --timeout=5m0s
       - name: ShellCheck
-        uses: ludeeus/action-shellcheck@v1
+        uses: ludeeus/action-shellcheck@master
