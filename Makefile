@@ -23,7 +23,7 @@ lint-go:
 
 ## Run shellcheck.
 lint-shell:
-	shellcheck scripts/*.sh build/package/scripts/*.sh deploy/*/*.sh
+	shellcheck scripts/*.sh build/package/scripts/* deploy/*/*.sh
 .PHONY: lint-shell
 
 ## Check if system meets prerequisites.
