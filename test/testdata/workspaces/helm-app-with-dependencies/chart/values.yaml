@@ -28,3 +28,7 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
+# Overwrite username in subchart
+helm-sample-database:
+  username: tom

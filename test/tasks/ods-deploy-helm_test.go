@@ -133,9 +133,15 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					_, err = checkDeployment(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
+					d, err := checkDeployment(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
 					if err != nil {
 						t.Fatal(err)
+					}
+					// Check that Helm value overriding in subchart works
+					gotEnvValue := d.Spec.Template.Spec.Containers[0].Env[0].Value
+					wantEnvValue := "tom" // defined in parent (child has value "john")
+					if gotEnvValue != wantEnvValue {
+						t.Fatalf("Want ENV username = %s, got: %s", wantEnvValue, gotEnvValue)
 					}
 				},
 			},
