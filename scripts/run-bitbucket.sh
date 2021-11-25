@@ -52,6 +52,6 @@ BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 {
   echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'"
   echo "bitbucketUsername: 'admin'"
-  echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"]
+  echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"
   echo "bitbucketWebhookSecret: 's3cr3t'"
 } >> "${HELM_VALUES_FILE}"
