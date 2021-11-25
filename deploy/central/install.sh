@@ -104,7 +104,8 @@ else
         if [ -n "${NAMESPACE}" ]; then
             NAMESPACE_FLAG="-n ${NAMESPACE}"
         fi
-        helm "${NAMESPACE_FLAG}" \
+        # shellcheck disable=SC2086
+        helm ${NAMESPACE_FLAG} \
             "${UPGRADE_ARGS[@]}" --install \
             "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}
