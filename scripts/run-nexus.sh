@@ -51,10 +51,11 @@ function runJsonScript {
         --header 'Content-Type: application/json' \
         "${NEXUS_URL}/service/rest/v1/script" -d @"${SCRIPT_DIR}"/nexus/"${jsonScriptName}".json
     echo "running ${jsonScriptName}"
+    # shellcheck disable=SC2086
     curl ${INSECURE} -X POST -sSf \
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
         --header 'Content-Type: text/plain' \
-        "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}/run" "${runParams}" > /dev/null
+        "${NEXUS_URL}/service/rest/v1/script/${jsonScriptName}/run" ${runParams} 2> /dev/null
     echo "deleting ${jsonScriptName}"
     curl ${INSECURE} -X DELETE -sSf \
         --user "${ADMIN_USER}:${ADMIN_PASSWORD}" \
