@@ -36,9 +36,9 @@ esac; shift; done
 cd "${SCRIPT_DIR}"
 
 VALUES_FILES=$(echo "$VALUES_FILE" | tr "," "\n")
-VALUES_ARGS=""
+VALUES_ARGS=()
 for valueFile in ${VALUES_FILES}; do
-    VALUES_ARGS="${VALUES_ARGS} --values=${valueFile}"
+    VALUES_ARGS+=("--values=${valueFile}")
 done
 
 if [ -z "${CHART}" ]; then
@@ -83,7 +83,7 @@ echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
     if helm -n "${NAMESPACE}" \
             "${DIFF_UPGRADE_ARGS[@]}" --install --detailed-exitcode \
-            "${VALUES_ARGS}" \
+            "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."
     else
@@ -92,7 +92,7 @@ if [ "${DIFF}" == "true" ]; then
         else
             helm -n "${NAMESPACE}" \
                 "${UPGRADE_ARGS[@]}" --install \
-                "${VALUES_ARGS}" \
+                "${VALUES_ARGS[@]}" \
                 ${RELEASE_NAME} ${CHART_DIR}
         fi
     fi
@@ -106,7 +106,7 @@ else
         fi
         helm "${NAMESPACE_FLAG}" \
             "${UPGRADE_ARGS[@]}" --install \
-            "${VALUES_ARGS}" \
+            "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
 fi
