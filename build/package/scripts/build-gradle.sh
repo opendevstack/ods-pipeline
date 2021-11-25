@@ -59,7 +59,8 @@ export ODS_OUTPUT_DIR=${OUTPUT_DIR}
 echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
 echo "Building (Compile and Test) ..."
-./gradlew "clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS} --"
+# shellcheck disable=SC2086
+./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 echo
 
 echo "Verifying unit test report was generated  ..."
