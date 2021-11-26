@@ -15,6 +15,7 @@ listed in the changelog.
 - Automated check if the Docker host has enough memory ([#283](https://github.com/opendevstack/ods-pipeline/issues/283))
 - Create SonarQube quality gate artifact ([#273](https://github.com/opendevstack/ods-pipeline/issues/273))
 - Make task prefix customizable ([#289](https://github.com/opendevstack/ods-pipeline/issues/289))
+- Add overridable test timeout to Makefile ([#284](https://github.com/opendevstack/ods-pipeline/issues/284))
 
 ### Changed
 
