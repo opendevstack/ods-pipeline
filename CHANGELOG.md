@@ -23,7 +23,7 @@ listed in the changelog.
 - Hide confusing error message in Helm output ([#262](https://github.com/opendevstack/ods-pipeline/issues/262))
 - Update gcc (from 8.4 to 8.5), skopeo (from 1.3 to 1.4) and buildah (from 1.21 to 1.22) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
 - Iterating over Dockerfiles in build/package instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286))
-- Increase timeout of typescript task tests and generate a hint when testruns time out
+- Increase timeout of typescript task tests and generate a hint when testruns time out ([#310](https://github.com/opendevstack/ods-pipeline/issues/310))
 
 ### Fixed
 
