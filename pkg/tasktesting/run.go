@@ -3,6 +3,7 @@ package tasktesting
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -187,6 +188,9 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		case tr := <-taskRunDone:
 			cancel()
 			return tr, collectedLogsBuffer, nil
+		case <-ctx.Done():
+			cancel()
+			return nil, collectedLogsBuffer, fmt.Errorf("timeout waiting for task run to finish. Consider increasing the timeout for your testcase at hand")
 		}
 	}
 }
