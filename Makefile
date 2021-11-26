@@ -146,12 +146,12 @@ test-pkg:
 
 ## Run testsuite of Tekton tasks.
 test-tasks:
-	go test -v -count=1 ./test/tasks/...
+	go test -v -count=1 -timeout $${ODS_TESTTIMEOUT:-30m} ./test/tasks/...
 .PHONY: test-tasks
 
 ## Run testsuite of end-to-end tasks.
 test-e2e:
-	go test -v -count=1 ./test/e2e/...
+	go test -v -count=1 $${ODS_TESTTIMEOUT:-10m} ./test/e2e/...
 .PHONY: test-e2e
 
 ## Clear temporary workspaces created in testruns.
