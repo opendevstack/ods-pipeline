@@ -145,6 +145,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 	var collectedLogsBuffer bytes.Buffer
 
 	ctx, cancel := context.WithTimeout(context.TODO(), testOpts.Timeout)
+	defer cancel()
 	go waitForTaskRunDone(
 		ctx,
 		t,
@@ -167,7 +168,6 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 		select {
 		case err := <-errs:
 			if err != nil {
-				cancel()
 				return nil, collectedLogsBuffer, err
 			}
 
@@ -186,10 +186,8 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 			collectedLogsBuffer.Write(b)
 
 		case tr := <-taskRunDone:
-			cancel()
 			return tr, collectedLogsBuffer, nil
 		case <-ctx.Done():
-			cancel()
 			return nil, collectedLogsBuffer, fmt.Errorf("timeout waiting for task run to finish. Consider increasing the timeout for your testcase at hand")
 		}
 	}
