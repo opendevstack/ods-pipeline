@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
     TAR_VERSION=1.30
 
-RUN microdnf install -y python38 tar-${TAR_VERSION}*
+RUN microdnf install -y python39 tar-${TAR_VERSION}*
 
 RUN pip3 config set global.cert /etc/ssl/certs/ca-bundle.crt
 

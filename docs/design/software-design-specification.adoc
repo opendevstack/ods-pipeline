@@ -406,7 +406,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | SDS-EXT-11
 | Red Hat OpenJDK 11 Image
 | 1.10
-| OpenJDK 11 container is a base platform for building and running plain Java 11 applications, e.g. fat-jar and flat classpath. 
+| OpenJDK 11 container is a base platform for building and running plain Java 11 applications, e.g. fat-jar and flat classpath.
 | https://catalog.redhat.com/software/containers/ubi8/openjdk-11/5dd6a4b45a13461646f677f4
 
 | SDS-EXT-12
@@ -423,15 +423,15 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-14
 | Python
-| 3.8
+| 3.9
 | Interpreted high-level general-purpose programming language.
 | https://www.python.org
 
 | SDS-EXT-15
 | Tar
 | 1.30
-| Used to create nd extract archive files.
-| https://www.python.org
+| Used to create and extract archive files.
+| https://www.gnu.org/software/tar/
 
 | SDS-EXT-16
 | Node.js
@@ -488,6 +488,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.3
+| 2021-11-26
+| Gerard Castillo
+| Updated python.
 
 | 0.2
 | 2021-11-10
