@@ -46,11 +46,11 @@ Regarding the secrets, it is recommended to encrypt them at rest, therefore the 
 For this, you'll need to install `link:https://github.com/mozilla/sops[sops]` and `link:https://github.com/FiloSottile/age[age]` for en-/decryption of the `secrets.yaml` file.
 
 As described in the `sops` link:https://github.com/mozilla/sops#22encrypting-using-age[documentation], when decrypting
-using `age`, `sops` will look for a text file name `keys.txt` located in a `sops subdirectory` of your user
+using `age`, `sops` will look for a text file name `keys.txt` located in a `sops` subdirectory of your user
 configuration directory. On Linux, this would be `$XDG_CONFIG_HOME/sops/age/keys.txt` (if `$XDG_CONFIG_HOME` is not set,
 it is usually `$HOME/.config`). On macOS, this would be`$HOME/Library/Application Support/sops/age/keys.txt`. On Windows,
 this would be `%AppData%\sops\age\keys.txt`. You can specify the location of this file manually by setting the
-environment variable `SOPS_AGE_KEY_FILE`. We will refer to this user configuration directory as `<your_user_config_dir>`.
+environment variable `SOPS_AGE_KEY_FILE`. The following will refer to this user configuration directory as `<your_user_config_dir>`.
 
 Knowing this, we create a key pair for encryption by running:
 
@@ -64,13 +64,14 @@ This prints as a result the public key (alternatively you can find it in the `ke
 Public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
 ```
 
+The following will refer to this public key as `<your_age_public_key>`.
 Take the public key and use it to create an encrypted version of your `secrets.yaml`:
 
 ```
-sops --encrypt --age age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p chart/secrets.yaml > secrets.yaml
+sops --encrypt --age <your_age_public_key> chart/secrets.yaml > secrets.yaml
 ```
 
-You can edit the secrets with:
+Now you can edit the secrets with:
 ```
 helm secrets edit secrets.yaml
 ```
