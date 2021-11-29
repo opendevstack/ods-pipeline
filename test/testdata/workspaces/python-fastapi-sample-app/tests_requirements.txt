@@ -1,0 +1,7 @@
+-r ./requirements.txt
+
+mypy==0.910
+flake8==4.0.1
+pytest==6.2.5
+pytest-cov==3.0.0
+httpx==0.21.1
