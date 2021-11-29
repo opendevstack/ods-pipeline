@@ -19,8 +19,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-python",
 		map[string]tasktesting.TestCase{
-			"build python flask app": {
-				WorkspaceDirMapping: map[string]string{"source": "python-flask-sample-app"},
+			"build python fastapi app": {
+				WorkspaceDirMapping: map[string]string{"source": "python-fastapi-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
@@ -39,6 +39,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -62,18 +63,18 @@ func TestTaskODSBuildPython(t *testing.T) {
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
-			"build python flask app in subdirectory": {
+			"build python fastapi app in subdirectory": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup subdir in "monorepo"
-					subdir := "flask-src"
+					subdir := "fastapi-src"
 					err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
 					if err != nil {
 						t.Fatal(err)
 					}
 					err = directory.Copy(
-						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "python-flask-sample-app"),
+						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "python-fastapi-sample-app"),
 						filepath.Join(wsDir, subdir),
 					)
 					if err != nil {
@@ -89,7 +90,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
-					subdir := "flask-src"
+					subdir := "fastapi-src"
 					wantFiles := []string{
 						fmt.Sprintf("%s/docker/app/main.py", subdir),
 						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
@@ -97,6 +98,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.xml", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -108,8 +110,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
-			"build python flask app with pre-test script": {
-				WorkspaceDirMapping: map[string]string{"source": "python-flask-sample-app"},
+			"build python fastapi app with pre-test script": {
+				WorkspaceDirMapping: map[string]string{"source": "python-fastapi-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)

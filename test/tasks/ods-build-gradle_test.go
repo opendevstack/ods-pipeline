@@ -1,10 +1,11 @@
 package tasks
 
 import (
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
@@ -33,6 +34,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

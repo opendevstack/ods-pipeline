@@ -136,6 +136,14 @@ func sonarScan(
 		if err != nil {
 			return fmt.Errorf("quality gate could not be retrieved: %w", err)
 		}
+		err = pipelinectxt.WriteJsonArtifact(
+			qualityGateResult,
+			filepath.Join(opts.rootPath, pipelinectxt.SonarAnalysisPath),
+			fmt.Sprintf("%squality-gate.json", artifactPrefix),
+		)
+		if err != nil {
+			return fmt.Errorf("quality gate status could not be stored as an artifact: %w", err)
+		}
 		actualStatus := qualityGateResult.ProjectStatus.Status
 		if actualStatus != sonar.QualityGateStatusOk {
 			return fmt.Errorf(

@@ -146,12 +146,12 @@ test-pkg:
 
 ## Run testsuite of Tekton tasks.
 test-tasks:
-	go test -v -count=1 ./test/tasks/...
+	go test -v -count=1 -timeout $${ODS_TESTTIMEOUT:-30m} ./test/tasks/...
 .PHONY: test-tasks
 
 ## Run testsuite of end-to-end tasks.
 test-e2e:
-	go test -v -count=1 ./test/e2e/...
+	go test -v -count=1 $${ODS_TESTTIMEOUT:-10m} ./test/e2e/...
 .PHONY: test-e2e
 
 ## Clear temporary workspaces created in testruns.
@@ -159,10 +159,24 @@ clear-tmp-workspaces:
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
 
-## Build artifact-download binary.
-build-artifact-download:
-	cd cmd/artifact-download && CGO_ENABLED=0 go build -o ../../artifact-download
+## Build artifact-download binary for each supported OS/arch.
+build-artifact-download: build-artifact-download-linux build-artifact-download-darwin build-artifact-download-windows
 .PHONY: build-artifact-download
+
+## Build artifact-download Linux binary.
+build-artifact-download-linux:
+	cd cmd/artifact-download && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-linux-amd64
+.PHONY: build-artifact-download-linux
+
+## Build artifact-download macOS binary.
+build-artifact-download-darwin:
+	cd cmd/artifact-download && GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-darwin-amd64
+.PHONY: build-artifact-download-darwin
+
+## Build artifact-download Windows binary.
+build-artifact-download-windows:
+	cd cmd/artifact-download && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-windows-amd64.exe
+.PHONY: build-artifact-download-windows
 
 ### HELP
 ### Based on https://gist.github.com/prwhite/8168133#gistcomment-2278355.

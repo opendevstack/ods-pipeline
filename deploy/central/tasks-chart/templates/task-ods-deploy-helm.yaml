@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
-  name: ods-deploy-helm{{.Values.taskSuffix}}
+  name: '{{default "ods" .Values.taskPrefix}}-deploy-helm{{.Values.taskSuffix}}'
 spec:
   description: |
     Deploy Helm charts.

@@ -50,13 +50,14 @@ func parseTasks(taskNames []string) (map[string]*tekton.ClusterTask, error) {
 func adjustTasks(tasks map[string]*tekton.ClusterTask) {
 	for name, t := range tasks {
 		fmt.Printf("Adding sidecar to task %s ...\n", name)
-		nameParts := strings.Split(t.Name, "{{")
+		cleanName := strings.Replace(t.Name, "{{default \"ods\" .Values.taskPrefix}}", "ods", 1)
+		cleanName = strings.Replace(cleanName, "{{.Values.taskSuffix}}", "", 1)
 		t.Name = strings.Replace(t.Name, "{{.Values.taskSuffix}}", "-with-sidecar{{.Values.taskSuffix}}", 1)
 		t.Spec.Description = t.Spec.Description + `
 **Sidecar variant!** Use this task if you need to run a container next to the build task.
 For example, this could be used to run a database to allow for integration tests.
 The sidecar image to must be supplied via ` + "`sidecar-image`" + `.
-Apart from the sidecar, the task is an exact copy of ` + "`" + nameParts[0] + "`" + `.`
+Apart from the sidecar, the task is an exact copy of ` + "`" + cleanName + "`" + `.`
 		t.Spec.Params = append(t.Spec.Params, tekton.ParamSpec{
 			Name:        "sidecar-image",
 			Description: "Image to use for sidecar",
