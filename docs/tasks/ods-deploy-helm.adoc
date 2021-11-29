@@ -53,7 +53,7 @@ the subcomponents  for `qa`/`prod` instead of having those files in the subrepo.
 
 
 | release-name
-|
+| 
 | The Helm release name. If empty, the release name is simply the name of the chart.
 
 
@@ -63,10 +63,12 @@ the subcomponents  for `qa`/`prod` instead of having those files in the subrepo.
 If the secret exists, it is expected to have a field named `key.txt` with the age secret key in its content.
 
 
+
 | age-key-secret-path
 | /sops/age
 | Age key secret file path where `age-key-secret` secret will be mounted.
 Helm secrets will know `key.txt` file location via `SOPS_AGE_KEY_FILE` environment variable.
+
 
 |===
 
