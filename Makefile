@@ -126,7 +126,7 @@ docs:
 .PHONY: docs
 
 ## Run complete testsuite.
-test: test-internal test-pkg test-tasks
+test: test-cmd test-internal test-pkg test-tasks test-e2e
 .PHONY: test
 
 ## Run testsuite of cmd packages.
