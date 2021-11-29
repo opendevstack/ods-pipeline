@@ -24,9 +24,11 @@ make help
 
 As mentioned above, `make test` will run all tests. You may also run only a subset of tests:
 
+* `make test-cmd` for the packages under `cmd`
 * `make test-pkg` for the packages under `pkg`
 * `make test-internal` for the packages under `internal`
 * `make test-tasks` for the Tekton tasks
+* `make test-e2e` for the end-to-end tasks
 
 Individual task test can be executed like this:
 ```
