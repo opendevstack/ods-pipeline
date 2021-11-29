@@ -52,7 +52,7 @@ it is usually `$HOME/.config`). On macOS, this would be`$HOME/Library/Applicatio
 this would be `%AppData%\sops\age\keys.txt`. You can specify the location of this file manually by setting the
 environment variable `SOPS_AGE_KEY_FILE`. The following will refer to this user configuration directory as `<your_user_config_dir>`.
 
-Knowing this, we create a key pair for encryption by running:
+Knowing this, a key pair for encryption can be created by running:
 
 ```
 mkdir -p <your_user_config_dir>/sops/age
