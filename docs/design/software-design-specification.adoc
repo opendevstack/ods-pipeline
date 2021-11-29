@@ -280,7 +280,7 @@ Upgrades (or installs) a Helm chart.
 * The upgrade/install waits until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful.
 * Any values and secrets files corresponding to the environment and stage are respected (`values.yaml`, `secrets.yaml`, `values.<STAGE>.yaml`, `secrets.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`, `secrets.<ENVIRONMENT>.yaml`; in that order of specificity).
 * A values file containing the Git commit SHA is auto-generated and added to the Helm diff/upgrade invocation.
-* Any encrypted secrets files are decrypted on the fly, using the private key provided by the `Secret` identified by the `private-key-secret` parameter (defaulting to `helm-secrets-private-key`). The secret is expected to expose the private key under the `sops.asc` field.
+* Any encrypted secrets files are decrypted on the fly, using the age key provided by the `Secret` identified by the `age-key-secret` parameter (defaulting to `helm-secrets-age-key`). The secret is expected to expose the age key under the `key.txt` field.
 * The "app version" is set to the Git commit SHA and the "version" is set to given `version` if any, otherwise the chart version in `Chart.yaml`.
 * Charts in any of the respositories configured in `ods.y(a)ml` are packaged according to the same rules and added as subcharts.
 * The target namespace may also be external to the cluster in which the pipeline runs. The API server is identified by the `apiServer` field of the environment configuration, and the credential token of `apiCredentialsSecret` is used to authenticate.
@@ -294,11 +294,11 @@ Upgrades (or installs) a Helm chart.
 |===
 | SDS-INTERCEPTOR-1
 | `ods-pipeline` Service resource
-| Service (exposing a set of pods) for the wbhook interceptor
+| Service (exposing a set of pods) for the webhook interceptor
 
 | SDS-INTERCEPTOR-2
 | `ods-pipeline` Deployment resource
-| Deployment (providing declarative updates for pods and replica sets) for the wbhook interceptor. The container template references SDS-INTERCEPTOR-3.
+| Deployment (providing declarative updates for pods and replica sets) for the webhook interceptor. The container template references SDS-INTERCEPTOR-3.
 
 | SDS-INTERCEPTOR-3
 | `ods-webhook-interceptor` container image

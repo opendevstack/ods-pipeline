@@ -12,8 +12,9 @@ spec:
     Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is performed
     before an upgrade is attempted. `helm-secrets` can be used to encrypt sensitive
     values in the underlying Git repository. Secrets are decrypted on the fly if the secret
-    identified by the `private-key-secret` parameter exists and contains a private key
-    matching a fingerprint listed in `.sops.yaml`.
+    identified by the `age-key-secret` parameter exists, and contains an age secret key
+    which public key was used as one of the recipients to encrypt. The age-key file location
+    is known via `SOPS_AGE_KEY_FILE` environment variable (e.g.: `SOPS_AGE_KEY_FILE=/sops/age/keys.txt`)
 
     Based on the target environment, some values files are added automatically to the
     invocation of the `helm` command if they are present in the chart directory:
@@ -49,12 +50,18 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
-    - name: private-key-secret
+    - name: age-key-secret
       description: |
-        Name of the secret containing the PGP private key to use for helm-secrets.
-        If the secret exists, it is expected to have a field named `sops.asc` with the private key as its content.
+        Name of the secret containing the age key to use for helm-secrets.
+        If the secret exists, it is expected to have a field named `key.txt` with the age secret key in its content.
       type: string
-      default: 'helm-secrets-private-key'
+      default: 'helm-secrets-age-key'
+    - name: age-key-secret-path
+      description:  |
+        Age key secret file path where `age-key-secret` secret will be mounted.
+        Helm secrets will know `key.txt` file location via `SOPS_AGE_KEY_FILE` environment variable.
+      type: string
+      default: /sops/age
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
@@ -67,13 +74,21 @@ spec:
               name: ods-pipeline
         - name: HOME
           value: '/tekton/home'
+        - name: SOPS_AGE_KEY_FILE
+          value: '$(params.age-key-secret-path)/key.txt'
       resources: {}
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
           -release-name=$(params.release-name) \
-          -private-key-secret=$(params.private-key-secret)
       workingDir: $(workspaces.source.path)
+      volumeMounts:
+        - name: age-key-secret-volume
+          mountPath: $(params.age-key-secret-path)
   workspaces:
     - name: source
+  volumes:
+    - name: age-key-secret-volume
+      secret:
+        secretName: "$(params.age-key-secret)"
