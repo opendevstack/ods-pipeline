@@ -14,7 +14,7 @@ spec:
     values in the underlying Git repository. Secrets are decrypted on the fly if the secret
     identified by the `age-key-secret` parameter exists, and contains an age secret key
     which public key was used as one of the recipients to encrypt. The age-key file location
-    is known via `SOPS_AGE_KEY_FILE` environment variable (e.g.: `SOPS_AGE_KEY_FILE=/sops/age/keys.txt`)
+    is known via `SOPS_AGE_KEY_FILE` environment variable (e.g.: `SOPS_AGE_KEY_FILE=./key.txt`)
 
     Based on the target environment, some values files are added automatically to the
     invocation of the `helm` command if they are present in the chart directory:
@@ -56,12 +56,6 @@ spec:
         If the secret exists, it is expected to have a field named `key.txt` with the age secret key in its content.
       type: string
       default: 'helm-secrets-age-key'
-    - name: age-key-secret-path
-      description:  |
-        Age key secret file path where `age-key-secret` secret will be mounted.
-        Helm secrets will know `key.txt` file location via `SOPS_AGE_KEY_FILE` environment variable.
-      type: string
-      default: /sops/age
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
@@ -75,20 +69,14 @@ spec:
         - name: HOME
           value: '/tekton/home'
         - name: SOPS_AGE_KEY_FILE
-          value: '$(params.age-key-secret-path)/key.txt'
+          value: './key.txt'
       resources: {}
       script: |
         # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
           -release-name=$(params.release-name) \
+          -age-key-secret=$(params.age-key-secret)
       workingDir: $(workspaces.source.path)
-      volumeMounts:
-        - name: age-key-secret-volume
-          mountPath: $(params.age-key-secret-path)
   workspaces:
     - name: source
-  volumes:
-    - name: age-key-secret-volume
-      secret:
-        secretName: "$(params.age-key-secret)"

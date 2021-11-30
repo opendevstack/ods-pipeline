@@ -20,6 +20,7 @@ import (
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
@@ -49,6 +50,8 @@ Error: plugin "secrets" exited with error`
 type options struct {
 	chartDir             string
 	releaseName          string
+	ageKeySecret         string
+	ageKeySecretField    string
 	certDir              string
 	srcRegistryTLSVerify bool
 	debug                bool
@@ -58,6 +61,8 @@ func main() {
 	opts := options{}
 	flag.StringVar(&opts.chartDir, "chart-dir", "", "Chart dir")
 	flag.StringVar(&opts.releaseName, "release-name", "", "release-name")
+	flag.StringVar(&opts.ageKeySecret, "age-key-secret", "", "Name of the secret containing the age key to use for helm-secrets")
+	flag.StringVar(&opts.ageKeySecretField, "age-key-secret-field", "key.txt", "Name of the field in the secret holding the age private key")
 	flag.StringVar(&opts.certDir, "cert-dir", "/etc/containers/certs.d", "Use certificates at the specified path to access the registry")
 	flag.BoolVar(&opts.srcRegistryTLSVerify, "src-registry-tls-verify", true, "TLS verify source registry")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
@@ -335,7 +340,24 @@ func main() {
 		}
 	}
 
-	// TODO add a check for age-key-secret
+	if len(opts.ageKeySecret) == 0 {
+		fmt.Println("Skipping import of age key for helm-secrets as parameter is not set ...")
+	} else {
+		fmt.Println("Importing age key for helm-secrets ...")
+		secret, err := clientset.CoreV1().Secrets(ctxt.Namespace).Get(
+			context.TODO(), opts.ageKeySecret, metav1.GetOptions{},
+		)
+		if err != nil {
+			fmt.Printf("No secret %s found, skipping.\n", opts.ageKeySecret)
+		} else {
+			stderr, err = storeAgeKey(secret, opts.ageKeySecretField)
+			if err != nil {
+				fmt.Println(string(stderr))
+				log.Fatal(err)
+			}
+			fmt.Printf("Age key secret %s stored.\n", opts.ageKeySecret)
+		}
+	}
 
 	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
 	helmDiffArgs := []string{
@@ -450,6 +472,19 @@ func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv strin
 	}
 	f := artifactFilename(filename, chartDir, targetEnv) + ".txt"
 	return ioutil.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
+}
+
+func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []byte, err error) {
+	file, err := os.Create("./key.txt")
+	if err != nil {
+		return errBytes, err
+	}
+	defer file.Close()
+	_, err = file.Write(secret.Data[ageKeySecretField])
+	if err != nil {
+		return errBytes, err
+	}
+	return errBytes, err
 }
 
 func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (outBytes, errBytes []byte, err error) {
