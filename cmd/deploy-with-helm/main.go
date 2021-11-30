@@ -30,6 +30,7 @@ const (
 	tokenFile                   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	helmBin                     = "helm"
 	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
+	ageKeyFilePath              = "./key.txt"
 )
 
 // confusingHelmDiffMessage is the message Helm prints when helm-diff is
@@ -343,7 +344,7 @@ func main() {
 	if len(opts.ageKeySecret) == 0 {
 		fmt.Println("Skipping import of age key for helm-secrets as parameter is not set ...")
 	} else {
-		fmt.Println("Importing age key for helm-secrets ...")
+		fmt.Println("Storing age key for helm-secrets ...")
 		secret, err := clientset.CoreV1().Secrets(ctxt.Namespace).Get(
 			context.TODO(), opts.ageKeySecret, metav1.GetOptions{},
 		)
@@ -475,7 +476,7 @@ func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv strin
 }
 
 func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []byte, err error) {
-	file, err := os.Create("./key.txt")
+	file, err := os.Create(ageKeyFilePath)
 	if err != nil {
 		return errBytes, err
 	}
@@ -509,7 +510,9 @@ func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (ou
 		)
 	}
 	fmt.Println(helmBin, strings.Join(printableArgs, " "))
-	return command.Run(helmBin, args)
+
+	var extraEnvs = []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)}
+	return command.RunWithExtraEnvs(helmBin, args, extraEnvs)
 }
 
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
