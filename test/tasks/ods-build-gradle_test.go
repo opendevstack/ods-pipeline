@@ -23,7 +23,8 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						"sonar-quality-gate": "true",
 					}
 				},
-				WantRunSuccess: true,
+				RequiredServices: []string{"Bitbucket", "Nexus", "SonarQube"},
+				WantRunSuccess:   true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
