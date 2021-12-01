@@ -66,18 +66,27 @@ echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
 cp -r node_modules "${OUTPUT_DIR}/dist/node_modules"
 
 echo "Testing ..."
-npm run test
+if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+  echo "Test artifacts already present, skipping tests ..."
+  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
+  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml" clover.xml
+  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json" coverage-final.json
+  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
+else
+  npm run test
 
-mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-cat build/test-results/test/report.xml
-cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+  cat build/test-results/test/report.xml
+  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-cat build/coverage/clover.xml
-cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+  cat build/coverage/clover.xml
+  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-cat build/coverage/coverage-final.json
-cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+  cat build/coverage/coverage-final.json
+  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-cat build/coverage/lcov.info
-cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+  cat build/coverage/lcov.info
+  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+fi
