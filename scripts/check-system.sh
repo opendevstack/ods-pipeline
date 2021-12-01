@@ -5,12 +5,35 @@ set -ue
 
 ok="true"
 
-for exe in go docker jq kind kubectl helm; do
-    if ! which $exe &> /dev/null; then
-        ok="false"
-        echo "$exe is required"
-    fi
-done
+if ! which go &> /dev/null; then
+    ok="false"
+    echo "go is required. For documentation on how to install please visit https://go.dev/doc/install."
+fi
+
+if ! which docker &> /dev/null; then
+    ok="false"
+    echo "docker is required. For documentation on how to install please visit https://docs.docker.com/engine/install/."
+fi
+
+if ! which jq &> /dev/null; then
+    ok="false"
+    echo "jq is required. For documentation on how to install please visit https://stedolan.github.io/jq/download/."
+fi
+
+if ! which kind &> /dev/null; then
+    ok="false"
+    echo "kind is required. For documentation on how to install please visit https://kind.sigs.k8s.io/#installation-and-usage."
+fi
+
+if ! which kubectl &> /dev/null; then
+    ok="false"
+    echo "kubectl is required. For documentation on how to install please visit https://kubernetes.io/docs/tasks/tools/#kubectl."
+fi
+
+if ! which helm &> /dev/null; then
+    ok="false"
+    echo "helm is required. For documentation on how to install please visit https://helm.sh/docs/intro/install/."
+fi
 
 if which docker &> /dev/null; then
     docker_host_memory=$(docker info --format "{{.MemTotal}}")

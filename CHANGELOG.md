@@ -16,13 +16,16 @@ listed in the changelog.
 - Create SonarQube quality gate artifact ([#273](https://github.com/opendevstack/ods-pipeline/issues/273))
 - Make task prefix customizable ([#289](https://github.com/opendevstack/ods-pipeline/issues/289))
 - Provided make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
+- Add overridable test timeout to Makefile ([#284](https://github.com/opendevstack/ods-pipeline/issues/284))
 
 ### Changed
 
+- Changed encryption tool for helm secrets plugin from `gpg` to `age` ([#292](https://github.com/opendevstack/ods-pipeline/pull/292))
 - Automatically roll webhook interceptor deployment when related config map or secret changes ([#252](https://github.com/opendevstack/ods-pipeline/issues/252))
 - Hide confusing error message in Helm output ([#262](https://github.com/opendevstack/ods-pipeline/issues/262))
 - Update gcc (from 8.4 to 8.5), skopeo (from 1.3 to 1.4) and buildah (from 1.21 to 1.22) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
 - Iterating over Dockerfiles in build/package instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286))
+- Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
 
 ### Fixed
 
