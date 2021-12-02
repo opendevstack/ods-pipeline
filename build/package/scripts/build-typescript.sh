@@ -46,11 +46,11 @@ fi
 echo "Configuring npm to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
-if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
+if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
     npm config set registry=$NEXUS_URL/repository/npmjs/
     npm config set always-auth=true
-    npm config set _auth=$(echo -n $NEXUS_AUTH | base64)
+    npm config set _auth="$(echo -n "$NEXUS_AUTH" | base64)"
     npm config set email=no-reply@opendevstack.org
     npm config set ca=null
     npm config set strict-ssl=false

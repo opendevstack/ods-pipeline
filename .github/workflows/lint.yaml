@@ -1,4 +1,4 @@
-name: golangci-lint
+name: Lint
 
 on:
   push:
@@ -7,13 +7,18 @@ on:
   pull_request:
 
 jobs:
-  golangci:
-    name: lint
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.41.1
           args: --timeout=5m0s
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          ignore_paths: test/testdata/workspaces

@@ -54,15 +54,16 @@ fi
 echo "Configuring pip to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
-if [ ! -z ${NEXUS_HOST} ] && [ ! -z ${NEXUS_USERNAME} ] && [ ! -z ${NEXUS_PASSWORD} ]; then
+if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
-    NEXUS_URL_WITH_AUTH="$(echo "${NEXUS_URL}" | sed -E 's/:\/\//:\/\/'${NEXUS_AUTH}@'/g')"
-    pip3 config set global.index-url ${NEXUS_URL_WITH_AUTH}/repository/pypi-all/simple
-    pip3 config set global.trusted-host ${NEXUS_HOST}
+    NEXUS_URL_WITH_AUTH="$(echo "${NEXUS_URL}" | sed -E 's/:\/\//:\/\/'"${NEXUS_AUTH}"@'/g')"
+    pip3 config set global.index-url "${NEXUS_URL_WITH_AUTH}"/repository/pypi-all/simple
+    pip3 config set global.trusted-host "${NEXUS_HOST}"
     pip3 config set global.extra-index-url https://pypi.org/simple
 fi;
 
 echo "Installing test requirements ..."
+# shellcheck source=/dev/null
 . /opt/venv/bin/activate
 pip install --upgrade pip
 pip install -r tests_requirements.txt
@@ -74,7 +75,7 @@ flake8 --max-line-length="${MAX_LINE_LENGTH}" src
 
 if [ -n "${PRE_TEST_SCRIPT}" ]; then
   echo "Executing pre-test script ..."
-  ./${PRE_TEST_SCRIPT}
+  ./"${PRE_TEST_SCRIPT}"
 fi
 
 echo "Testing ..."

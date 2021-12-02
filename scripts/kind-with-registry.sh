@@ -62,8 +62,8 @@ running="$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null
 if [ "${running}" = 'true' ]; then
   reg_ip="$(docker inspect -f ${reg_ip_selector} "${REGISTRY_NAME}")"
   if [ "${reg_ip}" = '' ]; then
-    docker kill ${REGISTRY_NAME}
-    docker rm ${REGISTRY_NAME}
+    docker kill "${REGISTRY_NAME}"
+    docker rm "${REGISTRY_NAME}"
     running="false"
   fi
 fi
@@ -106,5 +106,5 @@ containerdConfigPatches:
 EOF
 
 for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
-  kubectl annotate node "${node}" tilt.dev/registry=localhost:${REGISTRY_PORT};
+  kubectl annotate node "${node}" tilt.dev/registry=localhost:"${REGISTRY_PORT}";
 done
