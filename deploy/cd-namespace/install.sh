@@ -35,7 +35,7 @@ esac; shift; done
 
 cd "${SCRIPT_DIR}"
 
-VALUES_FILES=$(echo $VALUES_FILE | tr "," "\n")
+VALUES_FILES=$(echo "$VALUES_FILE" | tr "," "\n")
 VALUES_ARGS=()
 for valueFile in ${VALUES_FILES}; do
     VALUES_ARGS+=(--values="${valueFile}")

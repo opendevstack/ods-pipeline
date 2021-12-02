@@ -48,7 +48,7 @@ echo "Configuring npm to use Nexus ..."
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
-    npm config set registry=$NEXUS_URL/repository/npmjs/
+    npm config set registry="$NEXUS_URL"/repository/npmjs/
     npm config set always-auth=true
     npm config set _auth="$(echo -n "$NEXUS_AUTH" | base64)"
     npm config set email=no-reply@opendevstack.org
