@@ -112,8 +112,11 @@ func getFileContentLean(filename string) (string, error) {
 	return contentStr, nil
 }
 
-func runTaskTestCases(t *testing.T, taskName string, testCases map[string]tasktesting.TestCase) {
+func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktesting.Service, testCases map[string]tasktesting.TestCase) {
 	tasktesting.CheckCluster(t, *outsideKindFlag)
+	if len(requiredServices) != 0 {
+		tasktesting.CheckServices(t, requiredServices)
+	}
 
 	c, ns := tasktesting.Setup(t,
 		tasktesting.SetupOpts{

@@ -26,6 +26,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 	var separateReleaseNamespace string
 	runTaskTestCases(t,
 		"ods-deploy-helm",
+		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
 			"should skip when no environment selected": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},

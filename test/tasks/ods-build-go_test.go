@@ -18,6 +18,11 @@ import (
 func TestTaskODSBuildGo(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-go",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+			tasktesting.SonarQube,
+		},
 		map[string]tasktesting.TestCase{
 			"build go app": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},

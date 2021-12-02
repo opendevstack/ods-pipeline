@@ -3,8 +3,6 @@ package tasktesting
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +36,6 @@ type TestCase struct {
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 	Timeout             time.Duration
-	RequiredServices    []string
 }
 
 type TaskRunContext struct {
@@ -56,27 +53,6 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	// Set default timeout for running the test
 	if testOpts.Timeout == 0 {
 		testOpts.Timeout = 120 * time.Second
-	}
-
-	if tc.RequiredServices != nil {
-		serviceToPortMapping := map[string]string{
-			"Bitbucket": "7990",
-			"Nexus":     "8081",
-			"SonarQube": "9000",
-		}
-		t.Logf("Trying to reach the required services...")
-		for _, service := range tc.RequiredServices {
-			if port, ok := serviceToPortMapping[service]; ok {
-				resp, err := http.Get(fmt.Sprintf("http://localhost:%s", port))
-				if err != nil {
-					t.Fatalf("%s needs to run for this test to be executable, but it could not be reached: %s", service, err)
-				}
-				t.Logf("%s reached successfully.", service)
-				defer resp.Body.Close()
-			} else {
-				t.Logf("Unknown Service specified: %s", service)
-			}
-		}
 	}
 
 	taskWorkspaces := map[string]string{}

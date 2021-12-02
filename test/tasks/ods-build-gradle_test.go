@@ -13,6 +13,11 @@ import (
 func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-gradle",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+			tasktesting.SonarQube,
+		},
 		map[string]tasktesting.TestCase{
 			"task should build gradle app": {
 				WorkspaceDirMapping: map[string]string{"source": "gradle-sample-app"},
@@ -23,8 +28,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						"sonar-quality-gate": "true",
 					}
 				},
-				RequiredServices: []string{"Bitbucket", "Nexus", "SonarQube"},
-				WantRunSuccess:   true,
+				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 

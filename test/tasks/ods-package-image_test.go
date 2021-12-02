@@ -14,6 +14,7 @@ import (
 func TestTaskODSPackageImage(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-package-image",
+		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
 			"task should build image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},

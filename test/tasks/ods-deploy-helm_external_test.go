@@ -50,6 +50,7 @@ func TestTaskODSDeployHelmExternal(t *testing.T) {
 	var imageStream string
 	runTaskTestCases(t,
 		"ods-deploy-helm",
+		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
 			"external deployment": {
 				Timeout:             10 * time.Minute,

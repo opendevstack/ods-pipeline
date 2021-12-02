@@ -20,6 +20,10 @@ func TestTaskODSStart(t *testing.T) {
 	var subrepoContext *pipelinectxt.ODSContext
 	runTaskTestCases(t,
 		"ods-start",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+		},
 		map[string]tasktesting.TestCase{
 			"clones repo": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
