@@ -30,7 +30,9 @@ const (
 	tokenFile                   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	helmBin                     = "helm"
 	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
-	ageKeyFilePath              = "./key.txt"
+	// file path where to internally store the age-key-secret openshift secret content,
+	// required by helm secrets plugin.
+	ageKeyFilePath = "./key.txt"
 )
 
 // confusingHelmDiffMessage is the message Helm prints when helm-diff is
