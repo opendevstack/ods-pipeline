@@ -48,8 +48,7 @@ RUN mkdir -p /tmp/sops \
 
 # Add age
 RUN go install filippo.io/age/cmd/...@v${AGE_VERSION} \
-    && age --version \
-    && age-keygen --version
+    && age --version
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
@@ -66,14 +65,12 @@ COPY --from=builder /usr/local/bin/deploy-with-helm /usr/local/bin/deploy-with-h
 COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=builder /usr/local/bin/sops /usr/local/bin/sops
 COPY --from=builder /usr/local/bin/age /usr/local/bin/age
-COPY --from=builder /usr/local/bin/age-keygen /usr/local/bin/age-keygen
 
 RUN mkdir -p $HELM_PLUGINS \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/databus23/helm-diff --version v${HELM_PLUGIN_DIFF_VERSION} \
     && HELM_DATA_HOME=${HELM_PLUGINS%/*} helm plugin install https://github.com/jkroepke/helm-secrets --version v${HELM_PLUGIN_SECRETS_VERSION} \
     && ls -lah $HELM_PLUGINS \
     && sops --version \
-    && age --version \
-    && age-keygen --version
+    && age --version
 
 USER 1001
