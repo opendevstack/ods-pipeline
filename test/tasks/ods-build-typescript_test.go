@@ -17,6 +17,11 @@ import (
 func TestTaskODSBuildTypescript(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-typescript",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+			tasktesting.SonarQube,
+		},
 		map[string]tasktesting.TestCase{
 			"build typescript app": {
 				Timeout:             20 * time.Minute,

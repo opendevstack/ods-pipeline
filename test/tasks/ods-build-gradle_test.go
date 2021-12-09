@@ -13,6 +13,11 @@ import (
 func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-gradle",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+			tasktesting.SonarQube,
+		},
 		map[string]tasktesting.TestCase{
 			"task should build gradle app": {
 				WorkspaceDirMapping: map[string]string{"source": "gradle-sample-app"},

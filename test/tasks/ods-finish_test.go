@@ -18,6 +18,10 @@ import (
 func TestTaskODSFinish(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-finish",
+		[]tasktesting.Service{
+			tasktesting.Bitbucket,
+			tasktesting.Nexus,
+		},
 		map[string]tasktesting.TestCase{
 			"set bitbucket build status to failed": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
