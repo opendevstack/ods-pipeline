@@ -23,7 +23,7 @@ n=0
 status="STARTING"
 set +e
 until [ $n -ge 30 ]; do
-    status=$(curl -s ${INSECURE} "${BITBUCKET_URL}/status" | jq -r .state)
+    status=$(curl -s "${INSECURE}" "${BITBUCKET_URL}/status" | jq -r .state)
     if [ "${status}" == "RUNNING" ]; then
         echo " success"
         break

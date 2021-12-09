@@ -33,28 +33,28 @@ while [[ "$#" -gt 0 ]]; do
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-cd ${SCRIPT_DIR}
+cd "${SCRIPT_DIR}"
 
-VALUES_FILES=$(echo $VALUES_FILE | tr "," "\n")
-VALUES_ARGS=""
+VALUES_FILES=$(echo "$VALUES_FILE" | tr "," "\n")
+VALUES_ARGS=()
 for valueFile in ${VALUES_FILES}; do
-    VALUES_ARGS="${VALUES_ARGS} --values=${valueFile}"
+    VALUES_ARGS+=(--values="${valueFile}")
 done
 
 if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-if kubectl -n ${NAMESPACE} get serviceaccount/${SERVICEACCOUNT} &> /dev/null; then
+if kubectl -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
     echo "Serviceaccount exists already ..."
 else
     echo "Creating serviceaccount ..."
     if [ "${DRY_RUN}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        kubectl -n ${NAMESPACE} create serviceaccount ${SERVICEACCOUNT}
+        kubectl -n "${NAMESPACE}" create serviceaccount "${SERVICEACCOUNT}"
 
-        kubectl -n ${NAMESPACE} \
+        kubectl -n "${NAMESPACE}" \
             create rolebinding "${SERVICEACCOUNT}-edit" \
             --clusterrole edit \
             --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
@@ -70,18 +70,18 @@ fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
-    if helm -n ${NAMESPACE} \
-            ${DIFF_UPGRADE_ARGS} --install --detailed-exitcode \
-            ${VALUES_ARGS} \
+    if helm -n "${NAMESPACE}" \
+            "${DIFF_UPGRADE_ARGS}" --install --detailed-exitcode \
+            "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."
     else
         if [ "${DRY_RUN}" == "true" ]; then
             echo "(skipping in dry-run)"
         else
-            helm -n ${NAMESPACE} \
-                ${UPGRADE_ARGS} --install \
-                ${VALUES_ARGS} \
+            helm -n "${NAMESPACE}" \
+                "${UPGRADE_ARGS}" --install \
+                "${VALUES_ARGS[@]}" \
                 ${RELEASE_NAME} ${CHART_DIR}
         fi
     fi
@@ -89,9 +89,9 @@ else
     if [ "${DRY_RUN}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        helm -n ${NAMESPACE} \
-            ${UPGRADE_ARGS} --install \
-            ${VALUES_ARGS} \
+        helm -n "${NAMESPACE}" \
+            "${UPGRADE_ARGS}" --install \
+            "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}
     fi
 fi
@@ -100,8 +100,8 @@ echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
 if [ "${DRY_RUN}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
-    kubectl -n ${NAMESPACE} \
-        patch sa ${SERVICEACCOUNT} \
+    kubectl -n "${NAMESPACE}" \
+        patch sa "${SERVICEACCOUNT}" \
         --type json \
         -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
 fi

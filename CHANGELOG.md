@@ -17,6 +17,7 @@ listed in the changelog.
 - Make task prefix customizable ([#289](https://github.com/opendevstack/ods-pipeline/issues/289))
 - Add overridable test timeout to Makefile ([#284](https://github.com/opendevstack/ods-pipeline/issues/284))
 - Skipping Tests in TypeScript build task if test artifacts are present already ([#238](https://github.com/opendevstack/ods-pipeline/issues/238))
+- Provided make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
 
 ### Changed
 
