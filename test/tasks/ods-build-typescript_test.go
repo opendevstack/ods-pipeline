@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +49,10 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						}
 					}
 
+					wantLogMsg := "No sonar-project.properties present, using default:"
+					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+					}
 				},
 			},
 			"build typescript app in subdirectory": {

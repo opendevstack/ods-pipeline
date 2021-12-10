@@ -256,6 +256,7 @@ Tasks above may refer to these shared requirements.
 a| The task shall analyze the source code statically using SonarQube.
 
 * The SQ project name shall be fixed by the task to avoid name clashes between projects.
+* Default `sonar-project.properties` shall be supplied if that file is not present in the repository.
 * Branch and pull request analysis shall be performed if the server edition supports it.
 * Report artifacts shall be generated unless the scan is against a pull request.
 * Optionally, it shall be checked if the Quality Gate passes. In this case, the quality gate status shall be stored as an artifact. If the gate fails, the task shall be terminated.
@@ -289,6 +290,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.3
+| 2021-11-24
+| Michael Sauter
+| Detailed requirement SRS-TASK-SHARED-1, specifying default SQ properties.
 
 | 0.2
 | 2021-11-23

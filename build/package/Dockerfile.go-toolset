@@ -28,6 +28,11 @@ RUN chmod g+w /go
 
 # Add scripts
 COPY build/package/scripts/build-go.sh /usr/local/bin/build-go
-RUN chmod +x /usr/local/bin/build-go
+COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
+RUN chmod +x /usr/local/bin/build-go && \
+    chmod +x /usr/local/bin/supply-sonar-project-properties-default
+
+# Add sonar-project.properties
+COPY build/package/sonar-project.properties.d/go.properties /usr/local/default-sonar-project.properties
 
 WORKDIR /go
