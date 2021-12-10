@@ -212,14 +212,6 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 			log.Printf("Skip adding nexus build args: could not get host in nexus url (%s)", opts.nexusURL)
 			return args
 		}
-		nexusArgs := []string{
-			fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", opts.nexusURL),
-			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", opts.nexusUsername),
-			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", opts.nexusPassword),
-			fmt.Sprintf("--build-arg=nexusHost=\"%s\"", nexusUrl.Host),
-		}
-		args = append(args, nexusArgs...)
-
 		if opts.nexusUsername != "" {
 			if opts.nexusPassword == "" {
 				nexusUrl.User = url.User(opts.nexusUsername)
@@ -227,7 +219,24 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 				nexusUrl.User = url.UserPassword(opts.nexusUsername, opts.nexusPassword)
 			}
 		}
-		nexusAuth := nexusUrl.User.String()
+		nexusAuth := nexusUrl.User.String() // this is encoded as needed.
+		a := strings.SplitN(nexusAuth, ":", 2)
+		un_esc := ""
+		pw_esc := ""
+		if len(a) > 0 {
+			un_esc = a[0]
+		}
+		if len(a) > 1 {
+			pw_esc = a[1]
+		}
+		nexusArgs := []string{
+			fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", opts.nexusURL),
+			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", un_esc),
+			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", pw_esc),
+			fmt.Sprintf("--build-arg=nexusHost=\"%s\"", nexusUrl.Host),
+		}
+		args = append(args, nexusArgs...)
+
 		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=\"%s\"", nexusAuth))
 		if nexusAuth != "" {
 			args = append(args,
@@ -238,6 +247,10 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 		}
 	}
 	return args
+}
+
+func urlEncode(s string) string {
+	return url.QueryEscape(s)
 }
 
 // buildahBuild builds a local image using the Dockerfile and context directory

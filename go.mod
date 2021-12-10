@@ -7,6 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.5
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
+	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/tektoncd/pipeline v0.24.0
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
