@@ -3,9 +3,16 @@ package interceptor
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/testfile"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"sigs.k8s.io/yaml"
@@ -160,5 +167,74 @@ func TestSelectEnvironmentFromMapping(t *testing.T) {
 func fatalIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+type mockClient struct {
+}
+
+func (c *mockClient) GetPipelineResourceVersion(name string) (int, error) {
+	return 200, nil
+}
+func (c *mockClient) ApplyPipeline(pipelineBody []byte, data PipelineData) (int, error) {
+	return 200, nil
+}
+
+func testServer() (*httptest.Server, *mockClient) {
+	mc := &mockClient{}
+	server := NewServer(mc, ServerConfig{
+		Namespace: "bar-cd",
+		Project:   "bar",
+		Token:     "",
+		TaskKind:  "ClusterTask",
+		RepoBase:  "https://domain.com",
+	})
+	return httptest.NewServer(http.HandlerFunc(server.HandleRoot)), mc
+}
+
+func TestServer(t *testing.T) {
+	ts, _ := testServer()
+	defer ts.Close()
+
+	tests := []struct {
+		requestBodyFixture string
+		wantStatus         int
+		wantBody           string
+	}{
+		{
+			requestBodyFixture: "interceptor/payload-unknown-event.json",
+			wantStatus:         http.StatusBadRequest,
+			wantBody:           "Unsupported event key: repo:ref_changed",
+		},
+		{
+			requestBodyFixture: "interceptor/payload-tag.json",
+			wantStatus:         http.StatusTeapot,
+			wantBody:           "Skipping change ref type TAG, only BRANCH is supported",
+		},
+	}
+	for i, tc := range tests {
+		t.Run(fmt.Sprintf("mapping #%d", i), func(t *testing.T) {
+			filename := filepath.Join(projectpath.Root, "test/testdata/fixtures", tc.requestBodyFixture)
+			f, err := os.Open(filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res, err := http.Post(ts.URL, "application/json", f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			gotStatus := res.StatusCode
+			if tc.wantStatus != gotStatus {
+				t.Fatalf("Got status: %v, want: %v", gotStatus, tc.wantStatus)
+			}
+			gotBodyBytes, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			gotBody := strings.TrimSpace(string(gotBodyBytes))
+			if tc.wantBody != gotBody {
+				t.Fatalf("Got body: %v, want: %v", gotBody, tc.wantBody)
+			}
+		})
 	}
 }

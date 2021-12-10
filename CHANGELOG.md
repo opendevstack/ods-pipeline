@@ -37,6 +37,7 @@ listed in the changelog.
 - `ods-finish` does not upload artifacts of subrepos ([#257](https://github.com/opendevstack/ods-pipeline/issues/257))
 - Waitfor-...sh scripts are not waiting for the expected 5 minutes ([#280](https://github.com/opendevstack/ods-pipeline/issues/280))
 - Specifying images to be build and pushed is not working anymore due to changes made in [#287](https://github.com/opendevstack/ods-pipeline/pull/287) ([#299](https://github.com/opendevstack/ods-pipeline/issues/299))
+- Tagging in ods-start causes second pipeline run ([#331](https://github.com/opendevstack/ods-pipeline/issues/331))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
