@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -125,13 +127,20 @@ func TestSonarScan(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			tempDir, err := ioutil.TempDir(".", "test-cmd-sonar-")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.RemoveAll(tempDir)
 			opts := options{
 				sonarEdition: tc.optSonarEdition,
 				qualityGate:  tc.optQualityGate,
+				workingDir:   ".",
+				rootPath:     tempDir,
 			}
 			ctxt := &pipelinectxt.ODSContext{PullRequestKey: tc.ctxtPrKey, PullRequestBase: tc.ctxtPrBase}
 			sonarClient := &fakeClient{passQualityGate: tc.passQualityGate}
-			err := sonarScan(logger, opts, ctxt, sonarClient)
+			err = sonarScan(logger, opts, ctxt, sonarClient)
 			if err != nil {
 				if tc.wantErr == "" || !strings.Contains(err.Error(), tc.wantErr) {
 					t.Fatalf("want err to contain: %s, got err: %s", tc.wantErr, err)

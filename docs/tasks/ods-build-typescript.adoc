@@ -14,6 +14,8 @@ The following steps are executed:
 All reports (xUnit report, coverage report and linting report) are placed into .ods/artifacts.
 
 After tests ran successfully, the application source code is scanned by SonarQube.
+Default SonarQube project properties are provided unless `sonar-project.properties`
+is present.
 When `sonar-quality-gate` is set to `true`, the task will fail if the quality gate
 is not passed. If SonarQube is not desired, it can be disabled via `sonar-skip`.
 The SonarQube scan will include parameters to perform a pull request analysis if

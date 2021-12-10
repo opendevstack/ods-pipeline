@@ -238,15 +238,6 @@ func buildahPush(opts options, workingDir, imageRef string) ([]byte, []byte, err
 	return command.Run("buildah", append(args, imageRef, fmt.Sprintf("docker://%s", imageRef)))
 }
 
-// buildahPush pushes a local image to the given imageName.
-// func buildahOCIArchive(opts options, workingDir, imageName string) ([]byte, []byte, error) {
-// 	return command.Run("buildah", []string{
-// 		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
-// 		"push",
-// 		imageName, fmt.Sprintf("oci-archive:/%s:%s", filepath.Join(workingDir, "image.tar"), imageName),
-// 	})
-// }
-
 // aquaScan runs an Aqua scan on given image.
 func aquaScan(opts options, image, htmlReportFile, jsonReportFile string) ([]byte, []byte, error) {
 	return command.Run(aquasecBin, []string{
@@ -262,18 +253,6 @@ func aquaScan(opts options, image, htmlReportFile, jsonReportFile string) ([]byt
 		fmt.Sprintf("--registry=%s", opts.aquaRegistry),
 	})
 }
-
-// aquaImport runs an Aqua scan on given imageRef.
-// func aquaImport(opts options, workingDir, jsonReportFile string) ([]byte, []byte, error) {
-// 	return command.Run(aquasecBin, []string{
-// 		"import",
-// 		fmt.Sprintf("--user=%s", opts.aquaUsername),
-// 		fmt.Sprintf("--password=%s", opts.aquaPassword),
-// 		fmt.Sprintf("--host=%s", opts.aquaURL),
-// 		jsonReportFile,
-// 		"-w", "/tmp",
-// 	})
-// }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
 func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {

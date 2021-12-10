@@ -2,13 +2,20 @@
 
 = ods-package-image
 
-Packages applications into container images using buildah.
+Packages applications into container images using
+link:https://buildah.io[buildah].
 
 buildah builds a container image from the `docker-dir` directory using the
 provided `dockerfile`.
 
 By default, the image is named after the component and pushed into the image
 stream located in the namespace of the pipeline run.
+
+If link:https://www.aquasec.com/products/container-security/[Aqua security scanning]
+is enabled in the cluster, images are scanned and registered in Aqua after
+they are pushed to the image stream. JSON and HTML report artifacts are
+generated. Further, if there is an open pull request on Bitbucket for the
+built branch, a code insight report is attached to the Git commit.
 
 
 == Parameters

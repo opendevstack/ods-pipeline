@@ -23,6 +23,11 @@ RUN python3 -m venv /opt/venv && \
 
 # Add scripts
 COPY build/package/scripts/build-python.sh /usr/local/bin/build-python
-RUN chmod +x /usr/local/bin/build-python
+COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
+RUN chmod +x /usr/local/bin/build-python && \
+    chmod +x /usr/local/bin/supply-sonar-project-properties-default
+
+# Add sonar-project.properties
+COPY build/package/sonar-project.properties.d/python.properties /usr/local/default-sonar-project.properties
 
 USER 1001

@@ -71,6 +71,12 @@ Take the public key and use it to create an encrypted version of your `secrets.y
 sops --encrypt --age <your_age_public_key> chart/secrets.yaml > secrets.yaml
 ```
 
+NOTE: you can add multiple recipients (e.g.: each team member has its own age key) comma-separated:
+
+```
+sops --encrypt --age <your_age_public_key>,<another_age_public_key> chart/secrets.yaml > secrets.yaml
+```
+
 Now you can edit the secrets with:
 ```
 helm secrets edit secrets.yaml

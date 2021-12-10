@@ -18,6 +18,7 @@ listed in the changelog.
 - Add overridable test timeout to Makefile ([#284](https://github.com/opendevstack/ods-pipeline/issues/284))
 - Skipping Tests in TypeScript build task if test artifacts are present already ([#238](https://github.com/opendevstack/ods-pipeline/issues/238))
 - Provided make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
+- Supply default `sonar-project.properties` when none is present, configuring SonarQube out-of-the-box ([#296](https://github.com/opendevstack/ods-pipeline/issues/296))
 - Linting stage in TypeScript build task ([#325](https://github.com/opendevstack/ods-pipeline/issues/325))
 
 ### Changed
@@ -28,6 +29,7 @@ listed in the changelog.
 - Update gcc (from 8.4 to 8.5), skopeo (from 1.3 to 1.4) and buildah (from 1.21 to 1.22) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
 - Iterating over Dockerfiles in build/package instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286))
 - Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
+- Helm secrets use age instead of pgp ([#293](https://github.com/opendevstack/ods-pipeline/issues/293))
 
 ### Fixed
 

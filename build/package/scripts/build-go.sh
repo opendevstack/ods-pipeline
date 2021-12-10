@@ -124,3 +124,5 @@ fi
 
 echo "Building ..."
 go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"
+
+supply-sonar-project-properties-default

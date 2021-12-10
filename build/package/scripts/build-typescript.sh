@@ -112,3 +112,5 @@ else
   cat build/coverage/lcov.info
   cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 fi
+
+supply-sonar-project-properties-default

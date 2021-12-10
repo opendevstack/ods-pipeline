@@ -17,7 +17,6 @@ Let's start by looking at the repository in detail. A few files are of special i
 
 * `Jenkinsfile`: describes the Jenkins pipeline to run
 * `docker/Dockerfile`: describes the container image to build
-* `sonar-project.properties`: defines SonarQube properties for the scanner
 
 You will need to replace the `Jenkinsfile` with an `ods.yaml` file. The `Jenkinsfile` defines which branches are mapped to which environment and uses stages provided by the link:https://github.com/opendevstack/ods-jenkins-shared-library[ODS Jenkins Shared Library] as well as custom Go tool instructions to build and deploy your application. The file might look like this:
 
@@ -132,7 +131,7 @@ pipeline:
       workspace: shared-workspace
 ----
 
-What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-1-1` task. The task continues to use the existing `sonar-project.properties`, which does not need to be modified. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
+What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-1-1` task. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
 
 Building the container image is now done in `ods-package-image-v0-1-1` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:tasks/ods-build-go.adoc[`ods-build-go` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
 
@@ -200,24 +199,6 @@ COPY app app
 EXPOSE 8080
 
 CMD ["./app"]
-----
-
-Then, create a `sonar-project.properties` file to configure the SonarQube scanner:
-
-.sonar-project.properties
-[source]
-----
-# Comma-separated paths to directories with sources (required)
-sonar.sources=.
-sonar.exclusions=**/*_test.go,**/vendor/**
-
-sonar.tests=.
-sonar.test.inclusions=**/*_test.go
-sonar.test.exclusions=**/vendor/**
-
-# Encoding of the source files (optional but recommended as default is ASCII)
-sonar.sourceEncoding=UTF-8
-sonar.go.coverage.reportPaths=coverage.out
 ----
 
 The `ods-deploy-helm-v0-1-1` requires a Helm chart to be present to deploy the Kubernetes resources for the application. Add it as described below in the <<helm-chart,Helm Chart>> section.

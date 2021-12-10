@@ -72,11 +72,11 @@ if [ "${VERBOSE}" == "true" ]; then
     set -x
 fi
 
-DIFF_UPGRADE_ARGS=("diff upgrade")
-UPGRADE_ARGS=("upgrade")
+DIFF_UPGRADE_ARGS=(diff upgrade)
+UPGRADE_ARGS=(upgrade)
 if helm plugin list | grep secrets &> /dev/null; then
-    DIFF_UPGRADE_ARGS=("secrets diff upgrade")
-    UPGRADE_ARGS=("secrets upgrade")
+    DIFF_UPGRADE_ARGS=(secrets diff upgrade)
+    UPGRADE_ARGS=(secrets upgrade)
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."
