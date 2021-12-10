@@ -61,13 +61,12 @@ func TestNexusBuildArgs(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			args := make([]string, 10)
 			opts := options{
 				nexusURL:      tc.nexusUrl,
 				nexusUsername: tc.nexusUsername,
 				nexusPassword: tc.nexusPassword,
 			}
-			args = addNexusBuildArgs([]string{}, opts)
+			args := addNexusBuildArgs([]string{}, opts)
 			expected := []string{
 				fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", tc.nexusUrl),
 				fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", tc.baNexusUsername),

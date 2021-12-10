@@ -249,10 +249,6 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 	return args
 }
 
-func urlEncode(s string) string {
-	return url.QueryEscape(s)
-}
-
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
