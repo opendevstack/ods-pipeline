@@ -95,6 +95,21 @@ spec:
             secretKeyRef:
               key: password
               name: ods-aqua-auth
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
         - name: DEBUG
           valueFrom:
             configMapKeyRef:
@@ -113,6 +128,7 @@ spec:
           -context-dir=$(params.docker-dir) \
           -buildah-build-extra-args=$(params.buildah-build-extra-args) \
           -buildah-push-extra-args=$(params.buildah-push-extra-args) \
+          -
           -aqua-gate=$(params.aqua-gate)
       volumeMounts:
         - mountPath: /var/lib/containers
