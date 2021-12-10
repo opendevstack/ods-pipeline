@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -31,6 +30,9 @@ const (
 	tokenFile                   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	helmBin                     = "helm"
 	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
+	// file path where to internally store the age-key-secret openshift secret content,
+	// required by helm secrets plugin.
+	ageKeyFilePath = "./key.txt"
 )
 
 // confusingHelmDiffMessage is the message Helm prints when helm-diff is
@@ -49,21 +51,21 @@ Error: plugin "diff" exited with error
 Error: plugin "secrets" exited with error`
 
 type options struct {
-	chartDir              string
-	releaseName           string
-	privateKeySecret      string
-	privateKeySecretField string
-	certDir               string
-	srcRegistryTLSVerify  bool
-	debug                 bool
+	chartDir             string
+	releaseName          string
+	ageKeySecret         string
+	ageKeySecretField    string
+	certDir              string
+	srcRegistryTLSVerify bool
+	debug                bool
 }
 
 func main() {
 	opts := options{}
 	flag.StringVar(&opts.chartDir, "chart-dir", "", "Chart dir")
 	flag.StringVar(&opts.releaseName, "release-name", "", "release-name")
-	flag.StringVar(&opts.privateKeySecret, "private-key-secret", "", "Name of the secret containing the PGP private key to use for helm-secrets")
-	flag.StringVar(&opts.privateKeySecretField, "private-key-secret-field", "sops.asc", "Name of the field in the secret holding the private key")
+	flag.StringVar(&opts.ageKeySecret, "age-key-secret", "", "Name of the secret containing the age key to use for helm-secrets")
+	flag.StringVar(&opts.ageKeySecretField, "age-key-secret-field", "key.txt", "Name of the field in the secret holding the age private key")
 	flag.StringVar(&opts.certDir, "cert-dir", "/etc/containers/certs.d", "Use certificates at the specified path to access the registry")
 	flag.BoolVar(&opts.srcRegistryTLSVerify, "src-registry-tls-verify", true, "TLS verify source registry")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
@@ -341,22 +343,22 @@ func main() {
 		}
 	}
 
-	if len(opts.privateKeySecret) == 0 {
-		fmt.Println("Skipping import of private key for helm-secrets as parameter is not set ...")
+	if len(opts.ageKeySecret) == 0 {
+		fmt.Println("Skipping import of age key for helm-secrets as parameter is not set ...")
 	} else {
-		fmt.Println("Importing private key for helm-secrets ...")
+		fmt.Println("Storing age key for helm-secrets ...")
 		secret, err := clientset.CoreV1().Secrets(ctxt.Namespace).Get(
-			context.TODO(), opts.privateKeySecret, metav1.GetOptions{},
+			context.TODO(), opts.ageKeySecret, metav1.GetOptions{},
 		)
 		if err != nil {
-			fmt.Printf("No secret %s found, skipping.\n", opts.privateKeySecret)
+			fmt.Printf("No secret %s found, skipping.\n", opts.ageKeySecret)
 		} else {
-			stdout, stderr, err = importPrivateKey(secret, opts.privateKeySecretField)
+			stderr, err = storeAgeKey(secret, opts.ageKeySecretField)
 			if err != nil {
 				fmt.Println(string(stderr))
 				log.Fatal(err)
 			}
-			fmt.Println(string(stdout))
+			fmt.Printf("Age key secret %s stored.\n", opts.ageKeySecret)
 		}
 	}
 
@@ -475,20 +477,17 @@ func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv strin
 	return ioutil.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
 }
 
-func importPrivateKey(secret *corev1.Secret, privateKeySecretField string) (outBytes, errBytes []byte, err error) {
-	gpgImport := exec.Command("gpg", "--import")
-	var stdout, stderr, stdin bytes.Buffer
-	_, err = stdin.Write(secret.Data[privateKeySecretField])
+func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []byte, err error) {
+	file, err := os.Create(ageKeyFilePath)
 	if err != nil {
-		return outBytes, errBytes, err
+		return errBytes, err
 	}
-	gpgImport.Stdout = &stdout
-	gpgImport.Stdin = &stdin
-	gpgImport.Stderr = &stderr
-	err = gpgImport.Run()
-	outBytes = stdout.Bytes()
-	errBytes = stderr.Bytes()
-	return outBytes, errBytes, err
+	defer file.Close()
+	_, err = file.Write(secret.Data[ageKeySecretField])
+	if err != nil {
+		return errBytes, err
+	}
+	return errBytes, err
 }
 
 func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (outBytes, errBytes []byte, err error) {
@@ -513,7 +512,9 @@ func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (ou
 		)
 	}
 	fmt.Println(helmBin, strings.Join(printableArgs, " "))
-	return command.Run(helmBin, args)
+
+	var extraEnvs = []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)}
+	return command.RunWithExtraEnvs(helmBin, args, extraEnvs)
 }
 
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {

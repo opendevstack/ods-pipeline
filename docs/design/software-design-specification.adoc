@@ -260,7 +260,7 @@ If the Aqua scanner is installed in the base image, the  pushed image shall be s
 
 | SDS-TASK-23
 | `ods-helm` contaner image
-| Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21 and SDS-TASK-24.
+| Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21, SDS-EXT-23, SDS-EXT-24 and SDS-TASK-24.
 
 | SDS-TASK-24
 | `deploy-with-helm` binary
@@ -280,7 +280,7 @@ Upgrades (or installs) a Helm chart.
 * The upgrade/install waits until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful.
 * Any values and secrets files corresponding to the environment and stage are respected (`values.yaml`, `secrets.yaml`, `values.<STAGE>.yaml`, `secrets.<STAGE>.yaml`, `values.<ENVIRONMENT>.yaml`, `secrets.<ENVIRONMENT>.yaml`; in that order of specificity).
 * A values file containing the Git commit SHA is auto-generated and added to the Helm diff/upgrade invocation.
-* Any encrypted secrets files are decrypted on the fly, using the private key provided by the `Secret` identified by the `private-key-secret` parameter (defaulting to `helm-secrets-private-key`). The secret is expected to expose the private key under the `sops.asc` field.
+* Any encrypted secrets files are decrypted on the fly, using the age key provided by the `Secret` identified by the `age-key-secret` parameter (defaulting to `helm-secrets-age-key`). The secret is expected to expose the age key under the `key.txt` field.
 * The "app version" is set to the Git commit SHA and the "version" is set to given `version` if any, otherwise the chart version in `Chart.yaml`.
 * Charts in any of the respositories configured in `ods.y(a)ml` are packaged according to the same rules and added as subcharts.
 * The target namespace may also be external to the cluster in which the pipeline runs. The API server is identified by the `apiServer` field of the environment configuration, and the credential token of `apiCredentialsSecret` is used to authenticate.
@@ -294,11 +294,11 @@ Upgrades (or installs) a Helm chart.
 |===
 | SDS-INTERCEPTOR-1
 | `ods-pipeline` Service resource
-| Service (exposing a set of pods) for the wbhook interceptor
+| Service (exposing a set of pods) for the webhook interceptor
 
 | SDS-INTERCEPTOR-2
 | `ods-pipeline` Deployment resource
-| Deployment (providing declarative updates for pods and replica sets) for the wbhook interceptor. The container template references SDS-INTERCEPTOR-3.
+| Deployment (providing declarative updates for pods and replica sets) for the webhook interceptor. The container template references SDS-INTERCEPTOR-3.
 
 | SDS-INTERCEPTOR-3
 | `ods-webhook-interceptor` container image
@@ -465,7 +465,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-21
 | Helm Secrets plugin
-| 3.5
+| 3.10
 | Manages secrets with Git workflow.
 | https://github.com/jkroepke/helm-secrets
 
@@ -474,6 +474,18 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 0.24
 | Cloud-native Pipeline resource.
 | https://github.com/tektoncd/pipeline
+
+| SDS-EXT-23
+| Sops
+| 3.7
+| Encrypted files management tool.
+| https://github.com/mozilla/sops
+
+| SDS-EXT-24
+| Age
+| 1.0
+| File encryption tool, format and Go library with small explicit keys.
+| https://github.com/FiloSottile/age
 
 |===
 
@@ -488,6 +500,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.4
+| 2021-12-09
+| Gerard Castillo
+| Add Sops and Age, and updated Helm Secrets plugin.
 
 | 0.3
 | 2021-11-26

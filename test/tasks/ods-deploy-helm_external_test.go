@@ -1,3 +1,4 @@
+//go:build external
 // +build external
 
 package tasks

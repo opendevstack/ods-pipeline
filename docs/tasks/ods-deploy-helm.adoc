@@ -10,8 +10,8 @@ OpenShift cluster using Helm.
 Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is performed
 before an upgrade is attempted. `helm-secrets` can be used to encrypt sensitive
 values in the underlying Git repository. Secrets are decrypted on the fly if the secret
-identified by the `private-key-secret` parameter exists and contains a private key
-matching a fingerprint listed in `.sops.yaml`.
+identified by the `age-key-secret` parameter exists, and contains an age secret key
+which public key was used as one of the recipients to encrypt.
 
 Based on the target environment, some values files are added automatically to the
 invocation of the `helm` command if they are present in the chart directory:
@@ -56,10 +56,10 @@ the subcomponents  for `qa`/`prod` instead of having those files in the subrepo.
 | The Helm release name. If empty, the release name is simply the name of the chart.
 
 
-| private-key-secret
-| helm-secrets-private-key
-| Name of the secret containing the PGP private key to use for helm-secrets.
-If the secret exists, it is expected to have a field named `sops.asc` with the private key as its content.
+| age-key-secret
+| helm-secrets-age-key
+| Name of the secret containing the age key to use for helm-secrets.
+If the secret exists, it is expected to have a field named `key.txt` with the age secret key in its content.
 
 
 |===
