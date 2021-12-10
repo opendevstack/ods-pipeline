@@ -13,6 +13,12 @@ urlencode() {
     done
 }
 
+copyLintReport() {
+  cat eslint-report.txt
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
+  cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+}
+
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
@@ -56,8 +62,24 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
     npm config set strict-ssl=false
 fi;
 
-echo "Building ..."
+echo "Installing dependencies..."
 npm ci
+
+echo "Linting..."
+set +e
+npm run lint > eslint-report.txt
+exitcode=$?
+set -e
+
+if [ $exitcode == 0 ]; then
+  echo "No linting issues inside workspace" > eslint-report.txt
+  copyLintReport
+else
+  copyLintReport
+  exit $exitcode
+fi
+
+echo "Building ..."
 npm run build
 mkdir -p "${OUTPUT_DIR}/dist"
 cp -r dist "${OUTPUT_DIR}/dist"
