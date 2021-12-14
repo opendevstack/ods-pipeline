@@ -200,17 +200,19 @@ func main() {
 	}
 }
 
-func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
+// nexusBuildArgs computes --build-arg parameters so that the Dockerfile
+// can access nexus as determined by the options nexus related
+// parameters.
+func nexusBuildArgs(opts options) ([]string, error) {
+	args := []string{}
 	// log.Printf("nexusURL: %s", opts.nexusURL)
 	if strings.TrimSpace(opts.nexusURL) != "" {
 		nexusUrl, err := url.Parse(opts.nexusURL)
 		if err != nil {
-			log.Printf("Skip adding nexus build args: could not parse nexus url (%s): %s", opts.nexusURL, err)
-			return args
+			return nil, fmt.Errorf("could not parse nexus url (%s): %w", opts.nexusURL, err)
 		}
 		if nexusUrl.Host == "" {
-			log.Printf("Skip adding nexus build args: could not get host in nexus url (%s)", opts.nexusURL)
-			return args
+			return nil, fmt.Errorf("could not get host in nexus url (%s)", opts.nexusURL)
 		}
 		if opts.nexusUsername != "" {
 			if opts.nexusPassword == "" {
@@ -221,18 +223,18 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 		}
 		nexusAuth := nexusUrl.User.String() // this is encoded as needed.
 		a := strings.SplitN(nexusAuth, ":", 2)
-		un_esc := ""
-		pw_esc := ""
+		unEscaped := ""
+		pwEscaped := ""
 		if len(a) > 0 {
-			un_esc = a[0]
+			unEscaped = a[0]
 		}
 		if len(a) > 1 {
-			pw_esc = a[1]
+			pwEscaped = a[1]
 		}
 		nexusArgs := []string{
 			fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", opts.nexusURL),
-			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", un_esc),
-			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", pw_esc),
+			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", unEscaped),
+			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", pwEscaped),
 			fmt.Sprintf("--build-arg=nexusHost=\"%s\"", nexusUrl.Host),
 		}
 		args = append(args, nexusArgs...)
@@ -246,7 +248,7 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 				fmt.Sprintf("--build-arg=nexusUrlWithAuth=\"%s\"", opts.nexusURL))
 		}
 	}
-	return args
+	return args, nil
 }
 
 // buildahBuild builds a local image using the Dockerfile and context directory
@@ -254,7 +256,7 @@ func addNexusBuildArgs(args []string, opts options) (ret_args []string) {
 func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
 	if err != nil {
-		log.Printf("could not parse extra args (%s): %s", opts.buildahBuildExtraArgs, err)
+		return nil, nil, fmt.Errorf("could not parse extra args (%s): %w", opts.buildahBuildExtraArgs, err)
 	}
 
 	args := []string{
@@ -268,7 +270,12 @@ func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 		fmt.Sprintf("--tag=%s", tag),
 	}
 	args = append(args, extraArgs...)
-	args = addNexusBuildArgs(args, opts)
+	nexusArgs, err := nexusBuildArgs(opts)
+	if err != nil {
+		return nil, nil, fmt.Errorf(
+			"could not add nexus build args: %w", err)
+	}
+	args = append(args, nexusArgs...)
 
 	if opts.debug {
 		args = append(args, "--log-level=debug")

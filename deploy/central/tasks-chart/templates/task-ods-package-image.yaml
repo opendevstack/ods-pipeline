@@ -16,7 +16,7 @@ spec:
     - nexusPassword=Escaped(${NEXUS_PASSWORD})
     - nexusHost=Host(${NEXUS_URL})
     - nexusAuth=${nexusUsername}:$(nexusPassword)
-    - nexusUrlWithAuth=${nexusAuth.withAuth($nexusAuth)}
+    - nexusUrlWithAuth=${nexusUrl.withAuth($nexusAuth)}
 
     If no nexusUsername/nexusPassword are defined nexusAuth will be empty and 
     nexusUrlWithAuth is equal to nexusUrl. 
@@ -54,18 +54,6 @@ spec:
       description: 'The format of the built container, `oci` or `docker`.'
       type: string
       default: oci
-    - name: nexus-url
-      description: 'Nexus URL without username:password e.g. `https://nexus-ods.example.openshiftapps.com`'
-      type: string
-      default:  'value of environment variable `NEXUS_URL`'
-    - name: nexus-username
-      description: 'Username for Nexus'
-      type: string
-      default: 'value of environment variable `NEXUS_USERNAME`'
-    - name: nexus-password
-      description: 'Password for Nexus'
-      type: string
-      default: 'value of environment variable `NEXUS_PASSWORD`'
     - name: buildah-build-extra-args
       description: Extra parameters passed for the build command when building images.
       type: string

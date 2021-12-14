@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestNexusBuildArgs(t *testing.T) {
@@ -66,7 +66,11 @@ func TestNexusBuildArgs(t *testing.T) {
 				nexusUsername: tc.nexusUsername,
 				nexusPassword: tc.nexusPassword,
 			}
-			args := addNexusBuildArgs([]string{}, opts)
+			args, err := nexusBuildArgs(opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			expected := []string{
 				fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", tc.nexusUrl),
 				fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", tc.baNexusUsername),
@@ -75,7 +79,9 @@ func TestNexusBuildArgs(t *testing.T) {
 				fmt.Sprintf("--build-arg=nexusAuth=\"%s\"", tc.baNexusAuth),
 				fmt.Sprintf("--build-arg=nexusUrlWithAuth=\"%s\"", tc.baNexusUrlWithAuth),
 			}
-			assert.ElementsMatch(t, args, expected, "no match %s")
+			if diff := cmp.Diff(expected, args); diff != "" {
+				t.Fatalf("expected (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
