@@ -18,6 +18,7 @@ spec:
     - nexusAuth=${nexusUsername}:$(nexusPassword)
     - nexusUrlWithAuth=${nexusUrl.withAuth($nexusAuth)}
 
+    The above is adhoc notation meant to be more clear than a bunch of words.
     If no nexusUsername/nexusPassword are defined nexusAuth will be empty and 
     nexusUrlWithAuth is equal to nexusUrl. 
 
@@ -139,7 +140,6 @@ spec:
           -context-dir=$(params.docker-dir) \
           -buildah-build-extra-args=$(params.buildah-build-extra-args) \
           -buildah-push-extra-args=$(params.buildah-push-extra-args) \
-          -
           -aqua-gate=$(params.aqua-gate)
       volumeMounts:
         - mountPath: /var/lib/containers
