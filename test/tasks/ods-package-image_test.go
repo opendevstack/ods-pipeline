@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
@@ -16,6 +17,19 @@ func TestTaskODSPackageImage(t *testing.T) {
 		"ods-package-image",
 		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
+			"task should build image and use nexus args": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-nexus-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImageHelloNexus(t, ctxt, wsDir)
+				},
+			},
 			"task should build image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -26,7 +40,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
-					checkResultingImage(t, ctxt, wsDir)
+					checkResultingImageHelloWorld(t, ctxt, wsDir)
 				},
 			},
 			"task should reuse existing image": {
@@ -41,7 +55,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
-					checkResultingImage(t, ctxt, wsDir)
+					checkResultingImageHelloWorld(t, ctxt, wsDir)
 					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
 				},
 			},
@@ -95,7 +109,7 @@ func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wa
 	}
 }
 
-func checkResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
 	stdout, stderr, err := command.Run("docker", []string{
 		"run", "--rm",
 		getDockerImageTag(t, ctxt, wsDir),
@@ -104,9 +118,31 @@ func checkResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir s
 		t.Fatalf("could not run built image: %s, stderr: %s", err, string(stderr))
 	}
 	got := strings.TrimSpace(string(stdout))
+	return got
+}
+
+func checkResultingImageHelloWorld(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	got := runResultingImage(t, ctxt, wsDir)
 	want := "Hello World"
 	if got != want {
 		t.Fatalf("Want %s, but got %s", want, got)
+	}
+}
+
+func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	got := runResultingImage(t, ctxt, wsDir)
+	gotLines := strings.Split(got, "\n")
+
+	want := []string{
+		"nexusUrl=\"http://nexustest.kind:8081\"",
+		"nexusUsername=\"developer\"",
+		"nexusPassword=\"s3cr3t\"",
+		"nexusAuth=\"developer:s3cr3t\"",
+		"nexusUrlWithAuth=\"http://developer:s3cr3t@nexustest.kind:8081\"",
+		"nexusHost=\"nexustest.kind:8081\"",
+	}
+	if diff := cmp.Diff(want, gotLines); diff != "" {
+		t.Fatalf("context mismatch (-want +got):\n%s", diff)
 	}
 }
 
