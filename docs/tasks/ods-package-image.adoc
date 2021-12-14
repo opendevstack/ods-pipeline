@@ -9,12 +9,13 @@ buildah builds a container image from the `docker-dir` directory using the
 provided `dockerfile`.
 The following `--build-arg` parameters are provided to enable convenient access
 to Nexus:
-- nexusUrl=${NEXUS_URL}
-- nexusUsername=Escaped(${NEXUS_USERNAME})
-- nexusPassword=Escaped(${NEXUS_PASSWORD})
-- nexusHost=Host(${NEXUS_URL})
-- nexusAuth=${nexusUsername}:$(nexusPassword)
-- nexusUrlWithAuth=${nexusUrl.withAuth($nexusAuth)}
+
+* nexusUrl=${NEXUS_URL}
+* nexusUsername=Escaped(${NEXUS_USERNAME})
+* nexusPassword=Escaped(${NEXUS_PASSWORD})
+* nexusHost=Host(${NEXUS_URL})
+* nexusAuth=${nexusUsername}:$(nexusPassword)
+* nexusUrlWithAuth=${nexusUrl.withAuth($nexusAuth)}
 
 The above is adhoc notation meant to be more clear than a bunch of words.
 If no nexusUsername/nexusPassword are defined nexusAuth will be empty and 
