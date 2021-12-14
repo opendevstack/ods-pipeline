@@ -210,10 +210,11 @@ a| The task shall build a TypeScript application.
 [cols="1,3"]
 |===
 | SRS-TASK-PACKAGE-IMAGE-1
-| The task shall build a container image unless the image tag already exists.
+a| The task shall build a container image unless the image tag already exists.
 
 * The Docker context directory and Dockerfile shall be customizable.
 * The resulting image name and SHA shall be recorded in an artifact.
+* The image build shall have access to Nexus for installing dependencies. This should only be used if one cannot easily copy artifacts created by the build task.
 
 | SRS-TASK-PACKAGE-IMAGE-2
 | The task shall push the image to the target registry.
