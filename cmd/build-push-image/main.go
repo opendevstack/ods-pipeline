@@ -231,14 +231,12 @@ func nexusBuildArgs(opts options) ([]string, error) {
 		if len(a) > 1 {
 			pwEscaped = a[1]
 		}
-		nexusArgs := []string{
+		args = []string{
 			fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", opts.nexusURL),
 			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", unEscaped),
 			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", pwEscaped),
 			fmt.Sprintf("--build-arg=nexusHost=\"%s\"", nexusUrl.Host),
 		}
-		args = append(args, nexusArgs...)
-
 		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=\"%s\"", nexusAuth))
 		if nexusAuth != "" {
 			args = append(args,
