@@ -205,7 +205,6 @@ func main() {
 // parameters.
 func nexusBuildArgs(opts options) ([]string, error) {
 	args := []string{}
-	// log.Printf("nexusURL: %s", opts.nexusURL)
 	if strings.TrimSpace(opts.nexusURL) != "" {
 		nexusUrl, err := url.Parse(opts.nexusURL)
 		if err != nil {
@@ -232,18 +231,18 @@ func nexusBuildArgs(opts options) ([]string, error) {
 			pwEscaped = a[1]
 		}
 		args = []string{
-			fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", opts.nexusURL),
-			fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", unEscaped),
-			fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", pwEscaped),
-			fmt.Sprintf("--build-arg=nexusHost=\"%s\"", nexusUrl.Host),
+			fmt.Sprintf("--build-arg=nexusUrl=%s", opts.nexusURL),
+			fmt.Sprintf("--build-arg=nexusUsername=%s", unEscaped),
+			fmt.Sprintf("--build-arg=nexusPassword=%s", pwEscaped),
+			fmt.Sprintf("--build-arg=nexusHost=%s", nexusUrl.Host),
 		}
-		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=\"%s\"", nexusAuth))
+		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=%s", nexusAuth))
 		if nexusAuth != "" {
 			args = append(args,
-				fmt.Sprintf("--build-arg=nexusUrlWithAuth=\"%s://%s@%s\"", nexusUrl.Scheme, nexusAuth, nexusUrl.Host))
+				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s://%s@%s", nexusUrl.Scheme, nexusAuth, nexusUrl.Host))
 		} else {
 			args = append(args,
-				fmt.Sprintf("--build-arg=nexusUrlWithAuth=\"%s\"", opts.nexusURL))
+				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s", opts.nexusURL))
 		}
 	}
 	return args, nil

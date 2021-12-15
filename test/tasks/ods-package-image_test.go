@@ -163,12 +163,12 @@ func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContex
 	}
 
 	want := []string{
-		fmt.Sprintf("nexusUrl=\"%s\"", nexusUrlString),
-		fmt.Sprintf("nexusUsername=\"%s\"", ncc.Username),
-		fmt.Sprintf("nexusPassword=\"%s\"", ncc.Password),
-		fmt.Sprintf("nexusAuth=\"%s:%s\"", ncc.Username, ncc.Password),
-		fmt.Sprintf("nexusUrlWithAuth=\"http://%s:%s@%s\"", ncc.Username, ncc.Password, nexusUrl.Host),
-		fmt.Sprintf("nexusHost=\"%s\"", nexusUrl.Host),
+		fmt.Sprintf("nexusUrl=%s", nexusUrlString),
+		fmt.Sprintf("nexusUsername=%s", ncc.Username),
+		fmt.Sprintf("nexusPassword=%s", ncc.Password),
+		fmt.Sprintf("nexusAuth=%s:%s", ncc.Username, ncc.Password),
+		fmt.Sprintf("nexusUrlWithAuth=http://%s:%s@%s", ncc.Username, ncc.Password, nexusUrl.Host),
+		fmt.Sprintf("nexusHost=%s", nexusUrl.Host),
 	}
 	if diff := cmp.Diff(want, gotLines); diff != "" {
 		t.Fatalf("context mismatch (-want +got):\n%s", diff)
