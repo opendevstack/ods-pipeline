@@ -72,12 +72,12 @@ func TestNexusBuildArgs(t *testing.T) {
 			}
 
 			expected := []string{
-				fmt.Sprintf("--build-arg=nexusUrl=\"%s\"", tc.nexusUrl),
-				fmt.Sprintf("--build-arg=nexusUsername=\"%s\"", tc.baNexusUsername),
-				fmt.Sprintf("--build-arg=nexusPassword=\"%s\"", tc.baNexusPassword),
-				fmt.Sprintf("--build-arg=nexusHost=\"%s\"", tc.baNexusHost),
-				fmt.Sprintf("--build-arg=nexusAuth=\"%s\"", tc.baNexusAuth),
-				fmt.Sprintf("--build-arg=nexusUrlWithAuth=\"%s\"", tc.baNexusUrlWithAuth),
+				fmt.Sprintf("--build-arg=nexusUrl=%s", tc.nexusUrl),
+				fmt.Sprintf("--build-arg=nexusUsername=%s", tc.baNexusUsername),
+				fmt.Sprintf("--build-arg=nexusPassword=%s", tc.baNexusPassword),
+				fmt.Sprintf("--build-arg=nexusHost=%s", tc.baNexusHost),
+				fmt.Sprintf("--build-arg=nexusAuth=%s", tc.baNexusAuth),
+				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s", tc.baNexusUrlWithAuth),
 			}
 			if diff := cmp.Diff(expected, args); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
