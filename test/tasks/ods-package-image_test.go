@@ -10,6 +10,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/installation"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -136,19 +138,36 @@ func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContex
 	got := runResultingImage(t, ctxt, wsDir)
 	gotLines := strings.Split(got, "\n")
 
-	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-	nexusUrlString := string(nexusClient.URL())
+	ncc, err := installation.NewNexusClientConfig(
+		ctxt.Clients.KubernetesClientSet, ctxt.Namespace, &logging.LeveledLogger{Level: logging.LevelDebug},
+	)
+	if err != nil {
+		t.Fatalf("could not create Nexus client config: %s", err)
+	}
+
+	// nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	nexusUrlString := string(ncc.BaseURL)
 	nexusUrl, err := url.Parse(nexusUrlString)
 	if err != nil {
 		t.Fatalf("could not determine nexusUrl from nexusClient: %s", err)
 	}
 
+	wantUsername := "developer"
+	if ncc.Username != wantUsername {
+		t.Fatalf("Want %s, but got %s", wantUsername, ncc.Username)
+	}
+
+	wantSecret := "s3cr3t"
+	if ncc.Password != wantSecret {
+		t.Fatalf("Want %s, but got %s", wantSecret, ncc.Password)
+	}
+
 	want := []string{
 		fmt.Sprintf("nexusUrl=\"%s\"", nexusUrlString),
-		fmt.Sprintf("nexusUsername=\"%s\"", nexusClient.Username()),
-		fmt.Sprintf("nexusPassword=\"%s\"", "s3cr3t"),
-		fmt.Sprintf("nexusAuth=\"%s:%s\"", nexusClient.Username(), "s3cr3t"),
-		fmt.Sprintf("nexusUrlWithAuth=\"http://%s:%s@%s\"", nexusClient.Username(), "s3cr3t", nexusUrl.Host),
+		fmt.Sprintf("nexusUsername=\"%s\"", ncc.Username),
+		fmt.Sprintf("nexusPassword=\"%s\"", ncc.Password),
+		fmt.Sprintf("nexusAuth=\"%s:%s\"", ncc.Username, ncc.Password),
+		fmt.Sprintf("nexusUrlWithAuth=\"http://%s:%s@%s\"", ncc.Username, ncc.Password, nexusUrl.Host),
 		fmt.Sprintf("nexusHost=\"%s\"", nexusUrl.Host),
 	}
 	if diff := cmp.Diff(want, gotLines); diff != "" {
