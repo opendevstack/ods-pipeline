@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:alpine-jre
+FROM eclipse-temurin:17-jdk-alpine
 
 COPY app.jar app.jar
 
