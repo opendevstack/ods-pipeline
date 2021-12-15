@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,9 @@ import (
 func TestTaskODSPackageImage(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-package-image",
-		[]tasktesting.Service{},
+		[]tasktesting.Service{
+			tasktesting.Nexus,
+		},
 		map[string]tasktesting.TestCase{
 			"task should build image and use nexus args": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-nexus-app"},
@@ -133,13 +136,20 @@ func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContex
 	got := runResultingImage(t, ctxt, wsDir)
 	gotLines := strings.Split(got, "\n")
 
+	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	nexusUrlString := string(nexusClient.URL())
+	nexusUrl, err := url.Parse(nexusUrlString)
+	if err != nil {
+		t.Fatalf("could not determine nexusUrl from nexusClient: %s", err)
+	}
+
 	want := []string{
-		"nexusUrl=\"http://nexustest.kind:8081\"",
-		"nexusUsername=\"developer\"",
-		"nexusPassword=\"s3cr3t\"",
-		"nexusAuth=\"developer:s3cr3t\"",
-		"nexusUrlWithAuth=\"http://developer:s3cr3t@nexustest.kind:8081\"",
-		"nexusHost=\"nexustest.kind:8081\"",
+		fmt.Sprintf("nexusUrl=\"%s\"", nexusUrlString),
+		fmt.Sprintf("nexusUsername=\"%s\"", nexusClient.Username()),
+		fmt.Sprintf("nexusPassword=\"%s\"", "s3cr3t"),
+		fmt.Sprintf("nexusAuth=\"%s:%s\"", nexusClient.Username(), "s3cr3t"),
+		fmt.Sprintf("nexusUrlWithAuth=\"http://%s:%s@%s\"", nexusClient.Username(), "s3cr3t", nexusUrl.Host),
+		fmt.Sprintf("nexusHost=\"%s\"", nexusUrl.Host),
 	}
 	if diff := cmp.Diff(want, gotLines); diff != "" {
 		t.Fatalf("context mismatch (-want +got):\n%s", diff)
