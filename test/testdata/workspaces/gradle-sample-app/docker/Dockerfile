@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM registry.access.redhat.com/ubi8/openjdk-17-runtime:1.10
 
 COPY app.jar app.jar
 
