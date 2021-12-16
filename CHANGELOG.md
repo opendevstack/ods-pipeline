@@ -23,13 +23,13 @@ listed in the changelog.
 
 ### Changed
 
-- Changed encryption tool for helm secrets plugin from `gpg` to `age` ([#292](https://github.com/opendevstack/ods-pipeline/pull/292))
+- Changed encryption tool for helm secrets plugin from `gpg` to `age` ([#293](https://github.com/opendevstack/ods-pipeline/issues/293), [#292](https://github.com/opendevstack/ods-pipeline/pull/292))
 - Automatically roll webhook interceptor deployment when related config map or secret changes ([#252](https://github.com/opendevstack/ods-pipeline/issues/252))
 - Hide confusing error message in Helm output ([#262](https://github.com/opendevstack/ods-pipeline/issues/262))
 - Update gcc (from 8.4 to 8.5), skopeo (from 1.3 to 1.4) and buildah (from 1.21 to 1.22) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
-- Iterating over Dockerfiles in build/package instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286))
+- Iterating over Dockerfiles in `build/package` instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286) and [#287](https://github.com/opendevstack/ods-pipeline/pull/287))
 - Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
-- Helm secrets use age instead of pgp ([#293](https://github.com/opendevstack/ods-pipeline/issues/293))
+- Upgrade Java toolset to JDK 17 ([#294](https://github.com/opendevstack/ods-pipeline/issues/294))
 
 ### Fixed
 
@@ -37,7 +37,7 @@ listed in the changelog.
 - `Directory` values in the artifact manifest (`.ods/artifacts/manifest.json`) contain an erronous leading slash. This should only be an issue if you relied on this value in a custom task. ([#269](https://github.com/opendevstack/ods-pipeline/pull/269))
 - `ods-finish` does not upload artifacts of subrepos ([#257](https://github.com/opendevstack/ods-pipeline/issues/257))
 - Waitfor-...sh scripts are not waiting for the expected 5 minutes ([#280](https://github.com/opendevstack/ods-pipeline/issues/280))
-- Specifying images to be build and pushed is not working anymore due to changes made in [#287](https://github.com/opendevstack/ods-pipeline/pull/287) ([#299](https://github.com/opendevstack/ods-pipeline/issues/299))
+- Tagging in ods-start causes second pipeline run ([#331](https://github.com/opendevstack/ods-pipeline/issues/331))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
