@@ -8,12 +8,15 @@ spec:
 
     The following steps are executed:
 
-    - linting using `eslint` (For information on how to configure eslint see the link:https://eslint.org/docs/user-guide/configuring/[official documentation])
+    - linting using `eslint`
     - build typescript application, using `npm run build`
     - test execution
     - SonarQube quality scan
 
     All reports (xUnit report, coverage report and linting report) are placed into .ods/artifacts.
+
+    For `eslint` to work there needs to be a config file (`eslintrc.json` or similar) at the root of the working directory.
+    This can be done by running `eslint --init` or by following the link:https://eslint.org/docs/user-guide/getting-started[official documentation]
 
     After tests ran successfully, the application source code is scanned by SonarQube.
     Default SonarQube project properties are provided unless `sonar-project.properties`
