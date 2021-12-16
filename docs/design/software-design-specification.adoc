@@ -120,7 +120,7 @@ Input parameters:
 
 | SDS-TASK-5
 | `ods-gradle-toolset` contaner image
-| Container image for building Gradle modules. Based on `ubi8/openjdk-11` (SDS-EXT-11), includes SDS-EXT-12, SDS-SHARED-3, SDS-TASK-6 and SDS-TASK-26.
+| Container image for building Gradle modules. Based on `ubi8/openjdk-17` (SDS-EXT-11), includes SDS-EXT-12, SDS-SHARED-3, SDS-TASK-6 and SDS-TASK-26.
 
 | SDS-TASK-6
 | `build-gradle.sh` shell script
@@ -433,15 +433,15 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-10
 | OpenJDK Headless
-| 11
-| Reference implementation of version 11 of the Java SE Platform.
-| https://openjdk.java.net/projects/jdk/11/
+| 17
+| Reference implementation of version 17 of the Java SE Platform.
+| https://openjdk.java.net/projects/jdk/17/
 
 | SDS-EXT-11
-| Red Hat OpenJDK 11 Image
+| Red Hat OpenJDK 17 Image
 | 1.10
-| OpenJDK 11 container is a base platform for building and running plain Java 11 applications, e.g. fat-jar and flat classpath.
-| https://catalog.redhat.com/software/containers/ubi8/openjdk-11/5dd6a4b45a13461646f677f4
+| OpenJDK 17 container is a base platform for building and running plain Java 17 applications, e.g. fat-jar and flat classpath.
+| https://catalog.redhat.com/software/containers/ubi8/openjdk-17/618bdbf34ae3739687568813
 
 | SDS-EXT-12
 | Gradle
@@ -534,6 +534,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.6
+| 2021-12-15
+| Andreas Kübler
+| Updated JDK version.
 
 | 0.5
 | 2021-12-10

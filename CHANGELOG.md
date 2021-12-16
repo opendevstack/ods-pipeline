@@ -28,6 +28,7 @@ listed in the changelog.
 - Update gcc (from 8.4 to 8.5), skopeo (from 1.3 to 1.4) and buildah (from 1.21 to 1.22) in container images ([#276](https://github.com/opendevstack/ods-pipeline/pull/276))
 - Iterating over Dockerfiles in `build/package` instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286) and [#287](https://github.com/opendevstack/ods-pipeline/pull/287))
 - Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
+- Upgrade Java toolset to JDK 17 ([#294](https://github.com/opendevstack/ods-pipeline/issues/294))
 
 ### Fixed
 
