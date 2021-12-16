@@ -125,7 +125,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						}
 					}
 
-					wantLintReportContent := "> src@1.0.0 lint /workspace/source\n> eslint src/**/*.ts --format compact --max-warnings 0\n\n/workspace/source/src/index.ts: line 5, col 20, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
+					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
 
 					checkFileContent(t, wsDir, filepath.Join(pipelinectxt.LintReportsPath, "report.txt"), wantLintReportContent)
 				},

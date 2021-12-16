@@ -6,7 +6,7 @@ Builds Typescript applications.
 
 The following steps are executed:
 
-- linting using `npm run lint`
+- linting using `eslint` (For information on how to configure eslint see the link:https://eslint.org/docs/user-guide/configuring/[official documentation])
 - build typescript application, using `npm run build`
 - test execution
 - SonarQube quality scan
@@ -44,6 +44,16 @@ without leading `./` and trailing `/`.
 | output-dir
 | docker
 | Path to the directory into which outputs should be placed, relative to `working-dir`. This directory may then later be used as Docker context for example.
+
+
+| max-lint-warnings
+| 0
+| Maximum of allowed linting warnings after which eslint will exit with an error. Set to "-1" to never exit with an error due to warnings.
+
+
+| lint-file-ext
+| .js,.ts,.jsx,.tsx
+| File extensions to lint separated by a comma.
 
 
 | sonar-quality-gate

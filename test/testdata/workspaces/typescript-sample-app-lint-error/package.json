@@ -5,18 +5,15 @@
   "scripts": {
     "build": "tsc",
     "test": "JEST_JUNIT_OUTPUT_DIR='build/test-results/test' JEST_JUNIT_OUTPUT_NAME='report.xml' npx jest --reporters=default --reporters=jest-junit --coverage --coverageDirectory=build/coverage --forceExit ./dist",
-    "start": "node dist/src/index.js",
-    "lint": "eslint src/**/*.ts --format compact --max-warnings 0"
+    "start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@types/express": "^4.17.13",
     "@types/jest": "^26.0.0",
     "@types/node": "^14.0.13",
-    "express": "^4.17.1",
     "typescript": "^3.9.5"
   },
   "devDependencies": {
