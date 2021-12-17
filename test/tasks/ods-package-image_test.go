@@ -2,20 +2,39 @@ package tasks
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/installation"
+	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSPackageImage(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-package-image",
-		[]tasktesting.Service{},
+		[]tasktesting.Service{
+			tasktesting.Nexus,
+		},
 		map[string]tasktesting.TestCase{
+			"task should build image and use nexus args": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-nexus-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImageHelloNexus(t, ctxt, wsDir)
+				},
+			},
 			"task should build image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -26,7 +45,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
-					checkResultingImage(t, ctxt, wsDir)
+					checkResultingImageHelloWorld(t, ctxt, wsDir)
 				},
 			},
 			"task should reuse existing image": {
@@ -41,7 +60,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
-					checkResultingImage(t, ctxt, wsDir)
+					checkResultingImageHelloWorld(t, ctxt, wsDir)
 					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
 				},
 			},
@@ -95,7 +114,7 @@ func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wa
 	}
 }
 
-func checkResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
 	stdout, stderr, err := command.Run("docker", []string{
 		"run", "--rm",
 		getDockerImageTag(t, ctxt, wsDir),
@@ -104,9 +123,55 @@ func checkResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir s
 		t.Fatalf("could not run built image: %s, stderr: %s", err, string(stderr))
 	}
 	got := strings.TrimSpace(string(stdout))
+	return got
+}
+
+func checkResultingImageHelloWorld(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	got := runResultingImage(t, ctxt, wsDir)
 	want := "Hello World"
 	if got != want {
 		t.Fatalf("Want %s, but got %s", want, got)
+	}
+}
+
+func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	got := runResultingImage(t, ctxt, wsDir)
+	gotLines := strings.Split(got, "\n")
+
+	ncc, err := installation.NewNexusClientConfig(
+		ctxt.Clients.KubernetesClientSet, ctxt.Namespace, &logging.LeveledLogger{Level: logging.LevelDebug},
+	)
+	if err != nil {
+		t.Fatalf("could not create Nexus client config: %s", err)
+	}
+
+	// nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	nexusUrlString := string(ncc.BaseURL)
+	nexusUrl, err := url.Parse(nexusUrlString)
+	if err != nil {
+		t.Fatalf("could not determine nexusUrl from nexusClient: %s", err)
+	}
+
+	wantUsername := "developer"
+	if ncc.Username != wantUsername {
+		t.Fatalf("Want %s, but got %s", wantUsername, ncc.Username)
+	}
+
+	wantSecret := "s3cr3t"
+	if ncc.Password != wantSecret {
+		t.Fatalf("Want %s, but got %s", wantSecret, ncc.Password)
+	}
+
+	want := []string{
+		fmt.Sprintf("nexusUrl=%s", nexusUrlString),
+		fmt.Sprintf("nexusUsername=%s", ncc.Username),
+		fmt.Sprintf("nexusPassword=%s", ncc.Password),
+		fmt.Sprintf("nexusAuth=%s:%s", ncc.Username, ncc.Password),
+		fmt.Sprintf("nexusUrlWithAuth=http://%s:%s@%s", ncc.Username, ncc.Password, nexusUrl.Host),
+		fmt.Sprintf("nexusHost=%s", nexusUrl.Host),
+	}
+	if diff := cmp.Diff(want, gotLines); diff != "" {
+		t.Fatalf("context mismatch (-want +got):\n%s", diff)
 	}
 }
 

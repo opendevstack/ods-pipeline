@@ -42,6 +42,9 @@ type options struct {
 	format                string
 	dockerfile            string
 	contextDir            string
+	nexusURL              string
+	nexusUsername         string
+	nexusPassword         string
 	buildahBuildExtraArgs string
 	buildahPushExtraArgs  string
 	aquasecGate           bool
@@ -65,6 +68,9 @@ func main() {
 	flag.StringVar(&opts.format, "format", "oci", "format of the built container, oci or docker")
 	flag.StringVar(&opts.dockerfile, "dockerfile", "./Dockerfile", "dockerfile")
 	flag.StringVar(&opts.contextDir, "context-dir", "docker", "contextDir")
+	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
+	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
+	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", "docker", "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", "docker", "extra parameters passed for the push command when pushing images")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", false, "whether the Aqua security scan needs to pass for the task to succeed")
@@ -194,13 +200,62 @@ func main() {
 	}
 }
 
+// nexusBuildArgs computes --build-arg parameters so that the Dockerfile
+// can access nexus as determined by the options nexus related
+// parameters.
+func nexusBuildArgs(opts options) ([]string, error) {
+	args := []string{}
+	if strings.TrimSpace(opts.nexusURL) != "" {
+		nexusUrl, err := url.Parse(opts.nexusURL)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse nexus url (%s): %w", opts.nexusURL, err)
+		}
+		if nexusUrl.Host == "" {
+			return nil, fmt.Errorf("could not get host in nexus url (%s)", opts.nexusURL)
+		}
+		if opts.nexusUsername != "" {
+			if opts.nexusPassword == "" {
+				nexusUrl.User = url.User(opts.nexusUsername)
+			} else {
+				nexusUrl.User = url.UserPassword(opts.nexusUsername, opts.nexusPassword)
+			}
+		}
+		nexusAuth := nexusUrl.User.String() // this is encoded as needed.
+		a := strings.SplitN(nexusAuth, ":", 2)
+		unEscaped := ""
+		pwEscaped := ""
+		if len(a) > 0 {
+			unEscaped = a[0]
+		}
+		if len(a) > 1 {
+			pwEscaped = a[1]
+		}
+		args = []string{
+			fmt.Sprintf("--build-arg=nexusUrl=%s", opts.nexusURL),
+			fmt.Sprintf("--build-arg=nexusUsername=%s", unEscaped),
+			fmt.Sprintf("--build-arg=nexusPassword=%s", pwEscaped),
+			fmt.Sprintf("--build-arg=nexusHost=%s", nexusUrl.Host),
+		}
+		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=%s", nexusAuth))
+		if nexusAuth != "" {
+			args = append(args,
+				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s://%s@%s", nexusUrl.Scheme, nexusAuth, nexusUrl.Host))
+		} else {
+			args = append(args,
+				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s", opts.nexusURL))
+		}
+	}
+	return args, nil
+}
+
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
 	if err != nil {
-		log.Printf("could not parse extra args (%s): %s", opts.buildahBuildExtraArgs, err)
+		return nil, nil, fmt.Errorf("could not parse extra args (%s): %w", opts.buildahBuildExtraArgs, err)
 	}
+
 	args := []string{
 		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
 		"bud",
@@ -212,6 +267,13 @@ func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
 		fmt.Sprintf("--tag=%s", tag),
 	}
 	args = append(args, extraArgs...)
+	nexusArgs, err := nexusBuildArgs(opts)
+	if err != nil {
+		return nil, nil, fmt.Errorf(
+			"could not add nexus build args: %w", err)
+	}
+	args = append(args, nexusArgs...)
+
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}

@@ -10,6 +10,7 @@ listed in the changelog.
 ## [Unreleased]
 ### Added
 
+- Provide nexus -build-arg variables during image building with ods-package-image ([#327](https://github.com/opendevstack/ods-pipeline/issues/327))
 - Provide separate binary to download all artifacts related to one version easily ([#167](https://github.com/opendevstack/ods-pipeline/issues/167))
 - Allow namespaced installation. This provides a way to give ODS pipeline a try without requiring the buy-in from a cluster admin. The OpenShift Pipelines operator is still required though. See [#263](https://github.com/opendevstack/ods-pipeline/issues/263).
 - Automated check if the Docker host has enough memory ([#283](https://github.com/opendevstack/ods-pipeline/issues/283))

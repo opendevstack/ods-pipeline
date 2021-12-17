@@ -1,12 +1,22 @@
 FROM registry.access.redhat.com/ubi8/python-39
 
+# expecting args to already be url encoded
+ARG nexusUrlWithAuth
+ARG nexusHost
+
 COPY app /app
 COPY run.sh /app/
 
 WORKDIR /app
 
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt && \
+RUN if [ ! -z ${nexusUrlWithAuth} ]; \
+    then \
+      pip install -i ${nexusUrlWithAuth}/repository/pypi-all/simple --trusted-host ${nexusHost} --upgrade pip && \
+      pip install -i ${nexusUrlWithAuth}/repository/pypi-all/simple --trusted-host ${nexusHost} -r requirements.txt; \
+    else \
+      pip install --upgrade pip && \
+      pip install -r requirements.txt; \
+    fi && \
     pip check
 
 USER root
