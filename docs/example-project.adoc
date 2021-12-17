@@ -113,6 +113,8 @@ repositories:
 - name: todo-backend
 - name: todo-frontend
 
+version: 1.0.0
+
 branchToEnvironmentMapping:
 - branch: production
   environment: prod
@@ -138,7 +140,6 @@ pipeline:
       workspace: shared-workspace
 ----
 
-
 When a commit is pushed into the `release/1.0.0` branch, a deploy is triggerd into the `todo-qa` project. The deployment uses the chart defined in the `chart` directory of the `todo-app` repository. That chart does not contain any resource templates itself, as all Kubernetes resources are defined in the charts in the components `todo-backend` and `todo-frontend`. However, the umbrella chart has to supply values which are specific to the "qa" environment. This can be done via a `values.qa.yaml` file. Values in that file can set values for dependencies (like the `backend` component) by nesting the values under the respective key, as shown in the following example. Assume we have the following `values.yaml` file in the `todo-backend` application:
 
 todo-backend/chart/values.yaml
@@ -159,6 +160,8 @@ backend:
 For more information on this, see link:https://helm.sh/docs/topics/charts/#scope-dependencies-and-values[scope, dependencies, and values].
 
 The "prod" environment is configured in the same way as the "qa" environment. Note that pushing directly into the `production` branch without a prior pipeline run against a "qa" environment will fail as deployments to environments of stage `prod` require a previous deployment to a `qa` stage.
+
+The version that is specified in `ods.yaml` is used whenever a `qa` or `prod` stage environment is selected. In such cases, the version from `ods.yaml` will be used in the Helm chart versions, and the repositories will be tagged at the current commit. For the `qa` stage this Git tag is `v<VERSION>-rc.<NUMBER>`, and for `prod` stage it is `v<VERSION>`.
 
 == Bitbucket Configuration
 

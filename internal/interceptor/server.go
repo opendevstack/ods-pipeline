@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const allowedChangeRefType = "BRANCH"
+
 // Server represents this service, and is a global.
 type Server struct {
 	OpenShiftClient Client
@@ -168,6 +170,19 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 		projectParam = req.Repository.Project.Key
 		commitSHA = change.ToHash
+
+		if change.Ref.Type != allowedChangeRefType {
+			msg := fmt.Sprintf(
+				"Skipping change ref type %s, only %s is supported",
+				change.Ref.Type,
+				allowedChangeRefType,
+			)
+			log.Println(requestID, msg)
+			// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
+			// "some websites use this response for requests they do not wish to handle [...]".
+			http.Error(w, msg, http.StatusTeapot)
+			return
+		}
 	} else if strings.HasPrefix(req.EventKey, "pr:") {
 		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
 		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
@@ -183,7 +198,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 		commitSHA = req.PullRequest.FromRef.LatestCommit
 	} else {
-		msg := fmt.Sprintf("Unsupported event key: %s", err)
+		msg := fmt.Sprintf("Unsupported event key: %s", req.EventKey)
 		log.Println(requestID, msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
@@ -240,7 +255,9 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	if skip {
 		msg := "Commit should be skipped"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, http.StatusNoContent)
+		// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
+		// "some websites use this response for requests they do not wish to handle [..]".
+		http.Error(w, msg, http.StatusTeapot)
 		return
 	}
 	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pData.Project, pData.Repository, commitSHA)
