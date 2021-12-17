@@ -243,7 +243,7 @@ Input parameters:
 * `working-dir`: allows to customize which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `output-dir`: sets destination directory of the build output
 * `max-lint-warnings`: maximum of allowed linting warnings after which eslint will exit with an error
-* `lint-file-ext`: file extension to lint
+* `lint-file-ext`: file extensions to lint
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
 

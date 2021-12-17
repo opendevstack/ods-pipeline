@@ -51,7 +51,7 @@ without leading `./` and trailing `/`.
 
 
 | lint-file-ext
-| .js,.ts,.jsx,.tsx
+| .js,.ts,.jsx,.tsx,.svelte
 | File extensions to lint separated by a comma.
 
 

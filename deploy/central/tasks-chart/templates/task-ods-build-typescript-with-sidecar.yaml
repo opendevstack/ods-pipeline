@@ -52,7 +52,7 @@ spec:
       with an error. Set to "-1" to never exit with an error due to warnings.
     name: max-lint-warnings
     type: string
-  - default: .js,.ts,.jsx,.tsx
+  - default: .js,.ts,.jsx,.tsx,.svelte
     description: File extensions to lint separated by a comma.
     name: lint-file-ext
     type: string

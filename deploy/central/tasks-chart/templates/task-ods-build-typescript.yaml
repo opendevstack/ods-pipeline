@@ -49,7 +49,7 @@ spec:
     - name: lint-file-ext
       description: File extensions to lint separated by a comma.
       type: string
-      default: ".js,.ts,.jsx,.tsx"
+      default: ".js,.ts,.jsx,.tsx,.svelte"
     - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
       type: string
