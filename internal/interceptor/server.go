@@ -21,7 +21,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const allowedChangeRefType = "BRANCH"
+const (
+	allowedChangeRefType = "BRANCH"
+	// Label prefix to use for labels applied by this webhook interceptor.
+	labelPrefix = "pipeline.opendevstack.org/"
+	// Label specifying the Bitbucket repository related to the pipeline.
+	repositoryLabel = labelPrefix + "repository"
+	// Label specifying the Git ref (e.g. branch) related to the pipeline.
+	gitRefLabel = labelPrefix + "git-ref"
+)
 
 // Server represents this service, and is a global.
 type Server struct {
@@ -511,6 +519,10 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.Ta
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            data.Name,
 			ResourceVersion: strconv.Itoa(data.ResourceVersion),
+			Labels: map[string]string{
+				repositoryLabel: data.Repository,
+				gitRefLabel:     data.GitRef,
+			},
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "tekton.dev/v1beta1",
