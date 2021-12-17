@@ -35,7 +35,8 @@ Individual task test can be executed like this:
 go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks -v -count=1
 ```
 
-Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too. Unfortunately these test dependencies are not expressed explicitly yet, see tracking issue https://github.com/opendevstack/ods-pipeline/issues/99. 
+Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too.
+These dependencies are explicitly set for each test suite and at the beginning of each test suite it will be checked if all required services are running. The tests will fail if at least one service is not running.
 
 Particularly the task and e2e tests might consume some time and might run into a timeout. To modify the standard timeout (by default in sync with the timeout predefined for Github actions), set the environment variable `ODS_TESTTIMEOUT` (e.g. to `45m`).
 
