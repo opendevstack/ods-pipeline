@@ -103,5 +103,16 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
+			"fail pulling image if unsupported node version is specified": {
+				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"node-version": "10",
+					}
+				},
+				WantSetupFail: true,
+			},
 		})
 }

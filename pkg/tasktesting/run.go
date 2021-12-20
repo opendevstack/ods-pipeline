@@ -34,6 +34,7 @@ type TestCase struct {
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
 	WantRunSuccess      bool
+	WantSetupFail       bool
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 	Timeout             time.Duration
@@ -93,33 +94,36 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
-	if err != nil {
-		t.Fatal(err)
+	hasSetupFailed := err != nil
+	if hasSetupFailed != tc.WantSetupFail {
+		t.Fatalf("Got: %+v, want: %+v.", hasSetupFailed, tc.WantSetupFail)
 	}
 
-	if collectedLogsBuffer.Len() > 0 {
-		testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
-	}
+	if !hasSetupFailed {
+		if collectedLogsBuffer.Len() > 0 {
+			testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
+		}
 
-	// Show info from Task result
-	CollectTaskResultInfo(taskRun, t.Logf)
+		// Show info from Task result
+		CollectTaskResultInfo(taskRun, t.Logf)
 
-	// Check if task was successful
-	if taskRun.IsSuccessful() != tc.WantRunSuccess {
-		t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
-	}
+		// Check if task was successful
+		if taskRun.IsSuccessful() != tc.WantRunSuccess {
+			t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
+		}
 
-	// Check local folder and evaluate output of task if needed
-	if tc.PostRunFunc != nil {
-		tc.PostRunFunc(t, testCaseContext)
-	}
+		// Check local folder and evaluate output of task if needed
+		if tc.PostRunFunc != nil {
+			tc.PostRunFunc(t, testCaseContext)
+		}
 
-	if !testOpts.AlwaysKeepTmpWorkspaces {
-		// Clean up only if test is successful
-		for _, wd := range taskWorkspaces {
-			err = os.RemoveAll(wd)
-			if err != nil {
-				t.Fatal(err)
+		if !testOpts.AlwaysKeepTmpWorkspaces {
+			// Clean up only if test is successful
+			for _, wd := range taskWorkspaces {
+				err = os.RemoveAll(wd)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
 	}

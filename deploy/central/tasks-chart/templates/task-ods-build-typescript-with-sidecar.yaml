@@ -43,6 +43,10 @@ spec:
     description: Whether to skip the SonarQube analysis or not.
     name: sonar-skip
     type: string
+  - default: "16"
+    description: 'Node.js version to use - supported versions: 16'
+    name: node-version
+    type: string
   - description: Image to use for sidecar
     name: sidecar-image
     type: string
@@ -75,7 +79,7 @@ spec:
         configMapKeyRef:
           key: debug
           name: ods-pipeline
-    image: '{{.Values.registry}}/{{.Values.namespace}}/ods-typescript-toolset:{{.Values.imageTag}}'
+    image: '{{.Values.registry}}/{{.Values.namespace}}/ods-node$(params.node-version)-typescript-toolset:{{.Values.imageTag}}'
     name: build-typescript
     resources: {}
     script: |2

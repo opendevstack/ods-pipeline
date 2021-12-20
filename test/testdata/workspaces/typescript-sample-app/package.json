@@ -18,6 +18,6 @@
     "typescript": "^3.9.5"
   },
   "devDependencies": {
-    "jest-junit": "^10.0.0"
+    "jest-junit": "^13.0.0"
   }
 }
