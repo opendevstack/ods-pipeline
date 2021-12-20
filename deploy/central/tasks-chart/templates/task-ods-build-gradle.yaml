@@ -127,6 +127,8 @@ spec:
               name: ods-pipeline
         - name: HOME
           value: '/tekton/home'
+        - name: CI
+          value: "true"
       resources: {}
       script: |
         # build-gradle is build/package/scripts/build-gradle.sh.

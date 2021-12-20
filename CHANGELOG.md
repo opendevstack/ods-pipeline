@@ -21,6 +21,7 @@ listed in the changelog.
 - Provided make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
 - Supply default `sonar-project.properties` when none is present, configuring SonarQube out-of-the-box ([#296](https://github.com/opendevstack/ods-pipeline/issues/296))
 - Linting stage in TypeScript build task ([#325](https://github.com/opendevstack/ods-pipeline/issues/325))
+- Set `CI=true` in build tasks ([#336](https://github.com/opendevstack/ods-pipeline/issues/336))
 
 ### Changed
 

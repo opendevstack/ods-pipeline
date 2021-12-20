@@ -137,6 +137,8 @@ spec:
           name: ods-pipeline
     - name: HOME
       value: /tekton/home
+    - name: CI
+      value: "true"
     image: '{{.Values.registry}}/{{.Values.namespace}}/ods-gradle-toolset:{{.Values.imageTag}}'
     name: build-gradle-binary
     resources: {}
