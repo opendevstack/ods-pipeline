@@ -15,10 +15,14 @@ spec:
     - test execution
     - SonarQube quality scan
 
-    All reports (xUnit report, coverage report and linting report) are placed into .ods/artifacts.
+    All reports (xUnit report, coverage report and linting report) are placed into `.ods/artifacts`.
 
     For `eslint` to work there needs to be a config file (`eslintrc.json` or similar) at the root of the working directory.
     This can be done by running `eslint --init` or by following the link:https://eslint.org/docs/user-guide/getting-started[official documentation]
+
+    The exact build recipe can be found at
+    link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-typescript.sh[build/package/scripts/build-typescript.sh].
+    In particular, `npm run build` is expected to place outputs into `dist`.
 
     After tests ran successfully, the application source code is scanned by SonarQube.
     Default SonarQube project properties are provided unless `sonar-project.properties`
