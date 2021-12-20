@@ -11,7 +11,7 @@ Container_Boundary(c1, "Central ODS Pipeline Installation"){
     Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go 1.16, golangci-lint, build script")
 
     Component(task_build_typescript, "ods-build-typescript", "ClusterTask", "Builds TypeScript applications")
-    Component(image_typescript_toolset, "ods/typescript-toolset", "Container Image", "TypeScript 3, build script")
+    Component(image_node16_typescript_toolset, "ods/node16-typescript-toolset", "Container Image", "TypeScript 3, build script")
 
     Component(task_build_python, "ods-build-python", "ClusterTask", "Builds Python applications")
     Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python 3, build script")

@@ -160,7 +160,7 @@ start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConf
 	oc start-build ods-python-toolset
 	oc start-build ods-sonar
 	oc start-build ods-start
-	oc start-build ods-typescript-toolset
+	oc start-build ods-node16-typescript-toolset
 	oc start-build ods-webhook-interceptor
 .PHONY: start-ods-central-builds
 

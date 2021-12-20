@@ -241,7 +241,7 @@ a| The task defines two steps:
 Input parameters: TODO
 
 | SDS-TASK-17
-| `ods-typescript-toolset` contaner image
+| `ods-node16-typescript-toolset` container image
 | Container image to build TypeScript applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-6, SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
@@ -469,7 +469,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-16
 | Node.js
-| 12
+| 16
 | Back-end JavaScript runtime environment.
 | https://nodejs.org/
 
@@ -534,6 +534,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.7
+| 2021-12-20
+| Henning Groß
+| Updated Node.js version.
 
 | 0.6
 | 2021-12-15
