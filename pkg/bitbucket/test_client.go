@@ -7,8 +7,10 @@ import (
 
 // TestClient returns mocked branches and tags.
 type TestClient struct {
-	Branches []Branch
-	Tags     []Tag
+	Branches     []Branch
+	Tags         []Tag
+	Commits      []Commit
+	PullRequests []PullRequest
 	// Files contains byte slices for filenames
 	Files map[string][]byte
 }
@@ -43,4 +45,21 @@ func (c *TestClient) RawGet(project, repository, filename, gitFullRef string) ([
 		return f, nil
 	}
 	return nil, fmt.Errorf("%s not found", filename)
+}
+
+func (c *TestClient) CommitList(projectKey string, repositorySlug string, params CommitListParams) (*CommitPage, error) {
+	return &CommitPage{Values: c.Commits}, nil
+}
+
+func (c *TestClient) CommitGet(projectKey, repositorySlug, commitID string) (*Commit, error) {
+	for _, co := range c.Commits {
+		if co.ID == commitID {
+			return &co, nil
+		}
+	}
+	return nil, fmt.Errorf("no commit %s", commitID)
+}
+
+func (c *TestClient) CommitPullRequestList(projectKey, repositorySlug, commitID string) (*PullRequestPage, error) {
+	return &PullRequestPage{Values: c.PullRequests}, nil
 }

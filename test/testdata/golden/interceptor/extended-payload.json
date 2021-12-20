@@ -1,0 +1,93 @@
+{
+    "actor": {
+        "active": true,
+        "displayName": "Mustermann,Max ACME",
+        "emailAddress": "max.mustermann@acme.org",
+        "id": 4653,
+        "links": {
+            "self": [
+                {
+                    "href": "https://bitbucket.acme.org/users/max.mustermann_acme.org"
+                }
+            ]
+        },
+        "name": "max.mustermann@acme.org",
+        "slug": "max.mustermann_acme.org",
+        "type": "NORMAL"
+    },
+    "changes": [
+        {
+            "fromHash": "dc85ccd8bb912006162e0d1d9f48e1f2d7210c9c",
+            "ref": {
+                "displayId": "master",
+                "id": "refs/heads/master",
+                "type": "BRANCH"
+            },
+            "refId": "refs/heads/master",
+            "toHash": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
+            "type": "UPDATE"
+        }
+    ],
+    "date": "2021-01-15T13:29:05+0000",
+    "eventKey": "repo:refs_changed",
+    "extensions": {
+        "name": "ods-pipeline-master",
+        "project": "foo",
+        "component": "ods-pipeline",
+        "repository": "ods-pipeline",
+        "environment": "",
+        "version": "",
+        "gitRef": "master",
+        "gitFullRef": "refs/heads/master",
+        "gitSha": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
+        "repoBase": "https://domain.com",
+        "gitURI": "https://domain.com/foo/ods-pipeline.git",
+        "namespace": "bar-cd",
+        "pvc": "ods-pipeline",
+        "trigger-event": "repo:refs_changed",
+        "comment": "",
+        "prKey": 0,
+        "prBase": ""
+    },
+    "repository": {
+        "forkable": true,
+        "id": 8733,
+        "links": {
+            "clone": [
+                {
+                    "href": "https://bitbucket.acme.org/scm/foo/ods-pipeline.git",
+                    "name": "http"
+                },
+                {
+                    "href": "ssh://git@bitbucket.acme.org:7999/foo/ods-pipeline.git",
+                    "name": "ssh"
+                }
+            ],
+            "self": [
+                {
+                    "href": "https://bitbucket.acme.org/projects/FOO/repos/ods-pipeline/browse"
+                }
+            ]
+        },
+        "name": "ods-pipeline",
+        "project": {
+            "id": 6603,
+            "key": "FOO",
+            "links": {
+                "self": [
+                    {
+                        "href": "https://bitbucket.acme.org/projects/FOO"
+                    }
+                ]
+            },
+            "name": "Max Mustermann Playground",
+            "public": false,
+            "type": "NORMAL"
+        },
+        "public": false,
+        "scmId": "git",
+        "slug": "ods-pipeline",
+        "state": "AVAILABLE",
+        "statusMessage": "Available"
+    }
+}

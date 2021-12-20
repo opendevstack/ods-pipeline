@@ -6,7 +6,6 @@ metadata:
     pipeline.opendevstack.org/git-ref: main
     pipeline.opendevstack.org/repository: foo-bar
   name: bar-main
-  resourceVersion: "0"
 spec:
   description: ODS
   finally:
