@@ -9,14 +9,17 @@ spec:
     This tasks will install / upgrade a Helm chart into your Kubernetes /
     OpenShift cluster using Helm.
 
-    Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is performed
-    before an upgrade is attempted. `helm-secrets` can be used to encrypt sensitive
-    values in the underlying Git repository. Secrets are decrypted on the fly if the secret
-    identified by the `age-key-secret` parameter exists, and contains an age secret key
-    which public key was used as one of the recipients to encrypt.
+    Helm has the plugins `helm-diff` and `helm-secrets` installed. A diff is
+    performed before an upgrade is attempted. `helm-secrets` can be used to
+    encrypt sensitive values in the underlying Git repository using
+    https://age-encryption.org[age]. Secrets are decrypted on the fly if the
+    secret identified by the `age-key-secret` parameter exists and contains an
+    age secret key which corresponding public key was used as one of the
+    recipients to encrypt.
 
-    Based on the target environment, some values files are added automatically to the
-    invocation of the `helm` command if they are present in the chart directory:
+    Based on the target environment, some values files are added automatically
+    to the invocation of the `helm` command if they are present in the chart
+    directory:
 
     - `values.yaml`: the values file (automatically considered by Helm).
     - `secrets.yaml`: a secrets file.
@@ -25,21 +28,30 @@ spec:
     - `values.<ENVIRONMENT>.yaml`: a values file named after the name of the target environment.
     - `secrets.<ENVIRONMENT>.yaml`: a secrets file named after the name of the target environment.
 
-    Further, the task adds a `values.generated.yaml` file. This values file
-    contains only one value, `gitCommitSha`, which contains the Git commit SHA being built. It is
-    provided by the task as this value cannot be known by value file authors in advance. Use this
-    value to set e.g. the image tags in `Deployment` resources, like this: `{{.Values.gitCommitSha}}`.
+    Further, the task automatically sets the `image.tag` value on the CLI which
+    equals the Git commit SHA being built. This value can be used in your Helm
+    templates to refer to images built via `ods-package-image`.
 
-    Before the Helm chart is applied, it is packaged, setting the `appVersion` to the Git commit SHA
-    and the `version` to the externally provided version, if any. If `version` is not given, the value
-    in `Chart.yaml` is used as-is.
+    Before the Helm chart is applied, it is packaged, setting the `appVersion`
+    to the Git commit SHA and the `version` to the externally provided version,
+    if any. If `version` is not given, the value in `Chart.yaml` is used as-is.
 
-    If the pipeline runs for a repository defining subrepos in its `ods.y(a)ml` file, then any charts in
-    those subrepos are packaged as well, and added as dependencies to the top-most chart under `charts/`.
-    Note that values and secrets files are only collected from the repository for which the pipeline runs.
-    This means that if you use an umbrella repository to promote an application from a `dev` stage to `qa`
-    and `prod`, the umbrella repository needs to define the stage/environment specific values for
-    the subcomponents  for `qa`/`prod` instead of having those files in the subrepo.
+    If the pipeline runs for a repository defining subrepos in its `ods.y(a)ml`
+    file, then any charts in those subrepos are packaged as well, and added as
+    dependencies to the top-most chart under `charts/`. Note that values and
+    secrets files are only collected from the repository for which the pipeline
+    runs. Therefore, if you use an umbrella repository to promote an
+    application from a `dev` stage to `qa` and `prod`, the umbrella repository
+    needs to define the stage/environment specific values for the subcomponents
+    for `qa`/`prod` instead of having those files in the subrepo.
+
+    In order to produce correct `image.tag` values for subcomponents, the task
+    automatically sets `<subcomponent>.image.tag` equal to the Git commit SHA of
+    the subcomponent. Further, if no release name is explicitly configured, the
+    task also sets `<subcomponent>.fullnameOverride` equal to the respective
+    subcomponent to avoid resources being prefixed with the umbrella repository
+    component name (assuming your resources are named using the `chart.fullname`
+    helper).
   params:
     - name: chart-dir
       description: Helm chart directory that will be deployed
