@@ -129,7 +129,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatal(err)
 					}
 					// Subchart
-					subChartResourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-sample-database")
+					subChartResourceName := "helm-sample-database" // fixed name due to fullnameOverride
 					_, err = checkService(ctxt.Clients.KubernetesClientSet, ctxt.Namespace, subChartResourceName)
 					if err != nil {
 						t.Fatal(err)

@@ -72,6 +72,8 @@ spec:
       env:
         - name: HOME
           value: '/tekton/home'
+        - name: CI
+          value: "true"
         - name: DEBUG
           valueFrom:
             configMapKeyRef:

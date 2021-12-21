@@ -13,10 +13,18 @@ urlencode() {
     done
 }
 
+copyLintReport() {
+  cat eslint-report.txt
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
+  cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+}
+
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 DEBUG="false"
+MAX_LINT_WARNINGS="0"
+LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -29,6 +37,12 @@ while [[ "$#" -gt 0 ]]; do
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
+
+    --max-lint-warnings) MAX_LINT_WARNINGS="$2"; shift;;
+    --max-lint-warnings=*) MAX_LINT_WARNINGS="${1#*=}";;
+
+    --lint-file-ext) LINT_FILE_EXT="$2"; shift;;
+    --lint-file-ext=*) LINT_FILE_EXT="${1#*=}";;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -56,8 +70,24 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
     npm config set strict-ssl=false
 fi;
 
-echo "Building ..."
+echo "Installing dependencies ..."
 npm ci
+
+echo "Linting ..."
+set +e
+npx eslint src --ext "${LINT_FILE_EXT}" --format compact --max-warnings "${MAX_LINT_WARNINGS}" > eslint-report.txt
+exitcode=$?
+set -e
+
+if [ $exitcode == 0 ]; then
+  echo "OK" > eslint-report.txt
+  copyLintReport
+else
+  copyLintReport
+  exit $exitcode
+fi
+
+echo "Building ..."
 npm run build
 mkdir -p "${OUTPUT_DIR}/dist"
 cp -r dist "${OUTPUT_DIR}/dist"

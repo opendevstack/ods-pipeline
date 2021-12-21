@@ -11,8 +11,6 @@ image:
   # Overrides the image repository whose default is the chart name.
   repository: hello-world
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
 
 nameOverride: ""
 fullnameOverride: ""

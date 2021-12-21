@@ -251,6 +251,11 @@ func main() {
 	}
 	fmt.Println(string(stdout))
 
+	// Collect values to be set via the CLI.
+	cliValues := []string{
+		fmt.Sprintf("--set=image.tag=%s", ctxt.GitCommitSHA),
+	}
+
 	fmt.Println("Adding dependencies from subrepos into the charts/ directory ...")
 	// Find subcharts
 	chartsDir := filepath.Join(opts.chartDir, "charts")
@@ -259,9 +264,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not create %s: %s", chartsDir, err)
 		}
-	}
-	gitCommitSHAs := map[string]interface{}{
-		"gitCommitSha": ctxt.GitCommitSHA,
 	}
 	for _, r := range subrepos {
 		subrepo := filepath.Join(pipelinectxt.SubreposPath, r.Name())
@@ -278,8 +280,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		gitCommitSHAs[hc.Name] = map[string]string{
-			"gitCommitSha": gitCommitSHA,
+		cliValues = append(cliValues, fmt.Sprintf("--set=%s.image.tag=%s", hc.Name, gitCommitSHA))
+		if releaseName == ctxt.Component {
+			cliValues = append(cliValues, fmt.Sprintf("--set=%s.fullnameOverride=%s", hc.Name, hc.Name))
 		}
 		helmArchive, err := packageHelmChart(subchart, ctxt.Version, gitCommitSHA, opts.debug)
 		if err != nil {
@@ -311,15 +314,6 @@ func main() {
 	}
 
 	fmt.Println("Collecting Helm values files ...")
-	generatedValuesFilename := filepath.Join(opts.chartDir, "values.generated.yaml")
-	out, err := yaml.Marshal(gitCommitSHAs)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = ioutil.WriteFile(generatedValuesFilename, out, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
 	valuesFiles := []string{}
 	valuesFilesCandidates := []string{
 		fmt.Sprintf("%s/secrets.yaml", opts.chartDir), // equivalent values.yaml is added automatically by Helm
@@ -333,7 +327,6 @@ func main() {
 			fmt.Sprintf("%s/secrets.%s.yaml", opts.chartDir, targetConfig.Name),
 		)
 	}
-	valuesFilesCandidates = append(valuesFilesCandidates, generatedValuesFilename)
 	for _, vfc := range valuesFilesCandidates {
 		if _, err := os.Stat(vfc); os.IsNotExist(err) {
 			fmt.Printf("%s is not present, skipping.\n", vfc)
@@ -375,6 +368,7 @@ func main() {
 	for _, vf := range valuesFiles {
 		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
 	}
+	helmDiffArgs = append(helmDiffArgs, cliValues...)
 	helmDiffArgs = append(helmDiffArgs, releaseName, helmArchive)
 	stdout, stderr, err = runHelmCmd(helmDiffArgs, targetConfig, opts.debug)
 	if err == nil {
@@ -402,6 +396,7 @@ func main() {
 	for _, vf := range valuesFiles {
 		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
 	}
+	helmUpgradeArgs = append(helmUpgradeArgs, cliValues...)
 	helmUpgradeArgs = append(helmUpgradeArgs, releaseName, helmArchive)
 	stdout, stderr, err = runHelmCmd(helmUpgradeArgs, targetConfig, opts.debug)
 	if err != nil {
