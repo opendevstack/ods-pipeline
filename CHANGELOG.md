@@ -30,6 +30,7 @@ listed in the changelog.
 - Iterating over Dockerfiles in `build/package` instead of using hardcoded list ([#286](https://github.com/opendevstack/ods-pipeline/issues/286) and [#287](https://github.com/opendevstack/ods-pipeline/pull/287))
 - Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
 - Upgrade Java toolset to JDK 17 ([#294](https://github.com/opendevstack/ods-pipeline/issues/294))
+- Set Helm value `image.tag` instead of `gitCommitSha` ([#342](https://github.com/opendevstack/ods-pipeline/pull/342))
 
 ### Fixed
 
@@ -38,6 +39,8 @@ listed in the changelog.
 - `ods-finish` does not upload artifacts of subrepos ([#257](https://github.com/opendevstack/ods-pipeline/issues/257))
 - Waitfor-...sh scripts are not waiting for the expected 5 minutes ([#280](https://github.com/opendevstack/ods-pipeline/issues/280))
 - Tagging in ods-start causes second pipeline run ([#331](https://github.com/opendevstack/ods-pipeline/issues/331))
+- Helm resource names differ between component and umbrella repository ([#340](https://github.com/opendevstack/ods-pipeline/issues/340))
+
 
 ## [0.1.1] - 2021-10-28
 ### Fixed
