@@ -6,6 +6,18 @@ spec:
   description: |
     Builds Typescript applications.
 
+    The following steps are executed:
+
+    - linting using `eslint`
+    - build typescript application, using `npm run build`
+    - test execution
+    - SonarQube quality scan
+
+    All reports (xUnit report, coverage report and linting report) are placed into .ods/artifacts.
+
+    For `eslint` to work there needs to be a config file (`eslintrc.json` or similar) at the root of the working directory.
+    This can be done by running `eslint --init` or by following the link:https://eslint.org/docs/user-guide/getting-started[official documentation]
+
     After tests ran successfully, the application source code is scanned by SonarQube.
     Default SonarQube project properties are provided unless `sonar-project.properties`
     is present.
@@ -28,6 +40,16 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: max-lint-warnings
+      description: >-
+        Maximum of allowed linting warnings after which eslint will exit with an error.
+        Set to "-1" to never exit with an error due to warnings.
+      type: string
+      default: "0"
+    - name: lint-file-ext
+      description: File extensions to lint separated by a comma.
+      type: string
+      default: ".js,.ts,.jsx,.tsx,.svelte"
     - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
       type: string
@@ -70,7 +92,9 @@ spec:
         build-typescript \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
-          --debug=${DEBUG}
+          --debug=${DEBUG} \
+          --max-lint-warnings=$(params.max-lint-warnings) \
+          --lint-file-ext=$(params.lint-file-ext)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.

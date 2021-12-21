@@ -42,6 +42,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -92,6 +93,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
+						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
 					}
 					for _, wf := range wantFiles {
 						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -101,6 +103,31 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+				},
+			},
+			"fail linting typescript app and generate lint report": {
+				Timeout:             20 * time.Minute,
+				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-lint-error"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+				},
+				WantRunSuccess: false,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					wantFiles := []string{
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
+					}
+					for _, wf := range wantFiles {
+						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
+							t.Fatalf("Want %s, but got nothing", wf)
+						}
+					}
+
+					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
+
+					checkFileContent(t, wsDir, filepath.Join(pipelinectxt.LintReportsPath, "report.txt"), wantLintReportContent)
 				},
 			},
 		})
