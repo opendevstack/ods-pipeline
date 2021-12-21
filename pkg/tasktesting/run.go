@@ -94,36 +94,43 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
-	hasSetupFailed := err != nil
-	if hasSetupFailed != tc.WantSetupFail {
-		t.Fatalf("Got: %+v, want: %+v.", hasSetupFailed, tc.WantSetupFail)
+
+	// Check if task setup was successful
+	if err != nil {
+		if tc.WantSetupFail {
+			return
+		} else {
+			t.Fatalf("Task setup failed: %s", err)
+		}
 	}
 
-	if !hasSetupFailed {
-		if collectedLogsBuffer.Len() > 0 {
-			testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
-		}
+	if tc.WantSetupFail {
+		t.Fatal("Task setup was successful, but was expected to fail.")
+	}
 
-		// Show info from Task result
-		CollectTaskResultInfo(taskRun, t.Logf)
+	if collectedLogsBuffer.Len() > 0 {
+		testCaseContext.CollectedLogs = collectedLogsBuffer.Bytes()
+	}
 
-		// Check if task was successful
-		if taskRun.IsSuccessful() != tc.WantRunSuccess {
-			t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
-		}
+	// Show info from Task result
+	CollectTaskResultInfo(taskRun, t.Logf)
 
-		// Check local folder and evaluate output of task if needed
-		if tc.PostRunFunc != nil {
-			tc.PostRunFunc(t, testCaseContext)
-		}
+	// Check if task was successful
+	if taskRun.IsSuccessful() != tc.WantRunSuccess {
+		t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
+	}
 
-		if !testOpts.AlwaysKeepTmpWorkspaces {
-			// Clean up only if test is successful
-			for _, wd := range taskWorkspaces {
-				err = os.RemoveAll(wd)
-				if err != nil {
-					t.Fatal(err)
-				}
+	// Check local folder and evaluate output of task if needed
+	if tc.PostRunFunc != nil {
+		tc.PostRunFunc(t, testCaseContext)
+	}
+
+	if !testOpts.AlwaysKeepTmpWorkspaces {
+		// Clean up only if test is successful
+		for _, wd := range taskWorkspaces {
+			err = os.RemoveAll(wd)
+			if err != nil {
+				t.Fatal(err)
 			}
 		}
 	}
