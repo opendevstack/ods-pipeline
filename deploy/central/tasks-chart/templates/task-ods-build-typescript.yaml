@@ -65,6 +65,8 @@ spec:
       env:
         - name: HOME
           value: '/tekton/home'
+        - name: CI
+          value: "true"
         - name: NEXUS_URL
           valueFrom:
             configMapKeyRef:
