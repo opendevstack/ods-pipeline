@@ -13,14 +13,14 @@ Notes:
 
 - tests exclude the vendor directory.
 - test results are converted into xUnit format.
-- both xUnit report and coverage report are placed into .ods/artifacts.
+- both xUnit report and coverage report are placed into `.ods/artifacts`.
 
-Environment variables available:
+Available environment variables:
 
 - `ODS_OUTPUT_DIR`: this environment variable points to the folder
 that this build expects generated application artifacts to be copied to.
 The gradle script should read it and copy there the generated artifacts.
-- `NEXUS_* env vars`: `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+- `NEXUS_*` env vars: `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
 are available and should be read by the gradle script.
 
 To enable the gradle script to copy the generated application artifacts script follow these steps:
@@ -70,6 +70,9 @@ tasks.named('test') {
     finalizedBy jacocoTestReport
 }
 ```
+
+The exact build recipe can be found at
+link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-gradle.sh[build/package/scripts/build-gradle.sh].
 
 After tests ran successfully, the application source code is scanned by SonarQube.
 Default SonarQube project properties are provided unless `sonar-project.properties`

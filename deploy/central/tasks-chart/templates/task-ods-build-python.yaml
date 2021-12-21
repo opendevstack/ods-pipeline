@@ -6,6 +6,10 @@ spec:
   description: |
     Builds Python applications.
 
+    The exact build recipe can be found at
+    link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-python.sh[build/package/scripts/build-python.sh].
+    In particular, the Python source files are expected to be located in `src`.
+
     After tests ran successfully, the application source code is scanned by SonarQube.
     Default SonarQube project properties are provided unless `sonar-project.properties`
     is present.
