@@ -1,30 +1,15 @@
-FROM registry.access.redhat.com/ubi8:8.4
+FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+USER root
 
-ENV GO_VERSION=1.16.3 \
-    GOLANGCI_LINT_VERSION=v1.41.1 \
+ENV GOLANGCI_LINT_VERSION=v1.41.1 \
     GO_JUNIT_REPORT_VERSION=v0.9.1 \
-    GIT_VERSION=2.27 \
-    GCC_VERSION=8.5
-
-RUN yum install -y gcc-${GCC_VERSION}* gcc-c++-${GCC_VERSION}* git-${GIT_VERSION}*
-
-RUN cd /tmp && \
-    curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
-    rm -f *.tar.gz && \
-    cd - && \
-    mkdir /go
-
-ENV PATH $PATH:/usr/local/go/bin
-ENV GOBIN /usr/local/bin
+    GOBIN=/usr/local/bin
 
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$GOLANGCI_LINT_VERSION/install.sh | sh -s -- -b /usr/local/bin $GOLANGCI_LINT_VERSION
 
 RUN go get github.com/jstemmer/go-junit-report@$GO_JUNIT_REPORT_VERSION
-
-RUN chmod g+w /go
 
 # Add scripts
 COPY build/package/scripts/build-go.sh /usr/local/bin/build-go
@@ -35,4 +20,4 @@ RUN chmod +x /usr/local/bin/build-go && \
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/go.properties /usr/local/default-sonar-project.properties
 
-WORKDIR /go
+USER default

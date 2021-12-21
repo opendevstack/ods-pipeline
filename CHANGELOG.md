@@ -34,6 +34,7 @@ listed in the changelog.
 - Upgrade Java toolset to JDK 17 ([#294](https://github.com/opendevstack/ods-pipeline/issues/294))
 - Set Helm value `image.tag` instead of `gitCommitSha` ([#342](https://github.com/opendevstack/ods-pipeline/pull/342))
 - Provide TypeScript toolset with Node.js 16 ([#337](https://github.com/opendevstack/ods-pipeline/issues/337))
+- Use `ubi8/go-toolset` as consistent builder image and as image for the `ods-build-go` task ([#295](https://github.com/opendevstack/ods-pipeline/issues/295))
 
 ### Fixed
 
