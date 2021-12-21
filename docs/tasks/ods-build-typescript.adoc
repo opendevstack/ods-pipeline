@@ -68,6 +68,11 @@ without leading `./` and trailing `/`.
 | false
 | Whether to skip the SonarQube analysis or not.
 
+
+| node-version
+| 16
+| Node.js version to use - supported versions: 16
+
 |===
 
 == Results

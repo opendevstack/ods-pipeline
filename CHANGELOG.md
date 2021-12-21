@@ -33,6 +33,7 @@ listed in the changelog.
 - Upgrade Python toolset to v3.9, with migration from Flask to FastAPI sample app ([#312](https://github.com/opendevstack/ods-pipeline/issues/312))
 - Upgrade Java toolset to JDK 17 ([#294](https://github.com/opendevstack/ods-pipeline/issues/294))
 - Set Helm value `image.tag` instead of `gitCommitSha` ([#342](https://github.com/opendevstack/ods-pipeline/pull/342))
+- Provide TypeScript toolset with Node.js 16 ([#337](https://github.com/opendevstack/ods-pipeline/issues/337))
 
 ### Fixed
 

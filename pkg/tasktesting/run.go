@@ -34,6 +34,7 @@ type TestCase struct {
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
 	WantRunSuccess      bool
+	WantSetupFail       bool
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 	Timeout             time.Duration
@@ -93,8 +94,18 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
+
+	// Check if task setup was successful
 	if err != nil {
-		t.Fatal(err)
+		if tc.WantSetupFail {
+			return
+		} else {
+			t.Fatalf("Task setup failed: %s", err)
+		}
+	}
+
+	if tc.WantSetupFail {
+		t.Fatal("Task setup was successful, but was expected to fail.")
 	}
 
 	if collectedLogsBuffer.Len() > 0 {
