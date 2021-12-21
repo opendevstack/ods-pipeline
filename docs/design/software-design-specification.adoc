@@ -83,7 +83,7 @@ Input parameters:
 | `build-go.sh` shell script
 a| Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
 
-Runs `golangci-lint` (SDS-EXT-4) to check if there are any lint errors.
+Runs `golangci-lint` (SDS-EXT-4) to check if there are any lint errors. A report is placed into `.ods/artifacts/lint-reports`.
 
 If the `pre-test-script` is set, it executes the given script before running tests.
 

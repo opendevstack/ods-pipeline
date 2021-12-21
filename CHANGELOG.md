@@ -18,10 +18,11 @@ listed in the changelog.
 - Make task prefix customizable ([#289](https://github.com/opendevstack/ods-pipeline/issues/289))
 - Add overridable test timeout to Makefile ([#284](https://github.com/opendevstack/ods-pipeline/issues/284))
 - Skipping Tests in TypeScript build task if test artifacts are present already ([#238](https://github.com/opendevstack/ods-pipeline/issues/238))
-- Provided make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
+- Provide make target for ShellCheck and added ShellCheck to GitHub actions ([#240](https://github.com/opendevstack/ods-pipeline/issues/240))
 - Supply default `sonar-project.properties` when none is present, configuring SonarQube out-of-the-box ([#296](https://github.com/opendevstack/ods-pipeline/issues/296))
-- Linting stage in TypeScript build task ([#325](https://github.com/opendevstack/ods-pipeline/issues/325))
+- Linting step in TypeScript build task ([#325](https://github.com/opendevstack/ods-pipeline/issues/325))
 - Set `CI=true` in build tasks ([#336](https://github.com/opendevstack/ods-pipeline/issues/336))
+- Generate report for successful linting step in Go build task ([#215](https://github.com/opendevstack/ods-pipeline/issues/215))
 
 ### Changed
 
