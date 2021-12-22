@@ -18,7 +18,8 @@ spec:
       link:https://golangci-lint.run/usage/configuration/[configuration documentation].
     - Tests are executed. A potential `vendor` directory is excluded. Test
       results are converted into xUnit format, and placed together with coverage
-      report into `.ods/artifacts`.
+      report into `.ods/artifacts`. If test artifacts are already present for
+      the current Git commit SHA, testing is skipped.
     - Application binary (named `app`) is built and placed into the directory
       specified by `output-dir`.
 

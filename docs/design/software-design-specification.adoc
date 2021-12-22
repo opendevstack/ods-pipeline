@@ -550,6 +550,11 @@ The following table provides the history of the document.
 |===
 | Version | Date | Author | Change
 
+| 0.10
+| 2021-12-22
+| Michael Sauter
+| Add Go lint report artifact.
+
 | 0.9
 | 2021-12-21
 | Michael Sauter
