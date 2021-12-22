@@ -46,11 +46,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
@@ -110,11 +106,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -135,9 +127,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := "docker/test.txt"
-					if _, err := os.Stat(filepath.Join(wsDir, wantFile)); os.IsNotExist(err) {
-						t.Fatalf("Want %s, but got nothing", wantFile)
-					}
+					checkFileExists(t, filepath.Join(wsDir, wantFile))
 				},
 			},
 		})

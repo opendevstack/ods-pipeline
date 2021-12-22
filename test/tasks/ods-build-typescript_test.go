@@ -44,11 +44,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
@@ -95,11 +91,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -116,14 +108,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
-						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					wantFile := filepath.Join(pipelinectxt.LintReportsPath, "report.txt")
+					checkFileExists(t, filepath.Join(wsDir, wantFile))
 
 					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
 

@@ -50,11 +50,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -114,11 +110,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					checkFilesExist(t, wantFiles, wsDir)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -146,15 +138,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
-						".ods/artifacts/lint-reports/report.txt",
-					}
-
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					wantFile := filepath.Join(pipelinectxt.LintReportsPath, "report.txt")
+					checkFileExists(t, wantFile)
 
 					wantLintReportContent := "main.go:6:2: printf: fmt.Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
 
@@ -176,9 +161,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := "docker/test.txt"
-					if _, err := os.Stat(filepath.Join(wsDir, wantFile)); os.IsNotExist(err) {
-						t.Fatalf("Want %s, but got nothing", wantFile)
-					}
+					checkFileExists(t, filepath.Join(wsDir, wantFile))
 				},
 			},
 			"build go app in PR": {
