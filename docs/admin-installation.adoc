@@ -22,7 +22,7 @@ First, create a repository in Bitbucket, e.g. `ods`. The name can be anything, b
 Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/central`) from the `opendestack/ods-pipeline` repository at the given revision (e.g. `master`) into your new local repository at the path `ods-pipeline`.
 
 ```
-pipelineGitRef=v0.1.1 # Pick the version you want to install
+pipelineGitRef=v0.2.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -106,7 +106,7 @@ IMPORTANT: Don't forget to refer to your tasks in `ods.yaml` with `kind: Task` i
 
 You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 ```
-pipelineGitRef=v0.1.1 # Pick the version you want to install
+pipelineGitRef=v0.2.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \

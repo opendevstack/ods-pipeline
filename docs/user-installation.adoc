@@ -25,7 +25,7 @@ First, create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything
 Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/cd-namespace`) from the `opendestack/ods-pipeline` repository at the given revision (e.g. `master`) into your new local repository at the path `ods-pipeline`.
 
 ```
-pipelineGitRef=v0.1.1 # Pick the version you want to install
+pipelineGitRef=v0.2.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -95,7 +95,7 @@ See the link:getting-started.adoc[Getting Started] guide for more information on
 
 You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 ```
-pipelineGitRef=v0.1.1 # Pick the version you want to install
+pipelineGitRef=v0.2.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -108,4 +108,4 @@ Now, compare if any new values have been introduced and update the values and se
 
 Afterwards you can update the resources via `./install.sh -n foo-cd -f values.yaml,secrets.yaml`. You may also use `--dry-run` to see the changes first.
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-1-0` to `ods-build-go-v0-1-1`.
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-1-1` to `ods-build-go-v0-2-0`.

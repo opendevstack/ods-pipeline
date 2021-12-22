@@ -67,7 +67,7 @@ interceptor:
     pullPolicy: Always
     # Image tag to pull.
     # If not given, defaults to the chart appVersion.
-    # tag: "0.1.1"
+    # tag: "0.2.0"
   # Deployment pod resources. Typically these settings should not need to change.
   resources:
     limits:

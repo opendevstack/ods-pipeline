@@ -4,8 +4,8 @@
 
 registry: image-registry.openshift-image-registry.svc:5000
 namespace: ods
-imageTag: 0.1.1
-taskSuffix: -v0-1-1
+imageTag: 0.2.0
+taskSuffix: -v0-2-0
 pushRegistry: image-registry.openshift-image-registry.svc:5000
 
 

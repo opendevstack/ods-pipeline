@@ -22,7 +22,7 @@ pipeline:
   - name: backend-build-go
     taskRef:
       kind: ClusterTask
-      name: ods-build-go-v0-1-1
+      name: ods-build-go-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace

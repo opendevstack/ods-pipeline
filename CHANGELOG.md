@@ -8,6 +8,8 @@ Note that changes which ONLY affect documentation or the testsuite will not be
 listed in the changelog.
 
 ## [Unreleased]
+
+## [0.2.0] - 2021-12-22
 ### Added
 
 - Provide nexus `-build-arg` variables during image building with ods-package-image ([#327](https://github.com/opendevstack/ods-pipeline/issues/327))
