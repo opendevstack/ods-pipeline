@@ -43,6 +43,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wantFiles := []string{
 						"docker/Dockerfile",
 						"docker/app",
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.out"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
@@ -106,6 +107,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wantFiles := []string{
 						fmt.Sprintf("%s/docker/Dockerfile", subdir),
 						binary,
+						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.out", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),

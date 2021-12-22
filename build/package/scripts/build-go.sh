@@ -1,6 +1,12 @@
 #!/bin/bash
 set -eu
 
+copyLintReport() {
+  cat golangci-lint-report.txt
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
+  cp golangci-lint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+}
+
 ENABLE_CGO="false"
 GO_OS=""
 GO_ARCH=""
@@ -72,20 +78,16 @@ fi
 echo "Linting ..."
 golangci-lint version
 set +e
-rm go-lint-report.txt &>/dev/null
-golangci-lint run > go-lint-report.txt
+rm golangci-lint-report.txt &>/dev/null
+golangci-lint run > golangci-lint-report.txt
 exitcode=$?
 set -e
-if [ -s go-lint-report.txt ]; then
-  cat go-lint-report.txt
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
-  cp go-lint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+if [ $exitcode == 0 ]; then
+  echo "OK" > golangci-lint-report.txt
+  copyLintReport
+else
+  copyLintReport
   exit $exitcode
-fi
-
-if [ -n "${PRE_TEST_SCRIPT}" ]; then
-  echo "Executing pre-test script ..."
-  ./"${PRE_TEST_SCRIPT}"
 fi
 
 echo "Testing ..."
@@ -95,6 +97,10 @@ if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" 
   cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
   cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
 else
+  if [ -n "${PRE_TEST_SCRIPT}" ]; then
+    echo "Executing pre-test script ..."
+    ./"${PRE_TEST_SCRIPT}"
+  fi
   GOPKGS=$(go list ./... | grep -v /vendor)
   set +e
   rm coverage.out test-results.txt report.xml &>/dev/null
