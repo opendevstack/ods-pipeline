@@ -32,7 +32,7 @@ As described in the architecture, the system is split into two main containers: 
 |===
 | SDS-SHARED-1
 | `ods-sonar` container image
-| Container image for SQ scanning. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7, SDS-EXT-8 and SDS-EXT-9).
+| Container image for SQ scanning. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7 and SDS-EXT-8).
 
 | SDS-SHARED-2
 | `sonar` binary
@@ -77,7 +77,7 @@ Input parameters:
 
 | SDS-TASK-2
 | `ods-go-toolset` contaner image
-| Container image for building Go applications. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-3, SDS-EXT-4,EXT- SDS-EXT-5, SDS-EXT-6, SDS-EXT-9, SDS-SHARED-3, SDS-TASK-3 and SDS-TASK-25.
+| Container image for building Go applications. Based on `ubi8/go-toolset` (SDS-EXT-25), includes SDS-EXT-4,EXT- SDS-EXT-5, SDS-SHARED-3, SDS-TASK-3 and SDS-TASK-25.
 
 | SDS-TASK-3
 | `build-go.sh` shell script
@@ -530,6 +530,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | File encryption tool, format and Go library with small explicit keys.
 | https://github.com/FiloSottile/age
 
+| SDS-EXT-25
+| Go Toolset for UBI 8
+| 1.16.12
+| go-toolset available as a container is a base platform for building and running various Go applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/go-toolset/5ce8713aac3db925c03774d1
+
 |===
 
 == Appendix
@@ -543,6 +549,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.9
+| 2021-12-21
+| Michael Sauter
+| Add Go UBI base image.
 
 | 0.8
 | 2021-12-20

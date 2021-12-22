@@ -1,12 +1,16 @@
-FROM golang:1.16-alpine AS builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12 AS builder
 
-RUN mkdir -p /etc/go
-COPY go.* /etc/go/
-COPY cmd /etc/go/cmd
-COPY internal /etc/go/internal
-COPY pkg /etc/go/pkg
-RUN cd /etc/go/cmd/webhook-interceptor && CGO_ENABLED=0 go build -o /usr/local/bin/webhook-interceptor
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+USER root
 
+# Add Go binaries
+COPY go.* .
+COPY cmd cmd
+COPY internal internal
+COPY pkg pkg
+RUN cd cmd/webhook-interceptor && CGO_ENABLED=0 go build -o /usr/local/bin/webhook-interceptor
+
+# Final image
 # ubi-micro cannot be used as it misses the ca-certificates package.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 

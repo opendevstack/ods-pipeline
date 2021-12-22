@@ -1,38 +1,19 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11 AS builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12 AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+USER root
 
 ARG sonarEdition=community
 
 ENV SONAR_SCANNER_VERSION=3.1.0.1141 \
     CNES_REPORT_VERSION=3.2.2 \
-    GO_VERSION=1.16 \
-    GIT_VERSION=2.27 \
     SONAR_EDITION=$sonarEdition
-
-USER root
-
-RUN microdnf install -y git-${GIT_VERSION}*
-
-RUN cd /tmp && \
-    curl -LO https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
-    rm -f *.tar.gz && \
-    cd - && \
-    mkdir /go
-
-ENV PATH $PATH:/usr/local/go/bin
-ENV GOBIN /usr/local/bin
-
-RUN chmod g+w /go
 
 # Install Sonar Scanner.
 RUN cd /tmp \
     && curl -LO https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/${SONAR_SCANNER_VERSION}/sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
     && unzip sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
-    && mv sonar-scanner-${SONAR_SCANNER_VERSION} /usr/local/sonar-scanner-cli \
-    && rm -rf sonar-scanner-cli-${SONAR_SCANNER_VERSION}.zip \
-    && /usr/local/sonar-scanner-cli/bin/sonar-scanner --version
+    && mv sonar-scanner-${SONAR_SCANNER_VERSION} /usr/local/sonar-scanner-cli
 
 # Install CNES report.
 RUN cd /tmp \
@@ -41,14 +22,14 @@ RUN cd /tmp \
     && mv cnesreport.jar /usr/local/cnes/cnesreport.jar \
     && chmod +x /usr/local/cnes/cnesreport.jar
 
-# Add Go binaries
-RUN mkdir -p /etc/go
-COPY go.* /etc/go/
-COPY cmd /etc/go/cmd
-COPY internal /etc/go/internal
-COPY pkg /etc/go/pkg
-RUN cd /etc/go/cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
+# Add Go binaries.
+COPY go.* .
+COPY cmd cmd
+COPY internal internal
+COPY pkg pkg
+RUN cd cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
 
+# Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
@@ -58,5 +39,3 @@ COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli
 COPY --from=builder /usr/local/cnes/cnesreport.jar /usr/local/cnes/cnesreport.jar
 
 ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
-
-WORKDIR /go
