@@ -139,7 +139,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := filepath.Join(pipelinectxt.LintReportsPath, "report.txt")
-					checkFileExists(t, wantFile)
+					checkFileExists(t, filepath.Join(wsDir, wantFile))
 
 					wantLintReportContent := "main.go:6:2: printf: fmt.Printf format %s reads arg #1, but call has 0 args (govet)\n\tfmt.Printf(\"Hello World %s\") // lint error on purpose to generate lint report\n\t^"
 
