@@ -39,12 +39,12 @@ listed in the changelog.
 ### Fixed
 
 - Release branches of subrepos are not detected ([#269](https://github.com/opendevstack/ods-pipeline/pull/269))
-- `Directory` values in the artifact manifest (`.ods/artifacts/manifest.json`) contain an erronous leading slash. This should only be an issue if you relied on this value in a custom task. ([#269](https://github.com/opendevstack/ods-pipeline/pull/269))
+- `directory` values in the artifact manifest (`.ods/artifacts/manifest.json`) contain an erronous leading slash. This should only be an issue if you relied on this value in a custom task. ([#269](https://github.com/opendevstack/ods-pipeline/pull/269))
 - `ods-finish` does not upload artifacts of subrepos ([#257](https://github.com/opendevstack/ods-pipeline/issues/257))
 - Waitfor-...sh scripts are not waiting for the expected 5 minutes ([#280](https://github.com/opendevstack/ods-pipeline/issues/280))
 - Tagging in `ods-start` causes second pipeline run ([#331](https://github.com/opendevstack/ods-pipeline/issues/331))
 - Helm resource names differ between component and umbrella repository ([#340](https://github.com/opendevstack/ods-pipeline/issues/340))
-
+- Commercial SonarQube capabilities are not detected because `SONAR_EDITION` is not set in `ods-sonar` ([#350](https://github.com/opendevstack/ods-pipeline/issues/350))
 
 ## [0.1.1] - 2021-10-28
 ### Fixed

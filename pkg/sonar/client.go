@@ -51,7 +51,7 @@ func NewClient(clientConfig *ClientConfig) *Client {
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
-	if len(clientConfig.ServerEdition) == 0 {
+	if clientConfig.ServerEdition == "" {
 		clientConfig.ServerEdition = "community"
 	}
 	return &Client{
