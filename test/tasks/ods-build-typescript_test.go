@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -58,17 +56,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup subdir in "monorepo"
 					subdir := "ts-src"
-					err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = directory.Copy(
-						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "typescript-sample-app"),
-						filepath.Join(wsDir, subdir),
-					)
-					if err != nil {
-						t.Fatal(err)
-					}
+					createAppInSubDirectory(t, wsDir, subdir, "typescript-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{

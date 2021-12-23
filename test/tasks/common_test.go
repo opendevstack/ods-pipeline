@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -200,5 +202,18 @@ func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildSta
 	if buildStatus.State != wantBuildStatus {
 		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
 	}
+}
 
+func createAppInSubDirectory(t *testing.T, wsDir string, subdir string, sampleApp string) {
+	err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = directory.Copy(
+		filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, sampleApp),
+		filepath.Join(wsDir, subdir),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
