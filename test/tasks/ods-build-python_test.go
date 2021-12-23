@@ -37,7 +37,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
+					checkFilesExist(t, wsDir,
 						"docker/app/main.py",
 						"docker/app/requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
@@ -45,8 +45,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
-					}
-					checkFilesExist(t, wantFiles, wsDir)
+					)
 
 					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
@@ -97,7 +96,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					subdir := "fastapi-src"
-					wantFiles := []string{
+
+					checkFilesExist(t, wsDir,
 						fmt.Sprintf("%s/docker/app/main.py", subdir),
 						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
@@ -105,8 +105,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
-					}
-					checkFilesExist(t, wantFiles, wsDir)
+					)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -127,7 +126,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := "docker/test.txt"
-					checkFileExists(t, filepath.Join(wsDir, wantFile))
+					checkFilesExist(t, wsDir, wantFile)
 				},
 			},
 		})

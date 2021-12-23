@@ -35,7 +35,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
+					checkFilesExist(t, wsDir,
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
@@ -43,8 +43,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-					}
-					checkFilesExist(t, wantFiles, wsDir)
+					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
@@ -81,7 +80,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					subdir := "ts-src"
-					wantFiles := []string{
+
+					checkFilesExist(t, wsDir,
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-clover.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage-final.json", subdir)),
@@ -90,8 +90,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
-					}
-					checkFilesExist(t, wantFiles, wsDir)
+					)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -109,7 +108,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := filepath.Join(pipelinectxt.LintReportsPath, "report.txt")
-					checkFileExists(t, filepath.Join(wsDir, wantFile))
+					checkFilesExist(t, wsDir, wantFile)
 
 					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
 

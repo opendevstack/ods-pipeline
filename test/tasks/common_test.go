@@ -54,15 +54,12 @@ func checkFileContent(t *testing.T, wsDir, filename, want string) {
 	}
 }
 
-func checkFileExists(t *testing.T, filename string) {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		t.Fatalf("Want %s, but got nothing", filename)
-	}
-}
-
-func checkFilesExist(t *testing.T, wantFiles []string, wsDir string) {
+func checkFilesExist(t *testing.T, wsDir string, wantFiles ...string) {
 	for _, wf := range wantFiles {
-		checkFileExists(t, filepath.Join(wsDir, wf))
+		filename := filepath.Join(wsDir, wf)
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			t.Fatalf("Want %s, but got nothing", filename)
+		}
 	}
 }
 
