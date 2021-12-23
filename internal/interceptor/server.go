@@ -317,10 +317,12 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		_, err := s.TektonClient.UpdatePipeline(r.Context(), tknPipeline, metav1.UpdateOptions{})
-		msg := fmt.Sprintf("cannot update pipeline %s", tknPipeline.Name)
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
+		if err != nil {
+			msg := fmt.Sprintf("cannot update pipeline %s", tknPipeline.Name)
+			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	log.Println(requestID, fmt.Sprintf("%+v", pData))

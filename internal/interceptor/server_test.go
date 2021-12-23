@@ -228,7 +228,7 @@ func testServer(tc tektonClient.ClientInterface, bc bitbucketInterface) (*httpte
 	return httptest.NewServer(http.HandlerFunc(server.HandleRoot)), nil
 }
 
-func TestServer(t *testing.T) {
+func TestWebhookHandling(t *testing.T) {
 
 	tests := map[string]struct {
 		requestBodyFixture string
@@ -360,6 +360,40 @@ func TestServer(t *testing.T) {
 					t.Fatal("exactly one pipeline should have been updated")
 				}
 			},
+		},
+		"failure to create pipeline is handled properly": {
+			requestBodyFixture: "interceptor/payload.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+				},
+			},
+			tektonClient: &tektonClient.TestClient{
+				FailCreatePipeline: true,
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   "cannot create pipeline ods-pipeline-master",
+		},
+		"failure to update pipeline is handled properly": {
+			requestBodyFixture: "interceptor/payload.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+				},
+			},
+			tektonClient: &tektonClient.TestClient{
+				Pipelines: []*tekton.Pipeline{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							// generated pipeline name
+							Name: "ods-pipeline-master",
+						},
+					},
+				},
+				FailUpdatePipeline: true,
+			},
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   "cannot update pipeline ods-pipeline-master",
 		},
 	}
 	for name, tc := range tests {
