@@ -77,7 +77,7 @@ func serve() error {
 	project := strings.TrimSuffix(namespace, namespaceSuffix)
 
 	// Initialize Tekton client.
-	client, err := tektonClient.NewInCluserClient(&tektonClient.ClientConfig{
+	client, err := tektonClient.NewInClusterClient(&tektonClient.ClientConfig{
 		Namespace: namespace,
 	})
 	if err != nil {

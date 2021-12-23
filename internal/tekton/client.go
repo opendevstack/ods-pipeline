@@ -29,8 +29,8 @@ type ClientInterface interface {
 	ClientPipelineInterface
 }
 
-// NewInCluserClient initializes a Tekton client from within a cluster.
-func NewInCluserClient(clientConfig *ClientConfig) (*Client, error) {
+// NewInClusterClient initializes a Tekton client from within a cluster.
+func NewInClusterClient(clientConfig *ClientConfig) (*Client, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
