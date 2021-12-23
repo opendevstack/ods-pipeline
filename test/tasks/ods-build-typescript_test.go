@@ -2,14 +2,11 @@ package tasks
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -35,7 +32,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
+					checkFilesExist(t, wsDir,
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
@@ -43,12 +40,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
@@ -63,17 +55,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup subdir in "monorepo"
 					subdir := "ts-src"
-					err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = directory.Copy(
-						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "typescript-sample-app"),
-						filepath.Join(wsDir, subdir),
-					)
-					if err != nil {
-						t.Fatal(err)
-					}
+					createAppInSubDirectory(t, wsDir, subdir, "typescript-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
@@ -85,7 +67,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					subdir := "ts-src"
-					wantFiles := []string{
+
+					checkFilesExist(t, wsDir,
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-clover.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage-final.json", subdir)),
@@ -94,12 +77,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -116,14 +94,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
-						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					wantFile := filepath.Join(pipelinectxt.LintReportsPath, "report.txt")
+					checkFilesExist(t, wsDir, wantFile)
 
 					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
 

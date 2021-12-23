@@ -3,13 +3,10 @@ package tasks
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -37,7 +34,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
+					checkFilesExist(t, wsDir,
 						"docker/app/main.py",
 						"docker/app/requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
@@ -45,12 +42,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					)
 
 					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
@@ -79,17 +71,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					// Setup subdir in "monorepo"
 					subdir := "fastapi-src"
-					err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = directory.Copy(
-						filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "python-fastapi-sample-app"),
-						filepath.Join(wsDir, subdir),
-					)
-					if err != nil {
-						t.Fatal(err)
-					}
+					createAppInSubDirectory(t, wsDir, subdir, "python-fastapi-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
@@ -101,7 +83,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					subdir := "fastapi-src"
-					wantFiles := []string{
+
+					checkFilesExist(t, wsDir,
 						fmt.Sprintf("%s/docker/app/main.py", subdir),
 						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
@@ -109,12 +92,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
@@ -135,9 +113,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					wantFile := "docker/test.txt"
-					if _, err := os.Stat(filepath.Join(wsDir, wantFile)); os.IsNotExist(err) {
-						t.Fatalf("Want %s, but got nothing", wantFile)
-					}
+					checkFilesExist(t, wsDir, wantFile)
 				},
 			},
 		})

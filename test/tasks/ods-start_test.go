@@ -63,8 +63,10 @@ func TestTaskODSStart(t *testing.T) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
-					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json"))
-					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
+					checkFilesExist(t, wsDir,
+						filepath.Join(pipelinectxt.PipelineRunsPath, "foo-zh9gt0.json"),
+						filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename),
+					)
 				},
 			},
 			"clones repo and configured subrepos": {
@@ -130,7 +132,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					// Check .ods directory contents of main repo
 					checkODSContext(t, wsDir, ctxt.ODS)
-					checkFileExists(t, filepath.Join(wsDir, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
+					checkFilesExist(t, wsDir, filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
 
 					// Check .ods directory contents of subrepo
 					subrepoDir := filepath.Join(wsDir, pipelinectxt.SubreposPath, subrepoContext.Repository)
@@ -142,7 +144,7 @@ func TestTaskODSStart(t *testing.T) {
 					xUnitContent := trimmedFileContentOrFatal(t, filepath.Join(sourceArtifactsBaseDir, xUnitFileSource))
 					destinationArtifactsBaseDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
 					checkFileContent(t, destinationArtifactsBaseDir, xUnitFileSource, xUnitContent)
-					checkFileExists(t, filepath.Join(destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename))
+					checkFilesExist(t, destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename)
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)

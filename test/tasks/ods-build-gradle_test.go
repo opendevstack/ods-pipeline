@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -33,7 +32,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 
-					wantFiles := []string{
+					checkFilesExist(t, wsDir,
 						"docker/Dockerfile",
 						"docker/app.jar",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
@@ -41,12 +40,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
-					}
-					for _, wf := range wantFiles {
-						if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
-							t.Fatalf("Want %s, but got nothing", wf)
-						}
-					}
+					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
