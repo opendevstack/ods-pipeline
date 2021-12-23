@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"

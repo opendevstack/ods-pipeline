@@ -3,7 +3,6 @@ package tasks
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
