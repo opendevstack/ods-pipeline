@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -ue
 
+date
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
@@ -28,16 +30,20 @@ esac; shift; done
 echo "Run container using image tag ${SONAR_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 cd "${SCRIPT_DIR}"/sonarqube
-docker build -t ${IMAGE_NAME} .
+date
+docker build --platform linux/amd64 -t ${IMAGE_NAME} .
 cd - &> /dev/null
-docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" ${IMAGE_NAME}
+date
+docker run -d --platform linux/amd64 --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" ${IMAGE_NAME}
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
 if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
     docker logs ${CONTAINER_NAME}
+    date
     exit 1
-fi 
+fi
 
+date
 echo "Creating token for '${SONAR_USERNAME}' ..."
 tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
     "${SONARQUBE_URL}/api/user_tokens/generate?login=${SONAR_USERNAME}&name=odspipeline")
@@ -50,3 +56,4 @@ token=$(echo "${tokenResponse}" | jq -r .token)
     echo "sonarUsername: '${SONAR_USERNAME}'"
     echo "sonarAuthToken: '${token}'"
 } >> "${HELM_VALUES_FILE}"
+date
