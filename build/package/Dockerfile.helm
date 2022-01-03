@@ -26,10 +26,7 @@ COPY pkg pkg
 RUN cd cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
 
 # Install sops.
-RUN mkdir -p /tmp/sops \
-    && cd /tmp/sops \
-    && curl -LO https://github.com/mozilla/sops/releases/download/v${SOPS_VERSION}/sops-${SOPS_VERSION}-1.x86_64.rpm \
-    && yum install -y sops-${SOPS_VERSION}-1.x86_64.rpm \
+RUN go install go.mozilla.org/sops/v3/cmd/sops@v${SOPS_VERSION} \
     && sops --version
 
 # Install age.
