@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/interceptor"
+	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 )
 
 const (
 	namespaceFile    = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	namespaceSuffix  = "-cd"
-	apiHostEnvVar    = "API_HOST"
-	apiHostDefault   = "openshift.default.svc.cluster.local"
 	repoBaseEnvVar   = "REPO_BASE"
 	tokenEnvVar      = "ACCESS_TOKEN"
 	taskKindEnvVar   = "ODS_TASK_KIND"
@@ -69,37 +69,40 @@ func serve() error {
 		)
 	}
 
-	apiHost := os.Getenv(apiHostEnvVar)
-	if len(apiHost) == 0 {
-		apiHost = apiHostDefault
-		log.Println(
-			"INFO:",
-			apiHostEnvVar,
-			"not set, using default value:",
-			apiHostDefault,
-		)
-	}
-
 	namespace, err := getFileContent(namespaceFile)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 
 	project := strings.TrimSuffix(namespace, namespaceSuffix)
 
-	client, err := interceptor.NewClient(apiHost, namespace)
+	// Initialize Tekton client.
+	client, err := tektonClient.NewInClusterClient(&tektonClient.ClientConfig{
+		Namespace: namespace,
+	})
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 
-	server := interceptor.NewServer(client, interceptor.ServerConfig{
-		Namespace:  namespace,
-		Project:    project,
-		RepoBase:   repoBase,
-		Token:      token,
-		TaskKind:   taskKind,
-		TaskSuffix: taskSuffix,
+	// Initialize Bitbucket client.
+	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+		APIToken: token,
+		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
+
+	server, err := interceptor.NewServer(interceptor.ServerConfig{
+		Namespace:       namespace,
+		Project:         project,
+		RepoBase:        repoBase,
+		Token:           token,
+		TaskKind:        taskKind,
+		TaskSuffix:      taskSuffix,
+		BitbucketClient: bitbucketClient,
+		TektonClient:    client,
+	})
+	if err != nil {
+		return err
+	}
 
 	log.Println("Ready to accept requests")
 

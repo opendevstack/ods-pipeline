@@ -2,8 +2,10 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   creationTimestamp: null
+  labels:
+    pipeline.opendevstack.org/git-ref: main
+    pipeline.opendevstack.org/repository: foo-bar
   name: bar-main
-  resourceVersion: "0"
 spec:
   description: ODS
   finally:

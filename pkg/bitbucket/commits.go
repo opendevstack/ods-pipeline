@@ -109,6 +109,12 @@ type CommitListParams struct {
 	Until string `json:"until"`
 }
 
+type CommitClientInterface interface {
+	CommitList(projectKey string, repositorySlug string, params CommitListParams) (*CommitPage, error)
+	CommitGet(projectKey, repositorySlug, commitID string) (*Commit, error)
+	CommitPullRequestList(projectKey, repositorySlug, commitID string) (*PullRequestPage, error)
+}
+
 // CommitList retrieves a page of commits from a given starting commit or "between" two commits. If no explicit commit is specified, the tip of the repository's default branch is assumed. commits may be identified by branch or tag name or by ID. A path may be supplied to restrict the returned commits to only those which affect that path.
 // The authenticated user must have REPO_READ permission for the specified repository to call this resource.
 // https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp222

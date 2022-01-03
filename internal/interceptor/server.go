@@ -3,6 +3,7 @@ package interceptor
 import (
 	"crypto/sha1"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,25 +15,35 @@ import (
 	"time"
 
 	intrepo "github.com/opendevstack/pipeline/internal/repository"
+	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
-const allowedChangeRefType = "BRANCH"
+const (
+	allowedChangeRefType = "BRANCH"
+	// Label prefix to use for labels applied by this webhook interceptor.
+	labelPrefix = "pipeline.opendevstack.org/"
+	// Label specifying the Bitbucket repository related to the pipeline.
+	repositoryLabel = labelPrefix + "repository"
+	// Label specifying the Git ref (e.g. branch) related to the pipeline.
+	gitRefLabel = labelPrefix + "git-ref"
+	// letterBytes contains letters to use for random strings.
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
 
 // Server represents this service, and is a global.
 type Server struct {
-	OpenShiftClient Client
+	TektonClient    tektonClient.ClientInterface
 	Namespace       string
 	Project         string
 	RepoBase        string
 	Token           string
 	TaskKind        tekton.TaskKind
 	TaskSuffix      string
-	BitbucketClient *bitbucket.Client
+	BitbucketClient bitbucketInterface
 }
 
 // ServerConfig configures a server.
@@ -50,11 +61,14 @@ type ServerConfig struct {
 	TaskKind string
 	// TaskSuffic is the suffix applied to tasks (version information).
 	TaskSuffix string
+	// TektonClient is a tekton client
+	TektonClient tektonClient.ClientInterface
+	// BitbucketClient is a Bitbucket client
+	BitbucketClient bitbucketInterface
 }
 
 type PipelineData struct {
 	Name            string `json:"name"`
-	ResourceVersion int    `json:"resourceVersion"`
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
@@ -73,26 +87,39 @@ type PipelineData struct {
 	PullRequestBase string `json:"prBase"`
 }
 
+type bitbucketInterface interface {
+	bitbucket.CommitClientInterface
+	bitbucket.RawClientInterface
+}
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
 // NewServer returns a new server.
-func NewServer(client Client, serverConfig ServerConfig) *Server {
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
-		APIToken: serverConfig.Token,
-		BaseURL:  strings.TrimSuffix(serverConfig.RepoBase, "/scm"),
-	})
+func NewServer(serverConfig ServerConfig) (*Server, error) {
+	if serverConfig.Namespace == "" {
+		return nil, errors.New("namespace is required")
+	}
+	if serverConfig.Token == "" {
+		return nil, errors.New("token is required")
+	}
+	if serverConfig.TektonClient == nil {
+		return nil, errors.New("tekton client is required")
+	}
+	if serverConfig.BitbucketClient == nil {
+		return nil, errors.New("bitbucket client is required")
+	}
 	return &Server{
-		OpenShiftClient: client,
+		TektonClient:    serverConfig.TektonClient,
 		Namespace:       serverConfig.Namespace,
 		Project:         serverConfig.Project,
 		RepoBase:        serverConfig.RepoBase,
 		Token:           serverConfig.Token,
 		TaskKind:        tekton.TaskKind(serverConfig.TaskKind),
 		TaskSuffix:      serverConfig.TaskSuffix,
-		BitbucketClient: bitbucketClient,
-	}
+		BitbucketClient: serverConfig.BitbucketClient,
+	}, nil
 }
 
 type repository struct {
@@ -127,13 +154,11 @@ type requestBitbucket struct {
 	} `json:"comment"`
 }
 
-// HandleRoot handles all requests to this service.
+// HandleRoot handles all requests to this service. It performs the following:
+// - extract pipeline data from request body
+// - extend body with calculated pipeline information
+// - create/update pipeline that will be triggerd by event listener
 func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
-
-	// read request body into Go object
-	// extract pipeline data
-	// extend body with data
-	// create/update pipeline
 
 	requestID := randStringBytes(6)
 	log.Println(requestID, "---START---")
@@ -215,28 +240,20 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	)
 
 	pipelineName := makePipelineName(component, gitRef)
-	resourceVersion, err := s.OpenShiftClient.GetPipelineResourceVersion(pipelineName)
-	if err != nil {
-		msg := "Could not retrieve pipeline resourceVersion"
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, 500)
-		return
-	}
 
 	pData := PipelineData{
-		Name:            pipelineName,
-		Project:         project,
-		Component:       component,
-		Repository:      repo,
-		GitRef:          gitRef,
-		GitFullRef:      gitFullRef,
-		ResourceVersion: resourceVersion,
-		RepoBase:        s.RepoBase,
-		GitURI:          gitURI,
-		Namespace:       s.Namespace,
-		PVC:             "ods-pipeline",
-		TriggerEvent:    req.EventKey,
-		Comment:         commentText,
+		Name:         pipelineName,
+		Project:      project,
+		Component:    component,
+		Repository:   repo,
+		GitRef:       gitRef,
+		GitFullRef:   gitFullRef,
+		RepoBase:     s.RepoBase,
+		GitURI:       gitURI,
+		Namespace:    s.Namespace,
+		PVC:          "ods-pipeline",
+		TriggerEvent: req.EventKey,
+		Comment:      commentText,
 	}
 
 	if len(commitSHA) == 0 {
@@ -287,28 +304,25 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
 	pData.Version = odsConfig.Version
 
-	rendered, err := renderPipeline(odsConfig, pData, s.TaskKind, s.TaskSuffix)
-	if err != nil {
-		msg := "Could not render pipeline definition"
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, 500)
-		return
-	}
+	tknPipeline := assemblePipeline(odsConfig, pData, s.TaskKind, s.TaskSuffix)
 
-	jsonBytes, err := yaml.YAMLToJSON(rendered)
+	_, err = s.TektonClient.GetPipeline(r.Context(), pData.Name, metav1.GetOptions{})
 	if err != nil {
-		msg := "could not convert YAML to JSON"
-		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
-		http.Error(w, msg, 500)
-		return
-	}
-
-	createStatusCode, createErr := s.OpenShiftClient.ApplyPipeline(jsonBytes, pData)
-	if createErr != nil {
-		msg := "Could not create/update pipeline"
-		log.Println(requestID, fmt.Sprintf("%s [%d]: %s", msg, createStatusCode, createErr))
-		http.Error(w, msg, createStatusCode)
-		return
+		_, err := s.TektonClient.CreatePipeline(r.Context(), tknPipeline, metav1.CreateOptions{})
+		if err != nil {
+			msg := fmt.Sprintf("cannot create pipeline %s", tknPipeline.Name)
+			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+	} else {
+		_, err := s.TektonClient.UpdatePipeline(r.Context(), tknPipeline, metav1.UpdateOptions{})
+		if err != nil {
+			msg := fmt.Sprintf("cannot update pipeline %s", tknPipeline.Name)
+			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	log.Println(requestID, fmt.Sprintf("%+v", pData))
@@ -329,22 +343,29 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
 	for _, bem := range mapping {
-		// exact match
-		if bem.Branch == branch {
+		if mappingBranchMatch(bem.Branch, branch) {
 			return bem.Environment
-		}
-		// prefix match like "release/*", also catches "*"
-		if strings.HasSuffix(bem.Branch, "*") {
-			branchPrefix := strings.TrimSuffix(bem.Branch, "*")
-			if strings.HasPrefix(branch, branchPrefix) {
-				return bem.Environment
-			}
 		}
 	}
 	return ""
 }
 
-func getCommitSHA(bitbucketClient *bitbucket.Client, project, repository, gitFullRef string) (string, error) {
+func mappingBranchMatch(mappingBranch, testBranch string) bool {
+	// exact match
+	if mappingBranch == testBranch {
+		return true
+	}
+	// prefix match like "release/*", also catches "*"
+	if strings.HasSuffix(mappingBranch, "*") {
+		branchPrefix := strings.TrimSuffix(mappingBranch, "*")
+		if strings.HasPrefix(testBranch, branchPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func getCommitSHA(bitbucketClient bitbucket.CommitClientInterface, project, repository, gitFullRef string) (string, error) {
 	commitList, err := bitbucketClient.CommitList(project, repository, bitbucket.CommitListParams{
 		Until: gitFullRef,
 	})
@@ -404,10 +425,10 @@ func makePipelineName(component string, branch string) string {
 		s := fmt.Sprintf("%x", bs)
 		pipeline = fmt.Sprintf("%s-%s", shortenedPipeline, s[0:7])
 	}
-	return pipeline
+	return strings.ToLower(pipeline)
 }
 
-func renderPipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.TaskKind, taskSuffix string) ([]byte, error) {
+func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.TaskKind, taskSuffix string) *tekton.Pipeline {
 
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
@@ -507,10 +528,13 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.Ta
 		},
 	})
 
-	p := tekton.Pipeline{
+	p := &tekton.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            data.Name,
-			ResourceVersion: strconv.Itoa(data.ResourceVersion),
+			Name: data.Name,
+			Labels: map[string]string{
+				repositoryLabel: data.Repository,
+				gitRefLabel:     data.GitRef,
+			},
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "tekton.dev/v1beta1",
@@ -601,8 +625,7 @@ func renderPipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.Ta
 			Finally: finallyTasks,
 		},
 	}
-
-	return yaml.Marshal(p)
+	return p
 }
 
 type prInfo struct {
@@ -610,7 +633,7 @@ type prInfo struct {
 	Base string
 }
 
-func extractPullRequestInfo(bitbucketClient *bitbucket.Client, projectKey, repositorySlug, gitCommit string) (prInfo, error) {
+func extractPullRequestInfo(bitbucketClient bitbucket.CommitClientInterface, projectKey, repositorySlug, gitCommit string) (prInfo, error) {
 	var i prInfo
 
 	prPage, err := bitbucketClient.CommitPullRequestList(projectKey, repositorySlug, gitCommit)
@@ -630,7 +653,7 @@ func extractPullRequestInfo(bitbucketClient *bitbucket.Client, projectKey, repos
 	return i, nil
 }
 
-func shouldSkip(bitbucketClient *bitbucket.Client, projectKey, repositorySlug, gitCommit string) bool {
+func shouldSkip(bitbucketClient bitbucket.CommitClientInterface, projectKey, repositorySlug, gitCommit string) bool {
 	c, err := bitbucketClient.CommitGet(projectKey, repositorySlug, gitCommit)
 	if err != nil {
 		return false
@@ -652,4 +675,13 @@ func isCiSkipInCommitMessage(message string) bool {
 	return strings.Contains(subject, "[ciskip]") ||
 		strings.Contains(subject, "[skipci]") ||
 		strings.Contains(subject, "***noci***")
+}
+
+// randStringBytes creates a random string of length n.
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

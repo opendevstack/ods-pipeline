@@ -74,7 +74,6 @@
     "extensions": {
         "name": "bar-main",
         "namespace": "foo-cd",
-        "resourceVersion": 0,
         "project": "foo",
         "component": "bar",
         "repository": "foo-bar",
