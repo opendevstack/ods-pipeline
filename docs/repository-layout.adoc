@@ -10,4 +10,4 @@ The most important pieces are:
 * **docs**: Design and user documents
 * **internal/interceptor**: Implementation of Tekton trigger interceptor - it creates and modifies the actual Tekton pipelines on the fly based on the config found in the repository triggering the webhook request.
 * **pkg**: Packages shared by the various main executables and the interceptor. These packages are the public interface and may be used outside this repo (e.g. by custom tasks). Example of packages are `bitbucket` (a Bitbucket Server API v1.0 client), `sonar` (a SonarQube client exposing API endpoints, scanner CLI and report CLI in one unified interface), `nexus` (a Nexus client for uploading, downloading and searching for assets) and `config` (the ODS configuration specification).
-* **test**: Test scripts and test data
+* **test**: Test scripts and test data. The actual tests are located in the `tasks` and `e2e` subfolders. Those tests make use files located in the `testdata` subfolder, in particular those in `testdata/workspaces`, which provide sample workspaces used by the Tekton task runs.
