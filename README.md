@@ -6,7 +6,7 @@
 
 ## Introduction
 
-ODS provides CI/CD pipeline support based on OpenShift Pipelines. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
+This repository provides an alternative OpenDevStack CI/CD pipeline based on OpenShift Pipelines. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
 
 The [ODS Pipeline Introduction](/docs/introduction.adoc) describes what ODS pipeline is and how it works. It is important to understand this before looking at further documentation or any other repository content.
 
