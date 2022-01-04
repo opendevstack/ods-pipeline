@@ -157,7 +157,7 @@ Input parameters: TODO
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. All checkouts are shallow and include submodules.
+a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
 
 Context information is stored under `.ods` for each checked out repository:
 
