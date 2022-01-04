@@ -69,7 +69,10 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 [cols="1,3"]
 |===
 | SRS-TASK-START-1
-a| The task shall check out a fresh copy of a Git repository If child repositories are configured, those shall be checked out as well. The checkouts must support Git submodules.
+a| The task shall check out a fresh copy of a Git repository.
+
+* If child repositories are configured, those shall be checked out as well. The checked out branch shall be configurable. If the pipeline run relates to a version, an existing release branch for that version shall be preferred.
+* All checkouts shall support Git submodules.
 
 | SRS-TASK-START-2
 a| The task shall store context information for each checked out repository (such as project and component key, Git commit SHA, target environment, etc.)
@@ -291,6 +294,11 @@ The following table provides the history of the document.
 [cols="1,1,1,3"]
 |===
 | Version | Date | Author | Change
+
+| 0.4
+| 2022-01-04
+| Michael Sauter
+| Detailed requirement SRS-TASK-START-1, specifying branch checkout rules.
 
 | 0.3
 | 2021-11-24
