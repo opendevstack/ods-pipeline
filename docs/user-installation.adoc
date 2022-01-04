@@ -99,7 +99,7 @@ pipelineGitRef=v0.2.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
-git subtree split --squash --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
+git subtree split --prefix=deploy/cd-namespace -b subtree-split-branch-$pipelineGitRef && \
 git checkout - && \
 git subtree merge --prefix=ods-pipeline subtree-split-branch-$pipelineGitRef --squash
 ```
