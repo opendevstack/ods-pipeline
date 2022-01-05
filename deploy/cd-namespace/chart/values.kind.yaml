@@ -28,3 +28,4 @@ interceptor:
 # PVC
 storageProvisioner: ''
 storageClassName: 'standard'
+storageSize: '2Gi'
