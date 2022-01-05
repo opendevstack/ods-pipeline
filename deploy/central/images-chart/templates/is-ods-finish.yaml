@@ -2,3 +2,5 @@ apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
   name: ods-finish
+  annotations:
+    "helm.sh/resource-policy": keep
