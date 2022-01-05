@@ -11,6 +11,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
+      storage: '{{default "2Gi" .Values.storageSize}}'
   storageClassName: '{{.Values.storageClassName}}'
   volumeMode: Filesystem
