@@ -29,7 +29,11 @@ esac; shift; done
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 cd "${SCRIPT_DIR}"/nexus
-docker build -t ${IMAGE_NAME} .
+if [ "$(uname -m)" == "arm64" ]; then
+    docker build -t ${IMAGE_NAME} -f Dockerfile.arm64 .
+else 
+    docker build -t ${IMAGE_NAME} .
+fi 
 cd - &> /dev/null
 docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
 
