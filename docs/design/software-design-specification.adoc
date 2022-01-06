@@ -555,7 +555,7 @@ The following table provides the history of the document.
 | 0.11
 | 2022-01-06
 | Henning Groß
-| Add new input parameters for separation of FE and BE builds.
+| Make TypeScript build task more suitable for FE builds.
 
 | 0.10
 | 2021-12-22
