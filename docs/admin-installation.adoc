@@ -19,6 +19,8 @@ You'll need:
 
 First, create a repository in Bitbucket, e.g. `ods`. The name can be anything, but since the repository will define the resources in namespace `ods` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
 
+IMPORTANT: The following commands will fail in an empty Git repository, so make sure you have made at least one commit in the repository.
+
 Then, use `git subtree` to get the required sources. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/central`) from the `opendestack/ods-pipeline` repository at the given revision (e.g. `master`) into your new local repository at the path `ods-pipeline`.
 
 ```
