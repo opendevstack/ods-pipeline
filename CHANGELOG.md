@@ -12,7 +12,13 @@ listed in the changelog.
 ### Added
 
 - Apply labels to pipelines allowing easier identification for cleanup ([#358](https://github.com/opendevstack/ods-pipeline/issues/358))
+- Configurable workspace PVC size ([#368](https://github.com/opendevstack/ods-pipeline/issues/368))
 - Add two parameters to `build-typescript.sh` to separate between FE and BE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/358))
+
+### Changed
+
+- Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
+
 ## [0.2.0] - 2021-12-22
 ### Added
 

@@ -37,11 +37,13 @@ aquaRegistry: ''
 # Leave empty when not using Aqua.
 aquaUsername: ''
 
-# PVC
+# PVC (used for the pipeline workspace)
 # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
 storageProvisioner: 'kubernetes.io/aws-ebs'
 # Storage class. On AWS backed clusters, use 'gp2'.
 storageClassName: 'gp2'
+# Storage size. Defaults to 2Gi unless set explicitly here.
+storageSize: '5Gi'
 
 # Cluster
 # URL (including scheme) of the OpenShift Web Console.
