@@ -12,7 +12,7 @@ listed in the changelog.
 ### Added
 
 - Apply labels to pipelines allowing easier identification for cleanup ([#358](https://github.com/opendevstack/ods-pipeline/issues/358))
-
+- Add two parameters to `build-typescript.sh` to separate between FE and BE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/358))
 ## [0.2.0] - 2021-12-22
 ### Added
 

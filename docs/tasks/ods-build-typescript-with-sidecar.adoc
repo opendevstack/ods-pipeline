@@ -78,6 +78,16 @@ without leading `./` and trailing `/`.
 | Node.js version to use - supported versions: 16
 
 
+| build-dir
+| dist
+| The directory into which `npm run build` places files. The files inside `build-dir` will be copied to `output-dir`.
+
+
+| copy-node-modules
+| false
+| Whether `node-modules` is copied or not.
+
+
 | sidecar-image
 | 
 | Image to use for sidecar
