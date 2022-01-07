@@ -208,7 +208,7 @@ Finally, setup a Bitbucket webhook pointing to the ODS pipeline installation as 
 [[helm-chart]]
 == Helm Chart
 
-ODS pipeline only supports deploying Kubernetes resources with Helm at the moment, and requires the Helm chart to be under version control. Please see the link:https://github.com/opendevstack/tailor/wiki/Migrating-from-Tailor-to-Helm#ods-quickstarter-migration[ODS Quickstarter Migration Guide] of Tailor for help how to create that chart.
+ODS pipeline only supports deploying Kubernetes resources with Helm at the moment, and requires the Helm chart to be under version control. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/blob/sample-helm-chart/README.md[sample chart provided in this repository]. If you are migrating an existing component which controls resources via Tailor, please see the link:https://github.com/opendevstack/tailor/wiki/Migrating-from-Tailor-to-Helm#ods-quickstarter-migration[ODS Quickstarter Migration Guide] of Tailor as well.
 
 [[webhook-configuration]]
 == Webhook Configuration
