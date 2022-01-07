@@ -50,7 +50,7 @@ spec:
 
 ----
 
-Then, run the following commands:
+Then, run the following commands (on OpenShift you can replace `kubectl` with `oc`):
 
 ```
 kubectl -n <namespace> apply -f debug-pod.yaml
