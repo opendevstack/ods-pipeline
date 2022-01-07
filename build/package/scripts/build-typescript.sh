@@ -22,7 +22,7 @@ copyLintReport() {
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
-DEBUG="false"
+DEBUG="${DEBUG:-false}"
 MAX_LINT_WARNINGS="0"
 LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
 

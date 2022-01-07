@@ -18,6 +18,9 @@ listed in the changelog.
 
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
 
+### Fixed
+- Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
+
 ## [0.2.0] - 2021-12-22
 ### Added
 
