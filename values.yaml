@@ -1,0 +1,29 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  registry: image-registry.openshift-image-registry.svc:5000
+  # Overrides the image namespace whose default is the release namespace.
+  namespace: ""
+  # Overrides the image repository whose default is the chart name.
+  repository: ""
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  # Do not set this manually as it is passed automatically in ods-deploy-helm.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+resources: {}
+  # If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi

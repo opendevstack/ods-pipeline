@@ -1,0 +1,7 @@
+.vscode/
+.idea/
+test/testdata/workspaces/workspace-*
+ods.external.yaml
+artifact-download-linux-amd64
+artifact-download-darwin-amd64
+artifact-download-windows-amd64.exe
