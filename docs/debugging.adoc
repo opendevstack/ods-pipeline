@@ -26,3 +26,35 @@ If the pipeline run does not progress for a specific task run, the `TaskRun` res
 == Problem: pipeline run proceeds but task fails
 
 When a task fails, its logs may indicate what the issue is. While some issues might be related to the application (e.g. failing tests), others might not, such as network issues. If the task logs do not provide enough information to diagnose the issue, you can turn on debug mode by setting the `debug` field to `true` in the `ods-pipeline` ConfigMap resource. The next pipeline run (or a re-run of the failed one) will output additional information.
+
+Sometimes it can also help to inspect the workspace that was used for the task run. For example, it might contain generated files such as test reports etc. that you can inspect to diagnose the problem. This can be achieved by copying the following and saving it to a file `debug-pod.yaml`:
+
+.debug-pod.yaml
+[source,yaml]
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ods-pipeline-debug
+spec:
+  volumes:
+    - name: ods-pipeline-vol
+      persistentVolumeClaim:
+        claimName: ods-pipeline
+  containers:
+    - name: ods-pipeline-debug-container
+      image: index.docker.io/crccheck/hello-world
+      volumeMounts:
+        - mountPath: "/workspace"
+          name: ods-pipeline-vol
+
+----
+
+Then, run the following commands:
+
+```
+kubectl -n <namespace> apply -f debug-pod.yaml
+kubectl -n <namespace> exec -it ods-pipeline-debug -- /bin/sh
+```
+
+The workspace is mounted at `/workspace`. Once you have completed debugging, do not forget to delete the pod again. 
