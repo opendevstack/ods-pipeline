@@ -24,7 +24,7 @@ spec:
     - `ODS_OUTPUT_DIR`: this environment variable points to the folder
     that this build expects generated application artifacts to be copied to.
     The gradle script should read it and copy there the generated artifacts.
-    - `NEXUS_*` env vars: `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+    - `NEXUS_*` env vars: `NEXUS_URL`, `NEXUS_USERNAME` and `NEXUS_PASSWORD`
     are available and should be read by the gradle script.
 
     To enable the gradle script to copy the generated application artifacts script follow these steps:
@@ -142,6 +142,21 @@ spec:
       value: /tekton/home
     - name: CI
       value: "true"
+    - name: NEXUS_URL
+      valueFrom:
+        configMapKeyRef:
+          key: url
+          name: ods-nexus
+    - name: NEXUS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: ods-nexus-auth
+    - name: NEXUS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: ods-nexus-auth
     image: '{{.Values.registry}}/{{.Values.namespace}}/ods-gradle-toolset:{{.Values.imageTag}}'
     name: build-gradle-binary
     resources: {}
