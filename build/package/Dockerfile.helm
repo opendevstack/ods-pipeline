@@ -36,7 +36,7 @@ RUN go install filippo.io/age/cmd/...@v${AGE_VERSION} \
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-ENV HELM_PLUGIN_DIFF_VERSION=3.1.3 \
+ENV HELM_PLUGIN_DIFF_VERSION=3.3.2 \
     HELM_PLUGIN_SECRETS_VERSION=3.10.0 \
     HELM_PLUGINS=/usr/local/helm/plugins \
     SKOPEO_VERSION=1.4 \
