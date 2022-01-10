@@ -50,7 +50,7 @@ For this, you'll need to install `link:https://github.com/mozilla/sops[sops]` an
 As described in the `sops` link:https://github.com/mozilla/sops#22encrypting-using-age[documentation], when decrypting
 using `age`, `sops` will look for a text file name `keys.txt` located in a `sops` subdirectory of your user
 configuration directory. On Linux, this would be `$XDG_CONFIG_HOME/sops/age/keys.txt` (if `$XDG_CONFIG_HOME` is not set,
-it is usually `$HOME/.config`). On macOS, this would be`$HOME/Library/Application Support/sops/age/keys.txt`. On Windows,
+it is usually `$HOME/.config`). On macOS, this would be `$HOME/Library/Application Support/sops/age/keys.txt`. On Windows,
 this would be `%AppData%\sops\age\keys.txt`. You can specify the location of this file manually by setting the
 environment variable `SOPS_AGE_KEY_FILE`. The following will refer to this user configuration directory as `<your_user_config_dir>`.
 
