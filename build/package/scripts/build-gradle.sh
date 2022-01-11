@@ -40,6 +40,9 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 export GRADLE_USER_HOME=/home/gradle/.gradle
+
+echo "Using NEXUS_URL=$NEXUS_URL"
+
 echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
 cd "${WORKING_DIR}"
