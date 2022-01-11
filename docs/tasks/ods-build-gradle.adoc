@@ -20,7 +20,7 @@ Available environment variables:
 - `ODS_OUTPUT_DIR`: this environment variable points to the folder
 that this build expects generated application artifacts to be copied to.
 The gradle script should read it and copy there the generated artifacts.
-- `NEXUS_*` env vars: `NEXUS_HOST`, `NEXUS_USER` and `NEXUS_PASSWORD`
+- `NEXUS_*` env vars: `NEXUS_URL`, `NEXUS_USERNAME` and `NEXUS_PASSWORD`
 are available and should be read by the gradle script.
 
 To enable the gradle script to copy the generated application artifacts script follow these steps:
