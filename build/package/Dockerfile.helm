@@ -5,6 +5,8 @@ ARG TARGETARCH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
+RUN echo "TARGETARCH=[${TARGETARCH}]"
+
 ENV HELM_VERSION=3.5.2 \
     SOPS_VERSION=3.7.1 \
     AGE_VERSION=1.0.0 \
