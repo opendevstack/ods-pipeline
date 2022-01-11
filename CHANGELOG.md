@@ -13,6 +13,7 @@ listed in the changelog.
 
 - Apply labels to pipelines allowing easier identification for cleanup ([#358](https://github.com/opendevstack/ods-pipeline/issues/358))
 - Configurable workspace PVC size ([#368](https://github.com/opendevstack/ods-pipeline/issues/368))
+- Customizable Helm flags ([#388](https://github.com/opendevstack/ods-pipeline/issues/388))
 
 ### Changed
 

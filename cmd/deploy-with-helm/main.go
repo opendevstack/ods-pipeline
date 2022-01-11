@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/file"
@@ -51,19 +52,32 @@ Error: plugin "diff" exited with error
 Error: plugin "secrets" exited with error`
 
 type options struct {
-	chartDir             string
-	releaseName          string
-	ageKeySecret         string
-	ageKeySecretField    string
-	certDir              string
+	// Location of Helm chart directory.
+	chartDir string
+	// Name of Helm release.
+	releaseName string
+	// Flags to pass to `helm diff upgrade` (in addition to default ones).
+	diffFlags string
+	// Flags to pass to `helm upgrade`.
+	upgradeFlags string
+	// Name of K8s secret holding the age key.
+	ageKeySecret string
+	// Field name within the K8s secret holding the age key.
+	ageKeySecretField string
+	// Location of the certificate directory.
+	certDir string
+	// Whether to TLS verify the source image registry.
 	srcRegistryTLSVerify bool
-	debug                bool
+	// Whether to enable debug mode.
+	debug bool
 }
 
 func main() {
 	opts := options{}
 	flag.StringVar(&opts.chartDir, "chart-dir", "", "Chart dir")
-	flag.StringVar(&opts.releaseName, "release-name", "", "release-name")
+	flag.StringVar(&opts.releaseName, "release-name", "", "Name of Helm release")
+	flag.StringVar(&opts.diffFlags, "diff-flags", "", "Flags to pass to `helm diff upgrade` (in addition to default ones)")
+	flag.StringVar(&opts.upgradeFlags, "upgrade-flags", "", "Flags to pass to `helm upgrade`")
 	flag.StringVar(&opts.ageKeySecret, "age-key-secret", "", "Name of the secret containing the age key to use for helm-secrets")
 	flag.StringVar(&opts.ageKeySecretField, "age-key-secret-field", "key.txt", "Name of the field in the secret holding the age private key")
 	flag.StringVar(&opts.certDir, "cert-dir", "/etc/containers/certs.d", "Use certificates at the specified path to access the registry")
@@ -361,10 +375,14 @@ func main() {
 		"secrets",
 		"diff",
 		"upgrade",
-		"--install",
 		"--detailed-exitcode",
 		"--no-color",
 	}
+	helmDiffFlags, err := shlex.Split(opts.diffFlags)
+	if err != nil {
+		log.Fatalf("could not parse diff flags (%s): %s", opts.diffFlags, err)
+	}
+	helmDiffArgs = append(helmDiffArgs, helmDiffFlags...)
 	for _, vf := range valuesFiles {
 		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
 	}
@@ -390,9 +408,12 @@ func main() {
 		"--namespace=" + releaseNamespace,
 		"secrets",
 		"upgrade",
-		"--wait",
-		"--install",
 	}
+	helmUpgradeFlags, err := shlex.Split(opts.upgradeFlags)
+	if err != nil {
+		log.Fatalf("could not parse upgrade flags (%s): %s", opts.upgradeFlags, err)
+	}
+	helmUpgradeArgs = append(helmUpgradeArgs, helmUpgradeFlags...)
 	for _, vf := range valuesFiles {
 		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
 	}
