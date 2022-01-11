@@ -504,7 +504,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-20
 | Helm Diff plugin
-| 3.1
+| 3.3
 | Shows a diff explaining what a helm upgrade would change.
 | https://github.com/databus23/helm-diff
 
@@ -552,10 +552,15 @@ The following table provides the history of the document.
 |===
 | Version | Date | Author | Change
 
-| 0.11
-| 2022-01-06
+| 0.12
+| 2022-01-11
 | Henning Groß
 | Make TypeScript build task more suitable for FE builds.
+
+| 0.11
+| 2022-01-10
+| Michael Sauter
+| Update helm-diff.
 
 | 0.10
 | 2021-12-22
