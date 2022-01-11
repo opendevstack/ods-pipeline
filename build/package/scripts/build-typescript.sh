@@ -97,6 +97,7 @@ fi
 
 echo "Building ..."
 npm run build
+mkdir -p "${OUTPUT_DIR}"
 cp -r "${BUILD_DIR}" "${OUTPUT_DIR}/dist"
 
 if [ "${COPY_NODE_MODULES}" = true ]; then

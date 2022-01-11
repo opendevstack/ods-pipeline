@@ -22,7 +22,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 		},
 		map[string]tasktesting.TestCase{
 			"build typescript app": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -50,7 +49,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				},
 			},
 			"build typescript app in subdirectory": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -114,7 +112,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				WantSetupFail: true,
 			},
 			"build backend typescript app": {
-				Timeout:             20 * time.Minute,
+				Timeout:             10 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -140,7 +138,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				},
 			},
 			"build typescript app with custom build directory": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-build-dir"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]

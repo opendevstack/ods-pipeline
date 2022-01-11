@@ -68,12 +68,16 @@ spec:
       default: "16"
     - name: build-dir
       description: >-
-        The directory into which `npm run build` places files.
+        Must match the directory into which `npm run build` places files.
         The files inside `build-dir` will be copied to `output-dir`.
       type: string
       default: "dist"
     - name: copy-node-modules
-      description: Whether `node-modules` is copied or not.
+      description: >-
+        Whether `node-modules` is copied to the `output-dir` or not.
+        For frontend components this should be set to "false",
+        while for backend components this should be set to "true".
+        Other common build directories are `build` and `public`.
       type: string
       default: "false"
   steps:
