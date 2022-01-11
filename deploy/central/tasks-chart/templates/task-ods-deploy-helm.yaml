@@ -52,6 +52,11 @@ spec:
     subcomponent to avoid resources being prefixed with the umbrella repository
     component name (assuming your resources are named using the `chart.fullname`
     helper).
+
+    If you do not have an existing Helm chart yet, you can use the provided
+    link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart]
+    as a starting point. It is setup in a way that works with this task out of
+    the box.
   params:
     - name: chart-dir
       description: Helm chart directory that will be deployed

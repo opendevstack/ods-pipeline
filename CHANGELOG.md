@@ -19,6 +19,10 @@ listed in the changelog.
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
 - Add `build-dir` and `copy-node-modules` parameters to TypeScript build task to make it more suitable for FE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
 
+### Fixed
+- Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
+- Gradle task does not expose Nexus env variables ([#373](https://github.com/opendevstack/ods-pipeline/issues/373))
+
 ## [0.2.0] - 2021-12-22
 ### Added
 

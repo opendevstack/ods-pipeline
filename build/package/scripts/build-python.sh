@@ -18,7 +18,7 @@ MAX_LINE_LENGTH="120"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 PRE_TEST_SCRIPT=""
-DEBUG="false"
+DEBUG="${DEBUG:-false}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
