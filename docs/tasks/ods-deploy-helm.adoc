@@ -73,6 +73,16 @@ the box.
 | The Helm release name. If empty, the release name is simply the name of the chart.
 
 
+| diff-flags
+| --install
+| Flags to pass to `helm diff upgrade`. Note that `--detailed-exitcode` and `--no-color` are automatically set and cannot be removed. Changes should be aligned with `upgrade-flags` as needed.
+
+
+| upgrade-flags
+| --install --wait
+| Flags to pass to `helm upgrade`. Changes should be aligned with `diff-flags` as needed.
+
+
 | age-key-secret
 | helm-secrets-age-key
 | Name of the secret containing the age key to use for helm-secrets.

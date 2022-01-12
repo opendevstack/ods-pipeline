@@ -66,6 +66,14 @@ spec:
       description: The Helm release name. If empty, the release name is simply the name of the chart.
       type: string
       default: ''
+    - name: diff-flags
+      description: Flags to pass to `helm diff upgrade`. Note that `--detailed-exitcode` and `--no-color` are automatically set and cannot be removed. Changes should be aligned with `upgrade-flags` as needed.
+      type: string
+      default: '--install'
+    - name: upgrade-flags
+      description: Flags to pass to `helm upgrade`. Changes should be aligned with `diff-flags` as needed.
+      type: string
+      default: '--install --wait'
     - name: age-key-secret
       description: |
         Name of the secret containing the age key to use for helm-secrets.
@@ -90,6 +98,8 @@ spec:
         deploy-with-helm \
           -chart-dir=$(params.chart-dir) \
           -release-name=$(params.release-name) \
+          -diff-flags="$(params.diff-flags)" \
+          -upgrade-flags="$(params.upgrade-flags)" \
           -age-key-secret=$(params.age-key-secret)
       workingDir: $(workspaces.source.path)
   workspaces:
