@@ -27,8 +27,8 @@ while [[ "$#" -gt 0 ]]; do
     -i|--image) IMAGES="$2"; shift;;
     -i=*|--image=*) IMAGES="${1#*=}";;
 
-    -i|--platform) PLATFORM="$2"; shift;;
-    -i=*|--platform=*) PLATFORM="${1#*=}";;
+    -p|--platform) PLATFORM="$2"; shift;;
+    -p=*|--platform=*) PLATFORM="${1#*=}";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -39,6 +39,7 @@ build_and_push_image() {
     odsImage="ods-$image"
     if [ "${SKIP_BUILD}" != "true" ]; then
         echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
+        # shellcheck disable=SC2086
         docker build $platform_arg \
             --build-arg http_proxy="$http_proxy" \
             --build-arg https_proxy="$https_proxy" \
@@ -50,9 +51,9 @@ build_and_push_image() {
     docker push "$REGISTRY/$NAMESPACE/$odsImage"
 }
 
-platform_arg=""
-if [ ! -z "$PLATFORM" ]; then
-    platform_arg="--platform $PLATFORM"
+platform_arg=
+if [ -n "$PLATFORM" ]; then
+    platform_arg="--platform=${PLATFORM}"
 fi
 
 if [ -z "$IMAGES" ]; then
