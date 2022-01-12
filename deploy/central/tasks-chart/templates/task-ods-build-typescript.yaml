@@ -3,6 +3,28 @@ kind: '{{default "ClusterTask" .Values.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-build-typescript{{.Values.taskSuffix}}'
 spec:
+  artifacts:
+    - name: Clover coverage report
+      format: XML
+      path: './code-coverage/clover.xml'
+    - name: Jest coverage report
+      format: JSON
+      path: './code-coverage/coverage-final.json'
+    - name: LCOV coverage report
+      format: LCOV format
+      path: './code-coverage/lcov.info'
+    - name: Lint report
+      format: Text
+      path: './lint-reports/report.txt'
+    - name: SonarQube analysis report
+      format: Markdown
+      path: './sonarqube-analysis/analysis-report.md'
+    - name: SonarQube issues report
+      format: CSV
+      path: './sonarqube-analysis/issues-report.csv'
+    - name: Unit test report
+      format: XML
+      path: './xunit-reports/report.xml'
   description: |
     Builds Typescript applications.
 

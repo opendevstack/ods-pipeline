@@ -5,6 +5,28 @@ metadata:
   creationTimestamp: null
   name: '{{default "ods" .Values.taskPrefix}}-build-typescript-with-sidecar{{.Values.taskSuffix}}'
 spec:
+  artifacts:
+  - format: XML
+    name: Clover coverage report
+    path: ./code-coverage/clover.xml
+  - format: JSON
+    name: Jest coverage report
+    path: ./code-coverage/coverage-final.json
+  - format: LCOV format
+    name: LCOV coverage report
+    path: ./code-coverage/lcov.info
+  - format: Text
+    name: Lint report
+    path: ./lint-reports/report.txt
+  - format: Markdown
+    name: SonarQube analysis report
+    path: ./sonarqube-analysis/analysis-report.md
+  - format: CSV
+    name: SonarQube issues report
+    path: ./sonarqube-analysis/issues-report.csv
+  - format: XML
+    name: Unit test report
+    path: ./xunit-reports/report.xml
   description: |-
     Builds Typescript applications.
 

@@ -91,6 +91,10 @@ If the secret exists, it is expected to have a field named `key.txt` with the ag
 
 |===
 
+== Artifacts
+
+N/A
+
 == Results
 
 N/A

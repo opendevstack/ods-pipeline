@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/opendevstack/pipeline/internal/docs"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -29,15 +30,15 @@ func main() {
 	}
 }
 
-func parseTasks(taskNames []string) (map[string]*tekton.ClusterTask, error) {
-	tasks := map[string]*tekton.ClusterTask{}
+func parseTasks(taskNames []string) (map[string]*docs.ODSClusterTask, error) {
+	tasks := map[string]*docs.ODSClusterTask{}
 	for _, task := range taskNames {
 		fmt.Printf("Parsing task %s ...\n", task)
 		b, err := ioutil.ReadFile(fmt.Sprintf("deploy/central/tasks-chart/templates/task-%s.yaml", task))
 		if err != nil {
 			return nil, err
 		}
-		var t tekton.ClusterTask
+		var t docs.ODSClusterTask
 		err = yaml.Unmarshal(b, &t)
 		if err != nil {
 			return nil, err
@@ -47,7 +48,7 @@ func parseTasks(taskNames []string) (map[string]*tekton.ClusterTask, error) {
 	return tasks, nil
 }
 
-func adjustTasks(tasks map[string]*tekton.ClusterTask) {
+func adjustTasks(tasks map[string]*docs.ODSClusterTask) {
 	for name, t := range tasks {
 		fmt.Printf("Adding sidecar to task %s ...\n", name)
 		cleanName := strings.Replace(t.Name, "{{default \"ods\" .Values.taskPrefix}}", "ods", 1)
@@ -74,7 +75,7 @@ Apart from the sidecar, the task is an exact copy of ` + "`" + cleanName + "`" +
 	}
 }
 
-func writeTasks(tasks map[string]*tekton.ClusterTask) error {
+func writeTasks(tasks map[string]*docs.ODSClusterTask) error {
 	for name, t := range tasks {
 		fmt.Printf("Writing sidecar task %s ...\n", name)
 		out, err := yaml.Marshal(t)

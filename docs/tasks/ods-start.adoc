@@ -121,6 +121,10 @@ by the webhook interceptor and cannot be customized by users at this point.*
 
 |===
 
+== Artifacts
+
+N/A
+
 == Results
 
 [cols="1,3"]

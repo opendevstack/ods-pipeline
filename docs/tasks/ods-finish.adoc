@@ -28,6 +28,10 @@ by the webhook interceptor and cannot be customized by users at this point.
 
 |===
 
+== Artifacts
+
+N/A
+
 == Results
 
 N/A

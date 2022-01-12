@@ -15,6 +15,22 @@
 {{ end}}
 |===
 
+== Artifacts
+{{ if .Artifacts }}
+[cols="1,1,1"]
+|===
+| Name | File Format | Path (relative to `.ods/artifacts/`)
+{{- range .Artifacts}}
+
+| {{.Name}}
+| {{.Format}}
+| {{.Path}}
+{{- end}}
+|===
+{{- else}}
+N/A
+{{- end}}
+
 == Results
 {{ if .Results}}
 [cols="1,3"]

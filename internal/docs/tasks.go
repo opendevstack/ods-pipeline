@@ -14,6 +14,12 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+type Artifact struct {
+	Name   string `json:"name"`
+	Format string `json:"format"`
+	Path   string `json:"path"`
+}
+
 type Param struct {
 	Name        string
 	Default     string
@@ -28,8 +34,19 @@ type Result struct {
 type Task struct {
 	Name        string
 	Description string
+	Artifacts   []Artifact
 	Params      []Param
 	Results     []Result
+}
+
+type ODSClusterTaskSpec struct {
+	tekton.TaskSpec
+	Artifacts []Artifact `json:"artifacts,omitempty"`
+}
+
+type ODSClusterTask struct {
+	tekton.ClusterTask
+	Spec ODSClusterTaskSpec `json:"spec,omitempty"`
 }
 
 func renderTemplate(targetDir, targetFilename string, data Task) error {
@@ -53,13 +70,13 @@ func renderTemplate(targetDir, targetFilename string, data Task) error {
 	return tmpl.Execute(targetFile, data)
 }
 
-func parseTasks(helmTemplateOutput []byte) ([]*tekton.ClusterTask, error) {
-	var tasks []*tekton.ClusterTask
+func parseTasks(helmTemplateOutput []byte) ([]*ODSClusterTask, error) {
+	var tasks []*ODSClusterTask
 
 	tasksBytes := bytes.Split(helmTemplateOutput, []byte("---"))
 
 	for _, taskBytes := range tasksBytes {
-		var t tekton.ClusterTask
+		var t ODSClusterTask
 		err := yaml.Unmarshal(taskBytes, &t)
 		if err != nil {
 			return nil, err
@@ -113,6 +130,13 @@ func RenderTasks(sourceDir, targetDir string) error {
 			task.Results = append(task.Results, Result{
 				Name:        r.Name,
 				Description: r.Description,
+			})
+		}
+		for _, a := range t.Spec.Artifacts {
+			task.Artifacts = append(task.Artifacts, Artifact{
+				Name:   a.Name,
+				Format: a.Format,
+				Path:   a.Path,
 			})
 		}
 		targetFilename := fmt.Sprintf("%s.adoc", t.Name)

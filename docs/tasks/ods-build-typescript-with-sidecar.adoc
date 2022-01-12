@@ -84,6 +84,41 @@ without leading `./` and trailing `/`.
 
 |===
 
+== Artifacts
+
+[cols="1,1,1"]
+|===
+| Name | File Format | Path (relative to `.ods/artifacts/`)
+
+| Clover coverage report
+| XML
+| ./code-coverage/clover.xml
+
+| Jest coverage report
+| JSON
+| ./code-coverage/coverage-final.json
+
+| LCOV coverage report
+| LCOV format
+| ./code-coverage/lcov.info
+
+| Lint report
+| Text
+| ./lint-reports/report.txt
+
+| SonarQube analysis report
+| Markdown
+| ./sonarqube-analysis/analysis-report.md
+
+| SonarQube issues report
+| CSV
+| ./sonarqube-analysis/issues-report.csv
+
+| Unit test report
+| XML
+| ./xunit-reports/report.xml
+|===
+
 == Results
 
 N/A

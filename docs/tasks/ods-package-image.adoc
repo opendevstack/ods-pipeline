@@ -83,6 +83,10 @@ built branch, a code insight report is attached to the Git commit.
 
 |===
 
+== Artifacts
+
+N/A
+
 == Results
 
 [cols="1,3"]

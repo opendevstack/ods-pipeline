@@ -124,6 +124,10 @@ without leading `./` and trailing `/`.
 
 |===
 
+== Artifacts
+
+N/A
+
 == Results
 
 N/A
