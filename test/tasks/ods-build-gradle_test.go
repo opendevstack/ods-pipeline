@@ -42,11 +42,16 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					wantLogMsg := "No sonar-project.properties present, using default:"
-					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
-						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
-					}
+					logContains("No sonar-project.properties present, using default:", ctxt.CollectedLogs, t)
+					logContains("Using NEXUS_URL=http://ods-test-nexus.kind:8081", ctxt.CollectedLogs, t)
 				},
 			},
 		})
+}
+
+func logContains(wantLogMsg string, collectedLogs []byte, t *testing.T) {
+	logString := string(collectedLogs)
+	if !strings.Contains(logString, wantLogMsg) {
+		t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, logString)
+	}
 }

@@ -8,6 +8,9 @@
 buildscript {
     ext {
         odsOutputDir = System.getenv('ODS_OUTPUT_DIR')
+        nexus_url = System.getenv('NEXUS_URL')
+        nexus_user = System.getenv('NEXUS_USERNAME')
+        nexus_pw = System.getenv('NEXUS_PASSWORD')
     }
 }
 
@@ -19,7 +22,41 @@ plugins {
 
 repositories {
     // Use Maven Central for resolving dependencies.
-    mavenCentral()
+    maven() {
+        url "${nexus_url}/repository/jcenter/"
+        credentials {
+            username = "${nexus_user}"
+            password = "${nexus_pw}"
+        }
+        /*
+         this setting is only added bcs. nexus in test runs under http, don't use this as a blueprint for your
+         */
+        allowInsecureProtocol = true
+    }
+
+    maven() {
+        url "${nexus_url}/repository/maven-public/"
+        credentials {
+            username = "${nexus_user}"
+            password = "${nexus_pw}"
+        }
+        /*
+         this setting is only added bcs. nexus in test runs under http, don't use this as a blueprint for your
+         */
+        allowInsecureProtocol = true
+    }
+
+    maven() {
+        url "${nexus_url}/repository/atlassian_public/"
+        credentials {
+            username = "${nexus_user}"
+            password = "${nexus_pw}"
+        }
+        /*
+        this setting is only added bcs. nexus in test runs under http, don't use this as a blueprint for your
+        */
+        allowInsecureProtocol = true
+    }
 }
 
 dependencies {
