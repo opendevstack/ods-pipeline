@@ -44,6 +44,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 
 					logContains("No sonar-project.properties present, using default:", ctxt.CollectedLogs, t)
 					logContains("Using NEXUS_URL=http://ods-test-nexus.kind:8081", ctxt.CollectedLogs, t)
+					logContains("Gradle 7.3.3", ctxt.CollectedLogs, t)
 				},
 			},
 		})
