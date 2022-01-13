@@ -18,7 +18,8 @@ listed in the changelog.
 ### Changed
 
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
-- Update gradle version to 7.3.3 to address log4j vulnerability and improved JDK 17 support. [#395](https://github.com/opendevstack/ods-pipeline/issues/395)
+- Add `build-dir` and `copy-node-modules` parameters to TypeScript build task to make it more suitable for FE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
+- Update gradle version to 7.3.3 to address log4j vulnerability and improved JDK 17 support. ([#395](https://github.com/opendevstack/ods-pipeline/issues/395))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))

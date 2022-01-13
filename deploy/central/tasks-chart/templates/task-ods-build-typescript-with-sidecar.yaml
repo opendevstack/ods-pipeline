@@ -72,6 +72,18 @@ spec:
     description: 'Node.js version to use - supported versions: 16'
     name: node-version
     type: string
+  - default: dist
+    description: Must match the directory into which `npm run build` places files.
+      The files inside `build-dir` will be copied to `output-dir`. Other common build
+      directories are `build` and `public`.
+    name: build-dir
+    type: string
+  - default: "false"
+    description: Whether `node-modules` is copied to the `output-dir` or not. For
+      frontend components this should be set to "false", while for backend components
+      this should be set to "true".
+    name: copy-node-modules
+    type: string
   - description: Image to use for sidecar
     name: sidecar-image
     type: string
@@ -117,7 +129,9 @@ spec:
         --output-dir=$(params.output-dir) \
         --debug=${DEBUG} \
         --max-lint-warnings=$(params.max-lint-warnings) \
-        --lint-file-ext=$(params.lint-file-ext)
+        --lint-file-ext=$(params.lint-file-ext) \
+        --build-dir=$(params.build-dir) \
+        --copy-node-modules=$(params.copy-node-modules)
     workingDir: $(workspaces.source.path)
   - env:
     - name: HOME

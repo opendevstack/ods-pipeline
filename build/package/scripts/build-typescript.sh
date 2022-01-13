@@ -19,12 +19,14 @@ copyLintReport() {
   cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
+BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
 MAX_LINT_WARNINGS="0"
 LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
+COPY_NODE_MODULES="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -43,6 +45,12 @@ while [[ "$#" -gt 0 ]]; do
 
     --lint-file-ext) LINT_FILE_EXT="$2"; shift;;
     --lint-file-ext=*) LINT_FILE_EXT="${1#*=}";;
+
+    --build-dir) BUILD_DIR="$2"; shift;;
+    --build-dir=*) BUILD_DIR="${1#*=}";;
+
+    --copy-node-modules) COPY_NODE_MODULES="$2"; shift;;
+    --copy-node-modules=*) COPY_NODE_MODULES="${1#*=}";;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -89,11 +97,13 @@ fi
 
 echo "Building ..."
 npm run build
-mkdir -p "${OUTPUT_DIR}/dist"
-cp -r dist "${OUTPUT_DIR}/dist"
+mkdir -p "${OUTPUT_DIR}"
+cp -r "${BUILD_DIR}" "${OUTPUT_DIR}/dist"
 
-echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
-cp -r node_modules "${OUTPUT_DIR}/dist/node_modules"
+if [ "${COPY_NODE_MODULES}" = true ]; then
+  echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
+  cp -r node_modules "${OUTPUT_DIR}/dist/node_modules"
+fi
 
 echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then

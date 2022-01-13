@@ -66,6 +66,20 @@ spec:
       description: "Node.js version to use - supported versions: 16"
       type: string
       default: "16"
+    - name: build-dir
+      description: >-
+        Must match the directory into which `npm run build` places files.
+        The files inside `build-dir` will be copied to `output-dir`.
+        Other common build directories are `build` and `public`.
+      type: string
+      default: "dist"
+    - name: copy-node-modules
+      description: >-
+        Whether `node-modules` is copied to the `output-dir` or not.
+        For frontend components this should be set to "false",
+        while for backend components this should be set to "true".
+      type: string
+      default: "false"
   steps:
     - name: build-typescript
       # Image is built from build/package/Dockerfile.node-xx-typescript-toolset.
@@ -104,7 +118,9 @@ spec:
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG} \
           --max-lint-warnings=$(params.max-lint-warnings) \
-          --lint-file-ext=$(params.lint-file-ext)
+          --lint-file-ext=$(params.lint-file-ext) \
+          --build-dir=$(params.build-dir) \
+          --copy-node-modules=$(params.copy-node-modules)
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
