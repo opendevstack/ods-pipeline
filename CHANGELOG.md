@@ -14,6 +14,8 @@ listed in the changelog.
 - Apply labels to pipelines allowing easier identification for cleanup ([#358](https://github.com/opendevstack/ods-pipeline/issues/358))
 - Configurable workspace PVC size ([#368](https://github.com/opendevstack/ods-pipeline/issues/368))
 - Customizable Helm flags ([#388](https://github.com/opendevstack/ods-pipeline/issues/388))
+- Run gradle in non daemon mode by default and enabling stacktraces ([#386](https://github.com/opendevstack/ods-pipeline/issues/386)) 
+- Enable setting `GRADLE_OPTS` via task parameters ([#387](https://github.com/opendevstack/ods-pipeline/issues/387))
 
 ### Changed
 
