@@ -14,7 +14,6 @@ func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-gradle",
 		[]tasktesting.Service{
-			tasktesting.Bitbucket,
 			tasktesting.Nexus,
 			tasktesting.SonarQube,
 		},
@@ -42,17 +41,26 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					logContains("No sonar-project.properties present, using default:", ctxt.CollectedLogs, t)
-					logContains("Using NEXUS_URL=http://ods-test-nexus.kind:8081", ctxt.CollectedLogs, t)
-					logContains("Gradle 7.3.3", ctxt.CollectedLogs, t)
+					logContains(ctxt.CollectedLogs, t,
+						"--gradle-options=--no-daemon --stacktrace",
+						"No sonar-project.properties present, using default:",
+						"Using NEXUS_URL=http://ods-test-nexus.kind:8081",
+						"Gradle 7.3.3",
+						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
+						"To honour the JVM settings for this build a single-use Daemon process will be forked.",
+					)
 				},
 			},
 		})
 }
 
-func logContains(wantLogMsg string, collectedLogs []byte, t *testing.T) {
+func logContains(collectedLogs []byte, t *testing.T, wantLogMsgs ...string) {
 	logString := string(collectedLogs)
-	if !strings.Contains(logString, wantLogMsg) {
-		t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, logString)
+
+	for _, msg := range wantLogMsgs {
+		if !strings.Contains(logString, msg) {
+			t.Fatalf("Want:\n%s\n\nGot:\n%s", msg, logString)
+		}
 	}
+
 }
