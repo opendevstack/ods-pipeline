@@ -456,7 +456,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-12
 | Gradle
-| 7.2
+| 7.3.3
 | Build automation tool for multi-language software development.
 | https://gradle.org
 
@@ -552,10 +552,15 @@ The following table provides the history of the document.
 |===
 | Version | Date | Author | Change
 
-| 0.12
-| 2022-01-11
+| 0.13
+| 2022-01-13
 | Henning Groß
 | Make TypeScript build task more suitable for FE builds.
+
+| 0.12
+| 2022-01-12
+| Jan Frank
+| Update gradle version to 7.3.3.
 
 | 0.11
 | 2022-01-10
