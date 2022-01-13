@@ -14,7 +14,6 @@ func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-gradle",
 		[]tasktesting.Service{
-			tasktesting.Bitbucket,
 			tasktesting.Nexus,
 			tasktesting.SonarQube,
 		},

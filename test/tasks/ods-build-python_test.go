@@ -16,7 +16,6 @@ func TestTaskODSBuildPython(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-python",
 		[]tasktesting.Service{
-			tasktesting.Bitbucket,
 			tasktesting.Nexus,
 			tasktesting.SonarQube,
 		},
