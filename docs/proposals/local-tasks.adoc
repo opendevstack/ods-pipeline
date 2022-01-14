@@ -19,7 +19,7 @@ The following is a proposal that completely sidesteps waiting for a solution, co
 
 ODS pipeline is comprised of two installations: a central one and a project-specific one. The central installation is split into two Helm charts: one for images, and one for (cluster) tasks. The project specific Helm chart contains the Tekton Trigger resources and config maps / secrets.
 
-The proposal is to remove the (cluster) task Helm chart from the central installation, and merge it into the project-specific installation. The tasks would then not be of type `Task` anymore, but of kind `Task`. This might sound like an odd suggestion at first but I think it is an interesting thought.
+The proposal is to remove the (cluster) task Helm chart from the central installation, and merge it into the project-specific installation. The tasks would then not be of type `ClusterTask` anymore, but of kind `Task`. This might sound like an odd suggestion at first but I think it is an interesting thought.
 
 This change would solve the outlined problem somewhat indirectly. As tasks are in the Helm chart of the project, they can be parameterized using Helm templating. The project can set their own resource consumption needs and change them whenever needed. Further, since the task definition is now under the control of the project, sidecars can be added as needed.
 
