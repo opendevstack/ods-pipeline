@@ -1,0 +1,51 @@
+= Proposal: Pipeline Queuing
+
+== Purpose
+
+This proposal aims to adress race conditions between pipelines, see https://github.com/opendevstack/ods-pipeline/issues/394.
+
+== Background
+
+As discovered in the linked issue, Tekton does not have a mechanism to control parallelism of pipelines. The initial assumption that parallel builds would not happen as the workspace would not be mounted by multiple pipelines is false. Race conditions are a big pain point because it leads to unstable pipeline runs.
+
+As Tekton does not provide a solution, at least not in the short term, we need to come up with our own fix.
+
+== Solution
+
+To solve this, we need to control which pipelines start when. At the moment, we do not control this: Tekton Triggers is responsible for starting pipeline runs, and we only intercept the Tekton Triggers flow to make sure the pipeline is configured correctly.
+
+The easiest place to implement the required functionality would be the webhook interceptor service. With increasing scope of this service, the value we gain from Tekton Triggers is becoming smaller and smaller, and Tekton Triggers may even be in the way of achieving our goal. Therefore this solution actually proposes to get rid of Tekton Triggers altogether.
+
+The webhook interceptor service would be "promoted" to a generic "pipeline manager" service. It would respond to Bitbucket webhooks directly. As a consequence, we need to do the Bitbucket validation in our service, which looks relatively straightforward as we can simply import and use the Go package from Tekton Triggers.
+
+The "pipeline manager" service would then need logic which decides if a pipeline should start immediately, or be creating in pending state and started later. This is supported by Tekton as described in https://tekton.dev/docs/pipelines/pipelineruns/#pending-pipelineruns.
+
+The logic would go something like this:
+
+* for each webhook request, create a pending pipeline run.
+* if the pipeline is allowed to start (no conflicting pipeline is running right now), it is started
+* otherwise it stays pending until the conflicting pipeline has finished.
+
+In the link:https://medium.com/ibm-garage/using-lease-resources-to-manage-concurrency-in-tekton-builds-344ba84df297[IBM Garage article], this logic is impleted via a "lease" CRD. I am a bit hesitant to introduce a CRD as that requires cluster admin intervention. That said, I think we can learn a lot from the approach described there.
+
+My initial proposal would be to not store the state in any resource but simply use API calls to determine the state in certain intervals. When a new pending pipeline run is created, we need to retrieve all conflicting pipeline runs that are currently running. If there are none, we can start the pipeline run just created. If there are running pipelines, we wait for some time until we check again. In addition to this periodic polling, the pipelines themselves could signal in the `ods-finish` task that they are done to avoid unnecessary waiting.
+
+There could also be situations in which multiple pipeline runs are pending. In that case, we might be able to optimize the wait time a bit by cancelling existing pending pipeline runs that belong to the same branch for which the webhook fired. IIRC this is how GitLab handles this situation and I liked that behaviour when I used GitLab back in the day.
+
+I believe a timeout is not required for this feature as pipeline runs have a default timeout (which is also configurable). This would mean that at some point, running pipelines that never finish would be cancelled (either by the user or the timeout), allowing the pending pipeline runs to be started eventually.
+
+Finally, we need to define when pipelines actually conflict, an issue this proposal as sidestepped so far ;) Any pipelines running in parallel need to be guaranteed that they do not fight over the same PVC. Therefore, for any set of pipelines that should run in parallel, we need a separate PVC. For this to be practical, the "pipeline manager" service now needs to manage PVCs.
+
+Starting from the "lowest" level, pipelines for different repositories are independent and should run in parallel (requiring one PVC per repository). The next level would be parallel pipelines for different branches, as branches are conceptually independent. However that would also require one PVC per branch. This sounds like a lot of PVCs, so we need to think about cleanup. We could use Bitbucket webhook events to know this, or we could apply some quota or similar. Since I am unsure about the exact logic that should be used, I suggest we only implement the lowest level initially. That fixes the problem of race conditions. Further enhancements allowing to run pipelines for different branches fit well into the proposed architecture and can be started once we see a pressing need.
+
+=== Pro
+
+* No more race conditions.
+* No more Tekton Triggers. While this flow has worked well so far, it is not very flexible. Interestingly, pipelines-as-code is not using Tekton Triggers either. Removing Tekton Triggers leaves us with just one service, which is easier to understand, easier to debug, and consumes fewer resources.
+* Different levels of parallelism should be easy to support, although we start with a simple approach avoiding parallel pipelines within one repository.
+
+=== Con
+
+* We need to add validation of incoming webhooks to our service.
+* Implementation requires some effort.
+* Signalling from `ods-finish` adds an interaction between pipeline and "manager" service that does not exist so far.
