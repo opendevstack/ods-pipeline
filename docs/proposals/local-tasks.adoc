@@ -1,0 +1,44 @@
+= Proposal: Local tasks
+
+== Purpose
+
+This proposal aims to adress the following issues:
+
+- Sidecars are barely usable (https://github.com/opendevstack/ods-pipeline/issues/135)
+- Resource Consumption is not configurable from pipeline (https://github.com/opendevstack/ods-pipeline/issues/372)
+
+== Background
+
+Both issues originate from the fact that most things within a Tekton task can only be configured by task authors, and not by pipeline authors. In an ideal world, Tekton would allow sidecars to be defined from a pipeline, as well as allow to configure resource consumption (CPU/memory) of the tasks.
+
+At the time of writing, it does not look like there will be quick solutions to this. One reason for this is that no solution is defined or implemented yet in Tekton, another that uptake in OpenShift would be delayed once there is a solution in Tekton.
+
+The following is a proposal that completely sidesteps waiting for a solution, comes with a few other advantages, and therefore is worth considering in my opinion.
+
+== Solution
+
+ODS pipeline is comprised of two installations: a central one and a project-specific one. The central installation is split into two Helm charts: one for images, and one for (cluster) tasks. The project specific Helm chart contains the Tekton Trigger resources and config maps / secrets.
+
+The proposal is to remove the (cluster) task Helm chart from the central installation, and merge it into the project-specific installation. The tasks would then not be of type `Task` anymore, but of kind `Task`. This might sound like an odd suggestion at first but I think it is an interesting thought.
+
+This change would solve the outlined problem somewhat indirectly. As tasks are in the Helm chart of the project, they can be parameterized using Helm templating. The project can set their own resource consumption needs and change them whenever needed. Further, since the task definition is now under the control of the project, sidecars can be added as needed.
+
+=== Pro
+
+* The admin installation would consist of only one chart, which is conceptually simpler.
+* The admin installation would not require cluster admin permissions.
+* Tasks can be customized even beyond the stated problem (e.g. customization of pod template).
+* The solution can be implemented right now, no need to wait for anything in upstream Tekton.
+* The installation and update procedure is based on `git subtree`, which allows to merge in changes in new releases safely into the Git repository which may have customized the tasks beyond just resource consumption / sidecars.
+* There would not be a need for the sidecar variants to be supplied as part of the main distribution.
+* It might serve as a first step to a world where there is no central installation at all (e.g. if images are pushed from GitHub to a registry from which they are simply pulled in the project-specific installation).
+* If Tekton introduces features that allow pipeline authors to control more aspects of tasks, this is would not interfere with the proposed solution.
+* Project-specific installations could potentially pick-and-choose which tasks to install at all (e.g. not all build tasks will be needed for all projects).
+* Implementation of the change is trivial and requires no further logic.
+
+=== Con
+
+* The user installation would consist of two charts, which is conceptually more complex. We could in theory change the approach to have just one chart, and simply protect "old tasks" from being removed when new ones are added - at the cost of being able to remove them easily by uninstalling a Helm release.
+* It requires users to modify the task YAML. This requires some knowledge and YAML is error-prone.
+* Resource consumption would be set per task, and not per usage in a pipeline. Some repositories in a project might use the same task, but might have a different resource consumption. This could be mitigated by duplicating tasks in that case. The same downside applies to sidecars: not all uses of a task might need a sidecar, or the same set of sidecars.
+* There would be way more resources in the cluster, as every project would define the tasks again.
