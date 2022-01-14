@@ -4,7 +4,7 @@ set -eu
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ROOT_DIR=$(pwd)
-ARTIFACTS_DIR=$ROOT_DIR/.ods/artifacts
+export ARTIFACTS_DIR=$ROOT_DIR/.ods/artifacts
 ARTIFACT_PREFIX=
 DEBUG="${DEBUG:-false}"
 GRADLE_ADDITIONAL_TASKS=
@@ -43,6 +43,7 @@ export GRADLE_USER_HOME=/home/gradle/.gradle
 
 echo "Using NEXUS_URL=$NEXUS_URL"
 echo "Using GRADLE_OPTS=$GRADLE_OPTS"
+echo "Using ARTIFACTS_DIR=$ARTIFACTS_DIR"
 
 echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
