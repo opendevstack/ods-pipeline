@@ -16,6 +16,7 @@ listed in the changelog.
 - Customizable Helm flags ([#388](https://github.com/opendevstack/ods-pipeline/issues/388))
 - Run gradle in non daemon mode by default and enabling stacktraces ([#386](https://github.com/opendevstack/ods-pipeline/issues/386)) 
 - Enable setting `GRADLE_OPTS` via task parameters ([#387](https://github.com/opendevstack/ods-pipeline/issues/387))
+- Export `ARTIFACTS_DIR` environment variable to be visible to the gradle build ([#408](https://github.com/opendevstack/ods-pipeline/issues/408))
 
 ### Changed
 

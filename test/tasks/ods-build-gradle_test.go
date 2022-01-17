@@ -48,6 +48,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						"Gradle 7.3.3",
 						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
 						"To honour the JVM settings for this build a single-use Daemon process will be forked.",
+						"Using ARTIFACTS_DIR=/workspace/source/.ods/artifacts",
 					)
 				},
 			},
