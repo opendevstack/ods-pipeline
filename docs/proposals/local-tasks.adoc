@@ -2,7 +2,7 @@
 
 == Purpose
 
-This proposal aims to adress the following issues:
+This proposal aims to address the following issues:
 
 - Sidecars are barely usable (https://github.com/opendevstack/ods-pipeline/issues/135)
 - Resource Consumption is not configurable from pipeline (https://github.com/opendevstack/ods-pipeline/issues/372)
