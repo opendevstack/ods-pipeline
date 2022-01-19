@@ -1,0 +1,69 @@
+= Proposal: Caching
+
+== Purpose
+
+This proposal aims to support caching of dependencies
+(https://github.com/opendevstack/ods-pipeline/issues/147) in order to speed up build times. 
+
+== Background
+
+Currently there is a single PVC per project which is shared by all build pipelines. 
+As a consequence only a single build at a time can run for a project.
+
+The PVC is mounted as the workspace in all build tasks. 
+
+The `ods-start` task wipes the PVC at the beginning of each build so that no data persists between build.
+
+Each tekton task which gets started mounts the workspace PVC which can take quiet noticeable wait times.   
+
+== Solution
+
+In the initial implementation instead of a single PVC per project one PVC per repo will be used. The PVC will be used both as a workspace for the build and also as a cache of data between builds.
+
+A build task run will have the following directories available:
+
+* A repo checkout dir. This is the current workspace directory although I propose to rename it to checkout directory as for some technologies the actual build will not happen here but in a caching directory if available.
+
+With sufficient caching space available: 
+
+* A global cache directory where the parent directory is indicated by parameter `global-cache-parent`. Cleanup will only spare directories with in it so that build tasks must keep stuff in a subdirectory. For example in `$(global-cache-parent)/go-modules/`. 
+
+* A pipeline cache directory as indicated by parameter `pipeline-cache-dir`.
+
+In the initial implementation the parameters will be set to `/.cache/` and `/.cache-p/<pipeline-name>/` if space permits and be empty if there is not sufficient space available.
+
+While initially the caches will be on the same PVC as the checkout PVC, this should not be relied on, for example by using hard links between the checkout dir and the cache area. In the future we may want to keep different PVC for these areas. For example the global cache parent could be one day per project and perhaps even one per project for each build technology such as go, node. +
+Also in a future version the `pipeline-cache-dir` may be on a different PVC as the checkout PVC for example to enable faster cleanup of the pristine checkout dir by simply recreating it or not even having it on a PVC. 
+
+Files in the cache locations would persist between builds unless they are removed by the cleanup mechanism. 
+
+The build scripts are adjusted to take advantage of the cache parameters above. In addition each build task will support a new parameters `global-caching-mb` and `pipeline-caching-mb`. These defaults to 0 to indicate the task is not using caching. Otherwise it specify the minimum required cache space in MB.    
+
+All build scripts are adjusted to log
+
+- the time longer running commands take. 
+
+Furthermore the available disks pace is be logged as well (not sure where this should be done at the moment)
+
+=== ods-start and cleanup
+
+Build tasks can rely on that cache cleanup does not occur while they are running as well as that these would not be partially cleaned up. 
+
+On the other hand build Tasks cannot rely on that a cache remains populated from a previous build.
+
+The cleanup strategy described here is subject to change even in patch versions and specific details must not be relied on.
+
+Pipeline cleanup happens during `ods-start`, so that no other build can run concurrently.
+
+Before cache cleanup `ods-start` cleans up the prior PVC checkout dir, which means everything except `/.cache/<some-dir>` or `/.cache-p/<some-dir>`. In particular to prevent having files at the top levels regular files or links below `/.cache/` or `/.cache-p/` are deleted.  
+
+`ods-start` then cleans up separately the global and pipeline cache to fulfill the declared requirements of all build tasks in the odl.yaml. If disk space remains too low in a particular cache area a warning message is logged and the respective parameter `global-cache-parent` and/or `pipeline-cache-dir` will be empty. 
+
+
+== Pro
+
+TODO
+
+== Con
+
+TODO
