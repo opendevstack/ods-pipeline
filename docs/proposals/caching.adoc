@@ -62,8 +62,16 @@ Before cache cleanup `ods-start` cleans up the prior PVC checkout dir, which mea
 
 == Pro
 
-TODO
+* Caching enabled for tools using global cache
+
+* Caching enabled where it is best to build in a cached context per pipeline
+
+* Opt-in to caching can be used to document best practices for PVC sizing.
+
+* By having cleanup done in ods-start no need to have an interleaved cleanup process.
 
 == Con
 
-TODO
+* Tools such as for typescript https://github.com/pnpm/pnpm[pnpm] and https://github.com/yarnpkg/berry[yarn berry] support deduplication allowing to reference artifacts from a central location without packaging them again. pnpn uses hard links to make this efficient. However hard linking is not supported across PVCs and thus could not be used with the proposed design as is. See also related discussion at https://github.com/opendevstack/ods-pipeline/discussions/411[node typescript security and caching - npm or yarn? #411].
+
+* In some technologies caching is not mature and there is a desire to have caching be disabled for particular builds such as develop branch builds. At the moment this information is not readily configurable as proposed. Suggestions to fix this are welcome! 
