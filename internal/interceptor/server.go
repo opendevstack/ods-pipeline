@@ -1,6 +1,7 @@
 package interceptor
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/json"
 	"errors"
@@ -14,11 +15,14 @@ import (
 	"strings"
 	"time"
 
+	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
 	intrepo "github.com/opendevstack/pipeline/internal/repository"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,20 +34,31 @@ const (
 	repositoryLabel = labelPrefix + "repository"
 	// Label specifying the Git ref (e.g. branch) related to the pipeline.
 	gitRefLabel = labelPrefix + "git-ref"
+	// Annotation to set the storage provisioner for a PVC.
+	storageProvisionerAnnotation = "volume.beta.kubernetes.io/storage-provisioner"
+	pvcProtectionFinalizer       = "kubernetes.io/pvc-protection"
 	// letterBytes contains letters to use for random strings.
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 // Server represents this service, and is a global.
 type Server struct {
-	TektonClient    tektonClient.ClientInterface
-	Namespace       string
-	Project         string
-	RepoBase        string
-	Token           string
-	TaskKind        tekton.TaskKind
-	TaskSuffix      string
-	BitbucketClient bitbucketInterface
+	KubernetesClient kubernetesClient.ClientInterface
+	TektonClient     tektonClient.ClientInterface
+	Namespace        string
+	Project          string
+	RepoBase         string
+	Token            string
+	TaskKind         tekton.TaskKind
+	TaskSuffix       string
+	StorageConfig    StorageConfig
+	BitbucketClient  bitbucketInterface
+}
+
+type StorageConfig struct {
+	Provisioner string
+	ClassName   string
+	Size        string
 }
 
 // ServerConfig configures a server.
@@ -61,7 +76,11 @@ type ServerConfig struct {
 	TaskKind string
 	// TaskSuffic is the suffix applied to tasks (version information).
 	TaskSuffix string
-	// TektonClient is a tekton client
+	// StorageConfig describes the config to apply to PVCs.
+	StorageConfig StorageConfig
+	// KubernetesClient is a Kubernetes client
+	KubernetesClient kubernetesClient.ClientInterface
+	// TektonClient is a Tekton client
 	TektonClient tektonClient.ClientInterface
 	// BitbucketClient is a Bitbucket client
 	BitbucketClient bitbucketInterface
@@ -104,6 +123,12 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 	if serverConfig.Token == "" {
 		return nil, errors.New("token is required")
 	}
+	if serverConfig.StorageConfig.ClassName == "" {
+		return nil, errors.New("storage class name is required")
+	}
+	if serverConfig.StorageConfig.Size == "" {
+		return nil, errors.New("storage size is required")
+	}
 	if serverConfig.TektonClient == nil {
 		return nil, errors.New("tekton client is required")
 	}
@@ -111,14 +136,16 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 		return nil, errors.New("bitbucket client is required")
 	}
 	return &Server{
-		TektonClient:    serverConfig.TektonClient,
-		Namespace:       serverConfig.Namespace,
-		Project:         serverConfig.Project,
-		RepoBase:        serverConfig.RepoBase,
-		Token:           serverConfig.Token,
-		TaskKind:        tekton.TaskKind(serverConfig.TaskKind),
-		TaskSuffix:      serverConfig.TaskSuffix,
-		BitbucketClient: serverConfig.BitbucketClient,
+		KubernetesClient: serverConfig.KubernetesClient,
+		TektonClient:     serverConfig.TektonClient,
+		BitbucketClient:  serverConfig.BitbucketClient,
+		Namespace:        serverConfig.Namespace,
+		Project:          serverConfig.Project,
+		RepoBase:         serverConfig.RepoBase,
+		Token:            serverConfig.Token,
+		TaskKind:         tekton.TaskKind(serverConfig.TaskKind),
+		TaskSuffix:       serverConfig.TaskSuffix,
+		StorageConfig:    serverConfig.StorageConfig,
 	}, nil
 }
 
@@ -251,7 +278,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		RepoBase:     s.RepoBase,
 		GitURI:       gitURI,
 		Namespace:    s.Namespace,
-		PVC:          "ods-pipeline",
+		PVC:          makePVCName(component),
 		TriggerEvent: req.EventKey,
 		Comment:      commentText,
 	}
@@ -325,6 +352,15 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Create PVC if it does not exist yet
+	err = s.createPVCIfRequired(r.Context(), pData)
+	if err != nil {
+		msg := "cannot create workspace PVC"
+		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
 	log.Println(requestID, fmt.Sprintf("%+v", pData))
 
 	extendedBody, err := extendBodyWithExtensions(body, pData)
@@ -339,6 +375,39 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		log.Println(requestID, fmt.Sprintf("cannot write body: %s", err))
 		return
 	}
+}
+
+// createPVCIfRequired if it does not exist yet
+func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) error {
+	_, err := s.KubernetesClient.GetPersistentVolumeClaim(ctxt, pData.PVC, metav1.GetOptions{})
+	if err != nil {
+		vm := corev1.PersistentVolumeFilesystem
+		pvc := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       pData.PVC,
+				Labels:     map[string]string{repositoryLabel: pData.Repository},
+				Finalizers: []string{pvcProtectionFinalizer},
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceName(corev1.ResourceStorage): resource.MustParse(s.StorageConfig.Size),
+					},
+				},
+				StorageClassName: &s.StorageConfig.ClassName,
+				VolumeMode:       &vm,
+			},
+		}
+		if s.StorageConfig.Provisioner != "" {
+			pvc.Annotations[storageProvisionerAnnotation] = s.StorageConfig.Provisioner
+		}
+		_, err := s.KubernetesClient.CreatePersistentVolumeClaim(ctxt, pvc, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
@@ -412,20 +481,34 @@ func makePipelineName(component string, branch string) string {
 		"",
 	)
 
-	// Enforce maximum length - and if truncation needs to happen,
-	// ensure uniqueness of pipeline name as much as possible.
-	if len(pipeline) > 55 {
-		shortenedPipeline := pipeline[0:47]
-		h := sha1.New()
-		_, err := h.Write([]byte(pipeline))
-		if err != nil {
-			return shortenedPipeline
-		}
-		bs := h.Sum(nil)
-		s := fmt.Sprintf("%x", bs)
-		pipeline = fmt.Sprintf("%s-%s", shortenedPipeline, s[0:7])
-	}
+	// 55 is derived from K8s label max length minus room for generateName suffix.
+	pipeline = fitStringToMaxLength(pipeline, 55)
 	return strings.ToLower(pipeline)
+}
+
+func makePVCName(component string) string {
+	pvcName := fmt.Sprintf("ods-workspace-%s", strings.ToLower(component))
+	return fitStringToMaxLength(pvcName, 63) // K8s label max length to be on the safe side.
+}
+
+// fitStringToMaxLength ensures s is not longer than max.
+// If s is longer than max, it shortenes s and appends a unique, consistent
+// suffix so that multiple invocations produce the same result. The length
+// of the shortened string will be equal to max.
+func fitStringToMaxLength(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	suffixLength := 7
+	shortened := s[0 : max-suffixLength-1]
+	h := sha1.New()
+	_, err := h.Write([]byte(s))
+	if err != nil {
+		return shortened
+	}
+	bs := h.Sum(nil)
+	suffix := fmt.Sprintf("%x", bs)
+	return fmt.Sprintf("%s-%s", shortened, suffix[0:suffixLength])
 }
 
 func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.TaskKind, taskSuffix string) *tekton.Pipeline {

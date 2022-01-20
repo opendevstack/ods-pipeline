@@ -11,18 +11,24 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/interceptor"
+	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 )
 
 const (
-	namespaceFile    = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	namespaceSuffix  = "-cd"
-	repoBaseEnvVar   = "REPO_BASE"
-	tokenEnvVar      = "ACCESS_TOKEN"
-	taskKindEnvVar   = "ODS_TASK_KIND"
-	taskKindDefault  = "ClusterTask"
-	taskSuffixEnvVar = "ODS_TASK_SUFFIX"
+	namespaceFile            = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	namespaceSuffix          = "-cd"
+	repoBaseEnvVar           = "REPO_BASE"
+	tokenEnvVar              = "ACCESS_TOKEN"
+	taskKindEnvVar           = "ODS_TASK_KIND"
+	taskKindDefault          = "ClusterTask"
+	taskSuffixEnvVar         = "ODS_TASK_SUFFIX"
+	storageProvisionerEnvVar = "ODS_STORAGE_PROVISIONER"
+	storageClassNameEnvVar   = "ODS_STORAGE_CLASS_NAME"
+	storageClassNameDefault  = "standard"
+	storageSizeEnvVar        = "ODS_STORAGE_SIZE"
+	storageSizeDefault       = "2Gi"
 )
 
 func init() {
@@ -40,17 +46,17 @@ func serve() error {
 	log.Println("Booting")
 
 	repoBase := os.Getenv(repoBaseEnvVar)
-	if len(repoBase) == 0 {
+	if repoBase == "" {
 		return fmt.Errorf("%s must be set", repoBaseEnvVar)
 	}
 
 	token := os.Getenv(tokenEnvVar)
-	if len(token) == 0 {
+	if token == "" {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
 	}
 
 	taskKind := os.Getenv(taskKindEnvVar)
-	if len(taskKind) == 0 {
+	if taskKind == "" {
 		taskKind = taskKindDefault
 		log.Println(
 			"INFO:",
@@ -61,11 +67,42 @@ func serve() error {
 	}
 
 	taskSuffix := os.Getenv(taskSuffixEnvVar)
-	if len(taskSuffix) == 0 {
+	if taskSuffix == "" {
 		log.Println(
 			"INFO:",
 			taskSuffixEnvVar,
 			"not set, using no suffix",
+		)
+	}
+
+	storageProvisioner := os.Getenv(storageProvisionerEnvVar)
+	if storageProvisioner == "" {
+		log.Println(
+			"INFO:",
+			storageProvisionerEnvVar,
+			"not set, using no storage provisioner",
+		)
+	}
+
+	storageClassName := os.Getenv(storageClassNameEnvVar)
+	if storageClassName == "" {
+		storageClassName = storageClassNameDefault
+		log.Println(
+			"INFO:",
+			storageClassNameEnvVar,
+			"not set, using default value:",
+			storageClassNameDefault,
+		)
+	}
+
+	storageSize := os.Getenv(storageSizeEnvVar)
+	if storageSize == "" {
+		storageSize = storageSizeDefault
+		log.Println(
+			"INFO:",
+			storageSizeEnvVar,
+			"not set, using default value:",
+			storageSizeDefault,
 		)
 	}
 
@@ -76,8 +113,16 @@ func serve() error {
 
 	project := strings.TrimSuffix(namespace, namespaceSuffix)
 
-	// Initialize Tekton client.
-	client, err := tektonClient.NewInClusterClient(&tektonClient.ClientConfig{
+	// Initialize Kubernetes client.
+	kClient, err := kubernetesClient.NewInClusterClient(&kubernetesClient.ClientConfig{
+		Namespace: namespace,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Initialize Tekton tClient.
+	tClient, err := tektonClient.NewInClusterClient(&tektonClient.ClientConfig{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -91,14 +136,20 @@ func serve() error {
 	})
 
 	server, err := interceptor.NewServer(interceptor.ServerConfig{
-		Namespace:       namespace,
-		Project:         project,
-		RepoBase:        repoBase,
-		Token:           token,
-		TaskKind:        taskKind,
-		TaskSuffix:      taskSuffix,
-		BitbucketClient: bitbucketClient,
-		TektonClient:    client,
+		Namespace:  namespace,
+		Project:    project,
+		RepoBase:   repoBase,
+		Token:      token,
+		TaskKind:   taskKind,
+		TaskSuffix: taskSuffix,
+		StorageConfig: interceptor.StorageConfig{
+			Provisioner: storageProvisioner,
+			ClassName:   storageClassName,
+			Size:        storageSize,
+		},
+		KubernetesClient: kClient,
+		TektonClient:     tClient,
+		BitbucketClient:  bitbucketClient,
 	})
 	if err != nil {
 		return err

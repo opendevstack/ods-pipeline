@@ -11,19 +11,19 @@
     "date":"2017-09-19T09:58:11+1000",
     "eventKey":"pr:opened",
     "extensions": {
-        "name": "ods-pipeline-feature-foo",
+        "name": "bar-feature-foo",
         "project": "foo",
-        "component": "ods-pipeline",
-        "repository": "ods-pipeline",
+        "component": "bar",
+        "repository": "foo-bar",
         "environment": "",
         "version": "",
         "gitRef": "feature/foo",
         "gitFullRef": "refs/heads/feature/foo",
         "gitSha": "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
         "repoBase": "https://domain.com",
-        "gitURI": "https://domain.com/foo/ods-pipeline.git",
+        "gitURI": "https://domain.com/foo/foo-bar.git",
         "namespace": "bar-cd",
-        "pvc": "ods-pipeline",
+        "pvc": "ods-workspace-bar",
         "trigger-event": "pr:opened",
         "comment": "",
         "prKey": 1,
@@ -53,7 +53,7 @@
             "repository":{
                 "forkable":true,
                 "id":84,
-                "name":"ods-pipeline",
+                "name":"foo-bar",
                 "project":{
                     "id":84,
                     "key":"FOO",
@@ -63,7 +63,7 @@
                 },
                 "public":false,
                 "scmId":"git",
-                "slug":"ods-pipeline",
+                "slug":"foo-bar",
                 "state":"AVAILABLE",
                 "statusMessage":"Available"
             }
@@ -87,7 +87,7 @@
             "repository":{
                 "forkable":true,
                 "id":84,
-                "name":"ods-pipeline",
+                "name":"foo-bar",
                 "project":{
                     "id":84,
                     "key":"FOO",
@@ -97,7 +97,7 @@
                 },
                 "public":false,
                 "scmId":"git",
-                "slug":"ods-pipeline",
+                "slug":"foo-bar",
                 "state":"AVAILABLE",
                 "statusMessage":"Available"
             }

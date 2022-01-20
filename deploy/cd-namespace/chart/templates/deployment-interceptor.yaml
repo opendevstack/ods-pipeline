@@ -37,6 +37,12 @@ spec:
                 secretKeyRef:
                   key: password
                   name: ods-bitbucket-auth
+            - name: ODS_STORAGE_PROVISIONER
+              value: '{{.Values.interceptor.storageProvisioner}}'
+            - name: ODS_STORAGE_CLASS_NAME
+              value: '{{.Values.interceptor.storageClassName}}'
+            - name: ODS_STORAGE_SIZE
+              value: '{{.Values.interceptor.storageSize}}'
           readinessProbe:
             httpGet:
               path: /health

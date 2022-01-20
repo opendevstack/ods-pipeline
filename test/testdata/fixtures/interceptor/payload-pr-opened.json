@@ -24,9 +24,9 @@
         "displayId":"feature/foo",
         "latestCommit":"ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
         "repository":{  
-          "slug":"ods-pipeline",
+          "slug":"foo-bar",
           "id":84,
-          "name":"ods-pipeline",
+          "name":"foo-bar",
           "scmId":"git",
           "state":"AVAILABLE",
           "statusMessage":"Available",
@@ -46,9 +46,9 @@
         "displayId":"master",
         "latestCommit":"178864a7d521b6f5e720b386b2c2b0ef8563e0dc",
         "repository":{  
-          "slug":"ods-pipeline",
+          "slug":"foo-bar",
           "id":84,
-          "name":"ods-pipeline",
+          "name":"foo-bar",
           "scmId":"git",
           "state":"AVAILABLE",
           "statusMessage":"Available",

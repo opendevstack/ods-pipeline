@@ -13,12 +13,14 @@ import (
 	"unicode"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/internal/testfile"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -105,6 +107,50 @@ func TestIsCiSkipInCommitMessage(t *testing.T) {
 			got := isCiSkipInCommitMessage((tc.message))
 			if tc.want != got {
 				t.Fatalf("Got %v, want %v for message '%s'", got, tc.want, tc.message)
+			}
+		})
+	}
+}
+
+func TestShortenString(t *testing.T) {
+	tests := map[string]struct {
+		s        string
+		max      int
+		expected string
+	}{
+		"short enough": {
+			s:        "foobar",
+			max:      10,
+			expected: "foobar",
+		},
+		"too long": {
+			s:        "some-arbitarily-long-name-that-should-be-way-shorter",
+			max:      30,
+			expected: "some-arbitarily-long-n-8b85b7c",
+		},
+		"too long with slight difference in cut off string": {
+			s:        "some-arbitarily-long-name-that-should-be-way-shorterx",
+			max:      30,
+			expected: "some-arbitarily-long-n-50a3b84",
+		},
+		"exact length": {
+			s:        "some-arbitarily-long-name-that",
+			max:      30,
+			expected: "some-arbitarily-long-name-that",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := fitStringToMaxLength(tc.s, tc.max)
+			if tc.expected != got {
+				t.Fatalf(
+					"Want '%s', got '%s' for (s='%s', max='%d')",
+					tc.expected,
+					got,
+					tc.s,
+					tc.max,
+				)
 			}
 		})
 	}
@@ -212,15 +258,21 @@ func fatalIfErr(t *testing.T, err error) {
 	}
 }
 
-func testServer(tc tektonClient.ClientInterface, bc bitbucketInterface) (*httptest.Server, error) {
+func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, bc bitbucketInterface) (*httptest.Server, error) {
 	server, err := NewServer(ServerConfig{
-		Namespace:       "bar-cd",
-		Project:         "bar",
-		Token:           "test",
-		TaskKind:        "ClusterTask",
-		RepoBase:        "https://domain.com",
-		TektonClient:    tc,
-		BitbucketClient: bc,
+		Namespace: "bar-cd",
+		Project:   "bar",
+		Token:     "test",
+		TaskKind:  "ClusterTask",
+		RepoBase:  "https://domain.com",
+		StorageConfig: StorageConfig{
+			Provisioner: "",
+			ClassName:   "standard",
+			Size:        "2Gi",
+		},
+		KubernetesClient: kc,
+		TektonClient:     tc,
+		BitbucketClient:  bc,
 	})
 	if err != nil {
 		return nil, err
@@ -232,17 +284,18 @@ func TestWebhookHandling(t *testing.T) {
 
 	tests := map[string]struct {
 		requestBodyFixture string
+		kubernetesClient   *kubernetes.TestClient
 		tektonClient       *tektonClient.TestClient
 		bitbucketClient    *bitbucket.TestClient
 		wantStatus         int
 		wantBody           string
-		check              func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient)
+		check              func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient)
 	}{
 		"invalid JSON is not processed": {
 			requestBodyFixture: "interceptor/payload-invalid.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "cannot parse JSON: invalid character '\\n' in string literal",
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
@@ -252,7 +305,7 @@ func TestWebhookHandling(t *testing.T) {
 			requestBodyFixture: "interceptor/payload-unknown-event.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "Unsupported event key: repo:ref_changed",
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
@@ -262,7 +315,7 @@ func TestWebhookHandling(t *testing.T) {
 			requestBodyFixture: "interceptor/payload-tag.json",
 			wantStatus:         http.StatusTeapot,
 			wantBody:           "Skipping change ref type TAG, only BRANCH is supported",
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
@@ -281,7 +334,7 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusTeapot,
 			wantBody:   "Commit should be skipped",
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
@@ -296,9 +349,12 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) != 1 || len(tc.UpdatedPipelines) != 0 {
 					t.Fatal("exactly one pipeline should have been created")
+				}
+				if len(kc.CreatedPVCs) != 1 {
+					t.Fatal("exactly one PVC should have been created")
 				}
 			},
 		},
@@ -309,21 +365,34 @@ func TestWebhookHandling(t *testing.T) {
 					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
 				},
 			},
+			kubernetesClient: &kubernetes.TestClient{
+				PVCs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							// generated PVC name
+							Name: "ods-workspace-bar",
+						},
+					},
+				},
+			},
 			tektonClient: &tektonClient.TestClient{
 				Pipelines: []*tekton.Pipeline{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							// generated pipeline name
-							Name: "ods-pipeline-master",
+							Name: "bar-master",
 						},
 					},
 				},
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
+				}
+				if len(kc.CreatedPVCs) > 0 {
+					t.Fatal("no PVC should have been created")
 				}
 			},
 		},
@@ -348,14 +417,14 @@ func TestWebhookHandling(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							// generated pipeline name
-							Name: "ods-pipeline-feature-foo",
+							Name: "bar-feature-foo",
 						},
 					},
 				},
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload-pr-opened.json")),
-			check: func(t *testing.T, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
 				}
@@ -372,7 +441,7 @@ func TestWebhookHandling(t *testing.T) {
 				FailCreatePipeline: true,
 			},
 			wantStatus: http.StatusInternalServerError,
-			wantBody:   "cannot create pipeline ods-pipeline-master",
+			wantBody:   "cannot create pipeline bar-master",
 		},
 		"failure to update pipeline is handled properly": {
 			requestBodyFixture: "interceptor/payload.json",
@@ -386,14 +455,14 @@ func TestWebhookHandling(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							// generated pipeline name
-							Name: "ods-pipeline-master",
+							Name: "bar-master",
 						},
 					},
 				},
 				FailUpdatePipeline: true,
 			},
 			wantStatus: http.StatusInternalServerError,
-			wantBody:   "cannot update pipeline ods-pipeline-master",
+			wantBody:   "cannot update pipeline bar-master",
 		},
 	}
 	for name, tc := range tests {
@@ -404,7 +473,10 @@ func TestWebhookHandling(t *testing.T) {
 			if tc.bitbucketClient == nil {
 				tc.bitbucketClient = &bitbucket.TestClient{}
 			}
-			ts, err := testServer(tc.tektonClient, tc.bitbucketClient)
+			if tc.kubernetesClient == nil {
+				tc.kubernetesClient = &kubernetes.TestClient{}
+			}
+			ts, err := testServer(tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -431,7 +503,7 @@ func TestWebhookHandling(t *testing.T) {
 				t.Fatalf("body mismatch (-want +got):\n%s", diff)
 			}
 			if tc.check != nil {
-				tc.check(t, tc.tektonClient, tc.bitbucketClient)
+				tc.check(t, tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient)
 			}
 		})
 	}
