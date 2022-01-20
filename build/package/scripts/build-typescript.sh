@@ -19,9 +19,48 @@ copyLintReport() {
   cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
+copyTestReports() {
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+  cat build/test-results/test/report.xml
+  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+  cat build/coverage/clover.xml
+  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+
+  cat build/coverage/coverage-final.json
+  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+
+  cat build/coverage/lcov.info
+  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+}
+
+copyBuildResults() {
+  mkdir -p "${output_dir_abs}"
+  cp -rv "${BUILD_DIR}" "${output_dir_abs}/dist"
+
+  if [ "${COPY_NODE_MODULES}" = true ]; then
+    echo "Copying node_modules to ${output_dir_abs}/dist/node_modules ..."
+    start_time=$SECONDS
+    cp -r node_modules "${output_dir_abs}/dist/node_modules"
+    elapsed=$(( SECONDS - start_time ))
+    echo "copying node_modules took $elapsed seconds"
+  fi
+}
+
+touch_dir_commit_hash() {
+  # this would enables cleanup based on these timestamps
+  # however this function should ideally be done outside of the individual 
+  # build scripts.
+  mkdir -p "$build_dir/.ods/"
+  echo -n "$WORKING_DIR_COMMIT_SHA" > "$build_dir/.ods/git-dir-commit-sha"
+}
+
+
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
+WORKING_DIR_COMMIT_SHA=""
 PIPELINE_CACHE_DIR=""
 ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
@@ -35,6 +74,11 @@ while [[ "$#" -gt 0 ]]; do
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
 
+    --working-dir-commit-sha) WORKING_DIR_COMMIT_SHA="$2"; shift;;
+    --working-dir-commit-sha=*) WORKING_DIR_COMMIT_SHA="${1#*=}";;
+
+    # build pipeline should support skipping for example via commit tag
+    # in this case --pipeline-cache-dir would be omitted or set to an empty value.  
     --pipeline-cache-dir) PIPELINE_CACHE_DIR="$2"; shift;;
     --pipeline-cache-dir=*) PIPELINE_CACHE_DIR="${1#*=}";;
 
@@ -59,6 +103,10 @@ while [[ "$#" -gt 0 ]]; do
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
+if [ -z "$WORKING_DIR_COMMIT_SHA" ]; then
+  echo "--working-dir-commit-sha parameter is required."; exit 1
+fi 
+
 if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
@@ -74,15 +122,45 @@ case $git_ref in
   *);;
 esac
 
-
-if [ -d "$PIPELINE_CACHE_DIR" ]; then
-  # NOTE: rsync is currently not available in build script
-  echo "Updating cache dir with sources ..."
-  # rsync -auvhp --itemize-changes --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
-  # rsync -auvhp --progress --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
-  rsync -auhp --info=progress2 --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"  # the info progress2 does not work with verbose, needs rather new rsync version.
+same_build_in_cache=false
+build_dir="${WORKING_DIR}"
+output_dir_abs="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
+if [ -n "$PIPELINE_CACHE_DIR" ]; then
+  build_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
+  if [ ! -d "$build_dir" ]; then
+    mkdir -p "$build_dir"
+  fi
+  if [ -f "$build_dir/.ods/git-dir-commit-sha" ]; then
+    previous_dir_commit_sha=$(cat "$build_dir/.ods/git-dir-commit-sha")
+    if [ "$previous_dir_commit_sha" = "$WORKING_DIR_COMMIT_SHA" ]; then
+      same_build_in_cache=true
+      echo "INFO: build with same commit hash of dir $build_dir already in cache ($previous_dir_commit_sha)."
+    fi
+  fi
+  if [ "$same_build_in_cache" = "false" ]; then
+    # NOTE: rsync is currently not available in build script
+    echo "Updating cache dir with sources ..."
+    # rsync -auvhp --itemize-changes --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
+    # rsync -auvhp --progress --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
+    rsync -auhp --info=progress2 --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"  # the info progress2 does not work with verbose, needs rather new rsync version.
+  fi
 fi
 
+if [ "${WORKING_DIR}" != "." ]; then
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
+fi
+if [ "${build_dir}" != "." ]; then
+  cd "${build_dir}" 
+fi
+
+if [ "$same_build_in_cache" = "true" ]; then
+  echo "Using prior build for same commit hash to copy build results and reports"
+  copyBuildResults
+  copyLintReport
+  copyTestReports
+  touch_dir_commit_hash
+  exit 0
+fi
 echo "Configuring npm to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
@@ -95,19 +173,6 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
     npm config set ca=null
     npm config set strict-ssl=false
 fi;
-
-build_dir="${WORKING_DIR}"
-output_dir_abs="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
-if [ -d  "$PIPELINE_CACHE_DIR" ]; then
-  build_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
-fi
-
-if [ "${WORKING_DIR}" != "." ]; then
-  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
-fi
-if [ "${build_dir}" != "." ]; then
-  cd "${build_dir}" 
-fi
 
 echo "Installing dependencies ..."
 <<<<<<< HEAD
@@ -145,16 +210,7 @@ start_time=$SECONDS
 npm run build
 elapsed=$(( SECONDS - start_time ))
 echo "build took $elapsed seconds"
-mkdir -p "${output_dir_abs}"
-cp -rv "${BUILD_DIR}" "${output_dir_abs}/dist"
-
-if [ "${COPY_NODE_MODULES}" = true ]; then
-  echo "Copying node_modules to ${output_dir_abs}/dist/node_modules ..."
-  start_time=$SECONDS
-  cp -r node_modules "${output_dir_abs}/dist/node_modules"
-  elapsed=$(( SECONDS - start_time ))
-  echo "copying node_modules took $elapsed seconds"
-fi
+copyBuildResults
 
 echo "Testing ..."
 # Implement skipping tests for TypeScript #238
@@ -169,20 +225,8 @@ if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" 
   cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
 else
   npm run test
-
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-  cat build/test-results/test/report.xml
-  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
-
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-  cat build/coverage/clover.xml
-  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
-
-  cat build/coverage/coverage-final.json
-  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
-
-  cat build/coverage/lcov.info
-  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+  copyTestReports
+  touch_dir_commit_hash
 fi
 
 # Provide disk usage so that one can use this to estimate needs
