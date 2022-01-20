@@ -75,7 +75,7 @@ UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
+    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
 else
   echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
   exit 1
