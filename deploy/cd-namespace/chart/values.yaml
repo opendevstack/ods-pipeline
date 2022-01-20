@@ -51,8 +51,6 @@ consoleUrl: 'http://example.com'
 
 # Webhook Interceptor
 interceptor:
-  # API host (no scheme) of the OpenShift/K8s API.
-  apiHost: 'openshift.default.svc.cluster.local'
   # Number of replicas to run for the interceptor.
   replicaCount: 1
   image:

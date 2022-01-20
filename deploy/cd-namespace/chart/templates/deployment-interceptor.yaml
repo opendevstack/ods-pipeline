@@ -37,8 +37,6 @@ spec:
                 secretKeyRef:
                   key: password
                   name: ods-bitbucket-auth
-            - name: API_HOST
-              value: '{{.Values.interceptor.apiHost}}'
           readinessProbe:
             httpGet:
               path: /health

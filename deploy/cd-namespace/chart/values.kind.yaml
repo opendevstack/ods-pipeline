@@ -6,7 +6,6 @@ consoleUrl: 'http://example.com'
 
 # Webhook Interceptor
 interceptor:
-  apiHost: 'kubernetes.default.svc.cluster.local'
   replicaCount: 1
   image:
     registry: localhost:5000
