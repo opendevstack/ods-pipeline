@@ -52,8 +52,13 @@ touch_dir_commit_hash() {
   # this would enables cleanup based on these timestamps
   # however this function should ideally be done outside of the individual 
   # build scripts.
-  mkdir -p "$build_dir/.ods/"
-  echo -n "$WORKING_DIR_COMMIT_SHA" > "$build_dir/.ods/git-dir-commit-sha"
+  mkdir -p "$build_root_dir/.ods/"
+  echo -n "$WORKING_DIR_COMMIT_SHA" > "$build_root_dir/.ods/git-dir-commit-sha"
+}
+
+report_disk_usage() {
+  echo "Disk usage to estimate caching needs."
+  du -hs -- *
 }
 
 
@@ -123,34 +128,42 @@ case $git_ref in
 esac
 
 same_build_in_cache=false
-build_dir="${WORKING_DIR}"
+build_root_dir="${WORKING_DIR}"
 output_dir_abs="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
 if [ -n "$PIPELINE_CACHE_DIR" ]; then
-  build_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
-  if [ ! -d "$build_dir" ]; then
-    mkdir -p "$build_dir"
+  build_root_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
+  if [ ! -d "$build_root_dir" ]; then
+    mkdir -p "$build_root_dir"
   fi
-  if [ -f "$build_dir/.ods/git-dir-commit-sha" ]; then
-    previous_dir_commit_sha=$(cat "$build_dir/.ods/git-dir-commit-sha")
+  if [ -f "$build_root_dir/.ods/git-dir-commit-sha" ]; then
+    previous_dir_commit_sha=$(cat "$build_root_dir/.ods/git-dir-commit-sha")
     if [ "$previous_dir_commit_sha" = "$WORKING_DIR_COMMIT_SHA" ]; then
       same_build_in_cache=true
-      echo "INFO: build with same commit hash of dir $build_dir already in cache ($previous_dir_commit_sha)."
+      echo "INFO: build with same commit hash of dir $build_root_dir already in cache ($previous_dir_commit_sha)."
     fi
   fi
   if [ "$same_build_in_cache" = "false" ]; then
     # NOTE: rsync is currently not available in build script
     echo "Updating cache dir with sources ..."
-    # rsync -auvhp --itemize-changes --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
-    # rsync -auvhp --progress --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
-    rsync -auhp --info=progress2 --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"  # the info progress2 does not work with verbose, needs rather new rsync version.
+    rsync -ah -v --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
+    # -a = -rlptgoD
+    #   -r = --recursive
+    #   -l = --links recreate the symlink on the destination
+    #   -p = --perms (details see man page): aims to set dest permissions same as source
+    #   -t = --times tells rsync to transfer modification times 
+    #   -goD = --group --owner --devices --special
+    # -h = --hard-links reestablish hard links if they are both in the copied set  
+    # -v = --verbose (multiple would be more verbose)
+    # copied content is shown by sending incremental file list. Which maybe empty. 
+    # seems like this is all that is needed 
   fi
 fi
 
 if [ "${WORKING_DIR}" != "." ]; then
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
-if [ "${build_dir}" != "." ]; then
-  cd "${build_dir}" 
+if [ "${build_root_dir}" != "." ]; then
+  cd "${build_root_dir}" 
 fi
 
 if [ "$same_build_in_cache" = "true" ]; then
@@ -158,7 +171,7 @@ if [ "$same_build_in_cache" = "true" ]; then
   copyBuildResults
   copyLintReport
   copyTestReports
-  touch_dir_commit_hash
+  report_disk_usage
   exit 0
 fi
 echo "Configuring npm to use Nexus ..."
@@ -229,7 +242,6 @@ else
   touch_dir_commit_hash
 fi
 
-# Provide disk usage so that one can use this to estimate needs
-
+report_disk_usage
 
 supply-sonar-project-properties-default
