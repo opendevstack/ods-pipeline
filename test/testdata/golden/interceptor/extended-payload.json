@@ -31,19 +31,19 @@
     "date": "2021-01-15T13:29:05+0000",
     "eventKey": "repo:refs_changed",
     "extensions": {
-        "name": "ods-pipeline-master",
+        "name": "bar-master",
         "project": "foo",
-        "component": "ods-pipeline",
-        "repository": "ods-pipeline",
+        "component": "bar",
+        "repository": "foo-bar",
         "environment": "",
         "version": "",
         "gitRef": "master",
         "gitFullRef": "refs/heads/master",
         "gitSha": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
         "repoBase": "https://domain.com",
-        "gitURI": "https://domain.com/foo/ods-pipeline.git",
+        "gitURI": "https://domain.com/foo/foo-bar.git",
         "namespace": "bar-cd",
-        "pvc": "ods-pipeline",
+        "pvc": "ods-workspace-bar",
         "trigger-event": "repo:refs_changed",
         "comment": "",
         "prKey": 0,
@@ -55,21 +55,21 @@
         "links": {
             "clone": [
                 {
-                    "href": "https://bitbucket.acme.org/scm/foo/ods-pipeline.git",
+                    "href": "https://bitbucket.acme.org/scm/foo/foo-bar.git",
                     "name": "http"
                 },
                 {
-                    "href": "ssh://git@bitbucket.acme.org:7999/foo/ods-pipeline.git",
+                    "href": "ssh://git@bitbucket.acme.org:7999/foo/foo-bar.git",
                     "name": "ssh"
                 }
             ],
             "self": [
                 {
-                    "href": "https://bitbucket.acme.org/projects/FOO/repos/ods-pipeline/browse"
+                    "href": "https://bitbucket.acme.org/projects/FOO/repos/foo-bar/browse"
                 }
             ]
         },
-        "name": "ods-pipeline",
+        "name": "foo-bar",
         "project": {
             "id": 6603,
             "key": "FOO",
@@ -86,7 +86,7 @@
         },
         "public": false,
         "scmId": "git",
-        "slug": "ods-pipeline",
+        "slug": "foo-bar",
         "state": "AVAILABLE",
         "statusMessage": "Available"
     }

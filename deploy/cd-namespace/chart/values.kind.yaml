@@ -6,16 +6,15 @@ consoleUrl: 'http://example.com'
 
 # Webhook Interceptor
 interceptor:
-  apiHost: 'kubernetes.default.svc.cluster.local'
+  storageProvisioner: ''
+  storageClassName: 'standard'
+  storageSize: '2Gi'
   replicaCount: 1
   image:
     registry: localhost:5000
-    # Overrides the image namespace whose default is the release namespace.
     namespace: ods
-    # Overrides the image repository whose default is the chart name.
     repository: ods-webhook-interceptor
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
   resources:
     limits:
@@ -24,8 +23,3 @@ interceptor:
     requests:
       cpu: 100m
       memory: 128Mi
-
-# PVC
-storageProvisioner: ''
-storageClassName: 'standard'
-storageSize: '2Gi'

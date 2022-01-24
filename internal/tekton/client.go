@@ -21,7 +21,7 @@ type ClientConfig struct {
 	Namespace string
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
-	// HTTP client used to download assets.
+	// TektonClient is the wrapped Tekton client.
 	TektonClient *tektonClient.Clientset
 }
 

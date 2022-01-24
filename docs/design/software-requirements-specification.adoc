@@ -60,6 +60,9 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 
 | SRS-INTERCEPTOR-3
 | The interceptor shall create or update a pipeline corresponding to the Git branch received in the webhook request. The tasks (including finally tasks) of the pipline shall be read from the ODS config file in the repository.
+
+| SRS-INTERCEPTOR-4
+| The interceptor shall create a PVC for use as a pipeline workspace per repository.
 |===
 
 === Task Requirements
