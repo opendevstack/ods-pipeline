@@ -3,10 +3,11 @@ package kubernetes
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kschema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // TestClient returns mocked resources.
@@ -25,7 +26,10 @@ func (c *TestClient) GetPersistentVolumeClaim(ctxt context.Context, name string,
 			return p, nil
 		}
 	}
-	return nil, fmt.Errorf("pipeline %s not found", name)
+	return nil, kerrors.NewNotFound(kschema.GroupResource{
+		Group:    "core",
+		Resource: "PersistentVolumeClaim",
+	}, name)
 }
 
 func (c *TestClient) CreatePersistentVolumeClaim(ctxt context.Context, pipeline *corev1.PersistentVolumeClaim, options metav1.CreateOptions) (*corev1.PersistentVolumeClaim, error) {
