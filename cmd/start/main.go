@@ -384,6 +384,11 @@ func checkoutAndAssembleContext(
 	}
 	logger.Infof(string(stdout))
 
+	// check git LFS state and maybe pull
+	if gitLfsInUse(logger, absCheckoutDir) {
+		gitLfsPullFiles(logger, absCheckoutDir)
+	}
+
 	// write ODS cache
 	sha, err := getCommitSHA(absCheckoutDir)
 	if err != nil {
@@ -431,4 +436,39 @@ func getCommitSHA(dir string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
+}
+
+func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) bool {
+	stdout, stderr, err := command.RunInDir("git", []string{
+		"lfs",
+		"ls-files",
+		"--all",
+	}, dir)
+	if err != nil {
+		logger.Errorf(string(stderr))
+		log.Fatal(err)
+	}
+
+	// no error, so count lines/files
+	files := 0
+	endOfLine := '\n'
+	for _, c := range string(stdout) {
+		if c == endOfLine {
+			files++
+		}
+	}
+
+	return files > 0
+}
+
+func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) {
+	stdout, stderr, err := command.RunInDir("git", []string{
+		"lfs",
+		"pull",
+	}, dir)
+	if err != nil {
+		logger.Errorf(string(stderr))
+		log.Fatal(err)
+	}
+	logger.Infof(string(stdout))
 }
