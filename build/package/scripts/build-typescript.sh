@@ -36,24 +36,21 @@ copyTestReports() {
 }
 
 copyBuildResults() {
-  mkdir -p "${output_dir_abs}"
-  cp -rv "${BUILD_DIR}" "${output_dir_abs}/dist"
+  mkdir -p "${OUTPUT_DIR_ABS}"
+  cp -rv "${BUILD_DIR}" "${OUTPUT_DIR_ABS}/dist"
 
   if [ "${COPY_NODE_MODULES}" = true ]; then
-    echo "Copying node_modules to ${output_dir_abs}/dist/node_modules ..."
+    echo "Copying node_modules to ${OUTPUT_DIR_ABS}/dist/node_modules ..."
     start_time=$SECONDS
-    cp -r node_modules "${output_dir_abs}/dist/node_modules"
+    cp -r node_modules "${OUTPUT_DIR_ABS}/dist/node_modules"
     elapsed=$(( SECONDS - start_time ))
     echo "copying node_modules took $elapsed seconds"
   fi
 }
 
-touch_dir_commit_hash() {
-  # this would enables cleanup based on these timestamps
-  # however this function should ideally be done outside of the individual 
-  # build scripts.
-  mkdir -p "$build_root_dir/.ods/"
-  echo -n "$WORKING_DIR_COMMIT_SHA" > "$build_root_dir/.ods/git-dir-commit-sha"
+save_built_commit_hash() {
+  mkdir -p ".ods/"
+  echo -n "$working_dir_commit_sha" > ".ods/git-dir-last-built-commit-sha"
 }
 
 report_disk_usage() {
@@ -65,27 +62,24 @@ report_disk_usage() {
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
-WORKING_DIR_COMMIT_SHA=""
-PIPELINE_CACHE_DIR=""
 ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
 MAX_LINT_WARNINGS="0"
 LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
 COPY_NODE_MODULES="false"
 
+# Uses $WORKING_DIR/.ods/git-dir-commit-sha to recognize that it is running in a cached workspace
+#
+# This script stores the current commit hash from the file above when 
+# the build completes under
+#   $WORKING_DIR/.ods/git-dir-last-built-commit-sha
+# In a future build this file is used to determine whether this build can be skipped.
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
-
-    --working-dir-commit-sha) WORKING_DIR_COMMIT_SHA="$2"; shift;;
-    --working-dir-commit-sha=*) WORKING_DIR_COMMIT_SHA="${1#*=}";;
-
-    # build pipeline should support skipping for example via commit tag
-    # in this case --pipeline-cache-dir would be omitted or set to an empty value.  
-    --pipeline-cache-dir) PIPELINE_CACHE_DIR="$2"; shift;;
-    --pipeline-cache-dir=*) PIPELINE_CACHE_DIR="${1#*=}";;
 
     --output-dir) OUTPUT_DIR="$2"; shift;;
     --output-dir=*) OUTPUT_DIR="${1#*=}";;
@@ -108,65 +102,36 @@ while [[ "$#" -gt 0 ]]; do
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-if [ -z "$WORKING_DIR_COMMIT_SHA" ]; then
-  echo "--working-dir-commit-sha parameter is required."; exit 1
-fi 
-
 if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
 ROOT_DIR=$(pwd)
-# NOTE: git is currently not available in build script
-git_ref=$(cat .ods/git-ref)
-case $git_ref in
-  master|develop)
-    echo "INFO: not using cache in master or develop branch"
-    PIPELINE_CACHE_DIR=""
-    ;;
-  *);;
-esac
 
-same_build_in_cache=false
-build_root_dir="${WORKING_DIR}"
-output_dir_abs="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
-if [ -n "$PIPELINE_CACHE_DIR" ]; then
-  build_root_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
-  if [ ! -d "$build_root_dir" ]; then
-    mkdir -p "$build_root_dir"
-  fi
-  if [ -f "$build_root_dir/.ods/git-dir-commit-sha" ]; then
-    previous_dir_commit_sha=$(cat "$build_root_dir/.ods/git-dir-commit-sha")
-    if [ "$previous_dir_commit_sha" = "$WORKING_DIR_COMMIT_SHA" ]; then
-      same_build_in_cache=true
-      echo "INFO: build with same commit hash of dir $build_root_dir already in cache ($previous_dir_commit_sha)."
-    fi
-  fi
-  if [ "$same_build_in_cache" = "false" ]; then
-    # NOTE: rsync is currently not available in build script
-    echo "Updating cache dir with sources ..."
-    rsync -ah -v --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
-    # -a = -rlptgoD
-    #   -r = --recursive
-    #   -l = --links recreate the symlink on the destination
-    #   -p = --perms (details see man page): aims to set dest permissions same as source
-    #   -t = --times tells rsync to transfer modification times 
-    #   -goD = --group --owner --devices --special
-    # -h = --hard-links reestablish hard links if they are both in the copied set  
-    # -v = --verbose (multiple would be more verbose)
-    # copied content is shown by sending incremental file list. Which maybe empty. 
-    # seems like this is all that is needed 
-  fi
+already_built=false
+# The following 
+abs_build_dir="${ROOT_DIR}/${WORKING_DIR}"
+OUTPUT_DIR_ABS="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
+if [ ! -f "$WORKING_DIR/.ods/git-dir-commit-sha" ]; then
+  echo "--working-dir-commit-sha parameter is required."; exit 1
+fi
+working_dir_commit_sha=$(cat "$abs_build_dir/.ods/git-dir-commit-sha")
+working_dir_last_built_commit_sha=""
+[ -f "$abs_build_dir/.ods/git-dir-last-built-commit-sha" ] &&  working_dir_last_built_commit_sha=$(cat "$abs_build_dir/.ods/git-dir-last-built-commit-sha")
+
+if [ "$working_dir_last_built_commit_sha" = "$working_dir_commit_sha" ]; then
+  already_built=true
+  echo "INFO: build with same commit hash of dir $abs_build_dir was cached and is still in workspace ($working_dir_commit_sha)."
 fi
 
 if [ "${WORKING_DIR}" != "." ]; then
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
-if [ "${build_root_dir}" != "." ]; then
-  cd "${build_root_dir}" 
+if [ "${WORKING_DIR}" != "." ]; then
+  cd "${WORKING_DIR}" 
 fi
 
-if [ "$same_build_in_cache" = "true" ]; then
+if [ "$already_built" = "true" ]; then
   echo "Using prior build for same commit hash to copy build results and reports"
   copyBuildResults
   copyLintReport
@@ -192,7 +157,7 @@ echo "Installing dependencies ..."
 npm ci --ignore-scripts
 =======
 start_time=$SECONDS
-if [ -d "$PIPELINE_CACHE_DIR" ]; then
+if [ -n "$working_dir_last_built_commit_sha" ]; then
   npm i
 else
   npm ci
@@ -239,8 +204,8 @@ if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" 
 else
   npm run test
   copyTestReports
-  touch_dir_commit_hash
 fi
+save_built_commit_hash
 
 report_disk_usage
 
