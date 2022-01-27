@@ -385,8 +385,17 @@ func checkoutAndAssembleContext(
 	logger.Infof(string(stdout))
 
 	// check git LFS state and maybe pull
-	if gitLfsInUse(logger, absCheckoutDir) {
-		gitLfsPullFiles(logger, absCheckoutDir)
+	lfs, stderr, err := gitLfsInUse(logger, absCheckoutDir)
+	if err != nil {
+		logger.Errorf(string(stderr))
+		log.Fatal(err)
+	}
+	if lfs {
+		stderr, err := gitLfsPullFiles(logger, absCheckoutDir)
+		if err != nil {
+			logger.Errorf(string(stderr))
+			log.Fatal(err)
+		}
 	}
 
 	// write ODS cache
@@ -438,37 +447,21 @@ func getCommitSHA(dir string) (string, error) {
 	return strings.TrimSpace(string(content)), nil
 }
 
-func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) bool {
-	stdout, stderr, err := command.RunInDir("git", []string{
-		"lfs",
-		"ls-files",
-		"--all",
-	}, dir)
+func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, errBytes []byte, err error) {
+	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
 	if err != nil {
-		logger.Errorf(string(stderr))
-		log.Fatal(err)
+		return false, stderr, err
 	}
 
-	// no error, so count lines/files
-	files := 0
-	endOfLine := '\n'
-	for _, c := range string(stdout) {
-		if c == endOfLine {
-			files++
-		}
-	}
-
-	return files > 0
+	return strings.TrimSpace(string(stdout)) != "", stderr, err
 }
 
-func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) {
-	stdout, stderr, err := command.RunInDir("git", []string{
-		"lfs",
-		"pull",
-	}, dir)
+func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) (errBytes []byte, err error) {
+	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "pull"}, dir)
 	if err != nil {
-		logger.Errorf(string(stderr))
-		log.Fatal(err)
+		return stderr, err
 	}
 	logger.Infof(string(stdout))
+
+	return stderr, err
 }

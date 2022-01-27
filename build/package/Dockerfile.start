@@ -1,5 +1,6 @@
 FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12 AS builder
 
+ARG TARGETARCH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
@@ -20,11 +21,10 @@ WORKDIR $TEKTONCD_PATH/pipeline
 
 RUN cd /tmp \
     && mkdir -p /tmp/git-lfs \
-    && curl -LO https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VERSION}/git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz \
-    && tar -zxvf git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz -C /tmp/git-lfs \
+    && curl -LO https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VERSION}/git-lfs-linux-${TARGETARCH}-v${GIT_LFS_VERSION}.tar.gz \
+    && tar -zxvf git-lfs-linux-${TARGETARCH}-v${GIT_LFS_VERSION}.tar.gz -C /tmp/git-lfs \
     && bash /tmp/git-lfs/install.sh \
-    && git lfs version \
-    && rm -rf /tmp/git-lfs*
+    && git lfs version
 
 RUN CGO_ENABLED=0 go build -o /tmp/openshift-pipelines-git-init ./cmd/git-init && \
     mkdir ${KO_APP} && cp /tmp/openshift-pipelines-git-init ${KO_APP}/${BINARY}

@@ -79,6 +79,7 @@ a| The task shall check out a fresh copy of a Git repository.
 
 * If child repositories are configured, those shall be checked out as well. The checked out branch shall be configurable. If the pipeline run relates to a version, an existing release branch for that version shall be preferred.
 * All checkouts shall support Git submodules.
+* All checkouts shall support Git LFS extension.
 
 | SRS-TASK-START-2
 a| The task shall store context information for each checked out repository (such as project and component key, Git commit SHA, target environment, etc.)
