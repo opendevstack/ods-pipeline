@@ -6,7 +6,8 @@ USER root
 ENV TEKTON_VERSION=0.24.0 \
     TEKTONCD_PATH=/opt/app-root/src/go/src/github.com/tektoncd \
     BINARY=git-init.orig \
-    KO_APP=/ko-app
+    KO_APP=/ko-app \
+    GIT_LFS_VERSION=3.0.2
 
 RUN mkdir -p $TEKTONCD_PATH && \
     cd /tmp && \
@@ -16,6 +17,14 @@ RUN mkdir -p $TEKTONCD_PATH && \
     cd -
 
 WORKDIR $TEKTONCD_PATH/pipeline
+
+RUN cd /tmp \
+    && mkdir -p /tmp/git-lfs \
+    && curl -LO https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VERSION}/git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz \
+    && tar -zxvf git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz -C /tmp/git-lfs \
+    && bash /tmp/git-lfs/install.sh \
+    && git lfs version \
+    && rm -rf /tmp/git-lfs*
 
 RUN CGO_ENABLED=0 go build -o /tmp/openshift-pipelines-git-init ./cmd/git-init && \
     mkdir ${KO_APP} && cp /tmp/openshift-pipelines-git-init ${KO_APP}/${BINARY}
@@ -37,6 +46,10 @@ ENV GIT_VERSION=2.27 \
 RUN microdnf install git-${GIT_VERSION}* openssh-clients-${OPENSSH_CLIENTS_VERSION}* && microdnf clean all
 
 COPY --from=builder /usr/local/bin/ods-start /usr/local/bin/ods-start
+
+COPY --from=builder /usr/local/bin/git-lfs /usr/local/bin/git-lfs
+RUN git lfs version && \
+    git lfs install
 
 RUN mkdir /ko-app
 COPY --from=builder /ko-app/git-init.orig /ko-app/git-init.orig
