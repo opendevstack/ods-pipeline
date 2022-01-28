@@ -4,11 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/webhook"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/webhook"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -127,6 +128,7 @@ func main() {
 	err = webhookClient.CallWebhook(context.TODO(), webhook.PipelineRunResult{
 		PipelineRunURL: pipelineRunURL,
 		OverallStatus:  opts.aggregateTasksStatus,
+		ODSContext:     ctxt,
 	})
 	if err != nil {
 		log.Printf("Calling webhook failed: %s", err)

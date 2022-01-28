@@ -3,8 +3,11 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"log"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type ClientConfigMapInterface interface {
@@ -32,4 +35,18 @@ func (c *Client) GetConfigMapKey(ctxt context.Context, cmName, key string, optio
 	}
 
 	return v, err
+}
+
+func CreateConfigMap(clientset *kubernetes.Clientset, name string, content map[string]string, namespace string) (*v1.ConfigMap, error) {
+	log.Printf("Create configmap  %s", name)
+
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(),
+		&v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Data: content,
+		}, metav1.CreateOptions{})
+
+	return cm, err
 }

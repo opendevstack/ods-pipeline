@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"text/template"
+
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	webhookConfigMap        = "webhook-config"
-	urlProperty             = "url"
-	methodProperty          = "method"
-	contentTypeProperty     = "contentType"
-	requestTemplateProperty = "request"
+	WebhookConfigMap        = "webhook-config"
+	UrlProperty             = "url"
+	MethodProperty          = "method"
+	ContentTypeProperty     = "contentType"
+	RequestTemplateProperty = "request"
 )
 
 type Client struct {
@@ -33,6 +35,7 @@ type ClientConfig struct {
 type PipelineRunResult struct {
 	PipelineRunURL string
 	OverallStatus  string
+	ODSContext     *pipelinectxt.ODSContext
 }
 
 type webhookConfig struct {
@@ -55,29 +58,29 @@ func NewClient(config ClientConfig, kubernetesClient kubernetes.ClientInterface)
 }
 
 func (c Client) readWebhookConfig(ctxt context.Context) (*webhookConfig, error) {
-	cm, err := c.kubernetesClient.GetConfigMap(ctxt, webhookConfigMap, metav1.GetOptions{})
+	cm, err := c.kubernetesClient.GetConfigMap(ctxt, WebhookConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load webhook-config ConfigMap: %v", err)
 	}
 
-	url, ok := cm.Data[urlProperty]
+	url, ok := cm.Data[UrlProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", urlProperty)
+		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", UrlProperty)
 	}
 
-	method, ok := cm.Data[methodProperty]
+	method, ok := cm.Data[MethodProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", methodProperty)
+		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", MethodProperty)
 	}
 
-	contentType, ok := cm.Data[contentTypeProperty]
+	contentType, ok := cm.Data[ContentTypeProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", contentTypeProperty)
+		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", ContentTypeProperty)
 	}
 
-	text, ok := cm.Data[requestTemplateProperty]
+	text, ok := cm.Data[RequestTemplateProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", requestTemplateProperty)
+		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", RequestTemplateProperty)
 	}
 
 	requestTemplate, err := template.New("request-template").Parse(text)
@@ -110,11 +113,12 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 	}
 	req.Header.Add("Content-Type", config.contentType)
 
-	_, err = c.httpClient.Do(req)
+	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("performing webhook request failed: %v", err)
 	}
-	// Shall the returned status code be checked? Or fire & forget?
+	c.logger().Infof("Notification Webhook response was: %w", response.StatusCode)
+	// we do not fail
 	return nil
 }
 

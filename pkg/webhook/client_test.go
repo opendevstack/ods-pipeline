@@ -3,18 +3,19 @@ package webhook
 import (
 	"bytes"
 	"context"
-	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"text/template"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const jsonTemplate = `{
+const webhookNotificationJsonTemplate = `{
     "@context": "https://schema.org/extensions",
     "@type": "MessageCard",
     "themeColor": "c60000",
@@ -25,7 +26,7 @@ const jsonTemplate = `{
             "@type": "OpenUri",
             "name": "Learn More",
             "targets": [
-                { "os": "default", "uri":{{.PipelineRunURL}}" }
+                { "os": "default", "uri": "{{.PipelineRunURL}}" }
             ]
         }
     ]
@@ -38,12 +39,15 @@ func TestWebhookCall(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedTemplate, err := template.New("expectedJson").Parse(jsonTemplate)
+		expectedTemplate, err := template.New("expectedJson").Parse(webhookNotificationJsonTemplate)
 		if err != nil {
 			t.Fatalf("parsing jsonTemplate failed: %s", err)
 		}
 		want := bytes.NewBuffer([]byte{})
 		err = expectedTemplate.Execute(want, runResult)
+		if err != nil {
+			t.Fatalf("error executing template: %s", err)
+		}
 
 		got, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -59,13 +63,13 @@ func TestWebhookCall(t *testing.T) {
 		CMs: []*corev1.ConfigMap{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: webhookConfigMap,
+					Name: WebhookConfigMap,
 				},
 				Data: map[string]string{
-					urlProperty:             ts.URL,
-					methodProperty:          "POST",
-					contentTypeProperty:     "application/json",
-					requestTemplateProperty: jsonTemplate,
+					UrlProperty:             ts.URL,
+					MethodProperty:          "POST",
+					ContentTypeProperty:     "application/json",
+					RequestTemplateProperty: webhookNotificationJsonTemplate,
 				},
 			},
 		},
