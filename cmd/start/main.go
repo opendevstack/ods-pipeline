@@ -385,15 +385,14 @@ func checkoutAndAssembleContext(
 	logger.Infof(string(stdout))
 
 	// check git LFS state and maybe pull
-	lfs, stderr, err := gitLfsInUse(logger, absCheckoutDir)
+	lfs, err := gitLfsInUse(logger, absCheckoutDir)
 	if err != nil {
-		logger.Errorf(string(stderr))
 		log.Fatal(err)
 	}
 	if lfs {
-		stderr, err := gitLfsPullFiles(logger, absCheckoutDir)
+		logger.Infof("Git LFS detected, pulling files...")
+		err := gitLfsPullFiles(logger, absCheckoutDir)
 		if err != nil {
-			logger.Errorf(string(stderr))
 			log.Fatal(err)
 		}
 	}
@@ -447,21 +446,19 @@ func getCommitSHA(dir string) (string, error) {
 	return strings.TrimSpace(string(content)), nil
 }
 
-func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, errBytes []byte, err error) {
+func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, err error) {
 	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
 	if err != nil {
-		return false, stderr, err
+		return false, fmt.Errorf("cannot list git lfs files: %s (%w)", stderr, err)
 	}
-
-	return strings.TrimSpace(string(stdout)) != "", stderr, err
+	return strings.TrimSpace(string(stdout)) != "", err
 }
 
-func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) (errBytes []byte, err error) {
+func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
 	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "pull"}, dir)
 	if err != nil {
-		return stderr, err
+		return fmt.Errorf("cannot pull git lfs files: %s (%w)", stderr, err)
 	}
 	logger.Infof(string(stdout))
-
-	return stderr, err
+	return err
 }
