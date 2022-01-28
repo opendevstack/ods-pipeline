@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/pkg/webhook"
 	"log"
 	"os"
 	"path/filepath"
@@ -106,6 +109,27 @@ func main() {
 	err = handleArtifacts(logger, nexusClient, opts, checkoutDir, ctxt)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	kubernetesClient, err := kubernetes.NewInClusterClient(&kubernetes.ClientConfig{
+		Namespace: ctxt.Namespace,
+	})
+	if err != nil {
+		log.Fatalf("couldn't create kubernetes client: %s", err)
+	}
+
+	webhookClient, err := webhook.NewClient(webhook.ClientConfig{
+		Namespace: ctxt.Namespace,
+	}, kubernetesClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = webhookClient.CallWebhook(context.TODO(), webhook.PipelineRunResult{
+		PipelineRunURL: pipelineRunURL,
+		OverallStatus:  opts.aggregateTasksStatus,
+	})
+	if err != nil {
+		log.Printf("Calling webhook failed: %s", err)
 	}
 }
 
