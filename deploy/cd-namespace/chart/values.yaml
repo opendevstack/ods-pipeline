@@ -41,6 +41,34 @@ aquaUsername: ''
 # URL (including scheme) of the OpenShift Web Console.
 consoleUrl: 'http://example.com'
 
+# Notification Webhook
+notification:
+  # URL of the configured webhook
+  url: 'http://example.com'
+  # The HTTP method to be used
+  method: 'POST'
+  # The HTTP content type header
+  contentType: 'application/json'
+  # Template to be processed and accepted by the configured webhook in use
+  # Below example might work for Microsoft Teams
+  requestTemplate: |-
+    {
+        "@context": "https://schema.org/extensions",
+        "@type": "MessageCard",
+        "themeColor": "c60000",
+        "title": "{{.ODSContext.Project}} - ODS Pipeline Build finished",
+        "text": "ODS Pipeline run finished with status {{.OverallStatus}}!",
+        "potentialAction": [
+            {
+                "@type": "OpenUri",
+                "name": "Learn More",
+                "targets": [
+                    { "os": "default", "uri": "{{.PipelineRunURL}}" }
+                ]
+            }
+        ]
+    }
+
 # Webhook Interceptor
 interceptor:
   # PVC (used for the pipeline workspace)

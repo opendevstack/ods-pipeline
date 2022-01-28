@@ -1,4 +1,4 @@
-package webhook
+package notification
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const webhookNotificationJsonTemplate = `{
+const notificationJsonTemplate = `{
     "@context": "https://schema.org/extensions",
     "@type": "MessageCard",
     "themeColor": "c60000",
@@ -39,7 +39,7 @@ func TestWebhookCall(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedTemplate, err := template.New("expectedJson").Parse(webhookNotificationJsonTemplate)
+		expectedTemplate, err := template.New("expectedJson").Parse(notificationJsonTemplate)
 		if err != nil {
 			t.Fatalf("parsing jsonTemplate failed: %s", err)
 		}
@@ -63,13 +63,13 @@ func TestWebhookCall(t *testing.T) {
 		CMs: []*corev1.ConfigMap{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: WebhookConfigMap,
+					Name: NotificationConfigMap,
 				},
 				Data: map[string]string{
 					UrlProperty:             ts.URL,
 					MethodProperty:          "POST",
 					ContentTypeProperty:     "application/json",
-					RequestTemplateProperty: webhookNotificationJsonTemplate,
+					RequestTemplateProperty: notificationJsonTemplate,
 				},
 			},
 		},

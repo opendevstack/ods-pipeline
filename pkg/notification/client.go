@@ -1,4 +1,4 @@
-package webhook
+package notification
 
 import (
 	"bytes"
@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	WebhookConfigMap        = "webhook-config"
+	NotificationConfigMap   = "ods-notification"
 	UrlProperty             = "url"
 	MethodProperty          = "method"
 	ContentTypeProperty     = "contentType"
-	RequestTemplateProperty = "request"
+	RequestTemplateProperty = "requestTemplate"
 )
 
 type Client struct {
@@ -38,7 +38,7 @@ type PipelineRunResult struct {
 	ODSContext     *pipelinectxt.ODSContext
 }
 
-type webhookConfig struct {
+type notificationConfig struct {
 	url         string
 	method      string
 	contentType string
@@ -57,38 +57,38 @@ func NewClient(config ClientConfig, kubernetesClient kubernetes.ClientInterface)
 	}, nil
 }
 
-func (c Client) readWebhookConfig(ctxt context.Context) (*webhookConfig, error) {
-	cm, err := c.kubernetesClient.GetConfigMap(ctxt, WebhookConfigMap, metav1.GetOptions{})
+func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfig, error) {
+	cm, err := c.kubernetesClient.GetConfigMap(ctxt, NotificationConfigMap, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to load webhook-config ConfigMap: %v", err)
+		return nil, fmt.Errorf("failed to load %s ConfigMap: %v", NotificationConfigMap, err)
 	}
 
 	url, ok := cm.Data[UrlProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", UrlProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, UrlProperty)
 	}
 
 	method, ok := cm.Data[MethodProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", MethodProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, MethodProperty)
 	}
 
 	contentType, ok := cm.Data[ContentTypeProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", ContentTypeProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, ContentTypeProperty)
 	}
 
 	text, ok := cm.Data[RequestTemplateProperty]
 	if !ok {
-		return nil, fmt.Errorf("webhook-config doesn't specify '%s' property", RequestTemplateProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, RequestTemplateProperty)
 	}
 
-	requestTemplate, err := template.New("request-template").Parse(text)
+	requestTemplate, err := template.New("requestTemplate").Parse(text)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse request template")
+		return nil, fmt.Errorf("failed to parse requestTemplate template")
 	}
 
-	return &webhookConfig{
+	return &notificationConfig{
 		url,
 		method,
 		contentType,
@@ -97,14 +97,14 @@ func (c Client) readWebhookConfig(ctxt context.Context) (*webhookConfig, error) 
 }
 
 func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) error {
-	config, err := c.readWebhookConfig(ctxt)
+	config, err := c.readNotificationConfig(ctxt)
 	if err != nil {
-		return fmt.Errorf("unable to read webhook config: %v", err)
+		return fmt.Errorf("unable to read notification configmap: %v", err)
 	}
 
 	requestBody := bytes.NewBuffer([]byte{})
 	if config.template.Execute(requestBody, summary) != nil {
-		return fmt.Errorf("rendering webhook template failed: %v", err)
+		return fmt.Errorf("rendering notification webhook template failed: %v", err)
 	}
 
 	req, err := http.NewRequest(config.method, config.url, requestBody)
@@ -115,9 +115,9 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("performing webhook request failed: %v", err)
+		return fmt.Errorf("performing notification webhook request failed: %v", err)
 	}
-	c.logger().Infof("Notification Webhook response was: %w", response.StatusCode)
+	c.logger().Infof("notification webhook response was: %w", response.StatusCode)
 	// we do not fail
 	return nil
 }

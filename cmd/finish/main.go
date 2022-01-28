@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/webhook"
+	"github.com/opendevstack/pipeline/pkg/notification"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -119,13 +119,13 @@ func main() {
 		log.Fatalf("couldn't create kubernetes client: %s", err)
 	}
 
-	webhookClient, err := webhook.NewClient(webhook.ClientConfig{
+	notificationClient, err := notification.NewClient(notification.ClientConfig{
 		Namespace: ctxt.Namespace,
 	}, kubernetesClient)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = webhookClient.CallWebhook(context.TODO(), webhook.PipelineRunResult{
+	err = notificationClient.CallWebhook(context.TODO(), notification.PipelineRunResult{
 		PipelineRunURL: pipelineRunURL,
 		OverallStatus:  opts.aggregateTasksStatus,
 		ODSContext:     ctxt,
