@@ -2,7 +2,7 @@
 
 [![Tekton Tasks Tests](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml/badge.svg)](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml)
 
-**IMPORTANT: This is approach is currently being evaluated. This may or may not become part of ODS one day.**
+**IMPORTANT: This approach is currently being evaluated. This may or may not become part of ODS one day.**
 
 ## Introduction
 
