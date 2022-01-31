@@ -9,7 +9,7 @@ HOST_HTTP_PORT="9000"
 HOST_HTTPS_PORT="9443"
 IMAGE_NAME="ods-test-sonarqube"
 CONTAINER_NAME="ods-test-sonarqube"
-SONAR_VERSION="8.4"
+SONAR_VERSION="8.9"
 SONAR_USERNAME="admin"
 SONAR_PASSWORD="admin"
 SONAR_EDITION="community"
@@ -57,7 +57,7 @@ SONARQUBE_URL="http://localhost:${HOST_HTTP_PORT}"
 if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
     docker logs ${CONTAINER_NAME}
     exit 1
-fi 
+fi
 
 echo "Creating token for '${SONAR_USERNAME}' ..."
 tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_PASSWORD}" \
