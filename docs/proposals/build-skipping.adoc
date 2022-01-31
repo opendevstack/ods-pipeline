@@ -1,0 +1,55 @@
+= Proposal: Multi build repo skipping
+
+== Purpose
+
+Skip builds for which nothing has changed in their working directory.
+
+== Background
+
+For a repo with a single build, the pipeline build will only be triggered if any changes trigger a new pipeline run. 
+
+However if one has multiple builds in one repo, the pipeline build runs all build tasks even for those areas where nothing has changed. 
+
+A simple scenario is a repo with a backend and frontend component whose build outputs are combined by a subsequent docker build in a subsequent deploy task. 
+
+There is no good reason when only the frontend code changes that the backend build is redone as well and vice versa of course.  
+
+== Solution
+
+`ods-start` provides a file called `$WORKING_DIR/.ods/git-dir-commit-sha` which contains the git commit sha of the working directory (no whitespace or newlines).
+
+Build tasks check first whether their artifacts are available under the working dir commit sha. 
+If so the output is made available in the `output-dir` and the task sets as a result that it 'reused' the prior build.
+This can happen outside the individual build scripts which in this case would no longer be invoked and thus do not need to code for the scenario.
+
+A new script or go program would be provided instead that implements the mentioned logic and would be available in all tasks images.
+
+In cases where there is no prior build, the build output is added to the artifacts which are uploaded to Nexus (reports). The build output artifact would be available under the associated working dir commit sha.
+This could be an additional command provided for that purpose or be done in ods-finish (this assumes that the `output-dir` can be assumed to not overlap)
+
+== Pro
+
+* Build skipping just happens out of the box.
+
+* This might also be valuable to separate docs from code builds.
+
+* Having build artifacts in Nexus might be good for compliance and would be handy for debugging purposes.
+
+* The build scripts would stay unaware.
+
+== Con
+
+* Build skipping just happens out of the box. Problem in case it does not work or one wants to test build problems. Perhaps could have flag.
+
+* Additional artifacts are uploaded which might get pretty large. 
+
+* If artifacts have no value for compliance they should likely be cleaned out after a certain while.
+
+== Alternatives
+
+If we don't see value in keeping build outputs in Nexus, the approach could be adjusted to be supported by caching.  
+
+* Workspace cache proposal could be adjusted in a similar way so that build scripts would not need to be aware of build skipping either. Using a PVC cache for storing the build result seems more natural and would not provide additional pressure on Nexus.
+
+* A global cache could also provide a space to store build outputs keyed by working dir commit sha. This feels like a  better alternative.s
+
