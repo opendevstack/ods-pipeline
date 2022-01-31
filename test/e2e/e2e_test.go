@@ -15,7 +15,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/notification"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -54,74 +53,6 @@ func TestWebhookInterceptor(t *testing.T) {
 		8000,
 		ns,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create ConfigMap for pipeline Webhook notification
-	content := map[string]string{
-		notification.UrlProperty:         "http://example.com",
-		notification.MethodProperty:      "POST",
-		notification.ContentTypeProperty: "application/json",
-		notification.RequestTemplateProperty: `{
-			"@type": "MessageCard",
-			"@context": "http://schema.org/extensions",
-			"themeColor": "0076D7",
-			"summary": "{{.ODSContext.Project}} - ODS Pipeline Build finished with status {{.OverallStatus}}",
-			"sections": [{
-				"activityTitle": "ODS Pipeline Build finished with status {{.OverallStatus}}",
-				"activitySubtitle": "On Project {{.ODSContext.Project}}",
-				"activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
-				"facts": [{
-					"name": "Component",
-					"value": "{{.ODSContext.Component}}"
-				}, {
-					"name": "Namespace",
-					"value": "{{.ODSContext.Namespace}}"
-				}, {
-					"name": "GitCommitSHA",
-					"value": "{{.ODSContext.GitCommitSHA}}"
-				}, {
-					"name": "GitRef",
-					"value": "{{.ODSContext.GitRef}}"
-				}, {
-					"name": "Version",
-					"value": "{{.ODSContext.Version}}"
-				}, {
-					"name": "Environment",
-					"value": "{{.ODSContext.Environment}}"
-				}],
-				"markdown": true
-			}],
-			"potentialAction": [
-				{
-					"@type": "OpenUri",
-					"name": "Go to PipelineRun",
-					"targets": [
-						{ "os": "default", "uri": "{{.PipelineRunURL}}" }
-					]
-				},
-				{
-					"@type": "OpenUri",
-					"name": "Go to Git URL",
-					"targets": [
-						{ "os": "default", "uri": "{{.ODSContext.GitURL}}" }
-					]
-				}
-				{{if .ODSContext.PullRequestBase}}
-				,
-				{
-					"@type": "OpenUri",
-					"name": "Go to PR",
-					"targets": [
-						{ "os": "default", "uri": "{{.ODSContext.PullRequestBase}}" }
-					]
-				}
-				{{end}}
-			]
-		}`,
-	}
-	_, err = kubernetes.CreateConfigMap(c.KubernetesClientSet, notification.NotificationConfigMap, content, ns)
 	if err != nil {
 		t.Fatal(err)
 	}

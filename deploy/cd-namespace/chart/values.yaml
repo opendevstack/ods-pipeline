@@ -53,20 +53,61 @@ notification:
   # Below example might work for Microsoft Teams
   requestTemplate: |-
     {
-        "@context": "https://schema.org/extensions",
-        "@type": "MessageCard",
-        "themeColor": "c60000",
-        "title": "{{.ODSContext.Project}} - ODS Pipeline Build finished",
-        "text": "ODS Pipeline run finished with status {{.OverallStatus}}!",
-        "potentialAction": [
-            {
-                "@type": "OpenUri",
-                "name": "Learn More",
-                "targets": [
-                    { "os": "default", "uri": "{{.PipelineRunURL}}" }
-                ]
-            }
-        ]
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": "0076D7",
+      "summary": "{{.ODSContext.Project}} - ODS Pipeline Build finished with status {{.OverallStatus}}",
+      "sections": [{
+        "activityTitle": "ODS Pipeline Build finished with status {{.OverallStatus}}",
+        "activitySubtitle": "On Project {{.ODSContext.Project}}",
+        "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+        "facts": [{
+          "name": "Component",
+          "value": "{{.ODSContext.Component}}"
+        }, {
+          "name": "Namespace",
+          "value": "{{.ODSContext.Namespace}}"
+        }, {
+          "name": "GitCommitSHA",
+          "value": "{{.ODSContext.GitCommitSHA}}"
+        }, {
+          "name": "GitRef",
+          "value": "{{.ODSContext.GitRef}}"
+        }, {
+          "name": "Version",
+          "value": "{{.ODSContext.Version}}"
+        }, {
+          "name": "Environment",
+          "value": "{{.ODSContext.Environment}}"
+        }],
+        "markdown": true
+      }],
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": "Go to PipelineRun",
+          "targets": [
+            { "os": "default", "uri": "{{.PipelineRunURL}}" }
+          ]
+        },
+        {
+          "@type": "OpenUri",
+          "name": "Go to Git URL",
+          "targets": [
+            { "os": "default", "uri": "{{.ODSContext.GitURL}}" }
+          ]
+        }
+          {{if .ODSContext.PullRequestBase}}
+          ,
+        {
+          "@type": "OpenUri",
+          "name": "Go to PR",
+          "targets": [
+            { "os": "default", "uri": "{{.ODSContext.PullRequestBase}}" }
+          ]
+        }
+          {{end}}
+      ]
     }
 
 # Webhook Interceptor

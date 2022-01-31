@@ -1,0 +1,11 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ods-notification
+  labels:
+    {{- include "chart.labels" . | nindent 4}}
+data:
+  url: '{{.Values.notification.url}}'
+  method: '{{.Values.notification.method}}'
+  contentType: '{{.Values.notification.contentType}}'
+  requestTemplate: '{{.Values.notification.requestTemplate}}'
