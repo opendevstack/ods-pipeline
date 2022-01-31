@@ -2,6 +2,7 @@ package tasktesting
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -115,12 +116,12 @@ func TearDown(t *testing.T, cs *k.Clients, namespace string) {
 
 }
 
-func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {
+func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger, tc TestCase) {
 	if tr == nil {
 		logf("error: no taskrun")
 		return
 	}
-	logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
-	logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
-	logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
+	LogAndOutputToFile(logf, fmt.Sprintf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status), tc.OutputPath)
+	LogAndOutputToFile(logf, fmt.Sprintf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason()), tc.OutputPath)
+	LogAndOutputToFile(logf, fmt.Sprintf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage()), tc.OutputPath)
 }

@@ -38,6 +38,7 @@ type TestCase struct {
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 	Timeout             time.Duration
+	OutputPath          string
 }
 
 type TaskRunContext struct {
@@ -63,7 +64,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("Workspace is in %s", tempDir)
+		LogAndOutputToFile(t.Logf, fmt.Sprintf("Workspace is in %s", tempDir), tc.OutputPath)
 		taskWorkspaces[wn] = tempDir
 	}
 
@@ -90,22 +91,23 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		testOpts.Namespace,
 	)
 	if err != nil {
+		LogAndOutputToFile(t.Fatalf, err.Error(), tc.OutputPath)
 		t.Fatal(err)
 	}
 
-	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
+	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr, tc)
 
 	// Check if task setup was successful
 	if err != nil {
 		if tc.WantSetupFail {
 			return
 		} else {
-			t.Fatalf("Task setup failed: %s", err)
+			LogAndOutputToFile(t.Fatalf, fmt.Sprintf("Task setup failed: %s", err), tc.OutputPath)
 		}
 	}
 
 	if tc.WantSetupFail {
-		t.Fatal("Task setup was successful, but was expected to fail.")
+		LogAndOutputToFile(t.Fatalf, "Task setup was successful, but was expected to fail.", tc.OutputPath)
 	}
 
 	if collectedLogsBuffer.Len() > 0 {
@@ -113,11 +115,11 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	// Show info from Task result
-	CollectTaskResultInfo(taskRun, t.Logf)
+	CollectTaskResultInfo(taskRun, t.Logf, tc)
 
 	// Check if task was successful
 	if taskRun.IsSuccessful() != tc.WantRunSuccess {
-		t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
+		LogAndOutputToFile(t.Fatalf, fmt.Sprintf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess), tc.OutputPath)
 	}
 
 	// Check local folder and evaluate output of task if needed
@@ -148,7 +150,7 @@ func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	)
 }
 
-func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, bytes.Buffer, error) {
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun, tc TestCase) (*tekton.TaskRun, bytes.Buffer, error) {
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
@@ -186,6 +188,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) 
 			if pod != nil {
 				go getEventsAndLogsOfPod(
 					ctx,
+					tc,
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					collectedLogsChan,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,7 @@ import (
 // sends on the errs channels or if the passed context is cancelled.
 func getEventsAndLogsOfPod(
 	ctx context.Context,
+	tc TestCase,
 	c kubernetes.Interface,
 	pod *corev1.Pod,
 	collectedLogsChan chan []byte,
@@ -36,7 +38,7 @@ func getEventsAndLogsOfPod(
 
 	watchingEvents := true
 	for _, container := range pod.Spec.Containers {
-		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, collectedLogsChan)
+		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, collectedLogsChan, tc)
 		if err != nil {
 			fmt.Printf("failure while getting container logs: %s", err)
 			errs <- err
@@ -52,8 +54,8 @@ func getEventsAndLogsOfPod(
 func streamContainerLogs(
 	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string, collectedLogsChan chan []byte) error {
-	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
+	podNamespace, podName, containerName string, collectedLogsChan chan []byte, tc TestCase) error {
+	LogAndOutputToFile(log.Printf, fmt.Sprintf("Waiting for container %s from pod %s to be ready...\n", containerName, podName), tc.OutputPath)
 
 	w, err := c.CoreV1().Pods(podNamespace).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      podName,
@@ -67,7 +69,7 @@ func streamContainerLogs(
 		ev := <-w.ResultChan()
 		if cs, ok := containerFromEvent(ev, podName, containerName); ok {
 			if cs.State.Running != nil {
-				log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
+				LogAndOutputToFile(log.Printf, fmt.Sprintf("---------------------- Logs from %s -------------------------\n", containerName), tc.OutputPath)
 				// Set up log stream using a new ctx so that it's not cancelled
 				// when the task is done before all logs have been read.
 				ls, err := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
@@ -84,10 +86,12 @@ func streamContainerLogs(
 					case <-ctx.Done():
 						collectedLogsChan <- reader.Bytes()
 						fmt.Println(reader.Text())
+						OutputToFile(reader.Text(), tc.OutputPath)
 						return nil
 					default:
 						collectedLogsChan <- reader.Bytes()
 						fmt.Println(reader.Text())
+						OutputToFile(reader.Text(), tc.OutputPath)
 					}
 				}
 				return reader.Err()
@@ -108,4 +112,22 @@ func containerFromEvent(ev watch.Event, podName, containerName string) (corev1.C
 		}
 	}
 	return corev1.ContainerStatus{}, false
+}
+
+func LogAndOutputToFile(logFunc func(format string, args ...interface{}), output string, filePath string) {
+	logFunc(output)
+	OutputToFile(output, filePath)
+}
+
+func OutputToFile(output string, filePath string) {
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Print(err)
+	}
+	if _, err := f.Write([]byte(output + "\n")); err != nil {
+		fmt.Print(err)
+	}
+	if err := f.Close(); err != nil {
+		fmt.Print(err)
+	}
 }

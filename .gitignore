@@ -1,6 +1,7 @@
 .vscode/
 .idea/
 test/testdata/workspaces/workspace-*
+test/testdata/test-results
 ods.external.yaml
 artifact-download-linux-amd64
 artifact-download-darwin-amd64

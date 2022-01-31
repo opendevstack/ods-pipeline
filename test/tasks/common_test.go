@@ -118,6 +118,11 @@ func getFileContentLean(filename string) (string, error) {
 }
 
 func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktesting.Service, testCases map[string]tasktesting.TestCase) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tasktesting.CheckCluster(t, *outsideKindFlag)
 	if len(requiredServices) != 0 {
 		tasktesting.CheckServices(t, requiredServices)
@@ -131,28 +136,42 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 		},
 	)
 
+	t.Run(taskName, func(t *testing.T) {
+		testResultsPath := filepath.Join(filepath.Dir(wd), "testdata", "test-results", taskName)
+
+		err = os.MkdirAll(testResultsPath, 0777)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for name, tc := range testCases {
+			tc := tc
+			name := name
+			t.Run(name, func(t *testing.T) {
+				t.Parallel()
+				tc.OutputPath = filepath.Join(testResultsPath, strings.Replace(name, " ", "_", -1)+".log")
+				tn := taskName
+				if tc.TaskVariant != "" {
+					tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
+				}
+				if tc.Timeout == 0 {
+					tc.Timeout = 5 * time.Minute
+				}
+				tasktesting.Run(t, tc, tasktesting.TestOpts{
+					TaskKindRef:             taskKindRef,
+					TaskName:                tn,
+					Clients:                 c,
+					Namespace:               ns,
+					Timeout:                 tc.Timeout,
+					AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
+				})
+			})
+		}
+	})
+
 	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
 	defer tasktesting.TearDown(t, c, ns)
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			tn := taskName
-			if tc.TaskVariant != "" {
-				tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
-			}
-			if tc.Timeout == 0 {
-				tc.Timeout = 5 * time.Minute
-			}
-			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             taskKindRef,
-				TaskName:                tn,
-				Clients:                 c,
-				Namespace:               ns,
-				Timeout:                 tc.Timeout,
-				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
-			})
-		})
-	}
 }
 
 func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarProject string, qualityGateFlag bool, wantQualityGateStatus string) {
