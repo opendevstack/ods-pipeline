@@ -9,3 +9,4 @@ data:
   method: '{{.Values.notification.method}}'
   contentType: '{{.Values.notification.contentType}}'
   requestTemplate: '{{.Values.notification.requestTemplate}}'
+  notifyOnStatus: '{{.Values.notification.notifyOnStatus | toJson }}'

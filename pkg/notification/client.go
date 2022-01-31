@@ -3,8 +3,11 @@ package notification
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"text/template"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
@@ -19,6 +22,7 @@ const (
 	MethodProperty          = "method"
 	ContentTypeProperty     = "contentType"
 	RequestTemplateProperty = "requestTemplate"
+	NotifyOnStatusProperty  = "notifyOnStatus"
 )
 
 type Client struct {
@@ -39,10 +43,11 @@ type PipelineRunResult struct {
 }
 
 type notificationConfig struct {
-	url         string
-	method      string
-	contentType string
-	template    *template.Template
+	url            string
+	method         string
+	contentType    string
+	notifyOnStatus []string
+	template       *template.Template
 }
 
 func NewClient(config ClientConfig, kubernetesClient kubernetes.ClientInterface) (*Client, error) {
@@ -78,6 +83,18 @@ func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfi
 		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, ContentTypeProperty)
 	}
 
+	notifyOnStatus, ok := cm.Data[NotifyOnStatusProperty]
+	if !ok {
+		return nil, fmt.Errorf("%s doesn't specifiy '%s' property", NotificationConfigMap, NotifyOnStatusProperty)
+	}
+
+	decoder := json.NewDecoder(strings.NewReader(notifyOnStatus))
+	var notificationStatusValues []string
+	err = decoder.Decode(&notificationStatusValues)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("decoding notification status properties failed: %w", err)
+	}
+
 	text, ok := cm.Data[RequestTemplateProperty]
 	if !ok {
 		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, RequestTemplateProperty)
@@ -92,8 +109,18 @@ func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfi
 		url,
 		method,
 		contentType,
+		notificationStatusValues,
 		requestTemplate,
 	}, nil
+}
+
+func skipNotification(status string, allowedStatusValues []string) bool {
+	for _, allowedStatus := range allowedStatusValues {
+		if allowedStatus == status {
+			return false
+		}
+	}
+	return true
 }
 
 func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) error {
@@ -102,8 +129,13 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 		return fmt.Errorf("unable to read notification configmap: %v", err)
 	}
 
+	if skipNotification(summary.OverallStatus, config.notifyOnStatus) {
+		return nil
+	}
+
 	requestBody := bytes.NewBuffer([]byte{})
-	if config.template.Execute(requestBody, summary) != nil {
+	err = config.template.Execute(requestBody, summary)
+	if err != nil {
 		return fmt.Errorf("rendering notification webhook template failed: %v", err)
 	}
 

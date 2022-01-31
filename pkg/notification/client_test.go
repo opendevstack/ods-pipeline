@@ -3,6 +3,7 @@ package notification
 import (
 	"bytes"
 	"context"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,26 +17,85 @@ import (
 )
 
 const notificationJsonTemplate = `{
-    "@context": "https://schema.org/extensions",
-    "@type": "MessageCard",
-    "themeColor": "c60000",
-    "title": "ODS Pipeline Build finished",
-    "text": "ODS Pipeline run finished with status {{.OverallStatus}}!",
-    "potentialAction": [
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": {{if eq .OverallStatus "Succeeded"}} "237b4b" {{else}} "c4314b" {{ end }},
+      "summary": "{{.ODSContext.Project}} - ODS Pipeline Build finished with status {{.OverallStatus}}",
+      "sections": [
         {
-            "@type": "OpenUri",
-            "name": "Learn More",
-            "targets": [
-                { "os": "default", "uri": "{{.PipelineRunURL}}" }
-            ]
+          "activityTitle": "ODS Pipeline Build finished with status {{.OverallStatus}}",
+          "activitySubtitle": "On Project {{.ODSContext.Project}}",
+          "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+          "facts": [
+            {
+              "name": "Component",
+              "value": "{{.ODSContext.Component}}"
+            },
+            {
+              "name": "Namespace",
+              "value": "{{.ODSContext.Namespace}}"
+            },
+            {
+              "name": "GitCommitSHA",
+              "value": "{{.ODSContext.GitCommitSHA}}"
+            },
+            {
+              "name": "GitRef",
+              "value": "{{.ODSContext.GitRef}}"
+            },
+            {
+              "name": "Version",
+              "value": "{{.ODSContext.Version}}"
+            },
+            {
+              "name": "Environment",
+              "value": "{{.ODSContext.Environment}}"
+            }
+          ],
+          "markdown": true
         }
-    ]
-}`
+      ],
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": "Go to PipelineRun",
+          "targets": [
+            {
+              "os": "default",
+              "uri": "{{.PipelineRunURL}}"
+            }
+          ]
+        },
+        {
+          "@type": "OpenUri",
+          "name": "Go to Git URL",
+          "targets": [
+            {
+              "os": "default",
+              "uri": "{{.ODSContext.GitURL}}"
+            }
+          ]
+        }
+        {{if .ODSContext.PullRequestBase}},
+        {
+          "@type": "OpenUri",
+          "name": "Go to PR",
+          "targets": [
+            {
+              "os": "default",
+              "uri": "{{.ODSContext.PullRequestBase}}"
+            }
+          ]
+        }
+        {{end}}
+      ]
+    }`
 
 func TestWebhookCall(t *testing.T) {
 	runResult := PipelineRunResult{
-		OverallStatus:  "SUCCESS",
+		OverallStatus:  "Succeeded",
 		PipelineRunURL: "https://localhost",
+		ODSContext:     &pipelinectxt.ODSContext{},
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +129,49 @@ func TestWebhookCall(t *testing.T) {
 					UrlProperty:             ts.URL,
 					MethodProperty:          "POST",
 					ContentTypeProperty:     "application/json",
+					NotifyOnStatusProperty:  `["Failed","Succeeded"]`,
+					RequestTemplateProperty: notificationJsonTemplate,
+				},
+			},
+		},
+	}
+	webhookClient, err := NewClient(ClientConfig{
+		Namespace: "test",
+	}, &kubernetesClient)
+	if err != nil {
+		t.Fatalf("constructing webhook client failed: %s", err)
+	}
+	err = webhookClient.CallWebhook(context.TODO(), runResult)
+	if err != nil {
+		t.Fatalf("call webhook failed: %s", err)
+	}
+}
+
+func TestSkipNotification(t *testing.T) {
+	runResult := PipelineRunResult{
+		OverallStatus:  "None",
+		PipelineRunURL: "https://localhost",
+		ODSContext:     &pipelinectxt.ODSContext{},
+	}
+	allowedStatusValues := `["Failed","Succeeded"]`
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("Server was called even though status '%s' not configured for notifications (%s)",
+			runResult.OverallStatus, allowedStatusValues)
+	}))
+	defer ts.Close()
+
+	kubernetesClient := kubernetes.TestClient{
+		CMs: []*corev1.ConfigMap{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: NotificationConfigMap,
+				},
+				Data: map[string]string{
+					UrlProperty:             ts.URL,
+					MethodProperty:          "POST",
+					ContentTypeProperty:     "application/json",
+					NotifyOnStatusProperty:  allowedStatusValues,
 					RequestTemplateProperty: notificationJsonTemplate,
 				},
 			},

@@ -32,63 +32,84 @@ notification:
   method: 'POST'
   # The HTTP content type header
   contentType: 'application/json'
+  # Specify the outcomes you want to be notified of (allowed values: c.f.
+  # https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks)
+  notifyOnStatus:
+    - 'Failed'
   # Template to be processed and accepted by the configured webhook in use
   # Below example might work for Microsoft Teams
   requestTemplate: |-
     {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
-      "themeColor": "0076D7",
+      "themeColor": {{if eq .OverallStatus "Succeeded"}} "237b4b" {{else}} "c4314b" {{ end }},
       "summary": "{{.ODSContext.Project}} - ODS Pipeline Build finished with status {{.OverallStatus}}",
-      "sections": [{
-        "activityTitle": "ODS Pipeline Build finished with status {{.OverallStatus}}",
-        "activitySubtitle": "On Project {{.ODSContext.Project}}",
-        "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
-        "facts": [{
-          "name": "Component",
-          "value": "{{.ODSContext.Component}}"
-        }, {
-          "name": "Namespace",
-          "value": "{{.ODSContext.Namespace}}"
-        }, {
-          "name": "GitCommitSHA",
-          "value": "{{.ODSContext.GitCommitSHA}}"
-        }, {
-          "name": "GitRef",
-          "value": "{{.ODSContext.GitRef}}"
-        }, {
-          "name": "Version",
-          "value": "{{.ODSContext.Version}}"
-        }, {
-          "name": "Environment",
-          "value": "{{.ODSContext.Environment}}"
-        }],
-        "markdown": true
-      }],
+      "sections": [
+        {
+          "activityTitle": "ODS Pipeline Build finished with status {{.OverallStatus}}",
+          "activitySubtitle": "On Project {{.ODSContext.Project}}",
+          "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+          "facts": [
+            {
+              "name": "Component",
+              "value": "{{.ODSContext.Component}}"
+            },
+            {
+              "name": "Namespace",
+              "value": "{{.ODSContext.Namespace}}"
+            },
+            {
+              "name": "GitCommitSHA",
+              "value": "{{.ODSContext.GitCommitSHA}}"
+            },
+            {
+              "name": "GitRef",
+              "value": "{{.ODSContext.GitRef}}"
+            },
+            {
+              "name": "Version",
+              "value": "{{.ODSContext.Version}}"
+            },
+            {
+              "name": "Environment",
+              "value": "{{.ODSContext.Environment}}"
+            }
+          ],
+          "markdown": true
+        }
+      ],
       "potentialAction": [
         {
           "@type": "OpenUri",
           "name": "Go to PipelineRun",
           "targets": [
-            { "os": "default", "uri": "{{.PipelineRunURL}}" }
+            {
+              "os": "default",
+              "uri": "{{.PipelineRunURL}}"
+            }
           ]
         },
         {
           "@type": "OpenUri",
           "name": "Go to Git URL",
           "targets": [
-            { "os": "default", "uri": "{{.ODSContext.GitURL}}" }
+            {
+              "os": "default",
+              "uri": "{{.ODSContext.GitURL}}"
+            }
           ]
         }
-          {{if .ODSContext.PullRequestBase}}
-          ,
+        {{if .ODSContext.PullRequestBase}},
         {
           "@type": "OpenUri",
           "name": "Go to PR",
           "targets": [
-            { "os": "default", "uri": "{{.ODSContext.PullRequestBase}}" }
+            {
+              "os": "default",
+              "uri": "{{.ODSContext.PullRequestBase}}"
+            }
           ]
         }
-          {{end}}
+        {{end}}
       ]
     }
