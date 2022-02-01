@@ -5,7 +5,8 @@
 Finishes the pipeline run.
 
 This task uploads generated artifacts to Nexus, and sets the build status of
-the built commit in Bitbucket according to the aggregate task status.
+the built commit in Bitbucket according to the aggregate task status. If configured,
+the task sends notifications to a defined webhook receiver.
 
 This task is automatically added to any pipeline run in as a `finally` task
 by the webhook interceptor and cannot be customized by users at this point.

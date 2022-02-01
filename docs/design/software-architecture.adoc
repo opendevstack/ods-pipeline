@@ -123,6 +123,12 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | Nexus
 |
 
+| Task `ods-finish`
+| Send notifications
+| HTTP / API
+| Configured notification service
+|
+
 | Binary `artifact-download`
 | Retrieve configuration and secrets
 | HTTP / JSON API

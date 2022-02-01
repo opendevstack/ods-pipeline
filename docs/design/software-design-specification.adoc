@@ -193,6 +193,13 @@ a| Sets the Bitbucket build status to "failed" or "successful", depending on whe
 Creates an artifact for the pipeline run, containing its name and status, provided that all tasks succeeded.
 
 Uploads all files in any `.ods/artifacts` folder to Nexus, storing them in a group named `/<PROJECT>/<REPOSITORY>/<GIT-COMMIT-SHA>`, provided that all tasks succeeded.
+
+| SDS-TASK-29
+| `finish` binary
+a| Optionally sends a status notification to a webhook receiver.
+
+Status notification message, webhook URL, content type, HTTP method, and triggering status values may be configured via a `ConfigMap`.
+
 |===
 
 ===== `ods-build-python` task
