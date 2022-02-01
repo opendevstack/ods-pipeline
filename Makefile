@@ -113,7 +113,7 @@ build-and-push-images: ## Build and push images to local registry.
 		cd scripts && ./build-and-push-images.sh --image gradle-toolset
 		cd scripts && ./build-and-push-images.sh --image python-toolset
 		cd scripts && ./build-and-push-images.sh --image helm
-		cd scripts && ./build-and-push-images.sh --image node16-typescript-toolset --platform linux/amd64
+		cd scripts && ./build-and-push-images.sh --image node16-typescript-toolset
 .PHONY: build-and-push-images
 
 install-ods-tasks-kind: ## KinD only! Apply ODS ClusterTask manifests in KinD

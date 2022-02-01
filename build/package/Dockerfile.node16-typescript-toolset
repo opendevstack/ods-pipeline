@@ -1,37 +1,14 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+FROM registry.access.redhat.com/ubi8/nodejs-16
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV NODEJS_VERSION=16 \
-    GCC_VERSION=8.5 \
-    NPM_CONFIG_PREFIX=$HOME/.npm-global \
+ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
-COPY build/package/yum.repos.d/google-chrome.repo /etc/yum.repos.d/google-chrome.repo
-
-RUN set -euo pipefail \
-    && curl -sSf -L http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-Official -o /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial \
-    && echo -e '[centos-8-baseos]\nname=CentOS-$releasever - BaseOS\nbaseurl=http://mirror.centos.org/centos/$releasever/BaseOS/$basearch/os/\ngpgcheck=1\npriority=99\nenabled=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' > /etc/yum.repos.d/centos-8-baseos.repo \
-    && echo -e '[centos-8-appstream]\nname=CentOS-$releasever - AppStream\nbaseurl=http://mirror.centos.org/centos/$releasever/AppStream/$basearch/os/\ngpgcheck=1\npriority=99\nenabled=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' > /etc/yum.repos.d/centos-8-appstream.repo \
-    && microdnf update -y \
-    && microdnf install --nodocs -y --enablerepo=google-chrome --enablerepo=centos-8-baseos --enablerepo=centos-8-appstream \
-    yum tar google-chrome-stable libXt libX11-xcb \
-    # Install Cypress dependencies: https://docs.cypress.io/guides/getting-started/installing-cypress.html#System-requirements
-    dbus-glib xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
-    && microdnf clean all
-
 COPY build/package/contrib/bin/configure-agent /usr/local/bin/configure-agent
 
-# Generate machine ID
-RUN dbus-uuidgen > /etc/machine-id
-
-# Install NodeJS (https://rpm.nodesource.com/setup_12.x does NOT work)
-RUN yum module enable -y nodejs:${NODEJS_VERSION} && \
-    yum install -y --setopt=tsflags=nodocs --disableplugin=subscription-manager nodejs gcc-c++-${GCC_VERSION}* && \
-    rpm -V nodejs gcc-c++-${GCC_VERSION}* && \
-    yum clean all -y && \
-    echo node version: $(node --version) && \
+RUN echo node version: $(node --version) && \
     echo npm version: $(npm --version) && \
     echo npx version: $(npx --version)
 
