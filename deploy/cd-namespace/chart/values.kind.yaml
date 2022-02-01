@@ -26,6 +26,8 @@ interceptor:
 
 # Notification Webhook
 notification:
+  # notifications are disabled by default, i.e. the ConfigMap won't be installed
+  enabled: false
   # URL of the configured webhook
   url: 'http://example.com'
   # The HTTP method to be used
