@@ -131,7 +131,7 @@ func main() {
 		ODSContext:     ctxt,
 	})
 	if err != nil {
-		log.Printf("Calling webhook failed: %s", err)
+		log.Printf("Calling notification webhook failed: %s", err)
 	}
 }
 
