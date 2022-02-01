@@ -17,7 +17,7 @@ spec:
       dockerfilePath: build/package/Dockerfile.node16-typescript-toolset
       from:
         kind: DockerImage
-        name: "registry.redhat.io/ubi8/ubi-minimal:8.4"
+        name: "registry.redhat.io/ubi8/nodejs-16:1"
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
