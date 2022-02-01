@@ -79,7 +79,7 @@ test-pkg: ## Run testsuite of public packages.
 .PHONY: test-pkg
 
 test-tasks: ## Run testsuite of Tekton tasks.
-	go test -v -count=1 -timeout $${ODS_TESTTIMEOUT:-30m} ./test/tasks/...
+	go test -json -v -count=1 -timeout $${ODS_TESTTIMEOUT:-30m} ./test/tasks/... | go run cmd/disentangle-output/main.go -test-result-dir=./test/testdata/test-results
 .PHONY: test-tasks
 
 test-e2e: ## Run testsuite of end-to-end pipeline run.

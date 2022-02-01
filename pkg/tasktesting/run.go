@@ -38,7 +38,6 @@ type TestCase struct {
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
 	Timeout             time.Duration
-	OutputPath          string
 }
 
 type TaskRunContext struct {
@@ -64,7 +63,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		LogAndOutputToFile(t.Logf, fmt.Sprintf("Workspace is in %s", tempDir), tc.OutputPath)
+		t.Logf("Workspace is in %s", tempDir)
 		taskWorkspaces[wn] = tempDir
 	}
 
@@ -91,7 +90,6 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		testOpts.Namespace,
 	)
 	if err != nil {
-		LogAndOutputToFile(t.Fatalf, err.Error(), tc.OutputPath)
 		t.Fatal(err)
 	}
 
@@ -102,12 +100,12 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		if tc.WantSetupFail {
 			return
 		} else {
-			LogAndOutputToFile(t.Fatalf, fmt.Sprintf("Task setup failed: %s", err), tc.OutputPath)
+			t.Fatalf("Task setup failed: %s", err)
 		}
 	}
 
 	if tc.WantSetupFail {
-		LogAndOutputToFile(t.Fatalf, "Task setup was successful, but was expected to fail.", tc.OutputPath)
+		t.Fatal("Task setup was successful, but was expected to fail.")
 	}
 
 	if collectedLogsBuffer.Len() > 0 {
@@ -119,7 +117,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	// Check if task was successful
 	if taskRun.IsSuccessful() != tc.WantRunSuccess {
-		LogAndOutputToFile(t.Fatalf, fmt.Sprintf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess), tc.OutputPath)
+		t.Fatalf("Got: %+v, want: %+v.", taskRun.IsSuccessful(), tc.WantRunSuccess)
 	}
 
 	// Check local folder and evaluate output of task if needed
@@ -188,7 +186,6 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun, 
 			if pod != nil {
 				go getEventsAndLogsOfPod(
 					ctx,
-					tc,
 					testOpts.Clients.KubernetesClientSet,
 					pod,
 					collectedLogsChan,

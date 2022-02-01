@@ -2,7 +2,6 @@ package tasktesting
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -121,7 +120,7 @@ func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger, tc Te
 		logf("error: no taskrun")
 		return
 	}
-	LogAndOutputToFile(logf, fmt.Sprintf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status), tc.OutputPath)
-	LogAndOutputToFile(logf, fmt.Sprintf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason()), tc.OutputPath)
-	LogAndOutputToFile(logf, fmt.Sprintf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage()), tc.OutputPath)
+	logf("Status: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).Status)
+	logf("Reason: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetReason())
+	logf("Message: %s\n", tr.Status.GetCondition(apis.ConditionSucceeded).GetMessage())
 }

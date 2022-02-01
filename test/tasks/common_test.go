@@ -118,11 +118,6 @@ func getFileContentLean(filename string) (string, error) {
 }
 
 func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktesting.Service, testCases map[string]tasktesting.TestCase) {
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	tasktesting.CheckCluster(t, *outsideKindFlag)
 	if len(requiredServices) != 0 {
 		tasktesting.CheckServices(t, requiredServices)
@@ -137,21 +132,13 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 	)
 
 	t.Run(taskName, func(t *testing.T) {
-		testResultsPath := filepath.Join(filepath.Dir(wd), "testdata", "test-results", taskName)
-
-		err = os.MkdirAll(testResultsPath, 0777)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		for name, tc := range testCases {
 			tc := tc
 			name := name
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
-				tc.OutputPath = filepath.Join(testResultsPath, strings.Replace(name, " ", "_", -1)+".log")
 				tn := taskName
+				fmt.Println("testCaseName ", name)
 				if tc.TaskVariant != "" {
 					tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
 				}
