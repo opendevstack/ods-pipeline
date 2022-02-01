@@ -17,6 +17,7 @@ listed in the changelog.
 - Run gradle in non daemon mode by default and enabling stacktraces ([#386](https://github.com/opendevstack/ods-pipeline/issues/386)) 
 - Enable setting `GRADLE_OPTS` via task parameters ([#387](https://github.com/opendevstack/ods-pipeline/issues/387))
 - Export `ARTIFACTS_DIR` environment variable to be visible to the gradle build ([#408](https://github.com/opendevstack/ods-pipeline/issues/408))
+- Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 
 ### Changed
 
