@@ -162,8 +162,8 @@ func (c Client) CallWebhook(ctxt context.Context, notificationConfig *Notificati
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", notificationConfig.contentType)
-	req.WithContext(ctxt)
+	req.Header.Set("Content-Type", notificationConfig.contentType)
+	req = req.WithContext(ctxt)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
