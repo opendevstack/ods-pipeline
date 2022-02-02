@@ -371,6 +371,8 @@ For Git commits which message instructs to skip CI, no pipelines are triggererd.
 A pipeline is created or updated corresponding to the Git branch received in the webhook request. The pipeline name is made out of the component and the sanitized branch. A maximum of 63 characters is respected. Tasks (including `finally` tasks) of the pipline are read from the ODS config file in the repository.
 
 A PVC is created per repository unless it exists already. The name is equal to `ods-workspace-<component>` (shortened to 63 characters if longer). This PVC is then used in the pipeline as a shared workspace.
+
+Pipelines and pipeline runs are pruned when a webhook trigger is received. Pipeline runs that are newer than the configured time window are protected from pruning. Older pipeline runs are cleaned up to not grow beyond the configured maximum amount. If all pipeline runs of one pipeline can be pruned, the whole pipeline is pruned. The pruning strategy is applied per repository and stage (DEV, QA, PROD) to avoid aggressive pruning of QA and PROD pipeline runs.
 |===
 
 ===== Artifact Download

@@ -97,6 +97,14 @@ notification:
       ]
     }
 
+# Pipeline(Run) Pruning
+# Minimum hours to keep a pipeline run. Has precendence over pipelineRunMaxKeepRuns.
+# Must be at least 1.
+pipelineRunMinKeepHours: '48'
+# Maximum number of pipeline runs to keep per stage (stages: DEV, QA, PROD).
+# Must be at least 1.
+pipelineRunMaxKeepRuns: '20'
+
 # Webhook Interceptor
 interceptor:
   # PVC (used for the pipeline workspace)

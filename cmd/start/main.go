@@ -200,7 +200,7 @@ func main() {
 		}
 	}
 
-	if len(ctxt.Environment) > 0 {
+	if ctxt.Environment != "" {
 		env, err := odsConfig.Environment(ctxt.Environment)
 		if err != nil {
 			log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))

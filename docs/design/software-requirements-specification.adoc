@@ -63,6 +63,9 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 
 | SRS-INTERCEPTOR-4
 | The interceptor shall create a PVC for use as a pipeline workspace per repository.
+
+| SRS-INTERCEPTOR-5
+| The interceptor shall prune pipelines and pipeline runs per repository and stage.
 |===
 
 === Task Requirements
