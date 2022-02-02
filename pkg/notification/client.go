@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -23,6 +26,7 @@ const (
 	ContentTypeProperty     = "contentType"
 	RequestTemplateProperty = "requestTemplate"
 	NotifyOnStatusProperty  = "notifyOnStatus"
+	EnabledProperty         = "enabled"
 )
 
 type Client struct {
@@ -32,17 +36,20 @@ type Client struct {
 }
 
 type ClientConfig struct {
-	Namespace string
-	Logger    logging.LeveledLoggerInterface
+	Namespace  string
+	Logger     logging.LeveledLoggerInterface
+	HTTPClient *http.Client
 }
 
 type PipelineRunResult struct {
-	PipelineRunURL string
-	OverallStatus  string
-	ODSContext     *pipelinectxt.ODSContext
+	PipelineRunName string
+	PipelineRunURL  string
+	OverallStatus   string
+	ODSContext      *pipelinectxt.ODSContext
 }
 
-type notificationConfig struct {
+type NotificationConfig struct {
+	enabled        bool
 	url            string
 	method         string
 	contentType    string
@@ -55,17 +62,35 @@ func NewClient(config ClientConfig, kubernetesClient kubernetes.ClientInterface)
 		config.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
 
+	httpClient := config.HTTPClient
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
+	if httpClient.Timeout == 0 {
+		httpClient.Timeout = 20 * time.Second
+	}
+
 	return &Client{
 		clientConfig:     config,
-		httpClient:       &http.Client{},
 		kubernetesClient: kubernetesClient,
+		httpClient:       httpClient,
 	}, nil
 }
 
-func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfig, error) {
+func (c Client) ReadNotificationConfig(ctxt context.Context) (*NotificationConfig, error) {
 	cm, err := c.kubernetesClient.GetConfigMap(ctxt, NotificationConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load %s ConfigMap: %v", NotificationConfigMap, err)
+	}
+
+	enabledPropValue, ok := cm.Data[EnabledProperty]
+	if !ok {
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", NotificationConfigMap, EnabledProperty)
+	}
+
+	enabled, err := strconv.ParseBool(enabledPropValue)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse %s to bool", enabledPropValue)
 	}
 
 	url, ok := cm.Data[UrlProperty]
@@ -105,7 +130,8 @@ func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfi
 		return nil, fmt.Errorf("failed to parse requestTemplate template")
 	}
 
-	return &notificationConfig{
+	return &NotificationConfig{
+		enabled,
 		url,
 		method,
 		contentType,
@@ -114,42 +140,45 @@ func (c Client) readNotificationConfig(ctxt context.Context) (*notificationConfi
 	}, nil
 }
 
-func skipNotification(status string, allowedStatusValues []string) bool {
-	for _, allowedStatus := range allowedStatusValues {
-		if allowedStatus == status {
-			return false
+func (c *Client) ShouldNotify(notificationConfig *NotificationConfig, status string) bool {
+	if notificationConfig.enabled {
+		for _, allowedStatus := range notificationConfig.notifyOnStatus {
+			if allowedStatus == status {
+				return true
+			}
 		}
 	}
-	return true
+	return false
 }
 
-func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) error {
-	config, err := c.readNotificationConfig(ctxt)
-	if err != nil {
-		return fmt.Errorf("unable to read notification configmap: %v", err)
-	}
-
-	if skipNotification(summary.OverallStatus, config.notifyOnStatus) {
-		return nil
-	}
-
+func (c Client) CallWebhook(ctxt context.Context, notificationConfig *NotificationConfig, summary PipelineRunResult) error {
 	requestBody := bytes.NewBuffer([]byte{})
-	err = config.template.Execute(requestBody, summary)
+	err := notificationConfig.template.Execute(requestBody, summary)
 	if err != nil {
 		return fmt.Errorf("rendering notification webhook template failed: %v", err)
 	}
 
-	req, err := http.NewRequest(config.method, config.url, requestBody)
+	req, err := http.NewRequest(notificationConfig.method, notificationConfig.url, requestBody)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", config.contentType)
+	req.Header.Add("Content-Type", notificationConfig.contentType)
+	req.WithContext(ctxt)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("performing notification webhook request failed: %v", err)
 	}
-	c.logger().Infof("notification webhook response was: %w", response.StatusCode)
+	c.logger().Infof("notification webhook response was: %s", response.Status)
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			body = []byte("<could not read body>")
+		}
+		return fmt.Errorf("notification webhook returned non-2xx status (status: %s, body: %s)",
+			response.Status, string(body))
+	}
 	// we do not fail
 	return nil
 }

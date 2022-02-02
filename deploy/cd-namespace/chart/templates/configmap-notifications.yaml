@@ -1,4 +1,3 @@
-{{if .Values.notification.enabled}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -6,9 +5,9 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4}}
 data:
+  enabled: '{{.Values.notification.enabled}}'
   url: '{{.Values.notification.url}}'
   method: '{{.Values.notification.method}}'
   contentType: '{{.Values.notification.contentType}}'
   requestTemplate: '{{.Values.notification.requestTemplate}}'
   notifyOnStatus: '{{.Values.notification.notifyOnStatus | toJson }}'
-{{end}}

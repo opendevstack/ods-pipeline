@@ -125,13 +125,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = notificationClient.CallWebhook(context.TODO(), notification.PipelineRunResult{
-		PipelineRunURL: pipelineRunURL,
-		OverallStatus:  opts.aggregateTasksStatus,
-		ODSContext:     ctxt,
-	})
+
+	ctx := context.TODO()
+	notificationConfig, err := notificationClient.ReadNotificationConfig(ctx)
 	if err != nil {
-		log.Printf("Calling notification webhook failed: %s", err)
+		log.Fatalf("Notification config could not be read: %s", err)
+	}
+
+	if notificationClient.ShouldNotify(notificationConfig, opts.aggregateTasksStatus) {
+		err = notificationClient.CallWebhook(ctx, notificationConfig, notification.PipelineRunResult{
+			PipelineRunName: opts.pipelineRunName,
+			PipelineRunURL:  pipelineRunURL,
+			OverallStatus:   opts.aggregateTasksStatus,
+			ODSContext:      ctxt,
+		})
+		if err != nil {
+			log.Printf("Calling notification webhook failed: %s", err)
+		}
 	}
 }
 

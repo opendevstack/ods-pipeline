@@ -43,7 +43,10 @@ func (c *TestClient) GetConfigMap(ctxt context.Context, cmName string, options m
 			return cm, nil
 		}
 	}
-	return nil, fmt.Errorf("configmap %s not found", cmName)
+	return nil, kerrors.NewNotFound(kschema.GroupResource{
+		Group:    "core",
+		Resource: "ConfigMap",
+	}, cmName)
 }
 
 func (c *TestClient) GetConfigMapKey(ctxt context.Context, cmName, key string, options metav1.GetOptions) (string, error) {
