@@ -258,7 +258,7 @@ Input parameters:
 
 | SDS-TASK-17
 | `ods-node16-typescript-toolset` container image
-| Container image to build TypeScript applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-6, SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
 | `build-typescript.sh` shell script
@@ -546,6 +546,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 1.16.12
 | go-toolset available as a container is a base platform for building and running various Go applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/go-toolset/5ce8713aac3db925c03774d1
+
+| SDS-EXT-26
+| NodeJS 16 for UBI 8
+| 1
+| Node.js 16 available as container is a base platform for building and running various Node.js 16 applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1
 
 |===
 

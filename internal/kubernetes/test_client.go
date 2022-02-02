@@ -28,7 +28,10 @@ func (c *TestClient) GetPersistentVolumeClaim(ctxt context.Context, name string,
 			return p, nil
 		}
 	}
-	return nil, fmt.Errorf("pipeline %s not found", name)
+	return nil, kerrors.NewNotFound(kschema.GroupResource{
+		Group:    "core",
+		Resource: "PersistentVolumeClaim",
+	}, name)
 }
 
 func (c *TestClient) CreatePersistentVolumeClaim(ctxt context.Context, pipeline *corev1.PersistentVolumeClaim, options metav1.CreateOptions) (*corev1.PersistentVolumeClaim, error) {
