@@ -190,6 +190,7 @@ func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun, 
 					pod,
 					collectedLogsChan,
 					errs,
+					t,
 				)
 			}
 

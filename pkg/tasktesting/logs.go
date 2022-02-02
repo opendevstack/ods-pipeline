@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"log"
+	"testing"
 )
 
 // getEventsAndLogsOfPod streams events of the pod until all containers are ready,
@@ -19,7 +19,8 @@ func getEventsAndLogsOfPod(
 	c kubernetes.Interface,
 	pod *corev1.Pod,
 	collectedLogsChan chan []byte,
-	errs chan error) {
+	errs chan error,
+	t *testing.T) {
 	quitEvents := make(chan bool)
 	podName := pod.Name
 	podNamespace := pod.Namespace
@@ -35,9 +36,9 @@ func getEventsAndLogsOfPod(
 
 	watchingEvents := true
 	for _, container := range pod.Spec.Containers {
-		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, collectedLogsChan)
+		err := streamContainerLogs(ctx, c, podNamespace, podName, container.Name, collectedLogsChan, t)
 		if err != nil {
-			fmt.Printf("failure while getting container logs: %s", err)
+			t.Logf("failure while getting container logs: %s", err)
 			errs <- err
 			return
 		}
@@ -51,8 +52,8 @@ func getEventsAndLogsOfPod(
 func streamContainerLogs(
 	ctx context.Context,
 	c kubernetes.Interface,
-	podNamespace, podName, containerName string, collectedLogsChan chan []byte) error {
-	log.Printf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
+	podNamespace, podName, containerName string, collectedLogsChan chan []byte, t *testing.T) error {
+	t.Logf("Waiting for container %s from pod %s to be ready...\n", containerName, podName)
 
 	w, err := c.CoreV1().Pods(podNamespace).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      podName,
@@ -66,7 +67,7 @@ func streamContainerLogs(
 		ev := <-w.ResultChan()
 		if cs, ok := containerFromEvent(ev, podName, containerName); ok {
 			if cs.State.Running != nil {
-				log.Printf("---------------------- Logs from %s -------------------------\n", containerName)
+				t.Logf("---------------------- Logs from %s -------------------------\n", containerName)
 				// Set up log stream using a new ctx so that it's not cancelled
 				// when the task is done before all logs have been read.
 				ls, err := c.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
@@ -82,11 +83,11 @@ func streamContainerLogs(
 					select {
 					case <-ctx.Done():
 						collectedLogsChan <- reader.Bytes()
-						fmt.Println(reader.Text())
+						t.Log(reader.Text())
 						return nil
 					default:
 						collectedLogsChan <- reader.Bytes()
-						fmt.Println(reader.Text())
+						t.Log(reader.Text())
 					}
 				}
 				return reader.Err()
