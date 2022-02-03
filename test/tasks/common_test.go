@@ -138,7 +138,6 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
 				tn := taskName
-				fmt.Println("testCaseName ", name)
 				if tc.TaskVariant != "" {
 					tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
 				}
