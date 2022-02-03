@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/opendevstack/pipeline/internal/testoutput"
+	"log"
 	"os"
+
+	"github.com/opendevstack/pipeline/internal/testoutput"
 )
 
 type options struct {
@@ -16,5 +18,8 @@ func main() {
 	flag.Parse()
 
 	os.MkdirAll(opts.testResultDir, 0777)
-	testoutput.DisentangleTestOutputs(opts.testResultDir, os.Stdin, os.Stdout)
+	err := testoutput.DisentangleTestOutputs(opts.testResultDir, os.Stdin, os.Stdout)
+	if err != nil {
+		log.Fatalf("could not disentangle test output: %v", err)
+	}
 }
