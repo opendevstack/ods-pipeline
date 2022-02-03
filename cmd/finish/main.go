@@ -9,8 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/notification"
-
+	"github.com/opendevstack/pipeline/internal/notification"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -119,21 +118,22 @@ func main() {
 		log.Fatalf("couldn't create kubernetes client: %s", err)
 	}
 
-	notificationClient, err := notification.NewClient(notification.ClientConfig{
-		Namespace: ctxt.Namespace,
-	}, kubernetesClient)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	ctx := context.TODO()
-	notificationConfig, err := notificationClient.ReadNotificationConfig(ctx)
+	notificationConfig, err := notification.ReadConfigFromConfigMap(ctx, kubernetesClient)
 	if err != nil {
 		log.Fatalf("Notification config could not be read: %s", err)
 	}
 
-	if notificationClient.ShouldNotify(notificationConfig, opts.aggregateTasksStatus) {
-		err = notificationClient.CallWebhook(ctx, notificationConfig, notification.PipelineRunResult{
+	notificationClient, err := notification.NewClient(notification.ClientConfig{
+		Namespace:          ctxt.Namespace,
+		NotificationConfig: notificationConfig,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if notificationClient.ShouldNotify(opts.aggregateTasksStatus) {
+		err = notificationClient.CallWebhook(ctx, notification.PipelineRunResult{
 			PipelineRunName: opts.pipelineRunName,
 			PipelineRunURL:  pipelineRunURL,
 			OverallStatus:   opts.aggregateTasksStatus,
