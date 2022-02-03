@@ -164,11 +164,33 @@ jobs:
         name: Check if docs are up-to-date
         run: ./.github/workflows/check-docs.sh
       -
-        name: Run tests
+        name: Run cmd tests
         run: |
           set -o pipefail
           go test -v ./cmd/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      -
+        name: Run internal tests
+        run: |
+          set -o pipefail
           go test -v ./internal/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      -
+        name: Run pkg tests
+        run: |
+          set -o pipefail
           go test -v ./pkg/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-          go test -timeout 30m -v ./test/tasks/... -always-keep-tmp-workspaces | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      -
+        name: Run tasks tests
+        run: |
+          set -o pipefail
+          go test -parallel -json -v -timeout 30m ./test/tasks/... -always-keep-tmp-workspaces | go run cmd/disentangle-output/main.go -test-result-dir=./test/testdata/test-results | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      -
+        name: Run e2e tests
+        run: |
+          set -o pipefail
           go test -timeout 10m -v ./test/e2e/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      - 
+        name: Test Logs
+        uses: actions/upload-artifacts@v2
+        with:
+          name: Test Logs
+          path: test/testdata/test-results/
