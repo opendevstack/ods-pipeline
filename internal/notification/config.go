@@ -15,12 +15,12 @@ import (
 
 const (
 	configMapName           = "ods-notification"
-	urlProperty             = "URL"
-	methodProperty          = "Method"
-	contentTypeProperty     = "ContentType"
+	urlProperty             = "url"
+	methodProperty          = "method"
+	contentTypeProperty     = "contentType"
 	requestTemplateProperty = "requestTemplate"
-	notifyOnStatusProperty  = "NotifyOnStatus"
-	enabledProperty         = "Enabled"
+	notifyOnStatusProperty  = "notifyOnStatus"
+	enabledProperty         = "enabled"
 )
 
 type Config struct {
