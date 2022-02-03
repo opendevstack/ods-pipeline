@@ -12,16 +12,6 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
-const (
-	ConfigMapName           = "ods-notification"
-	UrlProperty             = "URL"
-	MethodProperty          = "Method"
-	ContentTypeProperty     = "ContentType"
-	RequestTemplateProperty = "requestTemplate"
-	NotifyOnStatusProperty  = "NotifyOnStatus"
-	EnabledProperty         = "Enabled"
-)
-
 type Client struct {
 	clientConfig ClientConfig
 	httpClient   *http.Client
@@ -77,7 +67,7 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 	requestBody := bytes.NewBuffer([]byte{})
 	err := notificationConfig.Template.Execute(requestBody, summary)
 	if err != nil {
-		return fmt.Errorf("rendering notification webhook Template failed: %v", err)
+		return fmt.Errorf("rendering notification webhook Template failed: %w", err)
 	}
 
 	req, err := http.NewRequest(notificationConfig.Method, notificationConfig.URL, requestBody)
@@ -89,7 +79,7 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("performing notification webhook request failed: %v", err)
+		return fmt.Errorf("performing notification webhook request failed: %w", err)
 	}
 	c.logger().Infof("notification webhook response was: %s", response.Status)
 

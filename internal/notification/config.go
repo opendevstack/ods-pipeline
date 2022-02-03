@@ -13,6 +13,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	configMapName           = "ods-notification"
+	urlProperty             = "URL"
+	methodProperty          = "Method"
+	contentTypeProperty     = "ContentType"
+	requestTemplateProperty = "requestTemplate"
+	notifyOnStatusProperty  = "NotifyOnStatus"
+	enabledProperty         = "Enabled"
+)
+
 type Config struct {
 	Enabled        bool
 	URL            string
@@ -23,14 +33,14 @@ type Config struct {
 }
 
 func ReadConfigFromConfigMap(ctxt context.Context, kubernetesClient kubernetes.ClientInterface) (*Config, error) {
-	cm, err := kubernetesClient.GetConfigMap(ctxt, ConfigMapName, metav1.GetOptions{})
+	cm, err := kubernetesClient.GetConfigMap(ctxt, configMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to load %s ConfigMap: %v", ConfigMapName, err)
+		return nil, fmt.Errorf("failed to load %s ConfigMap: %v", configMapName, err)
 	}
 
-	enabledPropValue, ok := cm.Data[EnabledProperty]
+	enabledPropValue, ok := cm.Data[enabledProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specify '%s' property", ConfigMapName, EnabledProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", configMapName, enabledProperty)
 	}
 
 	enabled, err := strconv.ParseBool(enabledPropValue)
@@ -38,24 +48,24 @@ func ReadConfigFromConfigMap(ctxt context.Context, kubernetesClient kubernetes.C
 		return nil, fmt.Errorf("cannot parse %s to bool", enabledPropValue)
 	}
 
-	url, ok := cm.Data[UrlProperty]
+	url, ok := cm.Data[urlProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specify '%s' property", ConfigMapName, UrlProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", configMapName, urlProperty)
 	}
 
-	method, ok := cm.Data[MethodProperty]
+	method, ok := cm.Data[methodProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specify '%s' property", ConfigMapName, MethodProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", configMapName, methodProperty)
 	}
 
-	contentType, ok := cm.Data[ContentTypeProperty]
+	contentType, ok := cm.Data[contentTypeProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specify '%s' property", ConfigMapName, ContentTypeProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", configMapName, contentTypeProperty)
 	}
 
-	notifyOnStatus, ok := cm.Data[NotifyOnStatusProperty]
+	notifyOnStatus, ok := cm.Data[notifyOnStatusProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specifiy '%s' property", ConfigMapName, NotifyOnStatusProperty)
+		return nil, fmt.Errorf("%s doesn't specifiy '%s' property", configMapName, notifyOnStatusProperty)
 	}
 
 	decoder := json.NewDecoder(strings.NewReader(notifyOnStatus))
@@ -65,9 +75,9 @@ func ReadConfigFromConfigMap(ctxt context.Context, kubernetesClient kubernetes.C
 		return nil, fmt.Errorf("decoding notification status properties failed: %w", err)
 	}
 
-	text, ok := cm.Data[RequestTemplateProperty]
+	text, ok := cm.Data[requestTemplateProperty]
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't specify '%s' property", ConfigMapName, RequestTemplateProperty)
+		return nil, fmt.Errorf("%s doesn't specify '%s' property", configMapName, requestTemplateProperty)
 	}
 
 	requestTemplate, err := template.New("requestTemplate").Parse(text)

@@ -40,15 +40,15 @@ func TestReadNotificationConfigFromConfigMap(t *testing.T) {
 		CMs: []*corev1.ConfigMap{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: ConfigMapName,
+					Name: configMapName,
 				},
 				Data: map[string]string{
-					EnabledProperty:         strconv.FormatBool(want.Enabled),
-					UrlProperty:             want.URL,
-					MethodProperty:          want.Method,
-					ContentTypeProperty:     want.ContentType,
-					NotifyOnStatusProperty:  string(statusValues),
-					RequestTemplateProperty: notificationJsonTemplate,
+					enabledProperty:         strconv.FormatBool(want.Enabled),
+					urlProperty:             want.URL,
+					methodProperty:          want.Method,
+					contentTypeProperty:     want.ContentType,
+					notifyOnStatusProperty:  string(statusValues),
+					requestTemplateProperty: notificationJsonTemplate,
 				},
 			},
 		},
