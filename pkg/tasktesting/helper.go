@@ -115,7 +115,7 @@ func TearDown(t *testing.T, cs *k.Clients, namespace string) {
 
 }
 
-func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger, tc TestCase) {
+func CollectTaskResultInfo(tr *v1beta1.TaskRun, logf logging.FormatLogger) {
 	if tr == nil {
 		logf("error: no taskrun")
 		return
