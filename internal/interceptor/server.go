@@ -22,6 +22,7 @@ import (
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -381,6 +382,9 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) error {
 	_, err := s.KubernetesClient.GetPersistentVolumeClaim(ctxt, pData.PVC, metav1.GetOptions{})
 	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("could not determine if %s already exists: %w", pData.PVC, err)
+		}
 		vm := corev1.PersistentVolumeFilesystem
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
