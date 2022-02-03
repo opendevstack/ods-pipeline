@@ -113,7 +113,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	// Show info from Task result
-	CollectTaskResultInfo(taskRun, t.Logf, tc)
+	CollectTaskResultInfo(taskRun, t.Logf)
 
 	// Check if task was successful
 	if taskRun.IsSuccessful() != tc.WantRunSuccess {
