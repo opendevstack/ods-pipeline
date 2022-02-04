@@ -75,6 +75,7 @@ type ClientConfig struct {
 
 type ClientInterface interface {
 	ClientPersistentVolumeClaimInterface
+	ClientConfigMapInterface
 }
 
 // NewInClusterClient initializes a Kubernetes client from within a cluster.
@@ -126,4 +127,8 @@ func (c *Client) coreV1Client() clientCoreV1.CoreV1Interface {
 
 func (c *Client) persistentVolumeClaimsClient() clientCoreV1.PersistentVolumeClaimInterface {
 	return c.coreV1Client().PersistentVolumeClaims(c.namespace())
+}
+
+func (c *Client) configMapsClient() clientCoreV1.ConfigMapInterface {
+	return c.coreV1Client().ConfigMaps(c.namespace())
 }

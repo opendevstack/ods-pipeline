@@ -5,6 +5,8 @@
 
 LAYOUT_LEFT_RIGHT()
 
+AddRelTag("optional", $lineStyle = DashedLine())
+
 Person(developer, "Developer")
 
 System_Boundary(pipeline, "ODS Pipeline"){
@@ -39,6 +41,10 @@ System_Boundary(release_cluster, "Release Cluster"){
 
 }
 
+System_Boundary(webhook_receiver_system, "Notification System") {
+    Container(webhook_receiver, "Webhook Receiver", "HTTPS Service", "Notification receiver (e.g. Microsoft Teams, Slack, etc.)")
+}
+
 Rel(pipeline_run, nexus, "downloads dependencies")
 Rel(pipeline_run, nexus, "uploads artifacts")
 Rel(pipeline_run, sonarqube, "analyzes source code")
@@ -50,5 +56,6 @@ Rel(pipeline_run, local_installation, "uses config maps and secrets")
 Rel(pipeline_run, central_installation, "uses tasks")
 Rel(pipeline_run, release_namespace, "deploys to")
 Rel(developer, bitbucket, "pushes")
+Rel(pipeline_run, webhook_receiver, "send status notification", $tags="optional")
 
 @enduml

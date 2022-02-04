@@ -102,6 +102,9 @@ a| The task shall store context information for each checked out repository (suc
 
 | SRS-TASK-FINISH-3
 | The task shall upload all artifacts to Nexus, associating them with the checked out commit, provided that all tasks succeeded.
+
+| SRS-TASK-FINISH-4
+| The task shall send a notification to a configured webhook about the pipeline run status.
 |===
 
 ==== Task `ods-build-go`

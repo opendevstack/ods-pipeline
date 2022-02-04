@@ -99,15 +99,25 @@ func TestWebhookInterceptor(t *testing.T) {
 
 	// Push a commit, which should trigger a webhook, which in turn should start a pipeline run.
 	filename := "ods.yml"
-	fileContent := `pipeline:
-  tasks:
-  - name: package-image
-    taskRef:
-      kind: ClusterTask
-      name: ods-package-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace`
+	fileContent := `
+	version: 2022.2.0
+
+	branchToEnvironmentMapping:
+		- branch: master
+		  environment: dev
+
+	environments:
+		- name: dev
+		  stage: dev
+	pipeline:
+		tasks:
+		  - name: package-image
+			taskRef:
+			kind: ClusterTask
+			name: ods-package-image
+			workspaces:
+			- name: source
+			  workspace: shared-workspace`
 
 	err = ioutil.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {
