@@ -16,6 +16,7 @@ import (
 )
 
 func TestTaskODSFinish(t *testing.T) {
+	t.Parallel()
 	runTaskTestCases(t,
 		"ods-finish",
 		[]tasktesting.Service{

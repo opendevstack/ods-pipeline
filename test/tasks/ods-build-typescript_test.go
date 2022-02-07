@@ -13,6 +13,7 @@ import (
 )
 
 func TestTaskODSBuildTypescript(t *testing.T) {
+	t.Parallel()
 	runTaskTestCases(t,
 		"ods-build-typescript",
 		[]tasktesting.Service{

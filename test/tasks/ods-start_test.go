@@ -17,6 +17,7 @@ import (
 )
 
 func TestTaskODSStart(t *testing.T) {
+	t.Parallel()
 	var subrepoContext *pipelinectxt.ODSContext
 	runTaskTestCases(t,
 		"ods-start",

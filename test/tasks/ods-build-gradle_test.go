@@ -11,6 +11,7 @@ import (
 )
 
 func TestTaskODSBuildGradle(t *testing.T) {
+	t.Parallel()
 	runTaskTestCases(t,
 		"ods-build-gradle",
 		[]tasktesting.Service{
