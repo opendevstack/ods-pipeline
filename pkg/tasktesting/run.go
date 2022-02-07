@@ -93,7 +93,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		t.Fatal(err)
 	}
 
-	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr, tc)
+	taskRun, collectedLogsBuffer, err := WatchTaskRunUntilDone(t, testOpts, tr)
 
 	// Check if task setup was successful
 	if err != nil {
@@ -148,7 +148,7 @@ func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
 	)
 }
 
-func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun, tc TestCase) (*tekton.TaskRun, bytes.Buffer, error) {
+func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, bytes.Buffer, error) {
 	taskRunDone := make(chan *tekton.TaskRun)
 	podAdded := make(chan *v1.Pod)
 	errs := make(chan error)
