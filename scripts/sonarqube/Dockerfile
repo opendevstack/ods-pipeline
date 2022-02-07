@@ -1,3 +1,3 @@
-FROM sonarqube:8.4-community
+FROM sonarqube:8.9-community
 
 RUN echo "sonar.forceAuthentication=true" >> conf/sonar.properties
