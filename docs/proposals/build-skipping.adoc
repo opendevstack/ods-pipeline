@@ -16,40 +16,58 @@ There is no good reason when only the frontend code changes that the backend bui
 
 == Solution
 
-`ods-start` provides a file called `$WORKING_DIR/.ods/git-dir-commit-sha` which contains the git commit sha of the working directory (no whitespace or newlines).
+The solution is only provided for tasks supporting global caching (see separate proposal # 412).
 
-Build tasks check first whether their artifacts are available under the working dir commit sha. 
-If so the output is made available in the `output-dir` and the task sets as a result that it 'reused' the prior build.
-This can happen outside the individual build scripts which in this case would no longer be invoked and thus do not need to code for the scenario.
+The following is added to the images of these tasks:
 
-A new script or go program would be provided instead that implements the mentioned logic and would be available in all tasks images.
+- `git`
 
-In cases where there is no prior build, the build output is added to the artifacts which are uploaded to Nexus (reports). The build output artifact would be available under the associated working dir commit sha.
-This could be an additional command provided for that purpose or be done in ods-finish (this assumes that the `output-dir` can be assumed to not overlap)
+Task parameter
+
+- `cache-output-dir` a boolean defaulting to true.
+
+
+Task implementations are revised as follows if global caching is enabled in `ods.yaml` (see separate proposal).
+
+The `build-output-cache` is at `$(cache-build-parent-dir)/$(git-sha-working-dir)`, where:
+
+- `cache-build-parent-dir` is a directory dedicated to hold build output from all tasks supporting it. 
+- `git-sha-working-dir` is the git sha of the working directory which is determined as follows: `git-sha-working-dir=$(git rev-parse "HEAD:$working_dir")`  (https://stackoverflow.com/a/58600111).
+
+However `build-output-cache` is not defined if:
+
+- Build caching is not enabled, tasks `cache-output-dir` is set to false in `ods.yaml`. 
+- There is no sufficient free space available as determined in `ods-start` after cleanup.
+- Global caching is not enabled as per its parameters in `ods.yaml` (see proposal #412).
+
+If `build-output-cache` is defined and there is prior build output at that location, cached files are made available in the tasks `output-dir`. The cache and output dir will be on the same PVC so that hard linking is expected to work. 
+In addition the task result set a parameter build-reused to 'true' (or perhaps the git sha). +
+**Question:** can `ods-finish` be changed so that reports of reused builds are not required to be provided?
+
+Otherwise the tasks builds as usual and provides the build output to the `output-dir`.
+
+If `build-output-cache` is defined the task makes the build output available in the the cache. Again this should be speedy as hard linking should enable avoiding to copy these files. In addition this can likely be implemented out side of the individual task build scripts.
+
+**To be determined **: If feasible: script(s) or go programs could be provided that implements the mentioned logic and would be available in all tasks images.
+
+=== Cleanup
+
+`ods-start` is changed to delete prior build output from the cache if it is older than 7 days (for example).
 
 == Pro
 
-* Build skipping just happens out of the box.
+* Build skipping!
 
-* This might also be valuable to separate docs from code builds.
+* Flag `cache-output-dir` allows to control build skipping independent of other global caching. 
 
-* Having build artifacts in Nexus might be good for compliance and would be handy for debugging purposes.
+* Build skipping should have little penalty if no reuse actually occurs. 
 
-* The build scripts would stay unaware.
+* The task build scripts can (likely) be unaware of build skipping.
 
 == Con
 
-* Build skipping just happens out of the box. Problem in case it does not work or one wants to test build problems. Perhaps could have flag.
-
-* Additional artifacts are uploaded which might get pretty large. 
-
-* If artifacts have no value for compliance they should likely be cleaned out after a certain while.
+* Build output cache cleanup strategy might be too simplistic.
 
 == Alternatives
 
-If we don't see value in keeping build outputs in Nexus, the approach could be adjusted to be supported by caching.  
-
-* Workspace cache proposal could be adjusted in a similar way so that build scripts would not need to be aware of build skipping either. Using a PVC cache for storing the build result seems more natural and would not provide additional pressure on Nexus.
-
-* A global cache could also provide a space to store build outputs keyed by working dir commit sha. This feels like a  better alternative.s
-
+* An initial proposal was using Nexus to store build outputs, but we did not see value in that while it raised the complexity of the proposal. So this was dismissed.
