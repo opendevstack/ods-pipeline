@@ -190,6 +190,7 @@ jobs:
           go test -timeout 10m -v ./test/e2e/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
       - 
         name: Test Logs
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: Test Logs
