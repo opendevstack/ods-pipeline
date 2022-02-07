@@ -182,7 +182,7 @@ jobs:
         name: Run tasks tests
         run: |
           set -o pipefail
-          go test -json -v -timeout 30m ./test/tasks/... -always-keep-tmp-workspaces | go run cmd/disentangle-output/main.go -test-result-dir=./test/testdata/test-results | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+          go test -json -v -parallel 4 -timeout 30m ./test/tasks/... -always-keep-tmp-workspaces | go run cmd/disentangle-output/main.go -test-result-dir=./test/testdata/test-results | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
       -
         name: Run e2e tests
         run: |
