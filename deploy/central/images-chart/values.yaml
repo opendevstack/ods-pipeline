@@ -7,7 +7,3 @@ taskSuffix: -v0-2-0
 # Git
 odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
 odsPipelineGitRepoRef: v0.2.0
-
-# Sonar
-# Edition of SonarQube server. One of "community", "developer", "enterprise" or "datacenter".
-sonarEdition: 'community'

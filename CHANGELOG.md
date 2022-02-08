@@ -21,6 +21,7 @@ listed in the changelog.
 
 ### Changed
 
+- Use configmap `ods-sonar` to configure SonarQube edition ([#410](https://github.com/opendevstack/ods-pipeline/issues/410))
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
 - Add `build-dir` and `copy-node-modules` parameters to TypeScript build task to make it more suitable for FE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
 - Update gradle version to 7.3.3 to address log4j vulnerability and improved JDK 17 support. ([#395](https://github.com/opendevstack/ods-pipeline/issues/395))
