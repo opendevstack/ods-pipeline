@@ -25,6 +25,8 @@ nexusPermanentRepository: 'ods-permanent-artifacts'
 sonarUrl: ''
 # SonarQube username. Example: developer.
 sonarUsername: ''
+# SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
+sonarEdition: 'community'
 
 # Aqua
 # Aqua URL (including scheme). Example: https://aqua.example.com.

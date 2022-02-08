@@ -146,6 +146,11 @@ spec:
             configMapKeyRef:
               key: url
               name: ods-sonar
+        - name: SONAR_EDITION
+          valueFrom:
+            configMapKeyRef:
+              key: edition
+              name: ods-sonar
         - name: SONAR_AUTH_TOKEN
           valueFrom:
             secretKeyRef:

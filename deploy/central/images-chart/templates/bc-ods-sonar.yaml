@@ -18,9 +18,6 @@ spec:
       from:
         kind: DockerImage
         name: 'registry.redhat.io/ubi8/ubi-minimal:8.4'
-      buildArgs:
-        - name: sonarEdition
-          value: '{{.Values.sonarEdition}}'
       pullSecret:
         name: registry.redhat.io
   postCommit: {}
