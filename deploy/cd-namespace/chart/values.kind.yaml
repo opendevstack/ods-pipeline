@@ -4,8 +4,8 @@ serviceAccountName: 'pipeline'
 # Cluster
 consoleUrl: 'http://example.com'
 
-# Webhook Interceptor
-interceptor:
+# Pipeline Manager
+pipelineManager:
   storageProvisioner: ''
   storageClassName: 'standard'
   storageSize: '2Gi'
@@ -13,7 +13,7 @@ interceptor:
   image:
     registry: localhost:5000
     namespace: ods
-    repository: ods-webhook-interceptor
+    repository: ods-pipeline-manager
     pullPolicy: Always
     tag: "latest"
   resources:

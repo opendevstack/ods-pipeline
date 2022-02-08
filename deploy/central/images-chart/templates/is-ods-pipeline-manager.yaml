@@ -1,6 +1,6 @@
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-  name: ods-webhook-interceptor
+  name: ods-pipeline-manager
   annotations:
     "helm.sh/resource-policy": keep

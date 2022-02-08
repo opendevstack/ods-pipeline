@@ -27,8 +27,11 @@ import (
 
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
 
-func TestWebhookInterceptor(t *testing.T) {
+func TestE2E(t *testing.T) {
 	tasktesting.CheckCluster(t, *outsideKindFlag)
+	tasktesting.CheckServices(t, []tasktesting.Service{
+		tasktesting.Bitbucket, tasktesting.Nexus,
+	})
 
 	// Setup namespace to run tests in.
 	c, ns := tasktesting.Setup(t,
@@ -47,10 +50,13 @@ func TestWebhookInterceptor(t *testing.T) {
 	var nodePort int32 = 30950
 	_, err := kubernetes.CreateNodePortService(
 		c.KubernetesClientSet,
-		"el-nodeport",
-		map[string]string{"eventlistener": "ods-pipeline"},
+		"ods-pm-nodeport", // NodePort for ODS Pipeline Manager
+		map[string]string{
+			"app.kubernetes.io/name":     "ods-pipeline",
+			"app.kubernetes.io/instance": "ods-pipeline",
+		},
 		nodePort,
-		8000,
+		8080,
 		ns,
 	)
 	if err != nil {
@@ -121,17 +127,13 @@ pipeline:
 	if err != nil {
 		t.Fatalf("could not write file=%s: %s", filename, err)
 	}
-	requiredServices := []string{"ods-pipeline", "el-ods-pipeline", "el-nodeport"}
+	requiredService := "ods-pipeline"
 	serviceTimeout := time.Minute
-	for _, serviceName := range requiredServices {
-		t.Logf("Waiting %s for service %s to have ready pods ...\n", serviceTimeout, serviceName)
-		err = waitForServiceToBeReady(t, c.KubernetesClientSet, ns, serviceName, serviceTimeout)
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Logf("Waiting %s for service %s to have ready pods ...\n", serviceTimeout, requiredService)
+	err = waitForServiceToBeReady(t, c.KubernetesClientSet, ns, requiredService, serviceTimeout)
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Log("Sleeping for 10s to make it work - unsure why needed ...")
-	time.Sleep(10 * time.Second)
 	t.Log("Pushing file to Bitbucket ...")
 	tasktesting.PushFileToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, "master", "ods.yaml")
 	triggerTimeout := time.Minute

@@ -11,7 +11,7 @@ Person(developer, "Developer")
 
 System_Boundary(pipeline, "ODS Pipeline"){
 
-    Container(local_installation, "Local ODS Pipeline Installation", "Tekton Triggers Kubernetes resources", "Resources to trigger pipelines, and config maps and secrets")
+    Container(local_installation, "Local ODS Pipeline Installation", "Kubernetes resources", "ODS pipeline manager + config maps and secrets")
 
     Container(central_installation, "Central ODS Pipeline Installation", "Kubernetes resources", "Tekton tasks to use in pipelines, and related images")
 

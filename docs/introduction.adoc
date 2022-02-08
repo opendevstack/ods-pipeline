@@ -8,13 +8,7 @@ https://www.openshift.com/learn/topics/pipelines[OpenShift Pipelines] is a Kuber
 
 ## What is Tekton?
 
-https://tekton.dev[Tekton] provides a framework to create cloud-native CI/CD pipelines. The two main components of Tekton are:
-
-* **Tekton Pipelines** - this is the foundation of Tekton. It defines a set of Kubernetes Custom Resources that act as building blocks from which CI/CD pipelines can be assembled.
-
-* **Tekton Triggers** - this allows to instantiate pipelines based on events. For example, one can trigger the execution of a pipeline every time a PR is merged against a GitHub repository.
-
-We'll look at *Tekton Pipelines* in detail now, and will look at *Tekton Triggers* later on in this introduction.
+https://tekton.dev[Tekton] provides a framework to create cloud-native CI/CD pipelines. The building blocks for those pipelines are defined using Kubernetes Custom Resources.
 
 A Tekton pipeline (a Kubernetes resource named `Pipeline`) references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artifacts, deploying, etc. Tekton distinguishes between the definition (`Pipeline` and `Task` resources) and the actual execution (also modelled as resources, namely `PipelineRun` and `TaskRun`). The `PipelineRun` provides a workspace to the pipeline, which is a Kubernetes volume mounted in the task pods. If the volume is a PVC, it can be shared between tasks, allowing the tasks to work e.g. on the same repository checkout. The following illustrates the basic Tekton architecture:
 
@@ -26,12 +20,12 @@ At this stage you know just enough about Tekton to continue with this introducti
 
 In regards to CI/CD, ODS provides two things:
 
-* a few Tekton Tasks
-* a webhook interceptor
+* a few Tekton Tasks for use in pipelines
+* a pipeline manager responding to Bitbucket webhook events by triggering pipelines
 
-We'll look at the Tekton tasks now and come back to the webhook interceptor later as it is connected to *Tekton Triggers*, the second main component of Tekton.
+We'll look at the Tekton tasks now and come back to the pipeline manager later.
 
-The ODS tasks can be used in a pipeline to build, deploy and test your application. Note that ODS does not implement it's own CI/CD system: The tasks provided by ODS are regular Tekton tasks and in fact you can use any Tekton task in a pipeline in addition to or instead of the tasks provided by ODS.
+The ODS tasks can be used in a pipeline to build, deploy and test your application. Note that ODS does not implement its own CI/CD system: The tasks provided by ODS are regular Tekton tasks and in fact you can use any Tekton task in a pipeline in addition to or instead of the tasks provided by ODS.
 
 The tasks are so easy to exchange and compose as Tekton tasks have clearly defined inputs (the parameters), clearly defined outputs (the results) and work on a generic workspace, for which an actual volume is provided to them by the pipeline.
 
@@ -75,7 +69,7 @@ While using this approach is possible, it has a few drawbacks:
 * You would need to manage the pipelines in the UI
 * You would need to start the pipeline manually after each commit
 
-To solve these problems (and a few more ...), ODS ships with another component alluded to earlier, the ODS webhook interceptor. Together with the functionality that *Tekton Triggers* provides out of the box, this interceptor allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
+To solve these problems (and a few more ...), ODS ships with another component alluded to earlier, the ODS pipeline manager. This service allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
 
 To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yaml` file in the root of your repository. The `ods.yaml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.yaml` file for our Go repository:
 
@@ -111,12 +105,7 @@ pipeline:
 
 You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially due to the usage of `runAfter`.
 
-In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to an event listener in OpenShift. The event listener is a small service provided by *Tekton Triggers*, running in your OpenShift namespace. When the webhook fires, a payload with information about the pushed commit is sent. However, before that payload arrives at the event listener pod, it is sent through interceptors. In the case of an ODS project, two interceptors are configured:
-
-1. A Bitbucket interceptor. This interceptor is provided by *Tekton Triggers* and checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?)
-2. A custom ODS interceptor.
-
-This custom ODS interceptor is a small service, provided by ODS, and running in your OpenShift namespace. When it receives the request, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the interceptor checks if a pipeline with that name already exists, and either creates a new pipeline or updates an existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows to see pipeline duration trends easily. Finally, the interceptor adds the name of that pipeline to the webhook request payload, and the standard *Tekton Triggers* flow continues. This means that the amended request is forwarded to the event listener, which handles the event using a trigger binding and a trigger template. The trigger binding extracts values from the request payload to pass as parameters to the pipeline, and the trigger templates instantiates a pipeline run for the pipeline name passed from the ODS interceptor with the parameters provided by the trigger binding. The following illustrates this flow:
+In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the ODS pipeline manager checks if a pipeline with that name already exists, and either creates a new pipeline or updates the existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows to see pipeline duration trends easily. Finally, the ODS pipeline manager triggers the pipeline, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
 
 image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/trigger_architecture.puml[Trigger Architecture]
 
