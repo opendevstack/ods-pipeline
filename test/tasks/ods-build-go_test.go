@@ -14,7 +14,6 @@ import (
 )
 
 func TestTaskODSBuildGo(t *testing.T) {
-	t.Parallel()
 	runTaskTestCases(t,
 		"ods-build-go",
 		[]tasktesting.Service{

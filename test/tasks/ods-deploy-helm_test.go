@@ -23,7 +23,6 @@ import (
 )
 
 func TestTaskODSDeployHelm(t *testing.T) {
-	t.Parallel()
 	var separateReleaseNamespace string
 	runTaskTestCases(t,
 		"ods-deploy-helm",

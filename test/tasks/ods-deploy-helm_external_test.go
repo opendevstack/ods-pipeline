@@ -47,7 +47,6 @@ var (
 )
 
 func TestTaskODSDeployHelmExternal(t *testing.T) {
-	t.Parallel()
 	var externalEnv *config.Environment
 	var imageStream string
 	runTaskTestCases(t,

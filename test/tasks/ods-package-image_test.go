@@ -16,7 +16,6 @@ import (
 )
 
 func TestTaskODSPackageImage(t *testing.T) {
-	t.Parallel()
 	runTaskTestCases(t,
 		"ods-package-image",
 		[]tasktesting.Service{

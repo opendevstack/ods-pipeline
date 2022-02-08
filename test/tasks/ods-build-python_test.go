@@ -13,7 +13,6 @@ import (
 )
 
 func TestTaskODSBuildPython(t *testing.T) {
-	t.Parallel()
 	runTaskTestCases(t,
 		"ods-build-python",
 		[]tasktesting.Service{
