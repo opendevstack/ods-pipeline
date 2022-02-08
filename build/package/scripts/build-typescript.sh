@@ -79,7 +79,7 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
 fi;
 
 echo "Installing dependencies ..."
-npm ci
+npm ci --ignore-scripts
 
 echo "Linting ..."
 set +e
