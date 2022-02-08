@@ -19,67 +19,24 @@ copyLintReport() {
   cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
-copyTestReports() {
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-  cat build/test-results/test/report.xml
-  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
-
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-  cat build/coverage/clover.xml
-  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
-
-  cat build/coverage/coverage-final.json
-  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
-
-  cat build/coverage/lcov.info
-  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
-}
-
-copyBuildResults() {
-  mkdir -p "${OUTPUT_DIR_ABS}"
-  cp -rv "${BUILD_DIR}" "${OUTPUT_DIR_ABS}/dist"
-
-  if [ "${COPY_NODE_MODULES}" = true ]; then
-    echo "Copying node_modules to ${OUTPUT_DIR_ABS}/dist/node_modules ..."
-    start_time=$SECONDS
-    cp -r node_modules "${OUTPUT_DIR_ABS}/dist/node_modules"
-    elapsed=$(( SECONDS - start_time ))
-    echo "copying node_modules took $elapsed seconds"
-  fi
-}
-
-save_built_commit_hash() {
-  mkdir -p ".ods/"
-  echo -n "$working_dir_commit_sha" > ".ods/git-dir-last-built-commit-sha"
-}
-
-report_disk_usage() {
-  echo "Disk usage to estimate caching needs."
-  du -hs -- *
-}
-
-
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
+PIPELINE_CACHE_DIR=""
 ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
 MAX_LINT_WARNINGS="0"
 LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
 COPY_NODE_MODULES="false"
 
-# Uses $WORKING_DIR/.ods/git-dir-commit-sha to recognize that it is running in a cached workspace
-#
-# This script stores the current commit hash from the file above when 
-# the build completes under
-#   $WORKING_DIR/.ods/git-dir-last-built-commit-sha
-# In a future build this file is used to determine whether this build can be skipped.
-
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
+
+    --pipeline-cache-dir) PIPELINE_CACHE_DIR="$2"; shift;;
+    --pipeline-cache-dir=*) PIPELINE_CACHE_DIR="${1#*=}";;
 
     --output-dir) OUTPUT_DIR="$2"; shift;;
     --output-dir=*) OUTPUT_DIR="${1#*=}";;
@@ -107,38 +64,25 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
+# NOTE: git is currently not available in build script
+git_ref=$(cat .ods/git-ref)
+case $git_ref in
+  master|develop)
+    echo "INFO: not using cache in master or develop branch"
+    PIPELINE_CACHE_DIR=""
+    ;;
+  *);;
+esac
 
-already_built=false
-# The following 
-abs_build_dir="${ROOT_DIR}/${WORKING_DIR}"
-OUTPUT_DIR_ABS="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
-if [ ! -f "$WORKING_DIR/.ods/git-dir-commit-sha" ]; then
-  echo "--working-dir-commit-sha parameter is required."; exit 1
-fi
-working_dir_commit_sha=$(cat "$abs_build_dir/.ods/git-dir-commit-sha")
-working_dir_last_built_commit_sha=""
-[ -f "$abs_build_dir/.ods/git-dir-last-built-commit-sha" ] &&  working_dir_last_built_commit_sha=$(cat "$abs_build_dir/.ods/git-dir-last-built-commit-sha")
 
-if [ "$working_dir_last_built_commit_sha" = "$working_dir_commit_sha" ]; then
-  already_built=true
-  echo "INFO: build with same commit hash of dir $abs_build_dir was cached and is still in workspace ($working_dir_commit_sha)."
-fi
-
-if [ "${WORKING_DIR}" != "." ]; then
-  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
-fi
-if [ "${WORKING_DIR}" != "." ]; then
-  cd "${WORKING_DIR}" 
+if [ -d "$PIPELINE_CACHE_DIR" ]; then
+  # NOTE: rsync is currently not available in build script
+  echo "Updating cache dir with sources ..."
+  # rsync -auvhp --itemize-changes --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
+  # rsync -auvhp --progress --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"
+  rsync -auhp --info=progress2 --delete --exclude=node_modules "${WORKING_DIR}" "$PIPELINE_CACHE_DIR"  # the info progress2 does not work with verbose, needs rather new rsync version.
 fi
 
-if [ "$already_built" = "true" ]; then
-  echo "Using prior build for same commit hash to copy build results and reports"
-  copyBuildResults
-  copyLintReport
-  copyTestReports
-  report_disk_usage
-  exit 0
-fi
 echo "Configuring npm to use Nexus ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
@@ -152,19 +96,21 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
     npm config set strict-ssl=false
 fi;
 
-echo "Installing dependencies ..."
-<<<<<<< HEAD
-npm ci --ignore-scripts
-=======
-start_time=$SECONDS
-if [ -n "$working_dir_last_built_commit_sha" ]; then
-  npm i
-else
-  npm ci
+build_dir="${WORKING_DIR}"
+output_dir_abs="${ROOT_DIR}/${WORKING_DIR}/${OUTPUT_DIR}"
+if [ -d  "$PIPELINE_CACHE_DIR" ]; then
+  build_dir="$PIPELINE_CACHE_DIR/$WORKING_DIR"
 fi
-elapsed=$(( SECONDS - start_time ))
-echo "Installing dependencies took $elapsed seconds"
->>>>>>> 4dc6da42 (build-typescript draft changes)
+
+if [ "${WORKING_DIR}" != "." ]; then
+  ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
+fi
+if [ "${build_dir}" != "." ]; then
+  cd "${build_dir}" 
+fi
+
+echo "Installing dependencies ..."
+npm ci --ignore-scripts
 
 echo "Linting ..."
 start_time=$SECONDS
@@ -188,7 +134,16 @@ start_time=$SECONDS
 npm run build
 elapsed=$(( SECONDS - start_time ))
 echo "build took $elapsed seconds"
-copyBuildResults
+mkdir -p "${output_dir_abs}"
+cp -rv "${BUILD_DIR}" "${output_dir_abs}/dist"
+
+if [ "${COPY_NODE_MODULES}" = true ]; then
+  echo "Copying node_modules to ${output_dir_abs}/dist/node_modules ..."
+  start_time=$SECONDS
+  cp -r node_modules "${output_dir_abs}/dist/node_modules"
+  elapsed=$(( SECONDS - start_time ))
+  echo "copying node_modules took $elapsed seconds"
+fi
 
 echo "Testing ..."
 # Implement skipping tests for TypeScript #238
@@ -203,10 +158,23 @@ if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" 
   cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
 else
   npm run test
-  copyTestReports
-fi
-save_built_commit_hash
 
-report_disk_usage
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+  cat build/test-results/test/report.xml
+  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+
+  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+  cat build/coverage/clover.xml
+  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+
+  cat build/coverage/coverage-final.json
+  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+
+  cat build/coverage/lcov.info
+  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+fi
+
+# Provide disk usage so that one can use this to estimate needs
+
 
 supply-sonar-project-properties-default

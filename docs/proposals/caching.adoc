@@ -5,6 +5,12 @@
 This proposal aims to support caching of dependencies
 (https://github.com/opendevstack/ods-pipeline/issues/147) in order to speed up build times. 
 
+An earlier version had proposed also a workspace caching scheme. 
+While workspace caching can provide a large benefit for some languages such as 
+Python and Node it also introduces complexities and could hide dependency issues. 
+As a consequence this proposal only focuses on a global cache. 
+A workspace caching proposal could be  made at a later time.
+
 == Background
 
 Currently there is a single PVC per project which is shared by all build pipelines. 
@@ -20,65 +26,34 @@ Each running tekton task mounts the workspace PVC which typically takes a notice
 
 In the initial implementation instead of a single PVC per project one PVC per repo will be used. 
 
-There are two possible ways to cache which are largely independent, except that they would store files on the same PVC:
+The same PVC is used for the workspace (where a repo is checked out in) and the global cache.
 
-1. A workspace cache enables to rebuild using the prior builds workspace akin to local development.
+The global cache enables build tasks to store cached files for at least the following purposes:
 
-2. A global cache allows storing dependencies. This is primarily intended for languages which are not supported by  Nexus or similar service running in the cluster.
+1. Dependency caching. Languages that use dependencies as packaged artifacts in Nexus may not benefit much from caching dependencies. Unless there is a clear indication that there is a large performance win, languages should not use the global cache if they can use Nexus. A language that currently is not supported by Nexus is go. Another example where a large performance win could be expected are `pnpm` or `yarn` which can install dependencies by referencing the artifacts on the same file system in a very efficient way. In other words there is no need to unpack/copy the dependencies from a global file system cache.
 
-=== Workspace cache
+2. Cache prior build output to support build skipping (see proposal at https://github.com/opendevstack/ods-pipeline/pull/423). Usage of the global cache for this purpose should work analog to how this is done for dependency caching but it is not further elaborated on here as this is covered in the mentioned proposal.
 
-Build tasks run in a workspace directory. Workspace caching allows the workspace directory to persist from prior pipeline runs -- space on the PVC permitting.
+3. There may be other usages for example for the gradle wrapper that could perhaps benefit from a global cache.
 
-.TODO figure out where/how to implement workspace cache disablement. 
+The following new parameter is introduced to build tasks supporting dependency caching:
 
-To ensure that mainline builds cannot be impacted by workspace caching ods-pipeline ensures the following:
+* `cache-deps` a boolean defaulting to `false`. Only if set to `true` the task will used dependency caching. 
 
-- Build pipelines for simple branch names will disable workspace caching.
-- When opening a pull request a non workspace cached build is triggered if the current build of this commit was workspace cashed (or always).
-- Pushing commits when a pull request is already open will disable workspace caching. 
+In addition to the build task parameter, build tasks also receives the following:
 
-ods-pipeline should support disable build with a special tag in a commit comment.
- 
-Furthermore only build tasks for which workspace caching provides a significant performance gain will support workspace caching. Candidates are node and python related build tasks.
+* File `.ods/cache-deps-parent-dir` contains an absolute path without trailing '/' to an existing directory (no whitespace or newlines). If file `.ods/cache-deps-parent-dir` does not exits the task must not use dependency caching. This is used to switch off dependency caching dynamically for example with a special tag in a git commit message. 
 
-* The workspace directory is where the source code is checked out. This is the current working directory when a build task starts running. Without caching the workspace directory will contain the checked out sources. A task will build at the workspace directory or below if `WORKING_DIR` is not set to `"."`. 
-
-With sufficient caching space available the workspace directory persists from a prior build if in `ods.yaml` workspace caching is enabled. By default workspace caching is not enabled.
-
-Without caching enabled `ods-start` checks out sources via `git-init` unchanged from the current implementation. With caching and if the workspace already exists, then the sources are updated via `git pull` instead and other files will be left alone, so that the build can take advantage of already installed dependencies for example.  
-
-A new pipeline task parameter is introduced:
-
-* `cache-workspace-require-space-mb` a number defaulting to `0`. This is the number of MB required for the cache workspace for this build task. If greater 0 caching will be enabled space permitting and if not disabled as described above. 
-
-Task implementation are expected to not pass the parameter to the build scripts as these should not be affected by this.
-
-When `ods-start` determines that workspace caching is available, it adds the following file:
-
-* `$WORKING_DIR/.ods/git-dir-commit-sha` which contains the git commit sha of the working directory (no whitespace or newlines). Build tasks can use this to avoid rebuilding when there were no changes in their working dir.
+Cleanup will spare directories below the $(cache-deps-parent-dir) so that build tasks must keep their cached files in a subdirectory they create. For example in `$(cache-deps-parent-dir)/go-mods/` where `go-mods` is called technology-name in this proposal.
 
 Build tasks supporting caching will also be adjusted to
 
+- Log available disk space at the beginning of the build.
+
 - Log how long build commands which may be long running take in seconds. 
 
-- Log available disk space well. This should be implemented so that one can see what sized to require.
+- Log available disk space at the end of the build and also the space delta.
 
-=== Global cache
-
-Only build tasks for which a global cache provides a significant performance gain will support global caching. At the moment the primary candidates is the go language. Nexus does not support go and we have no similar go dependency artifacts manager in place.
-
-The following new parameter is introduced to build tasks supporting global caching:
-
-* `cache-global-require-space-mb` a number defaulting to `0`. This is the number of MB required for the global cache for this build task. If greater 0 caching will be enabled space permitting. 
-
-In addition to these build task parameters, the build tasks also receives the following:
-
-* File `.ods/cache-global-parent-dir` contains an absolute path without trailing '/' to an existing directory (no whitespace or newlines). If this file does not exits the task must not use global caching as space might have run out and a prior cache may have been deleted. 
-
-Cleanup will spare directories below the cache-global-parent-dir so that build tasks must keep their cached files in a subdirectory they create. For example in `$(cache-global-parent-dir)/go-modules/` where `go-modules` is called technology-name.
-
-The global cache and workspace directory will be on the same PVC to enable build technologies utilizing the cache without needing to copy files by hard linking. 
 
 === ods-start and cleanup
 
@@ -89,76 +64,41 @@ Build tasks supporting caching can count on:
 
 On the other hand build tasks must not assume that the cache is still available from a prior build. 
 
+The dependency cache is somewhat special is it typically does not make sense to remove individual files.
+
+Instead if disk space issues arise one should manually:
+
+* Increase the PVC space of the associated repository or
+* Recreate the PVC (TODO: should this be done automatically for example on a randomized bi-weekly schedule for example)
+
+However in general cleanup of the PVC does happen during `ods-start`.
+
 The cleanup strategy described here is subject to change even in patch versions and specific details must not be relied on.
 
-Pipeline cleanup happens during `ods-start`
+The following cache locations on the PVC are used:
 
-The following locations on the PVC are used:
+- `/.c/deps/<technology-name>/` for dependency caches of a particular build technology. The technology-name would be defined by the build script and unknown to `ods-start`. For dependencies instead of strategy on the file level does not make sense. Instead one should either periodically 
+- `/.c/*/**` reserved for future usages for example to enable build skipping. For each new supported location `ods-start` may delete files as it makes sense for the purpose. 
 
-- `/ws/` for uncached workspaces. These are recognized if none of there build tasks enabled caching.
-- `/.cache-ws/<pipeline-name>/` for cached workspaces.
-- `/.cache/<technology-name>/` for global caches of a particular build technology. The technology-name would be defined by the build script.
-
-Before cache cleanup `ods-start` cleans up `/ws/` on the PVC. +
-Next all files directly underneath `/.cache/` which are not directories are deleted. This prevents tasks to forget to define and use a technology-name.
-
-**workspace cache cleanup**
-
-The workspace cache cleanup is skipped if the pipeline has workspace caching disabled to avoid merging workspace cached pipelines into a mainline as describe earlier.
-
-.TODO this could be done by creating the pipeline with `cache-workspace-require-space-mb` forcefully set to 0 or via another flag.
-
-`ods-start` then determines:
-
-- `workspace-required-space-mb-total` :== sum of all declared `cache-workspace-require-space-mb` of build tasks contained in `ods.yaml`
-
-If this is 0 the next step is to look at global cache cleanup some steps below.
-
-Otherwise `ods-start` will determine the size of the workspace directory with a variation of `du /.cache-ws/<pipeline-name>/` and convert the result to megabytes. 
-
-Until there is not enough free space:
-
-- Deleted the oldest workspace. Age should be available via `stat -f '%m' .git/FETCH_HEAD` (see https://stackoverflow.com/a/9229377).
-- If there is none continue below.
-
-If there is still not enough free space:
-
--  delete `/.cache-ws/<pipeline-name>` if it exists
--  continue the build in `/ws`, so that its `cwd` is at `/ws` and that files `$WORKING_DIR/.ods/git-dir-commit-sha` will not be created for each of the build tasks.
-
-**global cache cleanup**
-
-`ods-start` determines:
-
-- `cache-required-space-mb-total` :== sum of all declared `cache-global-require-space-mb` of build tasks contained in `ods.yaml`
-
-The global cache cleanup deletes in a similar way as the workspace cache cleaning just described but the cleanup candidates are folders at: `/.cache/<technology-name>/`. 
-
-If there is not sufficient space in the global cache after cleanup the file `.ods/cache-global-parent-dir` will not exist in the workspace directory.
-
+Before cache cleanup `ods-start` cleans up all files not in the cache locations above. +
+Next all files directly underneath `/.c/deps/` which are not directories are deleted. This prevents tasks to forget to define and use a `<technology-name>`.
 
 == Pro
 
-* Caching enabled for tools using global cache
+* Enables dependency caching.
 
-* Workspace caching enables speedup for technologies which benefit most from an incremental build as opposed to a global dependency cache. 
+* A global file cache also paves the way for other usages such as caching builds efficiently to enable build skipping. 
 
-* Multi build repos can be better supported by avoiding to rebuild when their working directory does not change.  
+* Opt-in to dependency caching makes this a conscious choice from ods-pipeline users.
 
-* Ensuring a mainline build will always be non workspace cached before merging ensures that (workspace) cache issues cannot impact the main build. 
+* By only supporting dependency caching in build tools where there is a big benefit we reduce complexity in other cases.
 
-* Opt-in to caching can be used to document best practices for PVC sizing.
-
-* By having cleanup done in ods-start no need to have an interleaved cleanup process.
-
-* Having workspaces and caches on the same PVC enables using modern newer technologies such as https://github.com/pnpm/pnpm[pnpm] or https://github.com/yarnpkg/berry[yarn berry (?)] which support deduplication allowing to reference artifacts from a central location without packaging them again. pnpn uses hard links to make this efficient.
+* Not implementing file based cleanup for the dependency cache keeps complexity low and increases performance as deleting a to of files can take a lot of time compared to recreating a PVC instead. 
 
 == Con
 
-* Avoiding unnecessary rebuild of sub builds when their working dir did not change by using workspace caching increases the complexity of the build scripts. Perhaps there is a better way to achieve this as the reports are already available and the build artifacts could be stored in Nexus or even extracted from a prior image.
+* By not making dependency cleanup up a responsibility of `ods-start`` users will have to take manual actions if disk space runs out. Here an ability to plug-in an interleaved cleanup process could make sense.
+ 
+* Using a file `.ods/cache-deps-parent-dir` enables skipping of using the dependency cache for example via a special tag in a git commit message, but seems otherwise odd. If we find a way to bind the parameters to the task run more explicitly that would be better for traceability. Is there a better way to pass in dynamic parameters from ods-start or the event listener to the build tasks? 
 
-* Workspace caching does not increase performance of FE builds much as there the bundling takes typically the the most time.  Perhaps newer tools such as https://github.com/evanw/esbuild[esbuild] or https://github.com/yarnpkg/berry[yarn berry] would help to speed up build times without requiring workspace caching.
-
-* The implementation to ensure mainline builds will always have a non workspace cached build may have bugs and thus the build may still be afflicted by cache issues which might pop up much later. 
-
-* Workspace caching adds complexity (unless we find it can be reduced to an acceptable level)
+* Languages where which don't have a mature way to share dependencies globally do not benefit from this approach. For these a workspace caching capability would be needed. 
