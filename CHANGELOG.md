@@ -30,6 +30,7 @@ listed in the changelog.
 - Update skopeo (from 1.4 to 1.5) and buildah (from 1.22 to 1.23) ([#430](https://github.com/opendevstack/ods-pipeline/issues/430))
 - Use `--ignore-scripts` when building TypeScript apps ([#434](https://github.com/opendevstack/ods-pipeline/issues/434))
 - Prune pipelines and pipeline runs ([#153](https://github.com/opendevstack/ods-pipeline/issues/153)). Note that any pipeline runs created with 0.2.0 or earlier will not be cleaned up and need to be dealt with manually.
+- Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
