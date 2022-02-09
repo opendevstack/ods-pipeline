@@ -10,7 +10,7 @@ import (
 
 // Upload a file to a repository group. The filename used inside the group is
 // the last element of given file.
-func (c *Client) Upload(repository, group, file string) error {
+func (c *Client) Upload(repository, group, file string) (string, error) {
 
 	filename := filepath.Base(file)
 
@@ -19,7 +19,7 @@ func (c *Client) Upload(repository, group, file string) error {
 
 	osFile, err := os.Open(file)
 	if err != nil {
-		return fmt.Errorf("could not open file %s: %w", file, err)
+		return "", fmt.Errorf("could not open file %s: %w", file, err)
 	}
 
 	uploadAssetRaw := nexusrm.UploadAssetRaw{
@@ -33,8 +33,8 @@ func (c *Client) Upload(repository, group, file string) error {
 	}
 	err = nexusrm.UploadComponent(c.rm, repository, uploadComponentRaw)
 	if err != nil {
-		return fmt.Errorf("could not upload component: %w", err)
+		return "", fmt.Errorf("could not upload component: %w", err)
 	}
 	c.logger().Infof("Successfully uploaded %s to %s", file, link)
-	return nil
+	return link, nil
 }

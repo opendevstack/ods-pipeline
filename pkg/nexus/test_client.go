@@ -23,11 +23,12 @@ func (c *TestClient) Search(repository, group string) ([]string, error) {
 }
 
 // Upload is not needed for the test cases below.
-func (c *TestClient) Upload(repository, group, file string) error {
+func (c *TestClient) Upload(repository, group, file string) (string, error) {
 	filename := filepath.Base(file)
+	path := fmt.Sprintf("%s/%s", group, filename)
 	c.URLs[repository] = append(
 		c.URLs[repository],
-		fmt.Sprintf("%s/%s", group, filename),
+		path,
 	)
-	return nil
+	return fmt.Sprintf("%s/%s", repository, path), nil
 }

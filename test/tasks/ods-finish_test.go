@@ -53,7 +53,7 @@ func TestTaskODSFinish(t *testing.T) {
 					// TODO: assure the safeguard is actually invoked by checking the logs.
 					t.Log("Uploading coverage artifact to Nexus and writing manifest")
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					err := nexusClient.Upload(
+					_, err := nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
 						filepath.Join(wsDir, pipelinectxt.CodeCoveragesPath, "coverage.out"),

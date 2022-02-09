@@ -36,7 +36,7 @@ func TestTaskODSStart(t *testing.T) {
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					// Upload artifact to permanent storage.
-					err := nexusClient.Upload(
+					_, err := nexusClient.Upload(
 						nexus.PermanentRepositoryDefault,
 						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.PipelineRunsDir),
 						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
@@ -100,7 +100,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
-					err = nexusClient.Upload(
+					_, err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(subCtxt, pipelinectxt.XUnitReportsDir),
 						filepath.Join(artifactsBaseDir, pipelinectxt.XUnitReportsDir, "report.xml"),
@@ -108,7 +108,7 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = nexusClient.Upload(
+					_, err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(subCtxt, pipelinectxt.PipelineRunsDir),
 						filepath.Join(artifactsBaseDir, pipelinectxt.PipelineRunsDir, "foo-zh9gt0.json"),
