@@ -37,12 +37,21 @@ spec:
                 secretKeyRef:
                   key: password
                   name: ods-bitbucket-auth
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  key: debug
+                  name: ods-pipeline
             - name: ODS_STORAGE_PROVISIONER
               value: '{{.Values.interceptor.storageProvisioner}}'
             - name: ODS_STORAGE_CLASS_NAME
               value: '{{.Values.interceptor.storageClassName}}'
             - name: ODS_STORAGE_SIZE
               value: '{{.Values.interceptor.storageSize}}'
+            - name: ODS_PRUNE_MIN_KEEP_HOURS
+              value: '{{int .Values.pipelineRunMinKeepHours}}'
+            - name: ODS_PRUNE_MAX_KEEP_RUNS
+              value: '{{int .Values.pipelineRunMaxKeepRuns}}'
           readinessProbe:
             httpGet:
               path: /health

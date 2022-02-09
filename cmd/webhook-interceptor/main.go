@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/logging"
 )
 
 const (
@@ -29,6 +31,10 @@ const (
 	storageClassNameDefault  = "standard"
 	storageSizeEnvVar        = "ODS_STORAGE_SIZE"
 	storageSizeDefault       = "2Gi"
+	pruneMinKeepHoursEnvVar  = "ODS_PRUNE_MIN_KEEP_HOURS"
+	pruneMinKeepHoursDefault = 48
+	pruneMaxKeepRunsEnvVar   = "ODS_PRUNE_MAX_KEEP_RUNS"
+	pruneMaxKeepRunsDefault  = 20
 )
 
 func init() {
@@ -55,55 +61,27 @@ func serve() error {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
 	}
 
-	taskKind := os.Getenv(taskKindEnvVar)
-	if taskKind == "" {
-		taskKind = taskKindDefault
-		log.Println(
-			"INFO:",
-			taskKindEnvVar,
-			"not set, using default value:",
-			taskKindDefault,
-		)
-	}
+	taskKind := readStringFromEnvVar(taskKindEnvVar, taskKindDefault)
 
-	taskSuffix := os.Getenv(taskSuffixEnvVar)
-	if taskSuffix == "" {
-		log.Println(
-			"INFO:",
-			taskSuffixEnvVar,
-			"not set, using no suffix",
-		)
-	}
+	taskSuffix := readStringFromEnvVar(taskSuffixEnvVar, "")
 
-	storageProvisioner := os.Getenv(storageProvisionerEnvVar)
-	if storageProvisioner == "" {
-		log.Println(
-			"INFO:",
-			storageProvisionerEnvVar,
-			"not set, using no storage provisioner",
-		)
-	}
+	storageProvisioner := readStringFromEnvVar(storageProvisionerEnvVar, "")
 
-	storageClassName := os.Getenv(storageClassNameEnvVar)
-	if storageClassName == "" {
-		storageClassName = storageClassNameDefault
-		log.Println(
-			"INFO:",
-			storageClassNameEnvVar,
-			"not set, using default value:",
-			storageClassNameDefault,
-		)
-	}
+	storageClassName := readStringFromEnvVar(storageClassNameEnvVar, storageClassNameDefault)
 
-	storageSize := os.Getenv(storageSizeEnvVar)
-	if storageSize == "" {
-		storageSize = storageSizeDefault
-		log.Println(
-			"INFO:",
-			storageSizeEnvVar,
-			"not set, using default value:",
-			storageSizeDefault,
-		)
+	storageSize := readStringFromEnvVar(storageSizeEnvVar, storageSizeDefault)
+
+	pruneMinKeepHours, err := readIntFromEnvVar(
+		pruneMinKeepHoursEnvVar, pruneMinKeepHoursDefault,
+	)
+	if err != nil {
+		return err
+	}
+	pruneMaxKeepRuns, err := readIntFromEnvVar(
+		pruneMaxKeepRunsEnvVar, pruneMaxKeepRunsDefault,
+	)
+	if err != nil {
+		return err
 	}
 
 	namespace, err := getFileContent(namespaceFile)
@@ -135,6 +113,24 @@ func serve() error {
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
 
+	// TODO: Use this logger in the interceptor as well, not just in the pruner.
+	var logger logging.LeveledLoggerInterface
+	if os.Getenv("DEBUG") == "true" {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+	}
+
+	pruner, err := interceptor.NewPipelineRunPrunerByStage(
+		tClient,
+		logger,
+		pruneMinKeepHours,
+		pruneMaxKeepRuns,
+	)
+	if err != nil {
+		return fmt.Errorf("could not create pruner: %w", err)
+	}
+
 	server, err := interceptor.NewServer(interceptor.ServerConfig{
 		Namespace:  namespace,
 		Project:    project,
@@ -147,9 +143,10 @@ func serve() error {
 			ClassName:   storageClassName,
 			Size:        storageSize,
 		},
-		KubernetesClient: kClient,
-		TektonClient:     tClient,
-		BitbucketClient:  bitbucketClient,
+		KubernetesClient:  kClient,
+		TektonClient:      tClient,
+		BitbucketClient:   bitbucketClient,
+		PipelineRunPruner: pruner,
 	})
 	if err != nil {
 		return err
@@ -177,4 +174,33 @@ func getFileContent(filename string) (string, error) {
 		return "", err
 	}
 	return string(content), nil
+}
+
+func readIntFromEnvVar(envVar string, fallback int) (int, error) {
+	var val int
+	valString := os.Getenv(envVar)
+	if valString == "" {
+		val = fallback
+		log.Println(
+			"INFO:", envVar, "not set, using default value:", fallback,
+		)
+	} else {
+		i, err := strconv.Atoi(valString)
+		if err != nil {
+			return 0, fmt.Errorf("could not read value of %s: %s", envVar, err)
+		}
+		val = i
+	}
+	return val, nil
+}
+
+func readStringFromEnvVar(envVar, fallback string) string {
+	val := os.Getenv(envVar)
+	if val == "" {
+		val = fallback
+		log.Printf(
+			"INFO: %s not set, using default value: '%s'", envVar, fallback,
+		)
+	}
+	return val
 }

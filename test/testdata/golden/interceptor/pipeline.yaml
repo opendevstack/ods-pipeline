@@ -5,6 +5,7 @@ metadata:
   labels:
     pipeline.opendevstack.org/git-ref: main
     pipeline.opendevstack.org/repository: foo-bar
+    pipeline.opendevstack.org/stage: dev
   name: bar-main
 spec:
   description: ODS

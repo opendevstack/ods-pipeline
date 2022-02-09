@@ -1,6 +1,7 @@
 package interceptor
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -38,6 +39,7 @@ func TestRenderPipeline(t *testing.T) {
 		RepoBase:        "https://bitbucket.acme.org",
 		GitURI:          "https://bitbucket.acme.org/scm/foo/bar.git",
 		Namespace:       "foo-cd",
+		Stage:           "dev",
 		TriggerEvent:    "repo:refs_changed",
 		Comment:         "",
 		PullRequestKey:  0,
@@ -65,6 +67,7 @@ func TestExtensions(t *testing.T) {
 		Project:         "foo",
 		Repository:      "foo-bar",
 		Component:       "bar",
+		Stage:           "dev",
 		Environment:     "",
 		Version:         "",
 		GitRef:          "main",
@@ -258,7 +261,16 @@ func fatalIfErr(t *testing.T, err error) {
 	}
 }
 
-func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, bc bitbucketInterface) (*httptest.Server, error) {
+type fakePruner struct {
+	called bool
+}
+
+func (p *fakePruner) Prune(ctxt context.Context, pipelineRuns []tekton.PipelineRun) error {
+	p.called = true
+	return nil
+}
+
+func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, bc bitbucketInterface, pruner PipelineRunPruner) (*httptest.Server, error) {
 	server, err := NewServer(ServerConfig{
 		Namespace: "bar-cd",
 		Project:   "bar",
@@ -266,13 +278,14 @@ func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, 
 		TaskKind:  "ClusterTask",
 		RepoBase:  "https://domain.com",
 		StorageConfig: StorageConfig{
-			Provisioner: "",
-			ClassName:   "standard",
+			Provisioner: "kubernetes.io/aws-ebs",
+			ClassName:   "gp2",
 			Size:        "2Gi",
 		},
-		KubernetesClient: kc,
-		TektonClient:     tc,
-		BitbucketClient:  bc,
+		KubernetesClient:  kc,
+		TektonClient:      tc,
+		BitbucketClient:   bc,
+		PipelineRunPruner: pruner,
 	})
 	if err != nil {
 		return nil, err
@@ -289,15 +302,18 @@ func TestWebhookHandling(t *testing.T) {
 		bitbucketClient    *bitbucket.TestClient
 		wantStatus         int
 		wantBody           string
-		check              func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient)
+		check              func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner)
 	}{
 		"invalid JSON is not processed": {
 			requestBodyFixture: "interceptor/payload-invalid.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "cannot parse JSON: invalid character '\\n' in string literal",
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
+				}
+				if p.called {
+					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -305,9 +321,12 @@ func TestWebhookHandling(t *testing.T) {
 			requestBodyFixture: "interceptor/payload-unknown-event.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "Unsupported event key: repo:ref_changed",
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
+				}
+				if p.called {
+					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -315,9 +334,12 @@ func TestWebhookHandling(t *testing.T) {
 			requestBodyFixture: "interceptor/payload-tag.json",
 			wantStatus:         http.StatusTeapot,
 			wantBody:           "Skipping change ref type TAG, only BRANCH is supported",
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
+				}
+				if p.called {
+					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -334,9 +356,12 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusTeapot,
 			wantBody:   "Commit should be skipped",
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
+				}
+				if p.called {
+					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -349,12 +374,15 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 1 || len(tc.UpdatedPipelines) != 0 {
 					t.Fatal("exactly one pipeline should have been created")
 				}
 				if len(kc.CreatedPVCs) != 1 {
 					t.Fatal("exactly one PVC should have been created")
+				}
+				if !p.called {
+					t.Fatal("pruning should have occured")
 				}
 			},
 		},
@@ -387,12 +415,15 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
 				}
 				if len(kc.CreatedPVCs) > 0 {
 					t.Fatal("no PVC should have been created")
+				}
+				if !p.called {
+					t.Fatal("pruning should have occured")
 				}
 			},
 		},
@@ -424,9 +455,12 @@ func TestWebhookHandling(t *testing.T) {
 			},
 			wantStatus: http.StatusOK,
 			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload-pr-opened.json")),
-			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient) {
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
+				}
+				if !p.called {
+					t.Fatal("pruning should have occured")
 				}
 			},
 		},
@@ -476,7 +510,8 @@ func TestWebhookHandling(t *testing.T) {
 			if tc.kubernetesClient == nil {
 				tc.kubernetesClient = &kubernetes.TestClient{}
 			}
-			ts, err := testServer(tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient)
+			pruner := &fakePruner{}
+			ts, err := testServer(tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient, pruner)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -503,7 +538,7 @@ func TestWebhookHandling(t *testing.T) {
 				t.Fatalf("body mismatch (-want +got):\n%s", diff)
 			}
 			if tc.check != nil {
-				tc.check(t, tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient)
+				tc.check(t, tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient, pruner)
 			}
 		})
 	}

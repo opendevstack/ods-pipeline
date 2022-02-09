@@ -15,6 +15,7 @@
         "project": "foo",
         "component": "bar",
         "repository": "foo-bar",
+        "stage": "dev",
         "environment": "",
         "version": "",
         "gitRef": "feature/foo",
