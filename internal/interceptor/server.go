@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
@@ -25,9 +26,11 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
+	// allowedChangeRefType is the Bitbucket change ref handled by this interceptor.
 	allowedChangeRefType = "BRANCH"
 	// Label prefix to use for labels applied by this webhook interceptor.
 	labelPrefix = "pipeline.opendevstack.org/"
@@ -35,25 +38,34 @@ const (
 	repositoryLabel = labelPrefix + "repository"
 	// Label specifying the Git ref (e.g. branch) related to the pipeline.
 	gitRefLabel = labelPrefix + "git-ref"
+	// Label specifying the target stage of the pipeline.
+	stageLabel = labelPrefix + "stage"
+	// tektonTriggerLabel is applied by Tekton Triggers.
+	tektonTriggerLabel = "triggers.tekton.dev/trigger"
+	// tektonTriggerLabelValue is applied by Tekton Triggers.
+	tektonTriggerLabelValue = "ods-pipeline"
 	// Annotation to set the storage provisioner for a PVC.
 	storageProvisionerAnnotation = "volume.beta.kubernetes.io/storage-provisioner"
-	pvcProtectionFinalizer       = "kubernetes.io/pvc-protection"
+	// PVC finalizer.
+	pvcProtectionFinalizer = "kubernetes.io/pvc-protection"
 	// letterBytes contains letters to use for random strings.
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 // Server represents this service, and is a global.
 type Server struct {
-	KubernetesClient kubernetesClient.ClientInterface
-	TektonClient     tektonClient.ClientInterface
-	Namespace        string
-	Project          string
-	RepoBase         string
-	Token            string
-	TaskKind         tekton.TaskKind
-	TaskSuffix       string
-	StorageConfig    StorageConfig
-	BitbucketClient  bitbucketInterface
+	KubernetesClient  kubernetesClient.ClientInterface
+	TektonClient      tektonClient.ClientInterface
+	Namespace         string
+	Project           string
+	RepoBase          string
+	Token             string
+	TaskKind          tekton.TaskKind
+	TaskSuffix        string
+	StorageConfig     StorageConfig
+	BitbucketClient   bitbucketInterface
+	PipelineRunPruner PipelineRunPruner
+	pruneMutex        sync.Mutex
 }
 
 type StorageConfig struct {
@@ -85,6 +97,8 @@ type ServerConfig struct {
 	TektonClient tektonClient.ClientInterface
 	// BitbucketClient is a Bitbucket client
 	BitbucketClient bitbucketInterface
+	// PipelineRunPruner is responsible to prune pipeline runs.
+	PipelineRunPruner PipelineRunPruner
 }
 
 type PipelineData struct {
@@ -92,6 +106,7 @@ type PipelineData struct {
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
+	Stage           string `json:"stage"`
 	Environment     string `json:"environment"`
 	Version         string `json:"version"`
 	GitRef          string `json:"gitRef"`
@@ -137,16 +152,17 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 		return nil, errors.New("bitbucket client is required")
 	}
 	return &Server{
-		KubernetesClient: serverConfig.KubernetesClient,
-		TektonClient:     serverConfig.TektonClient,
-		BitbucketClient:  serverConfig.BitbucketClient,
-		Namespace:        serverConfig.Namespace,
-		Project:          serverConfig.Project,
-		RepoBase:         serverConfig.RepoBase,
-		Token:            serverConfig.Token,
-		TaskKind:         tekton.TaskKind(serverConfig.TaskKind),
-		TaskSuffix:       serverConfig.TaskSuffix,
-		StorageConfig:    serverConfig.StorageConfig,
+		KubernetesClient:  serverConfig.KubernetesClient,
+		TektonClient:      serverConfig.TektonClient,
+		BitbucketClient:   serverConfig.BitbucketClient,
+		Namespace:         serverConfig.Namespace,
+		Project:           serverConfig.Project,
+		RepoBase:          serverConfig.RepoBase,
+		Token:             serverConfig.Token,
+		TaskKind:          tekton.TaskKind(serverConfig.TaskKind),
+		TaskSuffix:        serverConfig.TaskSuffix,
+		StorageConfig:     serverConfig.StorageConfig,
+		PipelineRunPruner: serverConfig.PipelineRunPruner,
 	}, nil
 }
 
@@ -330,23 +346,35 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pData.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pData.GitRef)
+	pData.Stage = string(config.DevStage)
+	if pData.Environment != "" {
+		env, err := odsConfig.Environment(pData.Environment)
+		if err != nil {
+			msg := fmt.Sprintf("environment misconfiguration: %s", err)
+			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+		pData.Stage = string(env.Stage)
+	}
 	pData.Version = odsConfig.Version
 
-	tknPipeline := assemblePipeline(odsConfig, pData, s.TaskKind, s.TaskSuffix)
+	newPipeline := assemblePipeline(odsConfig, pData, s.TaskKind, s.TaskSuffix)
 
-	_, err = s.TektonClient.GetPipeline(r.Context(), pData.Name, metav1.GetOptions{})
+	existingPipeline, err := s.TektonClient.GetPipeline(r.Context(), pData.Name, metav1.GetOptions{})
 	if err != nil {
-		_, err := s.TektonClient.CreatePipeline(r.Context(), tknPipeline, metav1.CreateOptions{})
+		_, err := s.TektonClient.CreatePipeline(r.Context(), newPipeline, metav1.CreateOptions{})
 		if err != nil {
-			msg := fmt.Sprintf("cannot create pipeline %s", tknPipeline.Name)
+			msg := fmt.Sprintf("cannot create pipeline %s", newPipeline.Name)
 			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 	} else {
-		_, err := s.TektonClient.UpdatePipeline(r.Context(), tknPipeline, metav1.UpdateOptions{})
+		newPipeline.ResourceVersion = existingPipeline.ResourceVersion
+		_, err := s.TektonClient.UpdatePipeline(r.Context(), newPipeline, metav1.UpdateOptions{})
 		if err != nil {
-			msg := fmt.Sprintf("cannot update pipeline %s", tknPipeline.Name)
+			msg := fmt.Sprintf("cannot update pipeline %s", newPipeline.Name)
 			log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
@@ -360,6 +388,37 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
+	}
+
+	if s.PipelineRunPruner != nil {
+		go func() {
+			// Make sure we do not clean up in parallel, which may lead to
+			// errors or weird results.
+			s.pruneMutex.Lock()
+			defer s.pruneMutex.Unlock()
+			log.Println(requestID, fmt.Sprintf("Starting pruning of pipeline runs related to repository %s ...", pData.Repository))
+			ctxt, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			labelMap := map[string]string{
+				repositoryLabel:    pData.Repository,
+				tektonTriggerLabel: tektonTriggerLabelValue,
+			}
+			pipelineRuns, err := s.TektonClient.ListPipelineRuns(
+				ctxt, metav1.ListOptions{LabelSelector: labels.Set(labelMap).String()},
+			)
+			if err != nil {
+				log.Printf("Could not retrieve existing pipeline runs: %s\n", err)
+				return
+			}
+			log.Println(requestID, fmt.Sprintf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), pData.Repository))
+			err = s.PipelineRunPruner.Prune(ctxt, pipelineRuns.Items)
+			if err != nil {
+				log.Println(fmt.Sprintf(
+					"Pruning pipeline runs of repository %s failed: %s",
+					pData.Repository, err,
+				))
+			}
+		}()
 	}
 
 	log.Println(requestID, fmt.Sprintf("%+v", pData))
@@ -388,9 +447,10 @@ func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) e
 		vm := corev1.PersistentVolumeFilesystem
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:       pData.PVC,
-				Labels:     map[string]string{repositoryLabel: pData.Repository},
-				Finalizers: []string{pvcProtectionFinalizer},
+				Name:        pData.PVC,
+				Labels:      map[string]string{repositoryLabel: pData.Repository},
+				Finalizers:  []string{pvcProtectionFinalizer},
+				Annotations: map[string]string{},
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
 				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -414,6 +474,7 @@ func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) e
 	return nil
 }
 
+// selectEnvironmentFromMapping selects the environment name matching given branch.
 func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
 	for _, bem := range mapping {
 		if mappingBranchMatch(bem.Branch, branch) {
@@ -621,6 +682,7 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 			Labels: map[string]string{
 				repositoryLabel: data.Repository,
 				gitRefLabel:     data.GitRef,
+				stageLabel:      data.Stage,
 			},
 		},
 		TypeMeta: metav1.TypeMeta{
