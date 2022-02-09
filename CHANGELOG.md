@@ -29,6 +29,7 @@ listed in the changelog.
 - Leaner NodeJS 16 Typescript image task, removed cypress and its dependencies ([#426](https://github.com/opendevstack/ods-pipeline/issues/426))
 - Update skopeo (from 1.4 to 1.5) and buildah (from 1.22 to 1.23) ([#430](https://github.com/opendevstack/ods-pipeline/issues/430))
 - Use `--ignore-scripts` when building TypeScript apps ([#434](https://github.com/opendevstack/ods-pipeline/issues/434))
+- Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
