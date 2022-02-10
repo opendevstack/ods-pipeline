@@ -48,8 +48,7 @@ RUN microdnf install git-${GIT_VERSION}* openssh-clients-${OPENSSH_CLIENTS_VERSI
 COPY --from=builder /usr/local/bin/ods-start /usr/local/bin/ods-start
 
 COPY --from=builder /usr/local/bin/git-lfs /usr/local/bin/git-lfs
-RUN git lfs version && \
-    git lfs install
+RUN git lfs version
 
 RUN mkdir /ko-app
 COPY --from=builder /ko-app/git-init.orig /ko-app/git-init.orig

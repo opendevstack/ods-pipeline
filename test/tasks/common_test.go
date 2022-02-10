@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -62,6 +63,18 @@ func checkFilesExist(t *testing.T, wsDir string, wantFiles ...string) {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			t.Fatalf("Want %s, but got nothing", filename)
 		}
+	}
+}
+
+func checkFileHash(t *testing.T, wsDir string, filename string, hash [32]byte) {
+	filepath := filepath.Join(wsDir, filename)
+	filecontent, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		t.Fatalf("Want %s, but got nothing", filename)
+	}
+	filehash := sha256.Sum256(filecontent)
+	if filehash != hash {
+		t.Fatalf("Want %x, but got %x", hash, filehash)
 	}
 }
 

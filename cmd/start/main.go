@@ -390,8 +390,8 @@ func checkoutAndAssembleContext(
 		log.Fatal(err)
 	}
 	if lfs {
-		logger.Infof("Git LFS detected, pulling files...")
-		err := gitLfsPullFiles(logger, absCheckoutDir)
+		logger.Infof("Git LFS detected, enabling and pulling files...")
+		err := gitLfsEnableAndPullFiles(logger, absCheckoutDir)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -454,10 +454,15 @@ func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, e
 	return strings.TrimSpace(string(stdout)) != "", err
 }
 
-func gitLfsPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
-	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "pull"}, dir)
+func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
+	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "install"}, dir)
 	if err != nil {
-		return fmt.Errorf("cannot pull git lfs files: %s (%w)", stderr, err)
+		return fmt.Errorf("cannot enable git lfs: %s (%w)", stderr, err)
+	}
+	logger.Infof(string(stdout))
+	stdout, stderr, err = command.RunInDir("git", []string{"lfs", "pull"}, dir)
+	if err != nil {
+		return fmt.Errorf("cannot git pull lfs files: %s (%w)", stderr, err)
 	}
 	logger.Infof(string(stdout))
 	return err
