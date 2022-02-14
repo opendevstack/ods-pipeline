@@ -77,8 +77,9 @@ The cleanup strategy described here is subject to change even in patch versions 
 
 The following cache locations on the PVC are used:
 
-- `/.c/deps/<technology-name>/` for dependency caches of a particular build technology. The technology-name would be defined by the build script and unknown to `ods-start`. For dependencies instead of strategy on the file level does not make sense. Instead one should either periodically 
-- `/.c/*/**` reserved for future usages for example to enable build skipping. For each new supported location `ods-start` may delete files as it makes sense for the purpose. 
+- `+/.c/deps/<technology-name>/+` for dependency caches of a particular build technology. The technology-name would be defined by the build script and unknown to `ods-start`. 
+
+- `+/.c/<not-deps>/**+` reserved for future usages for example to enable build skipping. For each new supported location `ods-start` may delete files as it makes sense for the purpose. 
 
 Before cache cleanup `ods-start` cleans up all files not in the cache locations above. +
 Next all files directly underneath `/.c/deps/` which are not directories are deleted. This prevents tasks to forget to define and use a `<technology-name>`.
