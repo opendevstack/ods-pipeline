@@ -98,26 +98,24 @@ func TestWebhookInterceptor(t *testing.T) {
 	}
 
 	// Push a commit, which should trigger a webhook, which in turn should start a pipeline run.
-	filename := "ods.yml"
+	filename := "ods.yaml"
 	fileContent := `
-	version: 2022.2.0
-
-	branchToEnvironmentMapping:
-		- branch: master
-		  environment: dev
-
-	environments:
-		- name: dev
-		  stage: dev
-	pipeline:
-		tasks:
-		  - name: package-image
-			taskRef:
-			kind: ClusterTask
-			name: ods-package-image
-			workspaces:
-			- name: source
-			  workspace: shared-workspace`
+version: 2022.2.0
+branchToEnvironmentMapping:
+  - branch: master
+    environment: dev
+environments:
+  - name: dev
+    stage: dev
+pipeline:
+  tasks:
+    - name: package-image
+      taskRef:
+        kind: ClusterTask
+        name: ods-package-image
+      workspaces:
+        - name: source
+          workspace: shared-workspace`
 
 	err = ioutil.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {
@@ -135,7 +133,7 @@ func TestWebhookInterceptor(t *testing.T) {
 	t.Log("Sleeping for 10s to make it work - unsure why needed ...")
 	time.Sleep(10 * time.Second)
 	t.Log("Pushing file to Bitbucket ...")
-	tasktesting.PushFileToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, "master", "ods.yml")
+	tasktesting.PushFileToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, "master", "ods.yaml")
 	triggerTimeout := time.Minute
 	t.Logf("Waiting %s for pipeline run to be triggered ...", triggerTimeout)
 	pr, err := waitForPipelineRunToBeTriggered(c.TektonClientSet, ns, triggerTimeout)
