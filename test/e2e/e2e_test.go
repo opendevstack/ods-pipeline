@@ -107,7 +107,15 @@ branchToEnvironmentMapping:
 environments:
   - name: dev
     stage: dev
-pipeline: {}`
+pipeline:
+  tasks:
+    - name: package-image
+      taskRef:
+        kind: ClusterTask
+        name: ods-package-image
+      workspaces:
+        - name: source
+          workspace: shared-workspace`
 
 	err = ioutil.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {
