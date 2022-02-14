@@ -8,6 +8,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
 	github.com/tektoncd/pipeline v0.24.0
+	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
 	k8s.io/api v0.21.6
 	k8s.io/apimachinery v0.21.6
 	k8s.io/client-go v0.21.6

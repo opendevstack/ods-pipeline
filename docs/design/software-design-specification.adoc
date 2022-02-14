@@ -153,7 +153,7 @@ Input parameters: TODO
 
 | SDS-TASK-8
 | `ods-start` contaner image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22 and SDS-TASK-9.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
@@ -554,6 +554,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 1
 | Node.js 16 available as container is a base platform for building and running various Node.js 16 applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1
+
+| SDS-EXT-27
+| Git LFS
+| 3.0.2
+| Git Large File Storage extension for versioning large files.
+| https://git-lfs.github.com/
 
 |===
 
