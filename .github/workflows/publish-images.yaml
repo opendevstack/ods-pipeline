@@ -63,7 +63,7 @@ jobs:
           context: .
           file: build/package/Dockerfile.${{ matrix.image }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/tst-${{ matrix.image }}:${{ env.tag }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/ods-${{ matrix.image }}:${{ env.tag }}
 
       # TODO:
       #   - on merging a PR to main: delete images tagged with PR's branch name
