@@ -144,28 +144,33 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 		},
 	)
 
+	t.Run(taskName, func(t *testing.T) {
+		for name, tc := range testCases {
+			tc := tc
+			name := name
+			t.Run(name, func(t *testing.T) {
+				t.Parallel()
+				tn := taskName
+				if tc.TaskVariant != "" {
+					tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
+				}
+				if tc.Timeout == 0 {
+					tc.Timeout = 5 * time.Minute
+				}
+				tasktesting.Run(t, tc, tasktesting.TestOpts{
+					TaskKindRef:             taskKindRef,
+					TaskName:                tn,
+					Clients:                 c,
+					Namespace:               ns,
+					Timeout:                 tc.Timeout,
+					AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
+				})
+			})
+		}
+	})
+
 	tasktesting.CleanupOnInterrupt(func() { tasktesting.TearDown(t, c, ns) }, t.Logf)
 	defer tasktesting.TearDown(t, c, ns)
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			tn := taskName
-			if tc.TaskVariant != "" {
-				tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
-			}
-			if tc.Timeout == 0 {
-				tc.Timeout = 5 * time.Minute
-			}
-			tasktesting.Run(t, tc, tasktesting.TestOpts{
-				TaskKindRef:             taskKindRef,
-				TaskName:                tn,
-				Clients:                 c,
-				Namespace:               ns,
-				Timeout:                 tc.Timeout,
-				AlwaysKeepTmpWorkspaces: *alwaysKeepTmpWorkspacesFlag,
-			})
-		})
-	}
 }
 
 func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarProject string, qualityGateFlag bool, wantQualityGateStatus string) {
