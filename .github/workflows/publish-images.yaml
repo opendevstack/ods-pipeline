@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: Dockerfile.${{ matrix.image }}
+          file: build/package/Dockerfile.${{ matrix.image }}
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/tst-${{ matrix.image }}:${{ env.tag }}
 
