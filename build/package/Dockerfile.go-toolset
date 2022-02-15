@@ -3,6 +3,11 @@ FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
+# Add locally provided certs
+RUN mkdir -p build/package/certs/
+COPY build/package/certs/ /etc/pki/ca-trust/source/anchors/
+RUN update-ca-trust
+
 ENV GOLANGCI_LINT_VERSION=v1.41.1 \
     GO_JUNIT_REPORT_VERSION=v0.9.1 \
     GOBIN=/usr/local/bin

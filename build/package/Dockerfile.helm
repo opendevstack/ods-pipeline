@@ -5,6 +5,10 @@ ARG TARGETARCH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
+RUN mkdir -p build/package/certs/
+COPY build/package/certs/ /etc/pki/ca-trust/source/anchors/
+RUN update-ca-trust
+
 ENV HELM_VERSION=3.5.2 \
     SOPS_VERSION=3.7.1 \
     AGE_VERSION=1.0.0 \
