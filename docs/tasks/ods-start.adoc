@@ -36,7 +36,7 @@ If a pipeline runs for `qa` or `prod` stages with a version for which a `v<VERSI
 tag exists already, no further tags are created.
 
 *This task is automatically added to any pipeline run as the first task
-by the webhook interceptor and cannot be customized by users at this point.*
+by the pipeline manager and cannot be customized by users at this point.*
 
 
 == Parameters

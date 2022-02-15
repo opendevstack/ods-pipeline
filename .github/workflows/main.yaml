@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "webhook-interceptor", "python-toolset", "node16-typescript-toolset"]
+        image: ["buildah", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "pipeline-manager", "python-toolset", "node16-typescript-toolset"]
     steps:
       -
         name: Checkout
@@ -106,11 +106,11 @@ jobs:
           docker push localhost:5000/ods/ods-start:latest
           docker rmi localhost:5000/ods/ods-start:latest
       -
-        name: Push webhook-interceptor image
+        name: Push pipeline-manager image
         run: |
-          docker load --input /tmp/buildx-image-ods-webhook-interceptor/image-ods-webhook-interceptor.tar
-          docker push localhost:5000/ods/ods-webhook-interceptor:latest
-          docker rmi localhost:5000/ods/ods-webhook-interceptor:latest
+          docker load --input /tmp/buildx-image-ods-pipeline-manager/image-ods-pipeline-manager.tar
+          docker push localhost:5000/ods/ods-pipeline-manager:latest
+          docker rmi localhost:5000/ods/ods-pipeline-manager:latest
       -
         name: Push python-toolset image
         run: |

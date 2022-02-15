@@ -1,8 +1,11 @@
-package interceptor
+package manager
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 	"unicode"
 
 	"github.com/google/go-cmp/cmp"
@@ -26,8 +30,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const testWebhookSecret = "s3cr3t"
+
 func TestRenderPipeline(t *testing.T) {
-	wantPipeline := testfile.ReadGolden(t, "interceptor/pipeline.yaml")
+	wantPipeline := testfile.ReadGolden(t, "manager/pipeline.yaml")
 	data := PipelineData{
 		Name:            "bar-main",
 		Project:         "foo",
@@ -47,7 +53,7 @@ func TestRenderPipeline(t *testing.T) {
 	}
 
 	// read ods.yaml
-	conf := testfile.ReadFixture(t, "interceptor/ods.yaml")
+	conf := testfile.ReadFixture(t, "manager/ods.yaml")
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
@@ -55,42 +61,6 @@ func TestRenderPipeline(t *testing.T) {
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
 		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
-	}
-}
-
-func TestExtensions(t *testing.T) {
-	bodyFixture := testfile.ReadFixture(t, "interceptor/payload.json")
-	wantBody := testfile.ReadGolden(t, "interceptor/payload.json")
-	data := PipelineData{
-		Name:            "bar-main",
-		Namespace:       "foo-cd",
-		Project:         "foo",
-		Repository:      "foo-bar",
-		Component:       "bar",
-		Stage:           "dev",
-		Environment:     "",
-		Version:         "",
-		GitRef:          "main",
-		GitFullRef:      "refs/heads/main",
-		GitSHA:          "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
-		RepoBase:        "https://bitbucket.acme.org",
-		GitURI:          "https://bitbucket.acme.org/scm/foo/bar.git",
-		PVC:             "pipeline-bar",
-		TriggerEvent:    "repo:refs_changed",
-		Comment:         "",
-		PullRequestKey:  0,
-		PullRequestBase: "",
-	}
-	gotBody, err := extendBodyWithExtensions(bodyFixture, data)
-	fatalIfErr(t, err)
-	var wantPayload map[string]interface{}
-	err = json.Unmarshal(wantBody, &wantPayload)
-	fatalIfErr(t, err)
-	var gotPayload map[string]interface{}
-	err = json.Unmarshal(gotBody, &gotPayload)
-	fatalIfErr(t, err)
-	if diff := cmp.Diff(wantPayload, gotPayload); diff != "" {
-		t.Fatalf("extendBodyWithExtensions() mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -272,11 +242,12 @@ func (p *fakePruner) Prune(ctxt context.Context, pipelineRuns []tekton.PipelineR
 
 func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, bc bitbucketInterface, pruner PipelineRunPruner) (*httptest.Server, error) {
 	server, err := NewServer(ServerConfig{
-		Namespace: "bar-cd",
-		Project:   "bar",
-		Token:     "test",
-		TaskKind:  "ClusterTask",
-		RepoBase:  "https://domain.com",
+		Namespace:     "bar-cd",
+		Project:       "bar",
+		Token:         "test",
+		WebhookSecret: testWebhookSecret,
+		TaskKind:      "ClusterTask",
+		RepoBase:      "https://domain.com",
 		StorageConfig: StorageConfig{
 			Provisioner: "kubernetes.io/aws-ebs",
 			ClassName:   "gp2",
@@ -300,12 +271,27 @@ func TestWebhookHandling(t *testing.T) {
 		kubernetesClient   *kubernetes.TestClient
 		tektonClient       *tektonClient.TestClient
 		bitbucketClient    *bitbucket.TestClient
+		wrongSignature     bool
 		wantStatus         int
 		wantBody           string
 		check              func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner)
 	}{
+		"wrong signature is not processed": {
+			requestBodyFixture: "manager/payload.json", // valid payload
+			wrongSignature:     true,
+			wantStatus:         http.StatusBadRequest,
+			wantBody:           "failed to validate incoming request",
+			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
+				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
+					t.Fatal("no pipeline should have been created/updated")
+				}
+				if p.called {
+					t.Fatal("pruning should not have occured")
+				}
+			},
+		},
 		"invalid JSON is not processed": {
-			requestBodyFixture: "interceptor/payload-invalid.json",
+			requestBodyFixture: "manager/payload-invalid.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "cannot parse JSON: invalid character '\\n' in string literal",
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
@@ -318,7 +304,7 @@ func TestWebhookHandling(t *testing.T) {
 			},
 		},
 		"unsupported events are not processed": {
-			requestBodyFixture: "interceptor/payload-unknown-event.json",
+			requestBodyFixture: "manager/payload-unknown-event.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           "Unsupported event key: repo:ref_changed",
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
@@ -331,7 +317,7 @@ func TestWebhookHandling(t *testing.T) {
 			},
 		},
 		"tags are not processed": {
-			requestBodyFixture: "interceptor/payload-tag.json",
+			requestBodyFixture: "manager/payload-tag.json",
 			wantStatus:         http.StatusTeapot,
 			wantBody:           "Skipping change ref type TAG, only BRANCH is supported",
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
@@ -344,7 +330,7 @@ func TestWebhookHandling(t *testing.T) {
 			},
 		},
 		"commits with skip message are not processed": {
-			requestBodyFixture: "interceptor/payload.json",
+			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Commits: []bitbucket.Commit{
 					{
@@ -366,14 +352,14 @@ func TestWebhookHandling(t *testing.T) {
 			},
 		},
 		"pushes into new branch creates a pipeline": {
-			requestBodyFixture: "interceptor/payload.json",
+			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
-					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
 				},
 			},
+			wantBody:   string(readTestdataFile(t, "golden/manager/response-payload-refs-changed.json")),
 			wantStatus: http.StatusOK,
-			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 1 || len(tc.UpdatedPipelines) != 0 {
 					t.Fatal("exactly one pipeline should have been created")
@@ -381,16 +367,19 @@ func TestWebhookHandling(t *testing.T) {
 				if len(kc.CreatedPVCs) != 1 {
 					t.Fatal("exactly one PVC should have been created")
 				}
+				if len(tc.CreatedPipelineRuns) != 1 {
+					t.Fatal("exactly one pipeline run should have been created")
+				}
 				if !p.called {
 					t.Fatal("pruning should have occured")
 				}
 			},
 		},
 		"pushes into an existing branch updates a pipeline": {
-			requestBodyFixture: "interceptor/payload.json",
+			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
-					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
 				},
 			},
 			kubernetesClient: &kubernetes.TestClient{
@@ -413,8 +402,8 @@ func TestWebhookHandling(t *testing.T) {
 					},
 				},
 			},
+			wantBody:   string(readTestdataFile(t, "golden/manager/response-payload-refs-changed.json")),
 			wantStatus: http.StatusOK,
-			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload.json")),
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
@@ -422,16 +411,19 @@ func TestWebhookHandling(t *testing.T) {
 				if len(kc.CreatedPVCs) > 0 {
 					t.Fatal("no PVC should have been created")
 				}
+				if len(tc.CreatedPipelineRuns) != 1 {
+					t.Fatal("exactly one pipeline run should have been created")
+				}
 				if !p.called {
 					t.Fatal("pruning should have occured")
 				}
 			},
 		},
 		"PR open events update a pipeline": {
-			requestBodyFixture: "interceptor/payload-pr-opened.json",
+			requestBodyFixture: "manager/payload-pr-opened.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
-					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
 				},
 				PullRequests: []bitbucket.PullRequest{
 					{
@@ -453,11 +445,14 @@ func TestWebhookHandling(t *testing.T) {
 					},
 				},
 			},
+			wantBody:   string(readTestdataFile(t, "golden/manager/response-payload-pr-opened.json")),
 			wantStatus: http.StatusOK,
-			wantBody:   string(readTestdataFile(t, "golden/interceptor/extended-payload-pr-opened.json")),
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) != 0 || len(tc.UpdatedPipelines) != 1 {
 					t.Fatal("exactly one pipeline should have been updated")
+				}
+				if len(tc.CreatedPipelineRuns) != 1 {
+					t.Fatal("exactly one pipeline run should have been created")
 				}
 				if !p.called {
 					t.Fatal("pruning should have occured")
@@ -465,10 +460,10 @@ func TestWebhookHandling(t *testing.T) {
 			},
 		},
 		"failure to create pipeline is handled properly": {
-			requestBodyFixture: "interceptor/payload.json",
+			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
-					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
 				},
 			},
 			tektonClient: &tektonClient.TestClient{
@@ -478,10 +473,10 @@ func TestWebhookHandling(t *testing.T) {
 			wantBody:   "cannot create pipeline bar-master",
 		},
 		"failure to update pipeline is handled properly": {
-			requestBodyFixture: "interceptor/payload.json",
+			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
-					"ods.yaml": readTestdataFile(t, "fixtures/interceptor/ods.yaml"),
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
 				},
 			},
 			tektonClient: &tektonClient.TestClient{
@@ -521,7 +516,23 @@ func TestWebhookHandling(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			res, err := http.Post(ts.URL, "application/json", f)
+			body, err := ioutil.ReadAll(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			fr := bytes.NewReader(body)
+			req, err := http.NewRequest("POST", ts.URL, fr)
+			if err != nil {
+				t.Fatalf("NewRequest: %v", err)
+			}
+			if tc.wrongSignature {
+				req.Header.Set(signatureHeader, "foobar")
+			} else {
+				req.Header.Set(signatureHeader, hmacHeader(t, testWebhookSecret, body))
+			}
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{Timeout: time.Minute}
+			res, err := client.Do(req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -564,4 +575,18 @@ func readTestdataFile(t *testing.T, filename string) []byte {
 		t.Fatal(err)
 	}
 	return b
+}
+
+// hmacHeader generates a X-Hub-Signature header given a secret token and the request body
+// See https://developer.github.com/webhooks/securing/#validating-payloads-from-github
+// Note that while this example and the validation comes from GitHub, it applies to
+// Bitbucket just the same.
+func hmacHeader(t *testing.T, secret string, body []byte) string {
+	t.Helper()
+	h := hmac.New(sha256.New, []byte(secret))
+	_, err := h.Write(body)
+	if err != nil {
+		t.Fatalf("HMACHeader fail: %s", err)
+	}
+	return fmt.Sprintf("sha256=%s", hex.EncodeToString(h.Sum(nil)))
 }

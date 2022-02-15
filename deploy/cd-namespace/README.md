@@ -6,4 +6,4 @@ This directory is maintained in https://github.com/opendevstack/ods-pipeline, an
 
 The resources are defined using Helm:
 * `ConfigMap` and `Secret` resources used by ODS tasks
-* Tekton Triggers related resources (`EventListener` etc.), including the custom ODS pipeline webhook interceptor
+* ODS pipeline manager (`Service`/`Deployment`)

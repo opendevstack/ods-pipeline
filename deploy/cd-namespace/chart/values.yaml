@@ -105,8 +105,8 @@ pipelineRunMinKeepHours: '48'
 # Must be at least 1.
 pipelineRunMaxKeepRuns: '20'
 
-# Webhook Interceptor
-interceptor:
+# Pipeline Manager
+pipelineManager:
   # PVC (used for the pipeline workspace)
   # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
   storageProvisioner: 'kubernetes.io/aws-ebs'
@@ -114,18 +114,18 @@ interceptor:
   storageClassName: 'gp2'
   # Storage size. Defaults to 2Gi unless set explicitly here.
   storageSize: '5Gi'
-  # Number of replicas to run for the interceptor.
+  # Number of replicas to run for the pipeline manager.
   replicaCount: 1
   image:
-    # Image registry from which to pull the webhook interceptor container image.
+    # Image registry from which to pull the pipeline manager container image.
     registry: image-registry.openshift-image-registry.svc:5000
-    # Namespace from which to pull the webhook interceptor container image.
+    # Namespace from which to pull the pipeline manager container image.
     # If not given, the image is pulled from the release namespace.
     namespace: ods
-    # Repository (ImageStream) from which to pull the webhook interceptor
+    # Repository (ImageStream) from which to pull the pipeline manager
     # container image.
     # If not given, the image name equals the chart name.
-    repository: ods-webhook-interceptor
+    repository: ods-pipeline-manager
     # Pull policy.
     pullPolicy: Always
     # Image tag to pull.

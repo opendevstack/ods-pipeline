@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/interceptor"
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/manager"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -23,6 +23,7 @@ const (
 	namespaceSuffix          = "-cd"
 	repoBaseEnvVar           = "REPO_BASE"
 	tokenEnvVar              = "ACCESS_TOKEN"
+	webhookSecretEnvVar      = "WEBHOOK_SECRET"
 	taskKindEnvVar           = "ODS_TASK_KIND"
 	taskKindDefault          = "ClusterTask"
 	taskSuffixEnvVar         = "ODS_TASK_SUFFIX"
@@ -59,6 +60,11 @@ func serve() error {
 	token := os.Getenv(tokenEnvVar)
 	if token == "" {
 		return fmt.Errorf("%s must be set", tokenEnvVar)
+	}
+
+	webhookSecret := os.Getenv(webhookSecretEnvVar)
+	if webhookSecret == "" {
+		return fmt.Errorf("%s must be set", webhookSecretEnvVar)
 	}
 
 	taskKind := readStringFromEnvVar(taskKindEnvVar, taskKindDefault)
@@ -113,7 +119,7 @@ func serve() error {
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
 
-	// TODO: Use this logger in the interceptor as well, not just in the pruner.
+	// TODO: Use this logger in the manager as well, not just in the pruner.
 	var logger logging.LeveledLoggerInterface
 	if os.Getenv("DEBUG") == "true" {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
@@ -121,7 +127,7 @@ func serve() error {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	pruner, err := interceptor.NewPipelineRunPrunerByStage(
+	pruner, err := manager.NewPipelineRunPrunerByStage(
 		tClient,
 		logger,
 		pruneMinKeepHours,
@@ -131,14 +137,15 @@ func serve() error {
 		return fmt.Errorf("could not create pruner: %w", err)
 	}
 
-	server, err := interceptor.NewServer(interceptor.ServerConfig{
-		Namespace:  namespace,
-		Project:    project,
-		RepoBase:   repoBase,
-		Token:      token,
-		TaskKind:   taskKind,
-		TaskSuffix: taskSuffix,
-		StorageConfig: interceptor.StorageConfig{
+	server, err := manager.NewServer(manager.ServerConfig{
+		Namespace:     namespace,
+		Project:       project,
+		RepoBase:      repoBase,
+		Token:         token,
+		WebhookSecret: webhookSecret,
+		TaskKind:      taskKind,
+		TaskSuffix:    taskSuffix,
+		StorageConfig: manager.StorageConfig{
 			Provisioner: storageProvisioner,
 			ClassName:   storageClassName,
 			Size:        storageSize,

@@ -1,4 +1,4 @@
-package interceptor
+package manager
 
 import (
 	"context"
@@ -30,9 +30,9 @@ import (
 )
 
 const (
-	// allowedChangeRefType is the Bitbucket change ref handled by this interceptor.
+	// allowedChangeRefType is the Bitbucket change ref handled by this service.
 	allowedChangeRefType = "BRANCH"
-	// Label prefix to use for labels applied by this webhook interceptor.
+	// Label prefix to use for labels applied by this service.
 	labelPrefix = "pipeline.opendevstack.org/"
 	// Label specifying the Bitbucket repository related to the pipeline.
 	repositoryLabel = labelPrefix + "repository"
@@ -40,14 +40,14 @@ const (
 	gitRefLabel = labelPrefix + "git-ref"
 	// Label specifying the target stage of the pipeline.
 	stageLabel = labelPrefix + "stage"
-	// tektonTriggerLabel is applied by Tekton Triggers.
-	tektonTriggerLabel = "triggers.tekton.dev/trigger"
-	// tektonTriggerLabelValue is applied by Tekton Triggers.
-	tektonTriggerLabelValue = "ods-pipeline"
+	// tektonAPIVersion specifies the Tekton API version in use
+	tektonAPIVersion = "tekton.dev/v1beta1"
 	// Annotation to set the storage provisioner for a PVC.
 	storageProvisionerAnnotation = "volume.beta.kubernetes.io/storage-provisioner"
 	// PVC finalizer.
 	pvcProtectionFinalizer = "kubernetes.io/pvc-protection"
+	// sharedWorkspaceName is the name of the workspace shared by all tasks
+	sharedWorkspaceName = "shared-workspace"
 	// letterBytes contains letters to use for random strings.
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
@@ -60,6 +60,7 @@ type Server struct {
 	Project           string
 	RepoBase          string
 	Token             string
+	WebhookSecret     string
 	TaskKind          tekton.TaskKind
 	TaskSuffix        string
 	StorageConfig     StorageConfig
@@ -84,6 +85,8 @@ type ServerConfig struct {
 	RepoBase string
 	// Token is the Bitbucket personal access token.
 	Token string
+	// WebhookSecret is the shared Bitbucket secret to validate webhook requests.
+	WebhookSecret string
 	// TaskKind is the Tekton resource kind for tassks.
 	// Either "ClusterTask" or "Task".
 	TaskKind string
@@ -139,6 +142,9 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 	if serverConfig.Token == "" {
 		return nil, errors.New("token is required")
 	}
+	if serverConfig.WebhookSecret == "" {
+		return nil, errors.New("webhook secret is required")
+	}
 	if serverConfig.StorageConfig.ClassName == "" {
 		return nil, errors.New("storage class name is required")
 	}
@@ -159,6 +165,7 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 		Project:           serverConfig.Project,
 		RepoBase:          serverConfig.RepoBase,
 		Token:             serverConfig.Token,
+		WebhookSecret:     serverConfig.WebhookSecret,
 		TaskKind:          tekton.TaskKind(serverConfig.TaskKind),
 		TaskSuffix:        serverConfig.TaskSuffix,
 		StorageConfig:     serverConfig.StorageConfig,
@@ -211,6 +218,13 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(requestID, err.Error())
 		http.Error(w, "could not read body", http.StatusInternalServerError)
+		return
+	}
+
+	if err := validatePayload(r.Header, body, []byte(s.WebhookSecret)); err != nil {
+		msg := "failed to validate incoming request"
+		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -399,10 +413,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 			log.Println(requestID, fmt.Sprintf("Starting pruning of pipeline runs related to repository %s ...", pData.Repository))
 			ctxt, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
-			labelMap := map[string]string{
-				repositoryLabel:    pData.Repository,
-				tektonTriggerLabel: tektonTriggerLabelValue,
-			}
+			labelMap := map[string]string{repositoryLabel: pData.Repository}
 			pipelineRuns, err := s.TektonClient.ListPipelineRuns(
 				ctxt, metav1.ListOptions{LabelSelector: labels.Set(labelMap).String()},
 			)
@@ -423,18 +434,47 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(requestID, fmt.Sprintf("%+v", pData))
 
-	extendedBody, err := extendBodyWithExtensions(body, pData)
+	_, err = s.createPipelineRun(r.Context(), pData)
 	if err != nil {
-		msg := "cannot extend body"
+		msg := "cannot create pipeline run"
 		log.Println(requestID, fmt.Sprintf("%s: %s", msg, err))
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
-	_, err = w.Write(extendedBody)
+
+	err = json.NewEncoder(w).Encode(pData)
 	if err != nil {
 		log.Println(requestID, fmt.Sprintf("cannot write body: %s", err))
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// createPipelineRun creates a PipelineRun resource
+func (s *Server) createPipelineRun(ctxt context.Context, pData PipelineData) (*tekton.PipelineRun, error) {
+	return s.TektonClient.CreatePipelineRun(ctxt, &tekton.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: fmt.Sprintf("%s-", pData.Name),
+			Labels:       pipelineLabels(pData),
+		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: tektonAPIVersion,
+			Kind:       "PipelineRun",
+		},
+		Spec: tekton.PipelineRunSpec{
+			PipelineRef:        &tekton.PipelineRef{Name: pData.Name},
+			ServiceAccountName: "pipeline", // TODO
+			Workspaces: []tekton.WorkspaceBinding{
+				{
+					Name: sharedWorkspaceName,
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: pData.PVC,
+					},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
 }
 
 // createPVCIfRequired if it does not exist yet
@@ -472,6 +512,15 @@ func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) e
 		}
 	}
 	return nil
+}
+
+// pipelineLabels returns a map of labels to apply to pipelines and related runs.
+func pipelineLabels(data PipelineData) map[string]string {
+	return map[string]string{
+		repositoryLabel: data.Repository,
+		gitRefLabel:     data.GitRef,
+		stageLabel:      data.Stage,
+	}
 }
 
 // selectEnvironmentFromMapping selects the environment name matching given branch.
@@ -515,20 +564,6 @@ func determineProject(serverProject string, projectParam string) string {
 		return projectParam
 	}
 	return strings.ToLower(serverProject)
-}
-
-func extendBodyWithExtensions(body []byte, data PipelineData) ([]byte, error) {
-	var payload map[string]interface{}
-	err := json.Unmarshal(body, &payload)
-	if err != nil {
-		return nil, err
-	}
-	payload["extensions"] = data
-	extendedBody, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	return extendedBody, nil
 }
 
 // makePipelineName generates the name of the pipeline.
@@ -583,7 +618,7 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 		Name:    "ods-start",
 		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
-			{Name: "source", Workspace: "shared-workspace"},
+			{Name: "source", Workspace: sharedWorkspaceName},
 		},
 		Params: []tekton.Param{
 			{
@@ -656,7 +691,7 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 		Name:    "ods-finish",
 		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
 		Workspaces: []tekton.WorkspacePipelineTaskBinding{
-			{Name: "source", Workspace: "shared-workspace"},
+			{Name: "source", Workspace: sharedWorkspaceName},
 		},
 		Params: []tekton.Param{
 			{
@@ -678,15 +713,11 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 
 	p := &tekton.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: data.Name,
-			Labels: map[string]string{
-				repositoryLabel: data.Repository,
-				gitRefLabel:     data.GitRef,
-				stageLabel:      data.Stage,
-			},
+			Name:   data.Name,
+			Labels: pipelineLabels(data),
 		},
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "tekton.dev/v1beta1",
+			APIVersion: tektonAPIVersion,
 			Kind:       "Pipeline",
 		},
 		Spec: tekton.PipelineSpec{
@@ -768,7 +799,7 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 			Tasks: tasks,
 			Workspaces: []tekton.PipelineWorkspaceDeclaration{
 				{
-					Name: "shared-workspace",
+					Name: sharedWorkspaceName,
 				},
 			},
 			Finally: finallyTasks,

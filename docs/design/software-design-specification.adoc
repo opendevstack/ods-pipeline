@@ -153,7 +153,7 @@ Input parameters: TODO
 
 | SDS-TASK-8
 | `ods-start` contaner image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22 and SDS-TASK-9.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
@@ -340,25 +340,25 @@ Upgrades (or installs) a Helm chart.
 
 ==== Local ODS Pipeline Installation
 
-===== Webhook Interceptor
+===== Pipeline Manager
 
 [cols="1,1,3"]
 |===
-| SDS-INTERCEPTOR-1
+| SDS-PIPELINE-MANAGER-1
 | `ods-pipeline` Service resource
-| Service (exposing a set of pods) for the webhook interceptor
+| Service (exposing a set of pods) for the pipeline manager
 
-| SDS-INTERCEPTOR-2
+| SDS-PIPELINE-MANAGER-2
 | `ods-pipeline` Deployment resource
-| Deployment (providing declarative updates for pods and replica sets) for the webhook interceptor. The container template references SDS-INTERCEPTOR-3.
+| Deployment (providing declarative updates for pods and replica sets) for the pipeline manager. The container template references SDS-PIPELINE-MANAGER-3.
 
-| SDS-INTERCEPTOR-3
-| `ods-webhook-interceptor` container image
-| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-INTERCEPTOR-4.
+| SDS-PIPELINE-MANAGER-3
+| `ods-pipeline-manager` container image
+| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-PIPELINE-MANAGER-4.
 
-| SDS-INTERCEPTOR-4
-| `webhook-interceptor` binary
-a| The interceptor parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
+| SDS-PIPELINE-MANAGER-4
+| `pipeline-manager` binary
+a| The pipeline manager parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
 
 For Git commits which message instructs to skip CI, no pipelines are triggererd. Instructions may be anywhere in the commit message and may be one of (case insensitive):
 
@@ -554,6 +554,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 1
 | Node.js 16 available as container is a base platform for building and running various Node.js 16 applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1
+
+| SDS-EXT-27
+| Git LFS
+| 3.0.2
+| Git Large File Storage extension for versioning large files.
+| https://git-lfs.github.com/
 
 |===
 
