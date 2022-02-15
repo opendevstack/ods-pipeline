@@ -39,13 +39,10 @@ if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
-export GRADLE_USER_HOME=/home/gradle/.gradle
-
 echo "Using NEXUS_URL=$NEXUS_URL"
 echo "Using GRADLE_OPTS=$GRADLE_OPTS"
+echo "Using GRADLE_USER_HOME=$GRADLE_USER_HOME"
 echo "Using ARTIFACTS_DIR=$ARTIFACTS_DIR"
-
-echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
 cd "${WORKING_DIR}"
 echo "Working on Gradle project in '${WORKING_DIR}'..."

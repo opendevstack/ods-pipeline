@@ -9,6 +9,9 @@ Then, launch a KinD cluster, install Tekton, build & push images and run service
 ```
 make prepare-local-env
 ```
+NOTE: If you are required to have certain certificates installed on your machine, e.g. due to being in an enforcing
+corporate network, place the `*.crt` files into a `build/package/certs` folder. It is being picked up from there when
+needed. Please note that this folder is ignored by `git`.
 
 Finally, run all tests:
 ```
