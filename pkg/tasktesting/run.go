@@ -33,6 +33,7 @@ type TestCase struct {
 	TaskVariant string
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
+	TaskParamsMapping   map[string]string
 	WantRunSuccess      bool
 	WantSetupFail       bool
 	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
@@ -71,6 +72,7 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		Namespace:  testOpts.Namespace,
 		Clients:    testOpts.Clients,
 		Workspaces: taskWorkspaces,
+		Params:     tc.TaskParamsMapping,
 	}
 
 	if tc.PreRunFunc != nil {
