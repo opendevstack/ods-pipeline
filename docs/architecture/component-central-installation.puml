@@ -39,7 +39,7 @@ Container_Boundary(c1, "Central ODS Pipeline Installation"){
 Rel(task_build_go, image_go_toolset, "uses")
 Rel(task_build_go, image_sonar, "uses")
 
-Rel(task_build_typescript, image_typescript_toolset, "uses")
+Rel(task_build_typescript, image_node16_typescript_toolset, "uses")
 Rel(task_build_typescript, image_sonar, "uses")
 
 Rel(task_build_python, image_python_toolset, "uses")
