@@ -38,6 +38,7 @@ cd "$ODS_PIPELINE_DIR"
 build_and_push_image() {
     odsImage="ods-$image"
     if [ "${SKIP_BUILD}" != "true" ]; then
+        mkdir -p build/package/certs/
         echo "Building image $REGISTRY/$NAMESPACE/$odsImage..."
         # shellcheck disable=SC2086
         docker build $platform_arg \

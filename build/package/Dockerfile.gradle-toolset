@@ -11,7 +11,6 @@ ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c
 USER root
 
 # Add locally provided certs
-RUN mkdir -p build/package/certs/
 COPY build/package/certs/ /etc/pki/ca-trust/source/anchors/
 RUN update-ca-trust
 

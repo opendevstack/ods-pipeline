@@ -19,6 +19,7 @@ listed in the changelog.
 - Export `ARTIFACTS_DIR` environment variable to be visible to the gradle build ([#408](https://github.com/opendevstack/ods-pipeline/issues/408))
 - Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
+- Add possibility to add certificates into Docker images ([#443](https://github.com/opendevstack/ods-pipeline/issues/443))
 
 ### Changed
 
@@ -38,6 +39,7 @@ listed in the changelog.
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
 - Gradle task does not expose Nexus env variables ([#373](https://github.com/opendevstack/ods-pipeline/issues/373))
 - Gradle build fails when it contains more than one test class ([#414](https://github.com/opendevstack/ods-pipeline/issues/414))
+- Proxy settings for Gradle are set during prepare-local-env ([#291](https://github.com/opendevstack/ods-pipeline/issues/291))
 
 ## [0.2.0] - 2021-12-22
 ### Added
