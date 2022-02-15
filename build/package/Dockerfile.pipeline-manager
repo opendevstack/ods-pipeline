@@ -8,7 +8,7 @@ COPY go.* .
 COPY cmd cmd
 COPY internal internal
 COPY pkg pkg
-RUN cd cmd/webhook-interceptor && CGO_ENABLED=0 go build -o /usr/local/bin/webhook-interceptor
+RUN cd cmd/pipeline-manager && CGO_ENABLED=0 go build -o /usr/local/bin/pipeline-manager
 
 # Final image
 # ubi-micro cannot be used as it misses the ca-certificates package.
@@ -19,7 +19,7 @@ ARG taskSuffix
 ENV ODS_TASK_KIND=$taskKind
 ENV ODS_TASK_SUFFIX=$taskSuffix
 
-COPY --from=builder /usr/local/bin/webhook-interceptor /usr/local/bin/webhook-interceptor
+COPY --from=builder /usr/local/bin/pipeline-manager /usr/local/bin/pipeline-manager
 EXPOSE 8080
 
-CMD webhook-interceptor
+CMD pipeline-manager

@@ -9,15 +9,7 @@ LAYOUT_LEFT_RIGHT()
 Container_Boundary(c1, "Local ODS Pipeline Installation"){
     Component(route, "Route", "Route resource", "External endpoint for Bitbucket webhook")
 
-    Component(event_listener, "Event Listener", "Tekton-provided service", "service listening for events")
-
-    Component(bitbucket_interceptor, "Bitbucket Interceptor", "Tekton-provided service", "Validate authenticity of event")
-
-    Component(ods_webhook_interceptor, "ODS webhook interceptor", "Custom service", "Manage pipelines")
-
-    Component(trigger_binding, "Trigger Binding", "TriggerBinding resource", "Extract parameters from modified body")
-
-    Component(trigger_template, "Trigger Template", "TriggerTemplate resource", "Link trigger resources to pipeline run")
+    Component(ods_pipeline_manager, "ODS Pipeline Manager", "Custom service", "Manage pipelines")
 
     Component(config_maps, "Config Maps", "ConfigMap resources", "Configuration for consumption by pipelines")
 

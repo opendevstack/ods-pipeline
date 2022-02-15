@@ -48,24 +48,24 @@ ODS Pipeline shall provide CI/CD tooling within a Kubernetes cluster such as Ope
 
 The tasks shall create artifacts of their work. Those artifacts shall be stored in Nexus and are intended to be used as evidence in technical documentation.
 
-=== Webhook Interceptor Requirements
+=== Pipeline Manager Requirements
 
 [cols="1,3"]
 |===
-| SRS-INTERCEPTOR-1
-| The interceptor shall be able to respond to `repo:refs_changed` and `pr:opened` events.
+| SRS-PIPELINE-MANAGER-1
+| The pipeline manager shall be able to respond to `repo:refs_changed` and `pr:opened` events.
 
-| SRS-INTERCEPTOR-2
-| The interceptor shall not trigger pipelines for Git commits which message instructs to skip CI.
+| SRS-PIPELINE-MANAGER-2
+| The pipeline manager shall not trigger pipelines for Git commits which message instructs to skip CI.
 
-| SRS-INTERCEPTOR-3
-| The interceptor shall create or update a pipeline corresponding to the Git branch received in the webhook request. The tasks (including finally tasks) of the pipline shall be read from the ODS config file in the repository.
+| SRS-PIPELINE-MANAGER-3
+| The pipeline manager shall create or update a pipeline corresponding to the Git branch received in the webhook request. The tasks (including finally tasks) of the pipline shall be read from the ODS config file in the repository.
 
-| SRS-INTERCEPTOR-4
-| The interceptor shall create a PVC for use as a pipeline workspace per repository.
+| SRS-PIPELINE-MANAGER-4
+| The pipeline manager shall create a PVC for use as a pipeline workspace per repository.
 
-| SRS-INTERCEPTOR-5
-| The interceptor shall prune pipelines and pipeline runs per repository and stage.
+| SRS-PIPELINE-MANAGER-5
+| The pipeline manager shall prune pipelines and pipeline runs per repository and stage.
 |===
 
 === Task Requirements

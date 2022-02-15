@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4}}
 spec:
-  replicas: {{.Values.interceptor.replicaCount}}
+  replicas: {{.Values.pipelineManager.replicaCount}}
   selector:
     matchLabels:
       {{- include "chart.selectorLabels" . | nindent 6}}
@@ -20,8 +20,8 @@ spec:
       containers:
         - name: {{.Chart.Name}}
           securityContext: {}
-          image: "{{.Values.interceptor.image.registry}}/{{.Values.interceptor.image.namespace | default .Release.Namespace}}/{{.Values.interceptor.image.repository | default .Chart.Name}}:{{.Values.interceptor.image.tag | default .Chart.AppVersion}}"
-          imagePullPolicy: {{.Values.interceptor.image.pullPolicy}}
+          image: "{{.Values.pipelineManager.image.registry}}/{{.Values.pipelineManager.image.namespace | default .Release.Namespace}}/{{.Values.pipelineManager.image.repository | default .Chart.Name}}:{{.Values.pipelineManager.image.tag | default .Chart.AppVersion}}"
+          imagePullPolicy: {{.Values.pipelineManager.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 8080
@@ -37,17 +37,22 @@ spec:
                 secretKeyRef:
                   key: password
                   name: ods-bitbucket-auth
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: ods-bitbucket-webhook
             - name: DEBUG
               valueFrom:
                 configMapKeyRef:
                   key: debug
                   name: ods-pipeline
             - name: ODS_STORAGE_PROVISIONER
-              value: '{{.Values.interceptor.storageProvisioner}}'
+              value: '{{.Values.pipelineManager.storageProvisioner}}'
             - name: ODS_STORAGE_CLASS_NAME
-              value: '{{.Values.interceptor.storageClassName}}'
+              value: '{{.Values.pipelineManager.storageClassName}}'
             - name: ODS_STORAGE_SIZE
-              value: '{{.Values.interceptor.storageSize}}'
+              value: '{{.Values.pipelineManager.storageSize}}'
             - name: ODS_PRUNE_MIN_KEEP_HOURS
               value: '{{int .Values.pipelineRunMinKeepHours}}'
             - name: ODS_PRUNE_MAX_KEEP_RUNS
@@ -65,6 +70,6 @@ spec:
             failureThreshold: 20
             periodSeconds: 3
           resources:
-            {{- toYaml .Values.interceptor.resources | nindent 12}}
+            {{- toYaml .Values.pipelineManager.resources | nindent 12}}
       serviceAccountName: '{{.Values.serviceAccountName}}'
       serviceAccount: '{{.Values.serviceAccountName}}'

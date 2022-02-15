@@ -1,20 +1,20 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: ods-webhook-interceptor
+  name: ods-pipeline-manager
 spec:
   nodeSelector: null
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-webhook-interceptor:{{.Values.imageTag}}'
+      name: 'ods-pipeline-manager:{{.Values.imageTag}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
   strategy:
     type: Docker
     dockerStrategy:
-      dockerfilePath: build/package/Dockerfile.webhook-interceptor
+      dockerfilePath: build/package/Dockerfile.pipeline-manager
       from:
         kind: DockerImage
         name: 'registry.redhat.io/ubi8/ubi-minimal:8.4'
