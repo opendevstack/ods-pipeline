@@ -19,6 +19,10 @@ copyLintReport() {
   cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
+# the copy commands are based on GNU cp tools
+# On a mac `brew install coreutils` gives `g` prefixed cmd line tools such as gcp
+# to use these define env variable GNU_CP=gcp before invoking this script.
+CP="${GNU_CP:-cp}"  
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
@@ -78,6 +82,16 @@ if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWOR
     npm config set strict-ssl=false
 fi;
 
+echo "package-*.json checks ..."
+if [ ! -f package.json ]; then
+  echo "File package.json not found"
+  exit 1
+fi 
+if [ ! -f package-lock.json ]; then
+  echo "File package-lock.json not found"
+  exit 1
+fi 
+
 echo "Installing dependencies ..."
 npm ci --ignore-scripts
 
@@ -98,11 +112,14 @@ fi
 echo "Building ..."
 npm run build
 mkdir -p "${OUTPUT_DIR}"
-cp -r "${BUILD_DIR}" "${OUTPUT_DIR}/dist"
+echo "Copying package.json and package-lock.json to ${OUTPUT_DIR} ..."
+"$CP" --target-directory  "${OUTPUT_DIR}" package.json package-lock.json
+echo "Copying ${BUILD_DIR} to ${OUTPUT_DIR} ..."
+"$CP" --target-directory  "${OUTPUT_DIR}" -r "${BUILD_DIR}" 
 
 if [ "${COPY_NODE_MODULES}" = true ]; then
-  echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
-  cp -r node_modules "${OUTPUT_DIR}/dist/node_modules"
+  echo "Copying node_modules to ${OUTPUT_DIR}/node_modules ..."
+  "$CP" --target-directory "${OUTPUT_DIR}" -r node_modules
 fi
 
 echo "Testing ..."
