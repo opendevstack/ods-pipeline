@@ -4,7 +4,7 @@
 
 The goal of this document is to provide a concrete example of a (fake) application using `ods-pipeline`. You may configure things differently for your own project, but the example here contains some best practices and you are encouraged to align your setup where it makes sense.
 
-== Oveview
+== Overview
 
 For this example, we assume that we deal with a simple todo application. The project key in Bitbucket is `TODO`. The application is made up of two components, a backend (repository `todo-backend`) written in Go, and a frontend (repository `todo-frontend`) written in TypeScript.
 

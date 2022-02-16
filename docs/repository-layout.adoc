@@ -5,7 +5,7 @@ The repo follows the https://github.com/golang-standards/project-layout[Standard
 The most important pieces are:
 
 * **build/package**: `Dockerfile`s for the various container images in use. These images back Tekton tasks or the pipeline manager.
-* **cmd**: Main executables. These are installed (in different combinations) into the contaier images.
+* **cmd**: Main executables. These are installed (in different combinations) into the container images.
 * **deploy**: OpenShift/K8S resource definitions, such as `BuildConfig`/`ImageStream` or `ClusterTask` resources. The tasks typically make use of the images built via `build/package` and their `script` calls one or more executables built from the `cmd` folder.
 * **docs**: Design and user documents
 * **internal/manager**: Implementation of the webhook receiver and pipeline manager - it creates and modifies the actual Tekton pipelines on the fly based on the config found in the repository triggering the webhook request.

@@ -44,7 +44,7 @@ build_and_push_image() {
             --build-arg http_proxy="$http_proxy" \
             --build-arg https_proxy="$https_proxy" \
             --build-arg HTTP_PROXY="$http_proxy" \
-            --build-arg HTTPS_PROXY="$https_proxy"  \
+            --build-arg HTTPS_PROXY="$https_proxy" \
             -f build/package/Dockerfile."$image" -t $REGISTRY/$NAMESPACE/"$odsImage" .
     fi
     echo "Pushing image to $REGISTRY/$NAMESPACE/$odsImage ..."
