@@ -20,8 +20,8 @@ spec:
     * nexusUrlWithAuth=${nexusUrl.withAuth($nexusAuth)}
 
     The above is adhoc notation meant to be more clear than a bunch of words.
-    If no nexusUsername/nexusPassword are defined nexusAuth will be empty and 
-    nexusUrlWithAuth is equal to nexusUrl. 
+    If no nexusUsername/nexusPassword are defined nexusAuth will be empty and
+    nexusUrlWithAuth is equal to nexusUrl.
 
     By default, the image is named after the component and pushed into the image
     stream located in the namespace of the pipeline run.
@@ -38,7 +38,7 @@ spec:
       ** `report.html`
       ** `report.json`
     * `image-digests/`
-      ** `<image-name>.json`    
+      ** `<image-name>.json`
   params:
     - name: registry
       description: Image registry to push image to.
@@ -69,7 +69,7 @@ spec:
       type: string
       default: ''
     - name: buildah-push-extra-args
-      description: Extra parameters passed for the push command when pushing images.
+      description: Extra parameters passed for the push command when pushing images (e.g. '--build-arg=firstArg=one --build-arg=secondArg=two').
       type: string
       default: ''
     - name: aqua-gate

@@ -1,0 +1,5 @@
+environments:
+- name: dev
+  stage: dev
+
+pipeline: {}

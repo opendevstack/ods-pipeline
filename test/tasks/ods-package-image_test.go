@@ -64,6 +64,20 @@ func TestTaskODSPackageImage(t *testing.T) {
 					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
 				},
 			},
+			"task should build image with build extra args param": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-build-extra-args-app"},
+				TaskParamsMapping:   map[string]string{"buildah-build-extra-args": "'--build-arg=firstArg=one --build-arg=secondArg=two'"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImageHelloBuildExtraArgs(t, ctxt, wsDir)
+				},
+			},
 		},
 	)
 }
@@ -169,6 +183,19 @@ func checkResultingImageHelloNexus(t *testing.T, ctxt *tasktesting.TaskRunContex
 		fmt.Sprintf("nexusAuth=%s:%s", ncc.Username, ncc.Password),
 		fmt.Sprintf("nexusUrlWithAuth=http://%s:%s@%s", ncc.Username, ncc.Password, nexusUrl.Host),
 		fmt.Sprintf("nexusHost=%s", nexusUrl.Host),
+	}
+	if diff := cmp.Diff(want, gotLines); diff != "" {
+		t.Fatalf("context mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func checkResultingImageHelloBuildExtraArgs(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	got := runResultingImage(t, ctxt, wsDir)
+	gotLines := strings.Split(got, "\n")
+
+	want := []string{
+		fmt.Sprintf("firstArg=%s", "one"),
+		fmt.Sprintf("secondArg=%s", "two"),
 	}
 	if diff := cmp.Diff(want, gotLines); diff != "" {
 		t.Fatalf("context mismatch (-want +got):\n%s", diff)
