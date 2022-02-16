@@ -6,6 +6,7 @@ Builds Typescript applications.
 
 The following steps are executed:
 
+- checks that package.json and package-lock.json exists to require best practice of using lock files. See also https://github.com/opendevstack/ods-pipeline/discussions/411 
 - linting using `eslint`
 - build typescript application, using `npm run build`
 - test execution
