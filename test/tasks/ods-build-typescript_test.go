@@ -161,7 +161,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-						"docker/dist/src/index.js",
+						"docker/build/src/index.js",
 						"docker/package.json",
 						"docker/package-lock.json",
 					)
