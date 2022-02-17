@@ -5,3 +5,4 @@ ods.external.yaml
 artifact-download-linux-amd64
 artifact-download-darwin-amd64
 artifact-download-windows-amd64.exe
+build/package/certs/*

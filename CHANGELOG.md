@@ -19,6 +19,7 @@ listed in the changelog.
 - Export `ARTIFACTS_DIR` environment variable to be visible to the gradle build ([#408](https://github.com/opendevstack/ods-pipeline/issues/408))
 - Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
+- Add possibility to add certificates into Docker images locally ([#443](https://github.com/opendevstack/ods-pipeline/issues/443))
 
 ### Changed
 

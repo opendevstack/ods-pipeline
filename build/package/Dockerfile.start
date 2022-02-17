@@ -4,6 +4,10 @@ ARG TARGETARCH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
+# Add locally provided certs
+COPY build/package/certs/ /etc/pki/ca-trust/source/anchors/
+RUN update-ca-trust
+
 ENV TEKTON_VERSION=0.24.0 \
     TEKTONCD_PATH=/opt/app-root/src/go/src/github.com/tektoncd \
     BINARY=git-init.orig \
