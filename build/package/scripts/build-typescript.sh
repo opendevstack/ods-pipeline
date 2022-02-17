@@ -111,9 +111,11 @@ fi
 
 echo "Building ..."
 npm run build
+# Copying most build output before testing so
+# that additional modules which may be installed by testing 
+# is not included.
+# However copying package.json too early can confuse the tests.
 mkdir -p "${OUTPUT_DIR}"
-echo "Copying package.json and package-lock.json to ${OUTPUT_DIR} ..."
-"$CP" --target-directory  "${OUTPUT_DIR}" package.json package-lock.json
 echo "Copying ${BUILD_DIR} to ${OUTPUT_DIR} ..."
 "$CP" --target-directory  "${OUTPUT_DIR}" -r "${BUILD_DIR}" 
 
@@ -147,5 +149,18 @@ else
   cat build/coverage/lcov.info
   cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 fi
+
+# Doing this earlier can confuse jest.
+# test build_typescript_app_with_custom_build_directory fails with
+#  jest-haste-map: Haste module naming collision: src
+#    The following files share their name; please adjust your hasteImpl:
+#      * <rootDir>/package.json
+#      * <rootDir>/docker/package.json
+#  No tests found, exiting with code 1
+# While one could demand to change the config of the test, there is no need
+# to copy this earlier
+echo "Copying package.json and package-lock.json to ${OUTPUT_DIR} ..."
+"$CP" --target-directory  "${OUTPUT_DIR}" package.json package-lock.json
+
 
 supply-sonar-project-properties-default
