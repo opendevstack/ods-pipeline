@@ -116,12 +116,14 @@ npm run build
 # is not included.
 # However copying package.json too early can confuse the tests.
 mkdir -p "${OUTPUT_DIR}"
-echo "Copying ${BUILD_DIR} to ${OUTPUT_DIR} ..."
-"$CP" --target-directory  "${OUTPUT_DIR}" -r "${BUILD_DIR}" 
+echo "Copying contents of ${BUILD_DIR} into ${OUTPUT_DIR}/dist ..."
+# see https://unix.stackexchange.com/questions/228597/how-to-copy-a-folder-recursively-in-an-idempotent-way-using-cp
+"$CP" -r "${BUILD_DIR}/." "${OUTPUT_DIR}/dist" 
 
 if [ "${COPY_NODE_MODULES}" = true ]; then
-  echo "Copying node_modules to ${OUTPUT_DIR}/node_modules ..."
-  "$CP" --target-directory "${OUTPUT_DIR}" -r node_modules
+  echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
+  # note "${OUTPUT_DIR}/dist" exists now and node_modules name will be maintained. 
+  "$CP"  -r node_modules "${OUTPUT_DIR}/dist"
 fi
 
 echo "Testing ..."
@@ -159,8 +161,8 @@ fi
 #  No tests found, exiting with code 1
 # While one could demand to change the config of the test, there is no need
 # to copy this earlier
-echo "Copying package.json and package-lock.json to ${OUTPUT_DIR} ..."
-"$CP" --target-directory  "${OUTPUT_DIR}" package.json package-lock.json
+echo "Copying package.json and package-lock.json to ${OUTPUT_DIR}/dist ..."
+cp package.json package-lock.json "${OUTPUT_DIR}/dist"
 
 
 supply-sonar-project-properties-default

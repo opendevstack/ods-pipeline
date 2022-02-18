@@ -39,8 +39,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						"docker/dist/src/index.js",
-						"docker/package.json",
-						"docker/package-lock.json",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
@@ -134,9 +134,9 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-						"docker/node_modules/",
-						"docker/package.json",
-						"docker/package-lock.json",
+						"docker/dist/node_modules/",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 				},
 			},
@@ -161,9 +161,9 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-						"docker/build/src/index.js",
-						"docker/package.json",
-						"docker/package-lock.json",
+						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 				},
 			},
