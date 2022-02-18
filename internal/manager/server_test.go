@@ -232,11 +232,11 @@ func fatalIfErr(t *testing.T, err error) {
 }
 
 type fakePruner struct {
-	called bool
+	called chan bool
 }
 
 func (p *fakePruner) Prune(ctxt context.Context, pipelineRuns []tekton.PipelineRun) error {
-	p.called = true
+	p.called <- true
 	return nil
 }
 
@@ -285,9 +285,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				// if p.called {
-				// 	t.Fatal("pruning should not have occured")
-				// }
 			},
 		},
 		"invalid JSON is not processed": {
@@ -298,9 +295,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				// if p.called {
-				// 	t.Fatal("pruning should not have occured")
-				// }
 			},
 		},
 		"unsupported events are not processed": {
@@ -311,9 +305,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				// if p.called {
-				// 	t.Fatal("pruning should not have occured")
-				// }
 			},
 		},
 		"tags are not processed": {
@@ -324,9 +315,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				// if p.called {
-				// 	t.Fatal("pruning should not have occured")
-				// }
 			},
 		},
 		"commits with skip message are not processed": {
@@ -346,9 +334,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				// if p.called {
-				// 	t.Fatal("pruning should not have occured")
-				// }
 			},
 		},
 		"pushes into new branch creates a pipeline": {
@@ -370,9 +355,12 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				// if !p.called {
-				// 	t.Fatal("pruning should have occured")
-				// }
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
+					t.Fatal("pruning should have occured")
+				}
 			},
 		},
 		"pushes into an existing branch updates a pipeline": {
@@ -414,9 +402,12 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				// if !p.called {
-				// 	t.Fatal("pruning should have occured")
-				// }
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
+					t.Fatal("pruning should have occured")
+				}
 			},
 		},
 		"PR open events update a pipeline": {
@@ -454,9 +445,12 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				// if !p.called {
-				// 	t.Fatal("pruning should have occured")
-				// }
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
+					t.Fatal("pruning should have occured")
+				}
 			},
 		},
 		"failure to create pipeline is handled properly": {
@@ -505,7 +499,7 @@ func TestWebhookHandling(t *testing.T) {
 			if tc.kubernetesClient == nil {
 				tc.kubernetesClient = &kubernetes.TestClient{}
 			}
-			pruner := &fakePruner{}
+			pruner := &fakePruner{called: make(chan bool)}
 			ts, err := testServer(tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient, pruner)
 			if err != nil {
 				t.Fatal(err)
