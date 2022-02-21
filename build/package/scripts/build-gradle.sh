@@ -64,7 +64,6 @@ export ODS_OUTPUT_DIR=${OUTPUT_DIR}
 echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
 
-
 echo "Testing ..."
 if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
@@ -99,6 +98,7 @@ else
   exit 1
 fi
 
+echo
 echo "Building ..."
 # shellcheck disable=SC2086
 ./gradlew clean build -x test ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
