@@ -217,7 +217,7 @@ Input parameters: TODO
 
 | SDS-TASK-14
 | `ods-python-toolset` contaner image
-| Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-EXT-14, SDS-EXT-15, SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
+| Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
 
 | SDS-TASK-15
 | `build-python.sh` shell script
@@ -227,7 +227,7 @@ If the `pre-test-script` is set, it executes the given script before running tes
 
 Runs `pytest`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
-Builds Python application (using SDS-EXT-14) into the directory specified by `output-dir`.
+Builds Python application into the directory specified by `output-dir`.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
@@ -258,7 +258,7 @@ Input parameters:
 
 | SDS-TASK-17
 | `ods-node16-typescript-toolset` container image
-| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
 | `build-typescript.sh` shell script
@@ -453,12 +453,6 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Distributed version control system.
 | https://git-scm.com
 
-| SDS-EXT-10
-| OpenJDK Headless
-| 17
-| Reference implementation of version 17 of the Java SE Platform.
-| https://openjdk.java.net/projects/jdk/17/
-
 | SDS-EXT-11
 | Red Hat OpenJDK 17 Image
 | 1.10
@@ -477,23 +471,11 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Clients necessary to make encrypted connections to SSH servers.
 | https://gradle.org
 
-| SDS-EXT-14
-| Python
-| 3.9
-| Interpreted high-level general-purpose programming language.
-| https://www.python.org
-
 | SDS-EXT-15
 | Tar
 | 1.30
 | Used to create and extract archive files.
 | https://www.gnu.org/software/tar/
-
-| SDS-EXT-16
-| Node.js
-| 16
-| Back-end JavaScript runtime environment.
-| https://nodejs.org/
 
 | SDS-EXT-17
 | Skopeo
