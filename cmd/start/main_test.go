@@ -6,13 +6,131 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"testing/fstest"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/test/testserver"
 )
+
+func TestDirectoryCleaningSparesCache(t *testing.T) {
+
+	tests := map[string]struct {
+		fileSystem         fstest.MapFS
+		expectedRemoveAlls []string
+	}{
+		"testCacheSpared": {
+			fstest.MapFS{
+				".ods-cache/.a":                                {},
+				".ods-cache/deps/dep1.txt":                     {},
+				".ods-cache/deps/go/gd1.txt":                   {},
+				".ods-cache/deps/go/gd1/foo.txt":               {},
+				".ods-cache/deps/go/gd2.txt":                   {},
+				".ods-cache/deps/npm/hithere_1.0/package.json": {},
+				"src/app.js":                                   {},
+				"package.json":                                 {},
+				".env":                                         {},
+			},
+			[]string{
+				".env",
+				"package.json",
+				"src",
+			},
+		},
+		"testCacheSparedCaseSensitive": {
+			fstest.MapFS{
+				".ods-cache/.a":                                {},
+				".ods-cache/deps/dep1.txt":                     {},
+				".ods-cache/deps/go/gd1.txt":                   {},
+				".ods-cache/deps/go/gd1/foo.txt":               {},
+				".ods-cache/deps/go/gd2.txt":                   {},
+				".ods-Cache/deps/npm/hithere_1.0/package.json": {},
+				"src/app.js":                                   {},
+				"package.json":                                 {},
+				".env":                                         {},
+			},
+			[]string{
+				".env",
+				".ods-Cache",
+				"package.json",
+				"src",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			removed := []string{}
+			deleteDirectoryContentsSpareCache(
+				FileSystemBase{tc.fileSystem, "."},
+				func(path string, isDir bool) error {
+					removed = append(removed, path)
+					return nil
+				})
+
+			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
+				t.Fatalf("expected (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+func TestCacheCleaning(t *testing.T) {
+
+	tests := map[string]struct {
+		fileSystem         fstest.MapFS
+		expectedRemoveAlls []string
+	}{
+		"testCacheClean": {
+			fstest.MapFS{
+				".ods-cache/.a":                                {},
+				".ods-cache/deps/dep1.txt":                     {},
+				".ods-cache/deps/go/gd1.txt":                   {},
+				".ods-cache/deps/go/gd1/foo.txt":               {},
+				".ods-cache/deps/go/gd2.txt":                   {},
+				".ods-cache/deps/npm/hithere_1.0/package.json": {},
+			},
+			[]string{
+				".ods-cache/.a",
+				".ods-cache/deps/dep1.txt",
+			},
+		},
+		"testCacheCleanNotRemovingOutside files": {
+			fstest.MapFS{
+				".ods-cache/.a":                  {},
+				".ods-cache/deps/dep1.txt":       {},
+				".ods-cache/deps/go/gd1.txt":     {},
+				".ods-cache/deps/go/gd1/foo.txt": {},
+				".ods-cache/deps/go/gd2.txt":     {},
+				"src/app.js":                     {},
+				"package.json":                   {},
+				".env":                           {},
+			},
+			[]string{
+				".ods-cache/.a",
+				".ods-cache/deps/dep1.txt",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			removed := []string{}
+			cleanCache(
+				FileSystemBase{tc.fileSystem, "."},
+				func(path string, isDir bool) error {
+					removed = append(removed, path)
+					return nil
+				})
+
+			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
+				t.Fatalf("expected (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestApplyVersionTags(t *testing.T) {
 	ctxt := &pipelinectxt.ODSContext{
