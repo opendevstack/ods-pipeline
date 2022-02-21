@@ -63,10 +63,17 @@ echo
 export ODS_OUTPUT_DIR=${OUTPUT_DIR}
 echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
-echo "Building (Compile and Test) ..."
-# shellcheck disable=SC2086
-./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
-echo
+
+
+echo "Testing ..."
+if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+  echo "Test artifacts already present, skipping tests ..."
+  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
+  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
+else
+  ./gradlew clean test
+fi
 
 echo "Verifying unit test report was generated  ..."
 BUILD_DIR="build"
@@ -91,5 +98,10 @@ else
   echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
   exit 1
 fi
+
+echo "Building ..."
+# shellcheck disable=SC2086
+./gradlew clean build -x test ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
+echo
 
 supply-sonar-project-properties-default
