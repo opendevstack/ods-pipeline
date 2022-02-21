@@ -217,7 +217,7 @@ Input parameters: TODO
 
 | SDS-TASK-14
 | `ods-python-toolset` contaner image
-| Container image to build Python applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-14, SDS-EXT-15, SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
+| Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-EXT-14, SDS-EXT-15, SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
 
 | SDS-TASK-15
 | `build-python.sh` shell script
@@ -560,6 +560,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 3.0.2
 | Git Large File Storage extension for versioning large files.
 | https://git-lfs.github.com/
+
+| SDS-EXT-28
+| Python 3.9 for UBI 8
+| 1
+| Python 3.9 available as container is a base platform for building and running various Python applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/python-39/6065b24eb92fbda3a4c65d8f
 
 |===
 

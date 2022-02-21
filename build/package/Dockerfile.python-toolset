@@ -1,25 +1,10 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+FROM registry.access.redhat.com/ubi8/python-39:1
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONIOENCODING=UTF-8 \
-    PIP_NO_CACHE_DIR=off \
-    HOME=/app \
-    PATH="/opt/venv/bin:$PATH" \
-    TAR_VERSION=1.30
-
-RUN microdnf install -y python39 tar-${TAR_VERSION}*
-
 RUN pip3 config set global.cert /etc/ssl/certs/ca-bundle.crt
 
-WORKDIR /app
-
 USER root
-
-RUN python3 -m venv /opt/venv && \
-    chown -R 1001:0 /app /opt/venv && \
-    chmod -R g=u /app /opt/venv
 
 # Add scripts
 COPY build/package/scripts/build-python.sh /usr/local/bin/build-python
