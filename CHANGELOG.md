@@ -34,6 +34,7 @@ listed in the changelog.
 - Prune pipelines and pipeline runs ([#153](https://github.com/opendevstack/ods-pipeline/issues/153)). Note that any pipeline runs created with 0.2.0 or earlier will not be cleaned up and need to be dealt with manually.
 - Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 - Remove Tekton Triggers, moving the required functionality it provided into the new ODS pipeline manager ([#438](https://github.com/opendevstack/ods-pipeline/issues/438))
+- Implement skipping tests for Gradle ([239](https://github.com/opendevstack/ods-pipeline/issues/239))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
