@@ -56,6 +56,11 @@ without leading `./` and trailing `/`.
 
 
 
+| cache-dependencies
+| false
+| Whether to cache dependencies in the PVC.
+
+
 | enable-cgo
 | false
 | Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.

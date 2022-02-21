@@ -50,6 +50,10 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
+    - name: cache-dependencies
+      description: Whether to cache dependencies in the PVC.
+      type: string
+      default: "false"
     - name: enable-cgo
       description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
       type: string
@@ -101,6 +105,7 @@ spec:
         build-go \
           --working-dir=$(params.working-dir) \
           --enable-cgo=$(params.enable-cgo) \
+          --cache-dependencies=$(params.cache-dependencies) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
           --pre-test-script=$(params.pre-test-script) \

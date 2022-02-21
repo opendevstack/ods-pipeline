@@ -8,6 +8,7 @@ copyLintReport() {
 }
 
 ENABLE_CGO="false"
+CACHE_DEPENDENCIES="false"
 GO_OS=""
 GO_ARCH=""
 OUTPUT_DIR="docker"
@@ -21,6 +22,9 @@ while [[ "$#" -gt 0 ]]; do
 
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
+
+    --cache-dependencies) CACHE_DEPENDENCIES="$2"; shift;;
+    --cache-dependencies=*) CACHE_DEPENDENCIES="${1#*=}";;
 
     --enable-cgo) ENABLE_CGO="$2"; shift;;
     --enable-cgo=*) ENABLE_CGO="${1#*=}";;
@@ -65,6 +69,12 @@ fi
 if [ -n "${GO_ARCH}" ]; then
   export GOARCH="${GO_ARCH}"
 fi
+if [ "${CACHE_DEPENDENCIES}" = "true" ]; then
+  export GOMODCACHE="$ROOT_DIR/.ods-cache/deps/gomod"
+  echo INFO: Using gomodule cache on repo pvc
+  echo GOMODCACHE="$GOMODCACHE"
+fi
+df -h "$ROOT_DIR"
 
 echo "Checking format ..."
 unformatted=$(gofmt -l .)
@@ -107,6 +117,7 @@ else
   go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
   exitcode=$?
   set -e
+  df -h "$ROOT_DIR"
   if [ -f test-results.txt ]; then
       cat test-results.txt
       go-junit-report < test-results.txt > report.xml
