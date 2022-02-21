@@ -9,6 +9,7 @@ import (
 type TestClient struct {
 	Branches     []Branch
 	Tags         []Tag
+	Repos        []Repo
 	Commits      []Commit
 	PullRequests []PullRequest
 	// Files contains byte slices for filenames
@@ -37,6 +38,16 @@ func (c *TestClient) TagGet(projectKey string, repositorySlug string, name strin
 }
 
 func (c *TestClient) TagCreate(projectKey string, repositorySlug string, payload TagCreatePayload) (*Tag, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (c *TestClient) RepoList(projectKey string) (*RepoPage, error) {
+	return &RepoPage{
+		Values: c.Repos,
+	}, nil
+}
+
+func (c *TestClient) RepoCreate(projectKey string, payload RepoCreatePayload) (*Repo, error) {
 	return nil, errors.New("not implemented")
 }
 
