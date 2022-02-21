@@ -154,6 +154,7 @@ func serve() error {
 		TektonClient:      tClient,
 		BitbucketClient:   bitbucketClient,
 		PipelineRunPruner: pruner,
+		Logger:            logger,
 	})
 	if err != nil {
 		return err

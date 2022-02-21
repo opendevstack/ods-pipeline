@@ -383,6 +383,8 @@ A pipeline is created or updated corresponding to the Git branch received in the
 
 A PVC is created per repository unless it exists already. The name is equal to `ods-workspace-<component>` (shortened to 63 characters if longer). This PVC is then used in the pipeline as a shared workspace.
 
+When no other pipeline run for the same repository is running or pending, the created/updated pipeline is started immediately. Otherwise a pending pipeline run is created, and a periodic polling is kicked off to allow the run to start once possible. Since the pipeline manager does not persist state about pending pipeline runs, polling is also started for all repositories in the related Bitbucket project when the server boots.
+
 Pipelines and pipeline runs are pruned when a webhook trigger is received. Pipeline runs that are newer than the configured time window are protected from pruning. Older pipeline runs are cleaned up to not grow beyond the configured maximum amount. If all pipeline runs of one pipeline can be pruned, the whole pipeline is pruned. The pruning strategy is applied per repository and stage (DEV, QA, PROD) to avoid aggressive pruning of QA and PROD pipeline runs.
 |===
 

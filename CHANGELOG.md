@@ -49,6 +49,7 @@ listed in the changelog.
 - Gradle proxy settings are set during prepare-local-env ([#291](https://github.com/opendevstack/ods-pipeline/issues/291))
 - Add `xargs` to helm image as `helm-secrets` depends on it ([#465](https://github.com/opendevstack/ods-pipeline/issues/465))
 - Pipeline creation fails when branch names contain slashes ([#466](https://github.com/opendevstack/ods-pipeline/issues/466))
+- Race conditions between pipelines of the same repository ([#394](https://github.com/opendevstack/ods-pipeline/issues/394))
 
 ## [0.2.0] - 2021-12-22
 ### Added

@@ -33,8 +33,8 @@ const (
 )
 
 // createPipelineRun creates a PipelineRun resource
-func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, pData PipelineData) (*tekton.PipelineRun, error) {
-	pr, err := tektonClient.CreatePipelineRun(ctxt, &tekton.PipelineRun{
+func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, pData PipelineData, needQueueing bool) (*tekton.PipelineRun, error) {
+	pr := &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", pData.Name),
 			Labels:       pipelineLabels(pData),
@@ -55,11 +55,11 @@ func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctx
 				},
 			},
 		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
 	}
-	return pr, nil
+	if needQueueing {
+		pr.Spec.Status = tekton.PipelineRunSpecStatusPending
+	}
+	return tektonClient.CreatePipelineRun(ctxt, pr, metav1.CreateOptions{})
 }
 
 // listPipelineRuns lists pipeline runs associated with repository.
