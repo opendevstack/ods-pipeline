@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eu
 
+BUILD_DIR="build"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ROOT_DIR=$(pwd)
@@ -65,37 +66,36 @@ echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
 
 echo "Testing ..."
-if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
+CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
+
+if [ -f "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
   # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
+  cp "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" coverage.xml
 else
   ./gradlew clean test
-fi
 
-echo "Verifying unit test report was generated  ..."
-BUILD_DIR="build"
-UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
+  echo "Verifying unit test report was generated  ..."
+  UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
+  if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
+      mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
+      cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
+  else
+    echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
+    exit 1
+  fi
 
-if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
-    UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
-    mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
-else
-  echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
-  exit 1
-fi
-
-echo "Verifying unit test coverage report was generated  ..."
-COVERAGE_RESULT_DIR="${BUILD_DIR}/reports/jacoco/test"
-if [ -d "${COVERAGE_RESULT_DIR}" ]; then
-    CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
-    mkdir -p "${CODE_COVERAGE_ARTIFACTS_DIR}"
-    cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
-else
-  echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
-  exit 1
+  echo "Verifying unit test coverage report was generated  ..."
+  COVERAGE_RESULT_DIR="${BUILD_DIR}/reports/jacoco/test"
+  if [ -d "${COVERAGE_RESULT_DIR}" ]; then
+      mkdir -p "${CODE_COVERAGE_ARTIFACTS_DIR}"
+      cp "${COVERAGE_RESULT_DIR}/jacocoTestReport.xml" "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml"
+  else
+    echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
+    exit 1
+  fi
 fi
 
 echo
