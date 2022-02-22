@@ -533,10 +533,10 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 			// Dependencies must be inside a folder specific to a technology
 			// such as for npm or go.
 			// Clean all files which are not directories
-			listOfPath := strings.Split(path, string(os.PathSeparator)) // https://stackoverflow.com/a/33619038
 			if path == cacheDependenciesPath {
 				return walkChildren
 			}
+			listOfPath := strings.Split(path, string(os.PathSeparator)) // https://stackoverflow.com/a/33619038
 			if len(listOfPath) == 2 {
 				if d.IsDir() {
 					return leaveAlone
@@ -544,7 +544,8 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 					return remove
 				}
 			}
-			return remove
+			// this is not expected to be reached
+			return leaveAlone
 		}
 		return remove // delete everything else
 	}, withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
