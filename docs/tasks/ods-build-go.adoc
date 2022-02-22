@@ -57,8 +57,8 @@ without leading `./` and trailing `/`.
 
 
 | cache-dependencies
-| false
-| Whether to cache dependencies in the PVC.
+| true
+| Whether to cache dependencies in the PVC. If 'true' sets up GOMODCACHE under `.ods-cache/deps/gomod`
 
 
 | enable-cgo

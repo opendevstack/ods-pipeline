@@ -51,9 +51,9 @@ spec:
       type: string
       default: "."
     - name: cache-dependencies
-      description: Whether to cache dependencies in the PVC.
+      description: Whether to cache dependencies in the PVC. If 'true' sets up GOMODCACHE under `.ods-cache/deps/gomod` 
       type: string
-      default: "false"
+      default: "true"
     - name: enable-cgo
       description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
       type: string

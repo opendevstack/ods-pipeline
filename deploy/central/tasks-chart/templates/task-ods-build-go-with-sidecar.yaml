@@ -57,8 +57,9 @@ spec:
       without leading `./` and trailing `/`.
     name: working-dir
     type: string
-  - default: "false"
-    description: Whether to cache dependencies in the PVC.
+  - default: "true"
+    description: Whether to cache dependencies in the PVC. If 'true' sets up GOMODCACHE
+      under `.ods-cache/deps/gomod`
     name: cache-dependencies
     type: string
   - default: "false"

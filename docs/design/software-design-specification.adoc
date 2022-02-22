@@ -67,6 +67,7 @@ a| The task defines two steps:
 Input parameters:
 
 * `working-dir`: allows to customize which directory is used as the Go module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
+* `cache-dependencies`: enables having the go module cache on the PVC's cache area. See https://go.dev/ref/mod#module-cache.
 * `enable-cgo`: allows to enable `CGO`
 * `go-os`: sets target operating system (`GOOS`)
 * `go-arch`: sets target architecture (`GOARCH`)
@@ -76,12 +77,14 @@ Input parameters:
 * `sonar-skip`: skips SonarQube analysis
 
 | SDS-TASK-2
-| `ods-go-toolset` contaner image
+| `ods-go-toolset` container image
 | Container image for building Go applications. Based on `ubi8/go-toolset` (SDS-EXT-25), includes SDS-EXT-4,EXT- SDS-EXT-5, SDS-SHARED-3, SDS-TASK-3 and SDS-TASK-25.
 
 | SDS-TASK-3
 | `build-go.sh` shell script
-a| Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
+a| If `cache-dependencies` is `'true'` sets environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` so that the go module cache is placed at the appropriate caching area on the PVC (see https://go.dev/ref/mod#module-cache)
+
+Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
 
 Runs `golangci-lint` (SDS-EXT-4) to check if there are any lint errors. A report is placed into `.ods/artifacts/lint-reports`.
 
@@ -152,12 +155,14 @@ a| Task to start pipeline. References SDS-TASK-8 and executes SDS-TASK-9.
 Input parameters: TODO
 
 | SDS-TASK-8
-| `ods-start` contaner image
+| `ods-start` container image
 | Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
+a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
+
+The task cleans the cache which deletes any files in unknown cache areas. A build task may store cached dependencies under directory `./ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported.
 
 Context information is stored under `.ods` for each checked out repository:
 

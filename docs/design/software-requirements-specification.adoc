@@ -92,6 +92,9 @@ a| The task shall store context information for each checked out repository (suc
 
 | SRS-TASK-START-5
 | The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
+
+| SRS-TASK-START-6
+| The task shall support caching. Caching shall enable persisting build dependencies.
 |===
 
 ==== Task `ods-finish`
