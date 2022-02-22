@@ -38,7 +38,7 @@ The global cache enables build tasks to store cached files for at least the foll
 
 The following new parameter is introduced to build tasks supporting dependency caching:
 
-* `cache-deps` a boolean defaulting to `false`. Only if set to `true` the task will used dependency caching. 
+* `cache-dependencies` a boolean defaulting to `false`. Only if set to `true` the task will used dependency caching. 
 
 In addition to the build task parameter, build tasks also receives the following:
 
@@ -77,12 +77,12 @@ The cleanup strategy described here is subject to change even in patch versions 
 
 The following cache locations on the PVC are used:
 
-- `+/.c/deps/<technology-name>/+` for dependency caches of a particular build technology. The technology-name would be defined by the build script and unknown to `ods-start`. 
+- `+./.ods-cache/deps/<technology-name>/+` for dependency caches of a particular build technology. The technology-name would be defined by the build script and unknown to `ods-start`. 
 
-- `+/.c/<not-deps>/**+` reserved for future usages for example to enable build skipping. For each new supported location `ods-start` may delete files as it makes sense for the purpose. 
+- `+./.ods-cache/<not-deps>/**+` reserved for future usages for example to enable build skipping. For each new supported location `ods-start` may delete files as it makes sense for the purpose. 
 
 Before cache cleanup `ods-start` cleans up all files not in the cache locations above. +
-Next all files directly underneath `/.c/deps/` which are not directories are deleted. This prevents tasks to forget to define and use a `<technology-name>`.
+Next all files directly underneath `+./.ods-cache/deps/+` which are not directories are deleted. This prevents tasks to forget to define and use a `<technology-name>`.
 
 == Pro
 
