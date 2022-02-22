@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,11 +17,6 @@ import (
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
-)
-
-const (
-	odsCacheDirName             = ".ods-cache"
-	odsCacheDependenciesDirName = "deps"
 )
 
 type options struct {
@@ -91,7 +85,6 @@ func main() {
 
 	logger.Infof("Cleaning checkout directory ...")
 	checkoutDirFSB := FileSystemBase{os.DirFS(checkoutDir), checkoutDir}
-
 	err := deleteDirectoryContentsSpareCache(checkoutDirFSB, removeFileOrDir)
 	if err != nil {
 		log.Fatal(err)
@@ -427,128 +420,6 @@ func checkoutAndAssembleContext(
 		log.Fatal(err)
 	}
 	return ctxt, nil
-}
-
-type SkipFileRemovalFlags int
-
-const (
-	leaveAlone   SkipFileRemovalFlags = 1 << iota
-	remove                            = 1 << iota
-	walkChildren                      = 1 << iota
-)
-
-type FileSkipFunc func(path string, d fs.DirEntry) SkipFileRemovalFlags
-
-type RemoveFunc func(path string, isDir bool) error
-
-func removeFileOrDir(path string, isDir bool) error {
-	err := os.RemoveAll(path)
-	if err != nil {
-		if isDir {
-			return fmt.Errorf("could not remove directory %s: %w", path, err)
-		} else {
-			return fmt.Errorf("could not remove file %s: %w", path, err)
-		}
-	}
-	return nil
-}
-
-func deleteDirRecursiveWithSkip(root fs.FS, fnSkip FileSkipFunc, fnRemove RemoveFunc) error {
-	return fs.WalkDir(root, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("could not read files in %s: %w", path, err)
-		}
-		if d.IsDir() {
-			if path == "." {
-				return nil
-			}
-			skipFlags := fnSkip(path, d)
-			if skipFlags&leaveAlone != 0 {
-				return fs.SkipDir
-			}
-			if skipFlags&remove != 0 {
-				err = fnRemove(path, true)
-			}
-			if err != nil {
-				return err
-			}
-			if skipFlags&walkChildren != 0 {
-				return nil
-			}
-			return fs.SkipDir
-
-		}
-		if d.Type().IsRegular() {
-			skipFlags := fnSkip(path, d)
-			if skipFlags&remove == 0 {
-				return nil
-			}
-			err = fnRemove(path, false)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-type FileSystemBase struct {
-	filesystem fs.FS
-	base       string
-}
-
-func withBaseFileRemover(base string, removeFunc RemoveFunc) RemoveFunc {
-	return func(path string, isDir bool) error {
-		fspath := filepath.Join(base, path)
-		return removeFunc(fspath, isDir)
-	}
-}
-
-func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
-	// Open the directory and read all its files.
-	cacheDirPath := filepath.Join(".", odsCacheDirName)
-	return deleteDirRecursiveWithSkip(fsb.filesystem, func(path string, d fs.DirEntry) SkipFileRemovalFlags {
-		if path == cacheDirPath {
-			return leaveAlone
-		}
-		return remove
-	}, withBaseFileRemover(fsb.base, fnRemove))
-}
-
-func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
-	_, err := fsb.filesystem.Open(odsCacheDirName)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	}
-
-	fsCache, err := fs.Sub(fsb.filesystem, odsCacheDirName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cacheDependenciesPath := filepath.Join(".", odsCacheDependenciesDirName)
-	// To avoid spare files inside the cache which are not supported delete
-	// all other areas of the cache
-	return deleteDirRecursiveWithSkip(fsCache, func(path string, d fs.DirEntry) SkipFileRemovalFlags {
-		if strings.HasPrefix(path, cacheDependenciesPath) {
-			// Dependencies must be inside a folder specific to a technology
-			// such as for npm or go.
-			// Clean all files which are not directories
-			if path == cacheDependenciesPath {
-				return walkChildren
-			}
-			listOfPath := strings.Split(path, string(os.PathSeparator)) // https://stackoverflow.com/a/33619038
-			if len(listOfPath) == 2 {
-				if d.IsDir() {
-					return leaveAlone
-				} else {
-					return remove
-				}
-			}
-			// this is not expected to be reached
-			return leaveAlone
-		}
-		return remove // delete everything else
-	}, withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
 }
 
 func getCommitSHA(dir string) (string, error) {
