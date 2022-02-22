@@ -65,17 +65,21 @@ export ODS_OUTPUT_DIR=${OUTPUT_DIR}
 echo "Exported env var 'ODS_OUTPUT_DIR' with value '${OUTPUT_DIR}'"
 echo
 
-echo "Testing ..."
+echo "Building ..."
 UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
 CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
 
-if [ -f "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" ]; then
+if [ -f "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" ] && [ -f "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
   # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
   cp "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" report.xml
   cp "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" coverage.xml
+
+  # shellcheck disable=SC2086
+  ./gradlew clean build -x test ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 else
-  ./gradlew clean test
+  # shellcheck disable=SC2086
+  ./gradlew clean build ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 
   echo "Verifying unit test report was generated  ..."
   UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
@@ -97,11 +101,6 @@ else
     exit 1
   fi
 fi
-
-echo
-echo "Building ..."
-# shellcheck disable=SC2086
-./gradlew clean build -x test ${GRADLE_ADDITIONAL_TASKS} ${GRADLE_OPTIONS}
 echo
 
 supply-sonar-project-properties-default
