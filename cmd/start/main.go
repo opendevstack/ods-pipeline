@@ -516,6 +516,11 @@ func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) 
 }
 
 func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
+	_, err := fsb.filesystem.Open(odsCacheDirName)
+	if err != nil && os.IsNotExist(err) {
+		return nil
+	}
+
 	fsCache, err := fs.Sub(fsb.filesystem, odsCacheDirName)
 	if err != nil {
 		log.Fatal(err)

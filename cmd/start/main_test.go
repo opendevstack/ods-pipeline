@@ -22,6 +22,10 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 		fileSystem         fstest.MapFS
 		expectedRemoveAlls []string
 	}{
+		"testCacheASparedEmpty": { // likely to never happen
+			fstest.MapFS{},
+			[]string{},
+		},
 		"testCacheSpared": {
 			fstest.MapFS{
 				".ods-cache/.a":                                {},
@@ -64,13 +68,15 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			removed := []string{}
-			deleteDirectoryContentsSpareCache(
+			err := deleteDirectoryContentsSpareCache(
 				FileSystemBase{tc.fileSystem, "."},
 				func(path string, isDir bool) error {
 					removed = append(removed, path)
 					return nil
 				})
-
+			if err != nil {
+				t.Fatal(err)
+			}
 			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
 			}
@@ -83,6 +89,10 @@ func TestCacheCleaning(t *testing.T) {
 		fileSystem         fstest.MapFS
 		expectedRemoveAlls []string
 	}{
+		"testCacheCleanWhenNoCache": {
+			fstest.MapFS{},
+			[]string{},
+		},
 		"testCacheClean": {
 			fstest.MapFS{
 				".ods-cache/.a":                                {},
@@ -118,12 +128,15 @@ func TestCacheCleaning(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			removed := []string{}
-			cleanCache(
+			err := cleanCache(
 				FileSystemBase{tc.fileSystem, "."},
 				func(path string, isDir bool) error {
 					removed = append(removed, path)
 					return nil
 				})
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
