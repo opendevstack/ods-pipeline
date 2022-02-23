@@ -10,8 +10,8 @@ import (
 func TestDirectoryCleaningSparesCache(t *testing.T) {
 
 	tests := map[string]struct {
-		fileSystem         fstest.MapFS
-		expectedRemoveAlls []string
+		fileSystem       fstest.MapFS
+		expectedRemovals []string
 	}{
 		"testCacheASparedEmpty": { // likely to never happen
 			fstest.MapFS{},
@@ -68,7 +68,7 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
+			if diff := cmp.Diff(tc.expectedRemovals, removed); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
 			}
 		})
@@ -77,8 +77,8 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 func TestCacheCleaning(t *testing.T) {
 
 	tests := map[string]struct {
-		fileSystem         fstest.MapFS
-		expectedRemoveAlls []string
+		fileSystem       fstest.MapFS
+		expectedRemovals []string
 	}{
 		"testCacheCleanWhenNoCache": {
 			fstest.MapFS{},
@@ -129,7 +129,7 @@ func TestCacheCleaning(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(tc.expectedRemoveAlls, removed); diff != "" {
+			if diff := cmp.Diff(tc.expectedRemovals, removed); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
 			}
 		})

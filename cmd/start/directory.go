@@ -2,7 +2,7 @@
 //
 // The implementation is a wrapper around [io.fs.WalkDir] which
 // operates on the filesystem abstraction [io.fs.FS].
-// The reason this is used as they facilitate unit testing.
+// This design facilitates unit testing.
 //
 // However the abstraction is also limited so that it does not
 // directly allow operation such as removing files.
@@ -18,19 +18,19 @@ import (
 	"os"
 )
 
-type SkipFileRemovalFlags int
+type WalkAndRemovalFlags int
 
 const (
 	// Used for directories only, where it indicates that the directory is not touched and the children are skipped.
-	leaveAlone SkipFileRemovalFlags = 1 << iota
+	skipDir WalkAndRemovalFlags = 1 << iota
 	// If Flag is set for a file the the associated file is deleted.
 	// If Flag is set for a directory, the directory is removed recursively and further walking is skipped.
 	remove = 1 << iota
 	// Used for directories only, where it indicates to continue with the directories children.
-	walkChildren = 1 << iota
+	enterDir = 1 << iota
 )
 
-type FileSkipFunc func(path string, d fs.DirEntry) SkipFileRemovalFlags
+type WalkAndRemovalDeciderFunc func(path string, d fs.DirEntry) WalkAndRemovalFlags
 
 // Type RemoveFunc allows to replace the error handling, for example to add logging.
 type RemoveFunc func(path string, isDir bool) error
@@ -48,7 +48,11 @@ func removeFileOrDir(path string, isDir bool) error {
 }
 
 // Selective deletions in a directory tree.
-func deleteDirRecursiveWithSkip(root fs.FS, fnSkip FileSkipFunc, fnRemove RemoveFunc) error {
+func deleteDirRecursiveWithSkip(
+	root fs.FS,
+	fnWalkAndRemoveDecider WalkAndRemovalDeciderFunc,
+	fnRemove RemoveFunc,
+) error {
 	return fs.WalkDir(root, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("could not read files in %s: %w", path, err)
@@ -57,31 +61,28 @@ func deleteDirRecursiveWithSkip(root fs.FS, fnSkip FileSkipFunc, fnRemove Remove
 			if path == "." {
 				return nil
 			}
-			skipFlags := fnSkip(path, d)
-			if skipFlags&leaveAlone != 0 {
+			flags := fnWalkAndRemoveDecider(path, d)
+			if flags&skipDir != 0 {
 				return fs.SkipDir
 			}
-			if skipFlags&remove != 0 {
-				err = fnRemove(path, true)
+			if flags&remove != 0 {
+				if err := fnRemove(path, true); err != nil {
+					return err
+				}
 			}
-			if err != nil {
-				return err
-			}
-			if skipFlags&walkChildren != 0 {
+			if flags&enterDir != 0 {
 				return nil
 			}
 			return fs.SkipDir
-
 		}
 		if d.Type().IsRegular() {
-			skipFlags := fnSkip(path, d)
-			if skipFlags&remove == 0 {
-				return nil
+			flags := fnWalkAndRemoveDecider(path, d)
+			if flags&remove != 0 {
+				if err := fnRemove(path, true); err != nil {
+					return err
+				}
 			}
-			err = fnRemove(path, false)
-			if err != nil {
-				return err
-			}
+			return nil
 		}
 		return nil
 	})

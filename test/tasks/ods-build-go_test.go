@@ -72,7 +72,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					ctxt.Params = map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
-						"cache-dependencies": "true",
+						"cache-dependencies": "false",
 						"sonar-quality-gate": "true",
 					}
 				},

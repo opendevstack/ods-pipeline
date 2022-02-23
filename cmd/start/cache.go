@@ -47,9 +47,9 @@ func withBaseFileRemover(base string, removeFunc RemoveFunc) RemoveFunc {
 func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 	// Open the directory and read all its files.
 	cacheDirPath := filepath.Join(".", odsCacheDirName)
-	return deleteDirRecursiveWithSkip(fsb.filesystem, func(path string, d fs.DirEntry) SkipFileRemovalFlags {
+	return deleteDirRecursiveWithSkip(fsb.filesystem, func(path string, d fs.DirEntry) WalkAndRemovalFlags {
 		if path == cacheDirPath {
-			return leaveAlone
+			return skipDir
 		}
 		return remove
 	}, withBaseFileRemover(fsb.base, fnRemove))
@@ -57,7 +57,7 @@ func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) 
 
 // Cleans the cache
 // At the moment only a cache for dependencies is supported and
-// All other contents is removed to ensure that tasks don't use
+// All other content is removed to ensure that tasks don't use
 // cache areas accidentally. This effectively reserve other
 // areas for future use.
 // For example if in the future build skipping is supported
@@ -77,25 +77,24 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 	cacheDependenciesPath := filepath.Join(".", odsCacheDependenciesDirName)
 	// To avoid spare files inside the cache which are not supported delete
 	// all other areas of the cache
-	return deleteDirRecursiveWithSkip(fsCache, func(path string, d fs.DirEntry) SkipFileRemovalFlags {
-		if strings.HasPrefix(path, cacheDependenciesPath) {
-			// Dependencies must be inside a folder specific to a technology
-			// such as for npm or go.
-			// Clean all files which are not directories
-			if path == cacheDependenciesPath {
-				return walkChildren
-			}
-			listOfPath := strings.Split(path, string(os.PathSeparator)) // https://stackoverflow.com/a/33619038
-			if len(listOfPath) == 2 {
-				if d.IsDir() {
-					return leaveAlone
-				} else {
-					return remove
-				}
-			}
-			// this is not expected to be reached
-			return leaveAlone
+	return deleteDirRecursiveWithSkip(fsCache, func(path string, d fs.DirEntry) WalkAndRemovalFlags {
+		if !strings.HasPrefix(path, cacheDependenciesPath) {
+			return remove // delete everything outside the dependency cache area
 		}
-		return remove // delete everything else
+		// Dependencies must be inside a folder specific to a technology
+		// such as for npm or go.
+		// Clean all files which are not directories
+		if path == cacheDependenciesPath {
+			return enterDir
+		}
+		// There should be no files below cacheDependenciesPath
+		// but all dirs are deemed valid.
+		// technology-folder names are not meant to be registered
+		// anywhere at this point.
+		if d.IsDir() {
+			return skipDir
+		} else {
+			return remove
+		}
 	}, withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
 }
