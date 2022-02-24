@@ -69,10 +69,10 @@ echo "Building ..."
 UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
 CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
 
-if [ -f "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" ] && [ -f "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" ]; then
+if [ "$(ls "${UNIT_TEST_ARTIFACTS_DIR}" 2>/dev/null)" ] && [ -f "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
   # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${UNIT_TEST_ARTIFACTS_DIR}" .
   cp "${CODE_COVERAGE_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}coverage.xml" coverage.xml
 
   # shellcheck disable=SC2086
@@ -85,7 +85,7 @@ else
   UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
   if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
       mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-      cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
+      cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}"
   else
     echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
     exit 1
