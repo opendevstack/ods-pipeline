@@ -16,7 +16,8 @@ There is no good reason when only the frontend code changes that the backend bui
 
 == Solution
 
-The solution is only provided for tasks supporting global caching (see separate proposal # 412).
+The solution will build on support for caching (issue #147). 
+All tasks shall be enabled to support build skipping.
 
 The following is added to the images of these tasks:
 
