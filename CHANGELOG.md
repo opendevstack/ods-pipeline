@@ -19,6 +19,7 @@ listed in the changelog.
 - Export `ARTIFACTS_DIR` environment variable to be visible to the gradle build ([#408](https://github.com/opendevstack/ods-pipeline/issues/408))
 - Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
+- Publish images to public registry (ghcr.io) ([#440](https://github.com/opendevstack/ods-pipeline/issues/440))
 - Allow to cache dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412).
 
 ### Changed
@@ -34,6 +35,7 @@ listed in the changelog.
 - Prune pipelines and pipeline runs ([#153](https://github.com/opendevstack/ods-pipeline/issues/153)). Note that any pipeline runs created with 0.2.0 or earlier will not be cleaned up and need to be dealt with manually.
 - Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 - Remove Tekton Triggers, moving the required functionality it provided into the new ODS pipeline manager ([#438](https://github.com/opendevstack/ods-pipeline/issues/438))
+- Use UBI8 provided Python 3.9 toolset image ([#457](https://github.com/opendevstack/ods-pipeline/issues/457))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
