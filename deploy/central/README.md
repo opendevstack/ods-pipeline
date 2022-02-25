@@ -6,7 +6,7 @@ This directory is maintained in https://github.com/opendevstack/ods-pipeline, an
 
 The resources are defined using Helm:
 * `BuildConfig` and `ImageStream` resources (in folder `images-chart`)
-* `ClusterTask` resources (in folder `tasks-chart`)
+* `Task` resources (in folder `tasks-chart`)
 
 The resources under `images-chart` are only applicable for OpenShift clusters.
 

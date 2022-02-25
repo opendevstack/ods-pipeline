@@ -1,5 +1,5 @@
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "ClusterTask" .Values.taskKind}}'
+kind: '{{default "Task" .Values.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-finish{{.Values.taskSuffix}}'
 spec:

@@ -20,7 +20,7 @@ spec:
         name: 'registry.redhat.io/ubi8/ubi-minimal:8.4'
       buildArgs:
         - name: taskKind
-          value: '{{default "ClusterTask" .Values.taskKind}}'
+          value: '{{default "Task" .Values.taskKind}}'
         - name: taskSuffix
           value: '{{.Values.taskSuffix}}'
       pullSecret:

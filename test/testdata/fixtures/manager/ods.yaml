@@ -2,7 +2,7 @@ pipeline:
   tasks:
     - name: go-helm-build
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: ods-build-go-v0-1-0
       params:
         - name: DOCKER_CONTEXT
@@ -16,7 +16,7 @@ pipeline:
           workspace: shared-workspace
     - name: go-helm-deploy
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: ods-deploy-helm-v0-1-0
       runAfter:
         - go-helm-build

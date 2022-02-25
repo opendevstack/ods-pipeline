@@ -27,7 +27,7 @@ var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false,
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
 
 const (
-	taskKindRef = "ClusterTask"
+	taskKindRef = "Task"
 )
 
 func checkODSContext(t *testing.T, repoDir string, want *pipelinectxt.ODSContext) {

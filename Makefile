@@ -107,7 +107,7 @@ build-and-push-images: ## Build and push images to local registry.
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
 
-install-ods-tasks-kind: ## KinD only! Apply ODS ClusterTask manifests in KinD
+install-ods-tasks-kind: ## KinD only! Apply ODS Task manifests in KinD
 	cd scripts && ./install-ods-tasks-kind.sh
 .PHONY: install-ods-tasks-kind
 
@@ -143,7 +143,7 @@ start-local-env: ## Restart stopped local environment.
 
 ##@ OpenShift
 
-install-ods-central: ## OpenShift only! Apply ODS BuildConfig, ImageStream and ClusterTask manifests
+install-ods-central: ## OpenShift only! Apply ODS BuildConfig, ImageStream and Task manifests
 ifeq ($(strip $(namespace)),)
 	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
 	@exit 1
