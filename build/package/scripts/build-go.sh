@@ -8,7 +8,6 @@ copyLintReport() {
 }
 
 ENABLE_CGO="false"
-CACHE_DEPENDENCIES="false"
 GO_OS=""
 GO_ARCH=""
 OUTPUT_DIR="docker"
@@ -22,9 +21,6 @@ while [[ "$#" -gt 0 ]]; do
 
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
-
-    --cache-dependencies) CACHE_DEPENDENCIES="$2"; shift;;
-    --cache-dependencies=*) CACHE_DEPENDENCIES="${1#*=}";;
 
     --enable-cgo) ENABLE_CGO="$2"; shift;;
     --enable-cgo=*) ENABLE_CGO="${1#*=}";;
@@ -69,11 +65,9 @@ fi
 if [ -n "${GO_ARCH}" ]; then
   export GOARCH="${GO_ARCH}"
 fi
-if [ "${CACHE_DEPENDENCIES}" = "true" ]; then
-  export GOMODCACHE="$ROOT_DIR/.ods-cache/deps/gomod"
-  echo INFO: Using gomodule cache on repo pvc
-  echo GOMODCACHE="$GOMODCACHE"
-fi
+export GOMODCACHE="$ROOT_DIR/.ods-cache/deps/gomod"
+echo INFO: Using gomodule cache on repo pvc
+echo GOMODCACHE="$GOMODCACHE"
 df -h "$ROOT_DIR"
 
 echo "Checking format ..."

@@ -13,7 +13,7 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 		fileSystem       fstest.MapFS
 		expectedRemovals []string
 	}{
-		"testCacheASparedEmpty": { // likely to never happen
+		"testCacheSparedEmpty": { // likely to never happen
 			fstest.MapFS{},
 			[]string{},
 		},
@@ -42,14 +42,14 @@ func TestDirectoryCleaningSparesCache(t *testing.T) {
 				".ods-cache/deps/go/gd1.txt":                   {},
 				".ods-cache/deps/go/gd1/foo.txt":               {},
 				".ods-cache/deps/go/gd2.txt":                   {},
-				".ods-Cache/deps/npm/hithere_1.0/package.json": {},
+				".ODS-Cache/deps/npm/hithere_1.0/package.json": {},
 				"src/app.js":                                   {},
 				"package.json":                                 {},
 				".env":                                         {},
 			},
 			[]string{
+				".ODS-Cache", // no plan to support case insensitive checking
 				".env",
-				".ods-Cache",
 				"package.json",
 				"src",
 			},
@@ -94,7 +94,6 @@ func TestCacheCleaning(t *testing.T) {
 				".ods-cache/deps/npm/hithere_1.0/package.json": {},
 			},
 			[]string{
-				".ods-cache/.a",
 				".ods-cache/deps/dep1.txt",
 			},
 		},
@@ -110,7 +109,6 @@ func TestCacheCleaning(t *testing.T) {
 				".env":                           {},
 			},
 			[]string{
-				".ods-cache/.a",
 				".ods-cache/deps/dep1.txt",
 			},
 		},

@@ -74,16 +74,16 @@ func deleteDirRecursiveWithSkip(
 				return nil
 			}
 			return fs.SkipDir
-		}
-		if d.Type().IsRegular() {
+		} else {
+			// intend is to delete symlinks and regular files.
+			// other files are not expected here.
 			flags := fnWalkAndRemoveDecider(path, d)
 			if flags&remove != 0 {
-				if err := fnRemove(path, true); err != nil {
+				if err := fnRemove(path, false); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
-		return nil
 	})
 }

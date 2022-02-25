@@ -21,7 +21,6 @@ package main
 
 import (
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,14 +71,16 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 
 	fsCache, err := fs.Sub(fsb.filesystem, odsCacheDirName)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	cacheDependenciesPath := filepath.Join(".", odsCacheDependenciesDirName)
 	// To avoid spare files inside the cache which are not supported delete
 	// all other areas of the cache
-	return deleteDirRecursiveWithSkip(fsCache, func(path string, d fs.DirEntry) WalkAndRemovalFlags {
+
+	dirEntryFunc := func(path string, d fs.DirEntry) WalkAndRemovalFlags {
+
 		if !strings.HasPrefix(path, cacheDependenciesPath) {
-			return remove // delete everything outside the dependency cache area
+			return 0 // allow files outside the dependency cache area for experimentation
 		}
 		// Dependencies must be inside a folder specific to a technology
 		// such as for npm or go.
@@ -96,5 +97,9 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 		} else {
 			return remove
 		}
-	}, withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
+	}
+	return deleteDirRecursiveWithSkip(
+		fsCache,
+		dirEntryFunc,
+		withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
 }

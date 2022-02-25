@@ -67,7 +67,6 @@ a| The task defines two steps:
 Input parameters:
 
 * `working-dir`: allows to customize which directory is used as the Go module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
-* `cache-dependencies`: enables having the go module cache on the PVC's cache area. See https://go.dev/ref/mod#module-cache.
 * `enable-cgo`: allows to enable `CGO`
 * `go-os`: sets target operating system (`GOOS`)
 * `go-arch`: sets target architecture (`GOARCH`)
@@ -82,7 +81,7 @@ Input parameters:
 
 | SDS-TASK-3
 | `build-go.sh` shell script
-a| If `cache-dependencies` is `'true'` sets environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` so that the go module cache is placed at the appropriate caching area on the PVC (see https://go.dev/ref/mod#module-cache)
+a| The go module cache is configured to be on the cache location of the PVC by setting environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` (see https://go.dev/ref/mod#module-cache)
 
 Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
 
@@ -162,7 +161,7 @@ Input parameters: TODO
 | `start` binary
 a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
 
-The task cleans the cache which deletes any files in unknown cache areas. A build task may store cached dependencies under directory `./ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported.
+A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation. 
 
 Context information is stored under `.ods` for each checked out repository:
 

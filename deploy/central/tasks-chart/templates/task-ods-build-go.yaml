@@ -12,6 +12,7 @@ spec:
     The following provides an overview of the performed steps:
 
     - Source files are checked to be formatted with `gofmt`.
+    - The go module cache is configured to be on the cache location of the PVC by setting environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` (see link:https://go.dev/ref/mod#module-cache[go module cache]).
     - `golanci-lint` is run. The linter can be configured via a
       config file as described in the
       link:https://golangci-lint.run/usage/configuration/[configuration documentation].
@@ -50,10 +51,6 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
-    - name: cache-dependencies
-      description: Whether to cache dependencies in the PVC. If 'true' sets up GOMODCACHE under `.ods-cache/deps/gomod` 
-      type: string
-      default: "true"
     - name: enable-cgo
       description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
       type: string
@@ -105,7 +102,6 @@ spec:
         build-go \
           --working-dir=$(params.working-dir) \
           --enable-cgo=$(params.enable-cgo) \
-          --cache-dependencies=$(params.cache-dependencies) \
           --go-os=$(params.go-os) \
           --go-arch=$(params.go-arch) \
           --pre-test-script=$(params.pre-test-script) \
