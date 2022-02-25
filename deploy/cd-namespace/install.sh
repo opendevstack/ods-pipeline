@@ -14,6 +14,7 @@ CHART_DIR="./chart"
 CHART=""
 
 while [[ "$#" -gt 0 ]]; do
+    # shellcheck disable=SC2034
     case $1 in
 
     -v|--verbose) VERBOSE="true";;
