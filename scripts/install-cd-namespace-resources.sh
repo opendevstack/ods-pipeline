@@ -10,4 +10,4 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 # deployment is self-contained within that folder, making it easy for consumers
 # to pull in the deployment logic into their repositories via "git subtree".
 "${ODS_PIPELINE_DIR}"/deploy/cd-namespace/install.sh -f ./chart/values.kind.yaml,./chart/values.generated.yaml "$@"
-"${ODS_PIPELINE_DIR}"/deploy/central/install.sh --chart=tasks -f ./tasks-chart/values.kind.yaml,./tasks-chart/values.generated.yaml "$@"
+"${ODS_PIPELINE_DIR}"/deploy/central/install.sh --chart=tasks -f ./tasks-chart/values.kind.yaml "$@"
