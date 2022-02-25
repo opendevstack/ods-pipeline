@@ -11,6 +11,7 @@ RELEASE_NAME="ods-pipeline"
 SERVICEACCOUNT="pipeline"
 VALUES_FILE="values.custom.yaml"
 CHART_DIR="./chart"
+CHART=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -25,6 +26,9 @@ while [[ "$#" -gt 0 ]]; do
 
     -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
     -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
+
+    -c|--chart) CHART="$2"; shift;;
+    -c=*|--chart=*) CHART="${1#*=}";;
 
     --no-diff) DIFF="false";;
 

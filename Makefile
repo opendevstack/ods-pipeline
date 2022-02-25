@@ -92,7 +92,7 @@ clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.
 
 ##@ KinD (local development environment)
 
-prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube install-ods-tasks-kind ## Prepare local environment from scratch.
+prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube ## Prepare local environment from scratch.
 .PHONY: prepare-local-env
 
 create-kind-with-registry: ## Create KinD cluster with local registry.
@@ -106,10 +106,6 @@ install-tekton-pipelines: ## Install Tekton pipelines in KinD cluster.
 build-and-push-images: ## Build and push images to local registry.
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
-
-install-ods-tasks-kind: ## KinD only! Apply ODS Task manifests in KinD
-	cd scripts && ./install-ods-tasks-kind.sh
-.PHONY: install-ods-tasks-kind
 
 run-bitbucket: ## Run Bitbucket server (using timebomb license, in "kind" network).
 	cd scripts && ./run-bitbucket.sh
@@ -130,7 +126,6 @@ run-sonarqube: ## Run SonarQube server (in "kind" network).
 recreate-kind-cluster: ## Recreate KinD cluster including Tekton tasks.
 	cd scripts && ./kind-with-registry.sh --recreate
 	cd scripts && ./install-tekton-pipelines.sh
-	cd scripts && ./install-ods-tasks-kind.sh
 .PHONY: recreate-kind-cluster
 
 stop-local-env: ## Stop local environment.

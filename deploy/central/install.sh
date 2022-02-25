@@ -8,6 +8,7 @@ DRY_RUN="false"
 DIFF="true"
 NAMESPACE=""
 RELEASE_NAME=""
+SERVICEACCOUNT=""
 VALUES_FILE=""
 CHART_DIR=""
 CHART=""
@@ -22,6 +23,9 @@ while [[ "$#" -gt 0 ]]; do
 
     -f|--values) VALUES_FILE="$2"; shift;;
     -f=*|--values=*) VALUES_FILE="${1#*=}";;
+
+    -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
+    -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
 
     -c|--chart) CHART="$2"; shift;;
     -c=*|--chart=*) CHART="${1#*=}";;
