@@ -35,6 +35,7 @@ The documentation provided by ODS pipeline has three audiences:
 * [Debugging](/docs/debugging.adoc)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
 * [Example Project](/docs/example-project.adoc)
+* [FAQ](https://github.com/opendevstack/ods-pipeline/wiki/FAQ)
 
 **Contributor Guide**
 * [Repository Layout](/docs/repository-layout.adoc)
