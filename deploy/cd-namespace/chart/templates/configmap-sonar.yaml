@@ -6,3 +6,4 @@ metadata:
     {{- include "chart.labels" . | nindent 4}}
 data:
   url: '{{.Values.sonarUrl}}'
+  edition: '{{.Values.sonarEdition | default "community" }}'

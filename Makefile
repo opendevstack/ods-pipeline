@@ -104,16 +104,7 @@ install-tekton-pipelines: ## Install Tekton pipelines in KinD cluster.
 .PHONY: install-tekton-pipelines
 
 build-and-push-images: ## Build and push images to local registry.
-		cd scripts && ./build-and-push-images.sh --image start
-		cd scripts && ./build-and-push-images.sh --image finish
-		cd scripts && ./build-and-push-images.sh --image buildah
-		cd scripts && ./build-and-push-images.sh --image sonar
-		cd scripts && ./build-and-push-images.sh --image webhook-interceptor
-		cd scripts && ./build-and-push-images.sh --image go-toolset
-		cd scripts && ./build-and-push-images.sh --image gradle-toolset
-		cd scripts && ./build-and-push-images.sh --image python-toolset
-		cd scripts && ./build-and-push-images.sh --image helm
-		cd scripts && ./build-and-push-images.sh --image node16-typescript-toolset --platform linux/amd64
+		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
 
 install-ods-tasks-kind: ## KinD only! Apply ODS ClusterTask manifests in KinD
@@ -170,7 +161,7 @@ start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConf
 	oc start-build ods-sonar
 	oc start-build ods-start
 	oc start-build ods-node16-typescript-toolset
-	oc start-build ods-webhook-interceptor
+	oc start-build ods-pipeline-manager
 .PHONY: start-ods-central-builds
 
 ##@ User Installation

@@ -21,7 +21,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 		},
 		map[string]tasktesting.TestCase{
 			"build typescript app": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -39,6 +38,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
+						"docker/dist/src/index.js",
 					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
@@ -48,7 +48,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				},
 			},
 			"build typescript app in subdirectory": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -83,7 +82,6 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 				},
 			},
 			"fail linting typescript app and generate lint report": {
-				Timeout:             20 * time.Minute,
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-lint-error"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -111,6 +109,57 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					}
 				},
 				WantSetupFail: true,
+			},
+			"build backend typescript app": {
+				Timeout:             10 * time.Minute,
+				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"copy-node-modules": "true",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					checkFilesExist(t, wsDir,
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
+						"docker/dist/node_modules/",
+					)
+				},
+			},
+			"build typescript app with custom build directory": {
+				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-build-dir"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"build-dir": "build",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					checkFilesExist(t, wsDir,
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
+						"docker/dist/src/index.js",
+					)
+				},
 			},
 		})
 }

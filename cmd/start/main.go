@@ -200,7 +200,7 @@ func main() {
 		}
 	}
 
-	if len(ctxt.Environment) > 0 {
+	if ctxt.Environment != "" {
 		env, err := odsConfig.Environment(ctxt.Environment)
 		if err != nil {
 			log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
@@ -384,6 +384,19 @@ func checkoutAndAssembleContext(
 	}
 	logger.Infof(string(stdout))
 
+	// check git LFS state and maybe pull
+	lfs, err := gitLfsInUse(logger, absCheckoutDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if lfs {
+		logger.Infof("Git LFS detected, enabling and pulling files...")
+		err := gitLfsEnableAndPullFiles(logger, absCheckoutDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// write ODS cache
 	sha, err := getCommitSHA(absCheckoutDir)
 	if err != nil {
@@ -431,4 +444,26 @@ func getCommitSHA(dir string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
+}
+
+func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, err error) {
+	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
+	if err != nil {
+		return false, fmt.Errorf("cannot list git lfs files: %s (%w)", stderr, err)
+	}
+	return strings.TrimSpace(string(stdout)) != "", err
+}
+
+func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
+	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "install"}, dir)
+	if err != nil {
+		return fmt.Errorf("cannot enable git lfs: %s (%w)", stderr, err)
+	}
+	logger.Infof(string(stdout))
+	stdout, stderr, err = command.RunInDir("git", []string{"lfs", "pull"}, dir)
+	if err != nil {
+		return fmt.Errorf("cannot git pull lfs files: %s (%w)", stderr, err)
+	}
+	logger.Infof(string(stdout))
+	return err
 }

@@ -2,7 +2,7 @@
 
 [![Tekton Tasks Tests](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml/badge.svg)](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml)
 
-**IMPORTANT: This is approach is currently being evaluated. This may or may not become part of ODS one day.**
+**IMPORTANT: This approach is currently being evaluated. This may or may not become part of ODS one day.**
 
 ## Introduction
 
@@ -20,7 +20,7 @@ The documentation provided by ODS pipeline has three audiences:
 
 * **Users** consume an existing central ODS pipeline installation. Users install ODS pipeline resources into a namespace they own to run CI/CD pipelines for their repositories.
 
-* **Developers** contribute to the ODS pipeline project itself, for example by improving existing tasks, adding new ones, updating documentation, etc.
+* **Contributors** work on the ODS pipeline project itself, for example by improving existing tasks, adding new ones, updating documentation, etc.
 
 **Admin Guide**
 * [Installation & Updating](/docs/admin-installation.adoc)
@@ -36,7 +36,7 @@ The documentation provided by ODS pipeline has three audiences:
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
 * [Example Project](/docs/example-project.adoc)
 
-**Developer Guide**
+**Contributor Guide**
 * [Repository Layout](/docs/repository-layout.adoc)
 * [Development & Running Tests](/docs/development.adoc)
 * [Artifacts](/docs/artifacts.adoc)

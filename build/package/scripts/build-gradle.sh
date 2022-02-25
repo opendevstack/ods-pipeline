@@ -4,7 +4,7 @@ set -eu
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ROOT_DIR=$(pwd)
-ARTIFACTS_DIR=$ROOT_DIR/.ods/artifacts
+export ARTIFACTS_DIR=$ROOT_DIR/.ods/artifacts
 ARTIFACT_PREFIX=
 DEBUG="${DEBUG:-false}"
 GRADLE_ADDITIONAL_TASKS=
@@ -22,8 +22,8 @@ while [[ "$#" -gt 0 ]]; do
     --gradle-additional-tasks) GRADLE_ADDITIONAL_TASKS="$2"; shift;;
     --gradle-additional-tasks=*) GRADLE_ADDITIONAL_TASKS="${1#*=}";;
 
-    # Gradle project properties ref: https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_configuration_properties
-    # Gradle options ref: https://docs.gradle.org/current/userguide/command_line_interface.html
+    # Gradle project properties ref: https://docs.gradle.org/7.3.3/userguide/build_environment.html#sec:gradle_configuration_properties
+    # Gradle options ref: https://docs.gradle.org/7.3.3/userguide/command_line_interface.html
     --gradle-options) GRADLE_OPTIONS="$2"; shift;;
     --gradle-options=*) GRADLE_OPTIONS="${1#*=}";;
 
@@ -42,6 +42,8 @@ fi
 export GRADLE_USER_HOME=/home/gradle/.gradle
 
 echo "Using NEXUS_URL=$NEXUS_URL"
+echo "Using GRADLE_OPTS=$GRADLE_OPTS"
+echo "Using ARTIFACTS_DIR=$ARTIFACTS_DIR"
 
 echo "Exported env var 'GRADLE_USER_HOME' with value '${GRADLE_USER_HOME}'"
 echo
@@ -73,7 +75,7 @@ UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}report.xml"
+    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
 else
   echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
   exit 1

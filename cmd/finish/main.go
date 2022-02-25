@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/pipeline/internal/notification"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -107,6 +110,39 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	kubernetesClient, err := kubernetes.NewInClusterClient(&kubernetes.ClientConfig{
+		Namespace: ctxt.Namespace,
+	})
+	if err != nil {
+		log.Fatalf("couldn't create kubernetes client: %s", err)
+	}
+
+	ctx := context.TODO()
+	notificationConfig, err := notification.ReadConfigFromConfigMap(ctx, kubernetesClient)
+	if err != nil {
+		log.Fatalf("Notification config could not be read: %s", err)
+	}
+
+	notificationClient, err := notification.NewClient(notification.ClientConfig{
+		Namespace:          ctxt.Namespace,
+		NotificationConfig: notificationConfig,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if notificationClient.ShouldNotify(opts.aggregateTasksStatus) {
+		err = notificationClient.CallWebhook(ctx, notification.PipelineRunResult{
+			PipelineRunName: opts.pipelineRunName,
+			PipelineRunURL:  pipelineRunURL,
+			OverallStatus:   opts.aggregateTasksStatus,
+			ODSContext:      ctxt,
+		})
+		if err != nil {
+			log.Printf("Calling notification webhook failed: %s", err)
+		}
+	}
 }
 
 // handleArtifacts figures out what to do with the artifacts stored underneath
@@ -199,10 +235,11 @@ func uploadArtifacts(
 				nexusGroup := pipelinectxt.ArtifactGroup(ctxt, artifactsSubDir)
 				localFile := filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
 				logger.Infof("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
-				err = nexusClient.Upload(nexusRepository, nexusGroup, localFile)
+				link, err := nexusClient.Upload(nexusRepository, nexusGroup, localFile)
 				if err != nil {
 					return err
 				}
+				logger.Infof("Successfully uploaded %s to %s", localFile, link)
 			}
 		}
 	}

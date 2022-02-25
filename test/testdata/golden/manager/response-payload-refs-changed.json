@@ -1,0 +1,20 @@
+{
+    "name": "bar-master",
+    "project": "foo",
+    "component": "bar",
+    "repository": "foo-bar",
+    "stage": "dev",
+    "environment": "",
+    "version": "",
+    "gitRef": "master",
+    "gitFullRef": "refs/heads/master",
+    "gitSha": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
+    "repoBase": "https://domain.com",
+    "gitURI": "https://domain.com/foo/foo-bar.git",
+    "namespace": "bar-cd",
+    "pvc": "ods-workspace-bar",
+    "trigger-event": "repo:refs_changed",
+    "comment": "",
+    "prKey": 0,
+    "prBase": ""
+}

@@ -11,6 +11,7 @@ type ClientPipelineInterface interface {
 	GetPipeline(ctxt context.Context, name string, options metav1.GetOptions) (*tekton.Pipeline, error)
 	CreatePipeline(ctxt context.Context, pipeline *tekton.Pipeline, options metav1.CreateOptions) (*tekton.Pipeline, error)
 	UpdatePipeline(ctxt context.Context, pipeline *tekton.Pipeline, options metav1.UpdateOptions) (*tekton.Pipeline, error)
+	DeletePipeline(ctxt context.Context, name string, options metav1.DeleteOptions) error
 }
 
 func (c *Client) GetPipeline(ctxt context.Context, name string, options metav1.GetOptions) (*tekton.Pipeline, error) {
@@ -26,4 +27,9 @@ func (c *Client) CreatePipeline(ctxt context.Context, pipeline *tekton.Pipeline,
 func (c *Client) UpdatePipeline(ctxt context.Context, pipeline *tekton.Pipeline, options metav1.UpdateOptions) (*tekton.Pipeline, error) {
 	c.logger().Debugf("Update pipeline %s", pipeline.Name)
 	return c.pipelinesClient().Update(ctxt, pipeline, options)
+}
+
+func (c *Client) DeletePipeline(ctxt context.Context, name string, options metav1.DeleteOptions) error {
+	c.logger().Debugf("Delete pipeline %s", name)
+	return c.pipelinesClient().Delete(ctxt, name, options)
 }

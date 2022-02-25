@@ -153,7 +153,7 @@ Input parameters: TODO
 
 | SDS-TASK-8
 | `ods-start` contaner image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22 and SDS-TASK-9.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
@@ -193,6 +193,13 @@ a| Sets the Bitbucket build status to "failed" or "successful", depending on whe
 Creates an artifact for the pipeline run, containing its name and status, provided that all tasks succeeded.
 
 Uploads all files in any `.ods/artifacts` folder to Nexus, storing them in a group named `/<PROJECT>/<REPOSITORY>/<GIT-COMMIT-SHA>`, provided that all tasks succeeded.
+
+| SDS-TASK-29
+| `finish` binary
+a| Optionally sends a status notification to a webhook receiver.
+
+Status notification message, webhook URL, content type, HTTP method, and triggering status values may be configured via a `ConfigMap`.
+
 |===
 
 ===== `ods-build-python` task
@@ -210,7 +217,7 @@ Input parameters: TODO
 
 | SDS-TASK-14
 | `ods-python-toolset` contaner image
-| Container image to build Python applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-14, SDS-EXT-15, SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
+| Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
 
 | SDS-TASK-15
 | `build-python.sh` shell script
@@ -220,7 +227,7 @@ If the `pre-test-script` is set, it executes the given script before running tes
 
 Runs `pytest`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
-Builds Python application (using SDS-EXT-14) into the directory specified by `output-dir`.
+Builds Python application into the directory specified by `output-dir`.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
@@ -242,6 +249,8 @@ Input parameters:
 
 * `working-dir`: allows to customize which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `output-dir`: sets destination directory of the build output
+* `build-dir`: sets source directory of the build output
+* `copy-node-modules`: enables copying node_modules folder to the output directory
 * `max-lint-warnings`: maximum of allowed linting warnings after which eslint will exit with an error
 * `lint-file-ext`: file extensions to lint
 * `sonar-quality-gate`: enables quality gate check
@@ -249,11 +258,11 @@ Input parameters:
 
 | SDS-TASK-17
 | `ods-node16-typescript-toolset` container image
-| Container image to build TypeScript applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-6, SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
 | `build-typescript.sh` shell script
-a| Runs `npm run build`, and copies the `dist` folder into the directory specified by `output-dir`.
+a| Runs `npm run build`, and copies the folder specified in `build-dir` into the directory specified by `output-dir`.
 
 Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
@@ -331,25 +340,25 @@ Upgrades (or installs) a Helm chart.
 
 ==== Local ODS Pipeline Installation
 
-===== Webhook Interceptor
+===== Pipeline Manager
 
 [cols="1,1,3"]
 |===
-| SDS-INTERCEPTOR-1
+| SDS-PIPELINE-MANAGER-1
 | `ods-pipeline` Service resource
-| Service (exposing a set of pods) for the webhook interceptor
+| Service (exposing a set of pods) for the pipeline manager
 
-| SDS-INTERCEPTOR-2
+| SDS-PIPELINE-MANAGER-2
 | `ods-pipeline` Deployment resource
-| Deployment (providing declarative updates for pods and replica sets) for the webhook interceptor. The container template references SDS-INTERCEPTOR-3.
+| Deployment (providing declarative updates for pods and replica sets) for the pipeline manager. The container template references SDS-PIPELINE-MANAGER-3.
 
-| SDS-INTERCEPTOR-3
-| `ods-webhook-interceptor` container image
-| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-INTERCEPTOR-4.
+| SDS-PIPELINE-MANAGER-3
+| `ods-pipeline-manager` container image
+| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-PIPELINE-MANAGER-4.
 
-| SDS-INTERCEPTOR-4
-| `webhook-interceptor` binary
-a| The interceptor parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
+| SDS-PIPELINE-MANAGER-4
+| `pipeline-manager` binary
+a| The pipeline manager parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
 
 For Git commits which message instructs to skip CI, no pipelines are triggererd. Instructions may be anywhere in the commit message and may be one of (case insensitive):
 
@@ -360,6 +369,10 @@ For Git commits which message instructs to skip CI, no pipelines are triggererd.
 ```
 
 A pipeline is created or updated corresponding to the Git branch received in the webhook request. The pipeline name is made out of the component and the sanitized branch. A maximum of 63 characters is respected. Tasks (including `finally` tasks) of the pipline are read from the ODS config file in the repository.
+
+A PVC is created per repository unless it exists already. The name is equal to `ods-workspace-<component>` (shortened to 63 characters if longer). This PVC is then used in the pipeline as a shared workspace.
+
+Pipelines and pipeline runs are pruned when a webhook trigger is received. Pipeline runs that are newer than the configured time window are protected from pruning. Older pipeline runs are cleaned up to not grow beyond the configured maximum amount. If all pipeline runs of one pipeline can be pruned, the whole pipeline is pruned. The pruning strategy is applied per repository and stage (DEV, QA, PROD) to avoid aggressive pruning of QA and PROD pipeline runs.
 |===
 
 ===== Artifact Download
@@ -440,12 +453,6 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Distributed version control system.
 | https://git-scm.com
 
-| SDS-EXT-10
-| OpenJDK Headless
-| 17
-| Reference implementation of version 17 of the Java SE Platform.
-| https://openjdk.java.net/projects/jdk/17/
-
 | SDS-EXT-11
 | Red Hat OpenJDK 17 Image
 | 1.10
@@ -464,33 +471,21 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Clients necessary to make encrypted connections to SSH servers.
 | https://gradle.org
 
-| SDS-EXT-14
-| Python
-| 3.9
-| Interpreted high-level general-purpose programming language.
-| https://www.python.org
-
 | SDS-EXT-15
 | Tar
 | 1.30
 | Used to create and extract archive files.
 | https://www.gnu.org/software/tar/
 
-| SDS-EXT-16
-| Node.js
-| 16
-| Back-end JavaScript runtime environment.
-| https://nodejs.org/
-
 | SDS-EXT-17
 | Skopeo
-| 1.4
+| 1.5
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
 | SDS-EXT-18
 | Buildah
-| 1.22
+| 1.23
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 
@@ -536,6 +531,24 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | go-toolset available as a container is a base platform for building and running various Go applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/go-toolset/5ce8713aac3db925c03774d1
 
+| SDS-EXT-26
+| NodeJS 16 for UBI 8
+| 1
+| Node.js 16 available as container is a base platform for building and running various Node.js 16 applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1
+
+| SDS-EXT-27
+| Git LFS
+| 3.0.2
+| Git Large File Storage extension for versioning large files.
+| https://git-lfs.github.com/
+
+| SDS-EXT-28
+| Python 3.9 for UBI 8
+| 1
+| Python 3.9 available as container is a base platform for building and running various Python applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/python-39/6065b24eb92fbda3a4c65d8f
+
 |===
 
 == Appendix
@@ -544,69 +557,4 @@ N/A
 
 == Document History
 
-The following table provides the history of the document.
-
-[cols="1,1,1,3"]
-|===
-| Version | Date | Author | Change
-
-| 0.12
-| 2022-01-12
-| Jan Frank
-| Update gradle version to 7.3.3.
-
-| 0.11
-| 2022-01-10
-| Michael Sauter
-| Update helm-diff.
-
-| 0.10
-| 2021-12-22
-| Michael Sauter
-| Add Go lint report artifact.
-
-| 0.9
-| 2021-12-21
-| Michael Sauter
-| Add Go UBI base image.
-
-| 0.8
-| 2021-12-20
-| Henning Groß
-| Updated Node.js version.
-
-| 0.7
-| 2021-12-16
-| Henning Groß
-| Add linting stage for TypeScript.
-
-| 0.6
-| 2021-12-15
-| Andreas Kübler
-| Updated JDK version.
-
-| 0.5
-| 2021-12-10
-| Michael Sauter
-| Add default SonarQube project properties.
-
-| 0.4
-| 2021-12-09
-| Gerard Castillo
-| Add Sops and Age, and updated Helm Secrets plugin.
-
-| 0.3
-| 2021-11-26
-| Gerard Castillo
-| Updated python.
-
-| 0.2
-| 2021-11-10
-| Michael Sauter
-| Updated gcc, skopeo and buildah.
-
-| 0.1
-| 2021-10-01
-| Michael Sauter
-| Initial version.
-|===
+As this document is version controlled in Git, all changes are tracked as commits. The history of changes to this file can be retrieved via `git log --oneline --no-merges docs/design/software-design-specification.adoc`.

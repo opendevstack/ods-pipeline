@@ -3,32 +3,25 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"log"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
-func GetConfigMap(clientset *kubernetes.Clientset, namespace string, cmName string) (*v1.ConfigMap, error) {
-
-	log.Printf("Get configmap %s", cmName)
-
-	cm, err := clientset.CoreV1().
-		ConfigMaps(namespace).
-		Get(context.TODO(), cmName, metav1.GetOptions{})
-
-	return cm, err
+type ClientConfigMapInterface interface {
+	GetConfigMap(ctxt context.Context, cmName string, options metav1.GetOptions) (*v1.ConfigMap, error)
+	GetConfigMapKey(ctxt context.Context, cmName, key string, options metav1.GetOptions) (string, error)
 }
 
-func GetConfigMapKey(clientset *kubernetes.Clientset, namespace, cmName, key string) (string, error) {
+func (c *Client) GetConfigMap(ctxt context.Context, cmName string, options metav1.GetOptions) (*v1.ConfigMap, error) {
+	c.logger().Debugf("Get configmap %s", cmName)
 
-	log.Printf("Get configmap %s", cmName)
+	return c.configMapsClient().Get(ctxt, cmName, options)
+}
 
-	cm, err := clientset.CoreV1().
-		ConfigMaps(namespace).
-		Get(context.TODO(), cmName, metav1.GetOptions{})
+func (c *Client) GetConfigMapKey(ctxt context.Context, cmName, key string, options metav1.GetOptions) (string, error) {
+	c.logger().Debugf("Get configmap %s", cmName)
 
+	cm, err := c.GetConfigMap(ctxt, cmName, options)
 	if err != nil {
 		return "", err
 	}

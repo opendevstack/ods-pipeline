@@ -4,18 +4,17 @@ serviceAccountName: 'pipeline'
 # Cluster
 consoleUrl: 'http://example.com'
 
-# Webhook Interceptor
-interceptor:
-  apiHost: 'kubernetes.default.svc.cluster.local'
+# Pipeline Manager
+pipelineManager:
+  storageProvisioner: ''
+  storageClassName: 'standard'
+  storageSize: '2Gi'
   replicaCount: 1
   image:
     registry: localhost:5000
-    # Overrides the image namespace whose default is the release namespace.
     namespace: ods
-    # Overrides the image repository whose default is the chart name.
-    repository: ods-webhook-interceptor
+    repository: ods-pipeline-manager
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"
   resources:
     limits:
@@ -25,7 +24,56 @@ interceptor:
       cpu: 100m
       memory: 128Mi
 
-# PVC
-storageProvisioner: ''
-storageClassName: 'standard'
-storageSize: '2Gi'
+# Notification Webhook
+notification:
+  # notifications are disabled by default, i.e. the ConfigMap won't be installed
+  enabled: false
+  # URL of the configured webhook
+  url: 'http://example.com'
+  # The HTTP method to be used
+  method: 'POST'
+  # The HTTP content type header
+  contentType: 'application/json'
+  # Specify the outcomes you want to be notified of (allowed values: c.f.
+  # https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks)
+  notifyOnStatus:
+    - 'Failed'
+  # Template to be processed and accepted by the configured webhook in use
+  # Below example might work for Microsoft Teams
+  requestTemplate: |-
+    {
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": {{if eq .OverallStatus "Succeeded"}}"237b4b"{{else}}"c4314b"{{ end }},
+      "summary": "{{.ODSContext.Project}} - ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+      "sections": [
+        {
+          "activityTitle": "ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+          "activitySubtitle": "On Project {{.ODSContext.Project}}",
+          "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+          "facts": [
+            {
+              "name": "GitRef",
+              "value": "{{.ODSContext.GitRef}}"
+            },
+            {
+              "name": "Environment",
+              "value": "{{.ODSContext.Environment}}"
+            }
+          ],
+          "markdown": true
+        }
+      ],
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": "Go to PipelineRun",
+          "targets": [
+            {
+              "os": "default",
+              "uri": "{{.PipelineRunURL}}"
+            }
+          ]
+        }
+      ]
+    }

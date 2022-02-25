@@ -32,9 +32,7 @@ func CreateNodePortService(clientset *kubernetes.Clientset, name string, selecto
 						TargetPort: intstr.FromInt(int(targetPort)),
 					},
 				},
-				Selector: map[string]string{
-					"eventlistener": "ods-pipeline",
-				},
+				Selector:        selectors,
 				SessionAffinity: v1.ServiceAffinityNone,
 				Type:            v1.ServiceTypeNodePort,
 			},

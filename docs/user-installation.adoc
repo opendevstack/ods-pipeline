@@ -8,7 +8,7 @@ Note that at the moment, `ods-pipeline` is somewhat compatible with an existing 
 The guide will install the following required resources:
 
 * `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
-* Tekton Triggers related resources (e.g. `EventListener`, `TriggerTemplate`, etc.) including the ODS webhook interceptor, all of which allow to trigger pipelines in response to Bitbucket webhook requests
+* ODS pipeline manager, wich is managing and triggering pipelines in response to Bitbucket webhook requests
 
 ## Prerequisites
 

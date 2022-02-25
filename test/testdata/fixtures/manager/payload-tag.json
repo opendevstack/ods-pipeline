@@ -1,0 +1,74 @@
+{
+    "eventKey": "repo:refs_changed",
+    "date": "2021-01-15T13:29:05+0000",
+    "actor": {
+        "name": "max.mustermann@acme.org",
+        "emailAddress": "max.mustermann@acme.org",
+        "id": 4653,
+        "displayName": "Mustermann,Max ACME",
+        "active": true,
+        "slug": "max.mustermann_acme.org",
+        "type": "NORMAL",
+        "links": {
+            "self": [
+                {
+                    "href": "https://bitbucket.acme.org/users/max.mustermann_acme.org"
+                }
+            ]
+        }
+    },
+    "repository": {
+        "slug": "foo-bar",
+        "id": 8733,
+        "name": "foo-bar",
+        "scmId": "git",
+        "state": "AVAILABLE",
+        "statusMessage": "Available",
+        "forkable": true,
+        "project": {
+            "key": "FOO",
+            "id": 6603,
+            "name": "Max Mustermann Playground",
+            "public": false,
+            "type": "NORMAL",
+            "links": {
+                "self": [
+                    {
+                        "href": "https://bitbucket.acme.org/projects/FOO"
+                    }
+                ]
+            }
+        },
+        "public": false,
+        "links": {
+            "clone": [
+                {
+                    "href": "https://bitbucket.acme.org/scm/foo/foo-bar.git",
+                    "name": "http"
+                },
+                {
+                    "href": "ssh://git@bitbucket.acme.org:7999/foo/foo-bar.git",
+                    "name": "ssh"
+                }
+            ],
+            "self": [
+                {
+                    "href": "https://bitbucket.acme.org/projects/FOO/repos/foo-bar/browse"
+                }
+            ]
+        }
+    },
+    "changes": [
+        {
+            "ref": {
+                "id": "refs/tags/v2.0.0",
+                "displayId": "v2.0.0",
+                "type": "TAG"
+            },
+            "refId": "refs/heads/master",
+            "fromHash": "dc85ccd8bb912006162e0d1d9f48e1f2d7210c9c",
+            "toHash": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
+            "type": "UPDATE"
+        }
+    ]
+}

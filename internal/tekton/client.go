@@ -21,12 +21,13 @@ type ClientConfig struct {
 	Namespace string
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
-	// HTTP client used to download assets.
+	// TektonClient is the wrapped Tekton client.
 	TektonClient *tektonClient.Clientset
 }
 
 type ClientInterface interface {
 	ClientPipelineInterface
+	ClientPipelineRunInterface
 }
 
 // NewInClusterClient initializes a Tekton client from within a cluster.
@@ -78,4 +79,8 @@ func (c *Client) tektonV1beta1Client() v1beta1.TektonV1beta1Interface {
 
 func (c *Client) pipelinesClient() v1beta1.PipelineInterface {
 	return c.tektonV1beta1Client().Pipelines(c.namespace())
+}
+
+func (c *Client) pipelineRunsClient() v1beta1.PipelineRunInterface {
+	return c.tektonV1beta1Client().PipelineRuns(c.namespace())
 }

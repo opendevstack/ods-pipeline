@@ -1,0 +1,36 @@
+{
+  "@type": "MessageCard",
+  "@context": "http://schema.org/extensions",
+  "themeColor": "237b4b",
+  "summary": "Project - ODS Pipeline Run pipelinerun-release-v0-message-deadbeef finished with status Succeeded",
+  "sections": [
+    {
+      "activityTitle": "ODS Pipeline Run pipelinerun-release-v0-message-deadbeef finished with status Succeeded",
+      "activitySubtitle": "On Project Project",
+      "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+      "facts": [
+        {
+          "name": "GitRef",
+          "value": "main"
+        },
+        {
+          "name": "Environment",
+          "value": "dev"
+        }
+      ],
+      "markdown": true
+    }
+  ],
+  "potentialAction": [
+    {
+      "@type": "OpenUri",
+      "name": "Go to PipelineRun",
+      "targets": [
+        {
+          "os": "default",
+          "uri": "https://localhost"
+        }
+      ]
+    }
+  ]
+}

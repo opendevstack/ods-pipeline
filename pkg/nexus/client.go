@@ -41,7 +41,7 @@ type ClientConfig struct {
 type ClientInterface interface {
 	Download(url, outfile string) (int64, error)
 	Search(repository, group string) ([]string, error)
-	Upload(repository, group, file string) error
+	Upload(repository, group, file string) (string, error)
 }
 
 // NewClient initializes a Nexus client.

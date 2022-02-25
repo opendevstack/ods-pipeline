@@ -29,8 +29,7 @@ RUN cd cmd/sonar && CGO_ENABLED=0 go build -o /usr/local/bin/sonar
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-ARG sonarEdition=community
-ENV SONAR_EDITION=$sonarEdition
+ENV SONAR_EDITION="community"
 
 RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
 

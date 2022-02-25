@@ -12,19 +12,11 @@ System_Boundary(c1, "OpenShift"){
     
     Container(route, "Route", "External endpoint for Bitbucket webhook")
 
-    Container(event_listener, "Event Listener", "Tekton-provided service", "service listening for events")
-
-    Container(bitbucket_interceptor, "Bitbucket Interceptor", "Tekton-provided service", "Validate authenticity of event")
-
-    Container(ods_interceptor, "ODS interceptor", "Custom service", "Manage pipelines")
-
-    Container(trigger_binding, "Trigger Binding", "Tekton-provided resource", "Extract parameters from modified body")
-
-    Container(trigger_template, "Trigger Template", "Tekton-provided resource", "Link trigger resources to pipeline run")
+    Container(ods_service, "ODS Pipeline Manager", "Service", "Manage and trigger pipelines")
 
     Container(pipeline, "Pipeline", "Tekton-provided resource", "Referencing tasks, name based on Git repo and ref")
 
-    Container(pipeline_run, "PipelineRun", "Tekton-provided resource", "URun referenced pipeline with parameters and workspace")
+    Container(pipeline_run, "PipelineRun", "Tekton-provided resource", "Run references pipeline with parameters and workspace")
 }
 
 System_Ext(bitbucket_repo, "Bitbucket Repository")
@@ -33,19 +25,12 @@ Rel(developer, bitbucket_repo, "Pushes", "Git commit")
 
 Rel(bitbucket_repo, route, "Send webhook request")
 
-Rel(route, event_listener, "Forward", "event")
+Rel(route, ods_service, "Forward", "event")
 
-Rel(event_listener, bitbucket_interceptor, "Pass on", "event")
+Rel(ods_service, bitbucket_repo, "Download ods.y(a)ml")
+Rel(ods_service, pipeline, "Create or update")
 
-Rel(bitbucket_interceptor, ods_interceptor, "Pass on", "event")
-
-Rel(ods_interceptor, trigger_binding, "Pass on", "event")
-Rel(ods_interceptor, bitbucket_repo, "Download ods.y(a)ml")
-Rel(ods_interceptor, pipeline, "Create or update")
-
-Rel(trigger_binding, trigger_template, "Pass on", "event")
-
-Rel(trigger_template, pipeline_run, "Create")
+Rel(ods_service, pipeline_run, "Create")
 
 Rel(pipeline_run, pipeline, "Reference")
 

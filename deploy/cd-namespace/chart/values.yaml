@@ -25,6 +25,8 @@ nexusPermanentRepository: 'ods-permanent-artifacts'
 sonarUrl: ''
 # SonarQube username. Example: developer.
 sonarUsername: ''
+# SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
+sonarEdition: 'community'
 
 # Aqua
 # Aqua URL (including scheme). Example: https://aqua.example.com.
@@ -37,34 +39,93 @@ aquaRegistry: ''
 # Leave empty when not using Aqua.
 aquaUsername: ''
 
-# PVC (used for the pipeline workspace)
-# Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
-storageProvisioner: 'kubernetes.io/aws-ebs'
-# Storage class. On AWS backed clusters, use 'gp2'.
-storageClassName: 'gp2'
-# Storage size. Defaults to 2Gi unless set explicitly here.
-storageSize: '5Gi'
-
 # Cluster
 # URL (including scheme) of the OpenShift Web Console.
 consoleUrl: 'http://example.com'
 
-# Webhook Interceptor
-interceptor:
-  # API host (no scheme) of the OpenShift/K8s API.
-  apiHost: 'openshift.default.svc.cluster.local'
-  # Number of replicas to run for the interceptor.
+# Notification Webhook
+notification:
+  # notifications are disabled by default, i.e. the ConfigMap won't be installed
+  enabled: false
+  # URL of the configured webhook
+  url: 'http://example.com'
+  # The HTTP method to be used
+  method: 'POST'
+  # The HTTP content type header
+  contentType: 'application/json'
+  # Specify the outcomes you want to be notified of (allowed values: c.f.
+  # https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks)
+  notifyOnStatus:
+    - 'Failed'
+  # Template to be processed and accepted by the configured webhook in use
+  # Below example might work for Microsoft Teams
+  requestTemplate: |-
+    {
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": {{if eq .OverallStatus "Succeeded"}}"237b4b"{{else}}"c4314b"{{ end }},
+      "summary": "{{.ODSContext.Project}} - ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+      "sections": [
+        {
+          "activityTitle": "ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+          "activitySubtitle": "On Project {{.ODSContext.Project}}",
+          "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+          "facts": [
+            {
+              "name": "GitRef",
+              "value": "{{.ODSContext.GitRef}}"
+            },
+            {
+              "name": "Environment",
+              "value": "{{.ODSContext.Environment}}"
+            }
+          ],
+          "markdown": true
+        }
+      ],
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": "Go to PipelineRun",
+          "targets": [
+            {
+              "os": "default",
+              "uri": "{{.PipelineRunURL}}"
+            }
+          ]
+        }
+      ]
+    }
+
+# Pipeline(Run) Pruning
+# Minimum hours to keep a pipeline run. Has precendence over pipelineRunMaxKeepRuns.
+# Must be at least 1.
+pipelineRunMinKeepHours: '48'
+# Maximum number of pipeline runs to keep per stage (stages: DEV, QA, PROD).
+# Must be at least 1.
+pipelineRunMaxKeepRuns: '20'
+
+# Pipeline Manager
+pipelineManager:
+  # PVC (used for the pipeline workspace)
+  # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
+  storageProvisioner: 'kubernetes.io/aws-ebs'
+  # Storage class. On AWS backed clusters, use 'gp2'.
+  storageClassName: 'gp2'
+  # Storage size. Defaults to 2Gi unless set explicitly here.
+  storageSize: '5Gi'
+  # Number of replicas to run for the pipeline manager.
   replicaCount: 1
   image:
-    # Image registry from which to pull the webhook interceptor container image.
+    # Image registry from which to pull the pipeline manager container image.
     registry: image-registry.openshift-image-registry.svc:5000
-    # Namespace from which to pull the webhook interceptor container image.
+    # Namespace from which to pull the pipeline manager container image.
     # If not given, the image is pulled from the release namespace.
     namespace: ods
-    # Repository (ImageStream) from which to pull the webhook interceptor
+    # Repository (ImageStream) from which to pull the pipeline manager
     # container image.
     # If not given, the image name equals the chart name.
-    repository: ods-webhook-interceptor
+    repository: ods-pipeline-manager
     # Pull policy.
     pullPolicy: Always
     # Image tag to pull.

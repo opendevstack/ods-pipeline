@@ -18,6 +18,8 @@ import (
 
 func TestTaskODSStart(t *testing.T) {
 	var subrepoContext *pipelinectxt.ODSContext
+	var lfsFilename string
+	var lfsFileHash [32]byte
 	runTaskTestCases(t,
 		"ods-start",
 		[]tasktesting.Service{
@@ -36,7 +38,7 @@ func TestTaskODSStart(t *testing.T) {
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					// Upload artifact to permanent storage.
-					err := nexusClient.Upload(
+					_, err := nexusClient.Upload(
 						nexus.PermanentRepositoryDefault,
 						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.PipelineRunsDir),
 						filepath.Join(artifactsBaseDir, "pipeline-runs", "foo-zh9gt0.json"),
@@ -100,7 +102,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
-					err = nexusClient.Upload(
+					_, err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(subCtxt, pipelinectxt.XUnitReportsDir),
 						filepath.Join(artifactsBaseDir, pipelinectxt.XUnitReportsDir, "report.xml"),
@@ -108,7 +110,7 @@ func TestTaskODSStart(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = nexusClient.Upload(
+					_, err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(subCtxt, pipelinectxt.PipelineRunsDir),
 						filepath.Join(artifactsBaseDir, pipelinectxt.PipelineRunsDir, "foo-zh9gt0.json"),
@@ -273,6 +275,38 @@ func TestTaskODSStart(t *testing.T) {
 							gotTag.LatestCommit,
 						)
 					}
+				},
+			},
+			"handles git LFS extension": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+					)
+					tasktesting.EnableLfsOnBitbucketRepoOrFatal(t, filepath.Base(wsDir), tasktesting.BitbucketProjectKey)
+					lfsFilename = "lfspicture.jpg"
+					lfsFileHash = tasktesting.UpdateBitbucketRepoWithLfsOrFatal(t, ctxt.ODS, wsDir, tasktesting.BitbucketProjectKey, lfsFilename)
+
+					ctxt.Params = map[string]string{
+						"url":               ctxt.ODS.GitURL,
+						"git-full-ref":      "refs/heads/master",
+						"project":           ctxt.ODS.Project,
+						"environment":       ctxt.ODS.Environment,
+						"version":           ctxt.ODS.Version,
+						"pipeline-run-name": "foo",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					checkODSContext(t, wsDir, ctxt.ODS)
+
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
+
+					checkFileHash(t, wsDir, lfsFilename, lfsFileHash)
 				},
 			},
 		},
