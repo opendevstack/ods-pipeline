@@ -14,6 +14,7 @@ spec:
     The following provides an overview of the performed steps:
 
     - Source files are checked to be formatted with `gofmt`.
+    - The go module cache is configured to be on the cache location of the PVC by setting environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` (see link:https://go.dev/ref/mod#module-cache[go module cache]).
     - `golanci-lint` is run. The linter can be configured via a
       config file as described in the
       link:https://golangci-lint.run/usage/configuration/[configuration documentation].
