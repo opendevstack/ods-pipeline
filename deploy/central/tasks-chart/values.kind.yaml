@@ -1,8 +1,0 @@
-# Default values for chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-registry: localhost:5000
-imageTag: latest
-taskSuffix: ''
-pushRegistry: kind-registry.kind:5000

@@ -13,7 +13,7 @@ SONAR_USERNAME="admin"
 SONAR_PASSWORD="admin"
 SONAR_EDITION="community"
 SONAR_IMAGE_TAG="${SONAR_VERSION}-${SONAR_EDITION}"
-HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -45,8 +45,12 @@ tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_
 # {"login":"cd_user","name":"foo","token":"bar","createdAt":"2020-04-22T13:21:54+0000"}
 token=$(echo "${tokenResponse}" | jq -r .token)
 
+if [ ! -e "${HELM_VALUES_FILE}" ]; then
+    echo "ods-pipeline-setup:" > "${HELM_VALUES_FILE}"
+fi
+
 {
-    echo "sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'"
-    echo "sonarUsername: '${SONAR_USERNAME}'"
-    echo "sonarAuthToken: '${token}'"
+    echo "  sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'"
+    echo "  sonarUsername: '${SONAR_USERNAME}'"
+    echo "  sonarAuthToken: '${token}'"
 } >> "${HELM_VALUES_FILE}"

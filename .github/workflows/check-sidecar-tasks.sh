@@ -2,7 +2,7 @@
 set -eu
 
 make sidecar-tasks
-if ! git diff --quiet deploy/central/tasks-chart/templates; then
+if ! git diff --quiet deploy/ods-pipeline/charts/tasks/templates; then
     echo "Sidecar Tasks are not up-to-date! Run 'make sidecar-tasks' to update."
     exit 1
 else

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	err := docs.RenderTasks(
-		filepath.Join(projectpath.Root, "deploy/central/tasks-chart"),
+		filepath.Join(projectpath.Root, "deploy/ods-pipeline/charts/ods-pipeline-tasks"),
 		filepath.Join(projectpath.Root, "docs/tasks"),
 	)
 	if err != nil {
