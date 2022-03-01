@@ -11,7 +11,6 @@ RELEASE_NAME="ods-pipeline"
 SERVICEACCOUNT="pipeline"
 VALUES_FILE="values.custom.yaml"
 CHART_DIR="./ods-pipeline"
-CHART=""
 
 while [[ "$#" -gt 0 ]]; do
     # shellcheck disable=SC2034
