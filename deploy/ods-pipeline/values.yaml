@@ -1,0 +1,197 @@
+# ################################################################################################ #
+# UMBRELLA                                                                                         #
+# ################################################################################################ #
+global:
+  # Image tag to use for images referenced by tasks.
+  imageTag: 0.2.0
+  # Suffix to append to the task name.
+  taskSuffix: -v0-2-0
+
+
+# ################################################################################################ #
+# IMAGES CHART CONFIG                                                                              #
+# ################################################################################################ #
+ods-pipeline-images:
+  # enable chart containing Openshift image streams and build configs
+  enabled: false
+
+  # Git
+  odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
+  odsPipelineGitRepoRef: v0.2.0
+
+
+
+# ################################################################################################ #
+# SETUP CHART CONFIG                                                                               #
+# ################################################################################################ #
+ods-pipeline-setup:
+  # enable configuration and management chart
+  enabled: true
+
+  # General
+  # Serviceaccount name to use for pipeline resources.
+  serviceAccountName: 'pipeline'
+  # Whether to enable debug mode
+  debug: 'false'
+
+  # Bitbucket
+  # Bitbucket URL (including scheme). Example: https://bitbucket.example.com.
+  bitbucketUrl: ''
+  # Bitbucket username. Example: cd_user.
+  bitbucketUsername: ''
+
+  # Nexus
+  # Nexus URL (including scheme). Example: https://nexus.example.com.
+  nexusUrl: ''
+  # Nexus username. Example: developer.
+  nexusUsername: ''
+  # Nexus repository for temporary artifacts (stage = dev)
+  nexusTemporaryRepository: 'ods-temporary-artifacts'
+  # Nexus repository for permanent artifacts (stage = qa|prod)
+  nexusPermanentRepository: 'ods-permanent-artifacts'
+
+  # Sonar
+  # SonarQube URL (including scheme). Example: https://sonarqube.example.com.
+  sonarUrl: ''
+  # SonarQube username. Example: developer.
+  sonarUsername: ''
+  # SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
+  sonarEdition: 'community'
+
+  # Aqua
+  # Aqua URL (including scheme). Example: https://aqua.example.com.
+  # Leave empty when not using Aqua.
+  aquaUrl: ''
+  # Aqua registry name.
+  # Leave empty when not using Aqua.
+  aquaRegistry: ''
+  # Aqua username. Example: developer.
+  # Leave empty when not using Aqua.
+  aquaUsername: ''
+
+  # Cluster
+  # URL (including scheme) of the OpenShift Web Console.
+  consoleUrl: 'http://example.com'
+
+  # Notification Webhook
+  notification:
+    # notifications are disabled by default, i.e. the ConfigMap won't be installed
+    enabled: false
+    # URL of the configured webhook
+    url: 'http://example.com'
+    # The HTTP method to be used
+    method: 'POST'
+    # The HTTP content type header
+    contentType: 'application/json'
+    # Specify the outcomes you want to be notified of (allowed values: c.f.
+    # https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks)
+    notifyOnStatus:
+      - 'Failed'
+    # Template to be processed and accepted by the configured webhook in use
+    # Below example might work for Microsoft Teams
+    requestTemplate: |-
+      {
+        "@type": "MessageCard",
+        "@context": "http://schema.org/extensions",
+        "themeColor": {{if eq .OverallStatus "Succeeded"}}"237b4b"{{else}}"c4314b"{{ end }},
+        "summary": "{{.ODSContext.Project}} - ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+        "sections": [
+          {
+            "activityTitle": "ODS Pipeline Run {{.PipelineRunName}} finished with status {{.OverallStatus}}",
+            "activitySubtitle": "On Project {{.ODSContext.Project}}",
+            "activityImage": "https://avatars.githubusercontent.com/u/38974438?s=200&v=4",
+            "facts": [
+              {
+                "name": "GitRef",
+                "value": "{{.ODSContext.GitRef}}"
+              },
+              {
+                "name": "Environment",
+                "value": "{{.ODSContext.Environment}}"
+              }
+            ],
+            "markdown": true
+          }
+        ],
+        "potentialAction": [
+          {
+            "@type": "OpenUri",
+            "name": "Go to PipelineRun",
+            "targets": [
+              {
+                "os": "default",
+                "uri": "{{.PipelineRunURL}}"
+              }
+            ]
+          }
+        ]
+      }
+
+  # Pipeline(Run) Pruning
+  # Minimum hours to keep a pipeline run. Has precendence over pipelineRunMaxKeepRuns.
+  # Must be at least 1.
+  pipelineRunMinKeepHours: '48'
+  # Maximum number of pipeline runs to keep per stage (stages: DEV, QA, PROD).
+  # Must be at least 1.
+  pipelineRunMaxKeepRuns: '20'
+
+  # Pipeline Manager
+  pipelineManager:
+    # PVC (used for the pipeline workspace)
+    # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
+    storageProvisioner: 'kubernetes.io/aws-ebs'
+    # Storage class. On AWS backed clusters, use 'gp2'.
+    storageClassName: 'gp2'
+    # Storage size. Defaults to 2Gi unless set explicitly here.
+    storageSize: '5Gi'
+    # Number of replicas to run for the pipeline manager.
+    replicaCount: 1
+    image:
+      # Image registry from which to pull the pipeline manager container image.
+      registry: image-registry.openshift-image-registry.svc:5000
+      # Namespace from which to pull the pipeline manager container image.
+      # If not given, the image is pulled from the release namespace.
+      namespace: ods
+      # Repository (ImageStream) from which to pull the pipeline manager
+      # container image.
+      # If not given, the image name equals the chart name.
+      repository: ods-pipeline-manager
+      # Pull policy.
+      pullPolicy: Always
+      # Image tag to pull.
+      # If not given, defaults to the chart appVersion.
+      # tag: "0.2.0"
+    # Deployment pod resources. Typically these settings should not need to change.
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+
+
+# ################################################################################################ #
+# TASK CHART CONFIG                                                                                #
+# ################################################################################################ #
+ods-pipeline-tasks:
+  # enable task definition chart
+  enabled: true
+
+  # Default values for chart.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  registry: image-registry.openshift-image-registry.svc:5000
+  namespace: ods
+  pushRegistry: image-registry.openshift-image-registry.svc:5000
+
+
+  # Optional Values
+
+  # Custom task kind (defaults to "Task")
+  # taskKind: "ClusterTask"
+
+  # Custom task prefix (defaults to "ods")
+  # taskPrefix: "foo"
