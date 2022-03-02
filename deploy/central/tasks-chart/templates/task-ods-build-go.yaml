@@ -98,6 +98,13 @@ spec:
       resources: {}
       script: |
 
+        if copy-build-if-cached \
+          --cache-output-dir=$(params.cache-output-dir) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG} ; then
+          exit 0
+        fi
         # build-go is build/package/scripts/build-go.sh.
         build-go \
           --working-dir=$(params.working-dir) \
@@ -107,6 +114,12 @@ spec:
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
+        if [ "$(params.cache-output-dir)" == "true" ]; then
+          cache-build \
+            --working-dir=$(params.working-dir) \
+            --output-dir=$(params.output-dir) \
+            --debug=${DEBUG}
+        fi
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
