@@ -55,3 +55,5 @@ cache_of_output_dir="$prior_output_dir/output"
 echo "Copying build output to cache: $OUTPUT_DIR to $cache_of_output_dir"
 mkdir -p "$cache_of_output_dir"
 $CP -r --link "$OUTPUT_DIR/." "$cache_of_output_dir"
+
+touch "$prior_output_dir/.ods-last-used-stamp"

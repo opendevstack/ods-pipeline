@@ -20,15 +20,20 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
 	odsCacheDirName             = ".ods-cache"
 	odsCacheDependenciesDirName = "deps"
+	odsCacheBuildOutputDirName  = "build-task"
+	odsCacheLastUsedTimestamp   = ".ods-last-used-stamp"
 )
 
 type FileSystemBase struct {
@@ -98,8 +103,78 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 			return remove
 		}
 	}
-	return deleteDirRecursiveWithSkip(
+	fnRemoveWithBase := withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove)
+	err = deleteDirRecursiveWithSkip(
 		fsCache,
 		dirEntryFunc,
-		withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
+		fnRemoveWithBase)
+	if err != nil {
+		return err
+	}
+	keepTimestamp := time.Now().AddDate(0, 0, -7)
+	// now delete build task cache
+	_, err = cleanupNotRecentlyUsed(fsCache, odsCacheBuildOutputDirName, keepTimestamp,
+		fnRemoveWithBase)
+	return err
 }
+
+func cleanupNotRecentlyUsed(
+	root fs.FS,
+	parentDir string,
+	keepTimestamp time.Time,
+	fnRemove RemoveFunc,
+) (int, error) {
+	count := 0
+	dirEntries, err := fs.ReadDir(root, parentDir)
+	if err != nil && os.IsNotExist(err) {
+		return count, nil
+	}
+	if err != nil {
+		return count, fmt.Errorf("could not read files in %s: %w", parentDir, err)
+	}
+	// Loop over the directory's files and remove stray files and
+	// directories if they are not recently used or incomplete
+	for _, f := range dirEntries {
+		count += 1
+		path := filepath.Join(parentDir, f.Name())
+		clean := false
+		if f.IsDir() {
+			timestamp := filepath.Join(path, odsCacheLastUsedTimestamp)
+			fileInfo, err := fs.Stat(root, timestamp)
+			if err != nil && os.IsNotExist(err) {
+				// This code is expected to not run at the same time as build tasks.
+				// Therefore no coordination for the case is needed where a build
+				// task populates a folder, while this code wants to delete it.
+				//
+				// As a consequence we can clean dirs without marker file
+				// which will clean up dirs that have only been partially written.
+				// we could use the creation time of the dir to not do this
+				// right away but this is not yet implemented.
+				clean = true
+			} else {
+				lastUsed := fileInfo.ModTime()
+				clean = lastUsed.Before(keepTimestamp)
+			}
+		} else {
+			clean = true
+		}
+		if clean {
+			log.Printf("Cleaning %s", path)
+			if err = fnRemove(path, f.IsDir()); err != nil {
+				return count, err
+			}
+		}
+	}
+	return count, nil
+}
+
+// [proposal: os: add Touch to set access/mod times to current time · Issue #31880 · golang/go](https://github.com/golang/go/issues/31880)  - issue with SMB
+// https://stackoverflow.com/a/35558965 - don't try to check exists first
+
+// func touch(path string) error {
+// 	f, err := os.Create(path)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return f.Close()
+// }
