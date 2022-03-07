@@ -33,7 +33,11 @@ fi
 
 ROOT_DIR=$(pwd)
 
-git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
+if [ "${WORKING_DIR}" == "." ]; then
+  git_sha_working_dir=$(git rev-parse "HEAD:")
+else
+  git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
+fi
 prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$git_sha_working_dir"
 
 if [ "${WORKING_DIR}" != "." ]; then
