@@ -77,6 +77,12 @@ spec:
       Docker context for example.
     name: output-dir
     type: string
+  - default: "true"
+    description: If enabled tasks uses or populates cache with the output dir contents
+      (and reports) so that a build can be skipped if the `working-dir` contents did
+      not change.
+    name: cache-output-dir
+    type: string
   - default: ""
     description: Script to execute before running tests, relative to the working directory.
     name: pre-test-script
@@ -114,6 +120,13 @@ spec:
     resources: {}
     script: |2
 
+      if copy-build-if-cached \
+        --cache-output-dir=$(params.cache-output-dir) \
+        --working-dir=$(params.working-dir) \
+        --output-dir=$(params.output-dir) \
+        --debug=${DEBUG} ; then
+        exit 0
+      fi
       # build-go is build/package/scripts/build-go.sh.
       build-go \
         --working-dir=$(params.working-dir) \
@@ -123,6 +136,12 @@ spec:
         --pre-test-script=$(params.pre-test-script) \
         --output-dir=$(params.output-dir) \
         --debug=${DEBUG}
+      if [ "$(params.cache-output-dir)" == "true" ]; then
+        cache-build \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG}
+      fi
     workingDir: $(workspaces.source.path)
   - env:
     - name: HOME
