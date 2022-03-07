@@ -250,7 +250,7 @@ Input parameters:
 * `working-dir`: allows to customize which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `output-dir`: sets destination directory of the build output
 * `build-dir`: sets source directory of the build output
-* `copy-node-modules`: enables copying node_modules folder to the output directory
+* `copy-node-modules`: enables copying node_modules directory to the output directory
 * `max-lint-warnings`: maximum of allowed linting warnings after which eslint will exit with an error
 * `lint-file-ext`: file extensions to lint
 * `sonar-quality-gate`: enables quality gate check
@@ -264,9 +264,9 @@ Input parameters:
 | `build-typescript.sh` shell script
 a| Checks that package.json and package-lock.json exist to require best practice of using lock files. See also https://github.com/opendevstack/ods-pipeline/discussions/411
 
-Runs `npm run build`, and copies the folder specified in `build-dir` into directory `dist` which is placed into the directory specified by `output-dir`.
+Runs `npm run build`, and copies the files inside the directory specified in `build-dir` into directory `dist` which is placed into the directory specified by `output-dir`.
 
-If `copy-node-modules` is `true` the `node_modules` folder is also copied into the mentioned dist directory.
+If `copy-node-modules` is `true` the `node_modules` directory is copied into the mentioned dist directory.
 
 For traceability package.json and package-lock.json are copied into the `dist` directory inside the output directory as well. This happens at the end of the script execution to avoid confusing the subsequent running of tests.
 
