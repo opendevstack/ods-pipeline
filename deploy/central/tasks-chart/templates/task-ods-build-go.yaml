@@ -103,8 +103,8 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
-
-        if $copy-build-if-cached \
+        set -e
+        if copy-build-if-cached \
           --cache-output-dir=$(params.cache-output-dir) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \

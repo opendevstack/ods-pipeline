@@ -118,9 +118,9 @@ spec:
     image: '{{.Values.registry}}/{{.Values.namespace}}/ods-go-toolset:{{.Values.imageTag}}'
     name: build-go-binary
     resources: {}
-    script: |2
-
-      if $copy-build-if-cached \
+    script: |
+      set -e
+      if copy-build-if-cached \
         --cache-output-dir=$(params.cache-output-dir) \
         --working-dir=$(params.working-dir) \
         --output-dir=$(params.output-dir) \
