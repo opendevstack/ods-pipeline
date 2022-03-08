@@ -52,6 +52,11 @@ without leading `./` and trailing `/`.
 | Path to the directory into which outputs should be placed, relative to `working-dir`. This directory may then later be used as Docker context for example.
 
 
+| cache-output-dir
+| true
+| If enabled tasks uses or populates cache with the output dir contents (and reports) so that a build can be skipped if the `working-dir` contents did not change.
+
+
 | max-line-length
 | 120
 | Maximum line length.

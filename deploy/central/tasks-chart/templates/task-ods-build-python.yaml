@@ -43,6 +43,12 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: cache-output-dir
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and reports) so that
+        a build can be skipped if the `working-dir` contents did not change.
+      type: string
+      default: "true"
     - name: max-line-length
       description: Maximum line length.
       type: string
@@ -90,7 +96,14 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
-
+        set -e
+        if copy-build-if-cached \
+          --cache-output-dir=$(params.cache-output-dir) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG} ; then
+          exit 0
+        fi
         # build-python is build/package/scripts/build-python.sh.
         build-python \
           --working-dir=$(params.working-dir) \
@@ -98,6 +111,12 @@ spec:
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
+        if [ "$(params.cache-output-dir)" == "true" ]; then
+          cache-build \
+            --working-dir=$(params.working-dir) \
+            --output-dir=$(params.output-dir) \
+            --debug=${DEBUG}
+        fi
       workingDir: $(workspaces.source.path)
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.

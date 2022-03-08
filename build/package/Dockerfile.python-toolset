@@ -8,8 +8,12 @@ USER root
 
 # Add scripts
 COPY build/package/scripts/build-python.sh /usr/local/bin/build-python
+COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
+COPY build/package/scripts/copy-build-if-cached.sh /usr/local/bin/copy-build-if-cached
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
 RUN chmod +x /usr/local/bin/build-python && \
+    chmod +x /usr/local/bin/cache-build && \
+    chmod +x /usr/local/bin/copy-build-if-cached && \
     chmod +x /usr/local/bin/supply-sonar-project-properties-default
 
 # Add sonar-project.properties
