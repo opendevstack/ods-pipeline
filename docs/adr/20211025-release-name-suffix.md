@@ -4,7 +4,7 @@ Date: 2021-10-25
 
 ## Status
 
-Accepted
+Superseded by [Namespaced Installation](20220308-namespaced-installation.md)
 
 ## Context
 
