@@ -120,7 +120,7 @@ spec:
     resources: {}
     script: |2
 
-      if copy-build-if-cached \
+      if $copy-build-if-cached \
         --cache-output-dir=$(params.cache-output-dir) \
         --working-dir=$(params.working-dir) \
         --output-dir=$(params.output-dir) \
