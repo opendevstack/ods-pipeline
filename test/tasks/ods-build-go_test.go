@@ -64,7 +64,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 				},
 			},
-			"build go app without build caching": {
+			"build go app no build caching": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -153,6 +153,15 @@ func TestTaskODSBuildGo(t *testing.T) {
 				},
 				AdditionalRuns: []tasktesting.TaskRunCase{{
 					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						subdir := "go-src"
+						ctxt.Params = map[string]string{
+							"go-os":              runtime.GOOS,
+							"go-arch":            runtime.GOARCH,
+							"sonar-quality-gate": "true",
+							"working-dir":        subdir,
+						}
+					},
 					WantRunSuccess: true,
 				}},
 			},

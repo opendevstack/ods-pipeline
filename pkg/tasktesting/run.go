@@ -60,7 +60,7 @@ type TaskRunContext struct {
 	CollectedLogs []byte
 }
 
-func RunTask(t *testing.T, testOpts TestOpts, taskWorkspaces map[string]string, testCaseContext *TaskRunContext, tc TaskRunCase) {
+func runTask(t *testing.T, testOpts TestOpts, taskWorkspaces map[string]string, testCaseContext *TaskRunContext, tc TaskRunCase) {
 	if tc.PreRunFunc != nil {
 		tc.PreRunFunc(t, testCaseContext)
 	}
@@ -154,10 +154,8 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		}
 		tasks = append(tasks, ttc)
 	}
-
-	tasks = append(tasks, tc.AdditionalRuns...)
 	for _, ttc := range tasks {
-		RunTask(t, testOpts, taskWorkspaces, testCaseContext, ttc)
+		runTask(t, testOpts, taskWorkspaces, testCaseContext, ttc)
 	}
 
 	if !testOpts.AlwaysKeepTmpWorkspaces {
