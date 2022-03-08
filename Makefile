@@ -33,7 +33,7 @@ lint-go: ## Run golangci-lint.
 .PHONY: lint-go
 
 lint-shell: ## Run shellcheck.
-	shellcheck scripts/*.sh build/package/scripts/* deploy/*/*.sh
+	shellcheck scripts/*.sh build/package/scripts/* deploy/*.sh
 .PHONY: lint-shell
 
 ##@ Building
