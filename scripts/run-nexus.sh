@@ -88,7 +88,7 @@ runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password
 rm "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
 
 if [ ! -e "${HELM_VALUES_FILE}" ]; then
-    echo "ods-pipeline-setup:" > "${HELM_VALUES_FILE}"
+    echo "setup:" > "${HELM_VALUES_FILE}"
 fi
 
 {

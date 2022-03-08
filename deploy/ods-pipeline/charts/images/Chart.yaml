@@ -1,6 +1,6 @@
 apiVersion: v2
-name: ods-pipeline-tasks
-description: A Helm chart to setup ODS pipeline tasks
+name: images
+description: A Helm chart to setup ODS pipeline images
 
 # A chart can be either an 'application' or a 'library' chart.
 #

@@ -5,7 +5,7 @@ global:
 ##
 # setup chart
 ##
-ods-pipeline-setup:
+setup:
   enabled: true
   # General
   serviceAccountName: 'pipeline'
@@ -90,7 +90,7 @@ ods-pipeline-setup:
 ##
 # tasks chart
 ##
-ods-pipeline-tasks:
+tasks:
   enabled: true
   # Default values for chart.
   # This is a YAML-formatted file.
@@ -99,5 +99,5 @@ ods-pipeline-tasks:
   registry: localhost:5000
   pushRegistry: kind-registry.kind:5000
 
-ods-pipeline-images:
+images:
   enabled: false

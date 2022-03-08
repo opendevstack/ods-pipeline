@@ -50,7 +50,7 @@ fi
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
 if [ ! -e "${HELM_VALUES_FILE}" ]; then
-    echo "ods-pipeline-setup:" > "${HELM_VALUES_FILE}"
+    echo "setup:" > "${HELM_VALUES_FILE}"
 fi
 
 {

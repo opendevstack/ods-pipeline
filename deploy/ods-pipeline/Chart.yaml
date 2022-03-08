@@ -24,12 +24,12 @@ version: 0.2.0
 appVersion: "0.2.0"
 
 dependencies:
-  - name: ods-pipeline-images
+  - name: images
     version: 0.2.0
-    condition: ods-pipeline-images.enabled
-  - name: ods-pipeline-setup
+    condition: images.enabled
+  - name: setup
     version: 0.2.0
-    condition: ods-pipeline-setup.enabled
-  - name: ods-pipeline-tasks
+    condition: setup.enabled
+  - name: tasks
     version: 0.2.0
-    condition: ods-pipeline-tasks.enabled
+    condition: tasks.enabled

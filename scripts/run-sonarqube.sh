@@ -46,7 +46,7 @@ tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_
 token=$(echo "${tokenResponse}" | jq -r .token)
 
 if [ ! -e "${HELM_VALUES_FILE}" ]; then
-    echo "ods-pipeline-setup:" > "${HELM_VALUES_FILE}"
+    echo "setup:" > "${HELM_VALUES_FILE}"
 fi
 
 {

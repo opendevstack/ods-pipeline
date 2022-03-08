@@ -11,7 +11,7 @@ global:
 # ################################################################################################ #
 # IMAGES CHART CONFIG                                                                              #
 # ################################################################################################ #
-ods-pipeline-images:
+images:
   # enable chart containing Openshift image streams and build configs
   enabled: false
 
@@ -24,7 +24,7 @@ ods-pipeline-images:
 # ################################################################################################ #
 # SETUP CHART CONFIG                                                                               #
 # ################################################################################################ #
-ods-pipeline-setup:
+setup:
   # enable configuration and management chart
   enabled: true
 
@@ -175,7 +175,7 @@ ods-pipeline-setup:
 # ################################################################################################ #
 # TASK CHART CONFIG                                                                                #
 # ################################################################################################ #
-ods-pipeline-tasks:
+tasks:
   # enable task definition chart
   enabled: true
 
