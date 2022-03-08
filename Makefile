@@ -38,11 +38,7 @@ lint-shell: ## Run shellcheck.
 
 ##@ Building
 
-sidecar-tasks: ## Render sidecar task variants.
-	go run cmd/sidecar-tasks/main.go
-.PHONY: sidecar-tasks
-
-docs: sidecar-tasks ## Render documentation for tasks.
+docs: ## Render documentation for tasks.
 	go run cmd/docs/main.go
 .PHONY: docs
 
