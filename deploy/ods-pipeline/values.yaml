@@ -195,3 +195,28 @@ ods-pipeline-tasks:
 
   # Custom task prefix (defaults to "ods")
   # taskPrefix: "foo"
+
+  # To define build task specific sidecars and quotas, add resources/sidecar section(s) per task,
+  # e.g.
+  #
+  # go:
+  #   # define custom resource quotas for the go build task
+  #   resources:
+  #     limits:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #     requests:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #   sidecars:
+  #     # sidecars added to go build task
+  #     - Workspaces: null
+  #      image: postgres
+  #      name: postgres-sidecar
+  #      resources:
+  #        limits:
+  #          cpu: 100m
+  #          memory: 128Mi
+  #        requests:
+  #          cpu: 100m
+  #          memory: 128Mi

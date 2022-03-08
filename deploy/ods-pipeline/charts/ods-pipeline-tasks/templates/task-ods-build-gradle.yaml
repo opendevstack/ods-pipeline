@@ -136,6 +136,10 @@ spec:
       description: Whether to skip SonarQube analysis or not.
       type: string
       default: "false"
+  {{- with ((.Values.gradle).sidecars) }}
+  sidecars:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   steps:
     - name: build-gradle-binary
       # Image is built from build/package/Dockerfile.gradle-toolset.
@@ -167,7 +171,8 @@ spec:
             secretKeyRef:
               key: password
               name: ods-nexus-auth
-      resources: {}
+      resources:
+        {{- (.Values.gradle).resources | default dict | toYaml | nindent 8 }}
       script: |
         # build-gradle is build/package/scripts/build-gradle.sh.
         build-gradle \
@@ -176,43 +181,6 @@ spec:
           --gradle-additional-tasks="$(params.gradle-additional-tasks)" \
           --gradle-options="$(params.gradle-options)"
       workingDir: $(workspaces.source.path)
-    - name: scan-with-sonar
-      # Image is built from build/package/Dockerfile.sonar.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.global.imageTag}}'
-      env:
-        - name: HOME
-          value: '/tekton/home'
-        - name: SONAR_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: ods-sonar
-        - name: SONAR_EDITION
-          valueFrom:
-            configMapKeyRef:
-              key: edition
-              name: ods-sonar
-        - name: SONAR_AUTH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: ods-sonar-auth
-        - name: DEBUG
-          valueFrom:
-            configMapKeyRef:
-              key: debug
-              name: ods-pipeline
-      resources: {}
-      script: |
-        if [ "$(params.sonar-skip)" = "true" ]; then
-          echo "Skipping SonarQube analysis"
-        else
-          mkdir -p .ods/artifacts/sonarqube-analysis
-          # sonar is built from cmd/sonar/main.go.
-          sonar \
-            -working-dir=$(params.working-dir) \
-            -quality-gate=$(params.sonar-quality-gate)
-        fi
-      workingDir: $(workspaces.source.path)
+    {{- include "sonar-step" . | indent 4}}
   workspaces:
     - name: source
