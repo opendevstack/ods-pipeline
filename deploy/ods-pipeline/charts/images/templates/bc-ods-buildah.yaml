@@ -16,21 +16,11 @@ spec:
     type: Docker
     dockerStrategy:
       buildArgs:
+        - name: imageTag
+          value: '{{.Values.global.imageTag}}'
         - name: aquasecScannerUrl
           value: ''
   source:
     dockerfile: |-
-      FROM ghcr.io/opendevstack/ods-pipeline/ods-buildah:{{.Values.global.imageTag}}
-
-      ARG aquasecScannerUrl
-
-      # Optionally install Aqua scanner.
-      RUN if [ -z $aquasecScannerUrl ] ; then echo 'Skipping Aqua scanner installation!' ; else echo 'Installing Aqua scanner... getting binary from' $aquasecScannerUrl \
-          && curl -v -L $aquasecScannerUrl -o aquasec \
-          && mv aquasec /usr/local/bin/ \
-          && chmod +x /usr/local/bin/aquasec \
-          && echo 'Aqua scanner version:' \
-          && aquasec version \
-          && echo 'Aqua scanner installation completed!'; \
-          fi
+      {{- .Files.Get "docker/Dockerfile.buildah" | nindent 6}}
   runPolicy: Serial

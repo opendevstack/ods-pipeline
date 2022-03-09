@@ -14,7 +14,11 @@ spec:
   postCommit: {}
   strategy:
     type: Docker
+    dockerStrategy:
+      buildArgs:
+        - name: imageTag
+          value: '{{.Values.global.imageTag}}'
   source:
     dockerfile: |-
-      FROM ghcr.io/opendevstack/ods-pipeline/ods-go-toolset:{{.Values.global.imageTag}}
+      {{- .Files.Get "docker/Dockerfile.go-toolset" | nindent 6}}
   runPolicy: Serial
