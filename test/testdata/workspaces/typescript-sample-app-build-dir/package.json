@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "test": "JEST_JUNIT_OUTPUT_DIR='build/test-results/test' JEST_JUNIT_OUTPUT_NAME='report.xml' npx jest --reporters=default --reporters=jest-junit --coverage --coverageDirectory=build/coverage --forceExit ./dist",
-    "start": "node dist/src/index.js"
+    "test": "JEST_JUNIT_OUTPUT_DIR='build/test-results/test' JEST_JUNIT_OUTPUT_NAME='report.xml' npx jest --reporters=default --reporters=jest-junit --coverage --coverageDirectory=build/coverage --forceExit ./build",
+    "start": "node build/src/index.js"
   },
   "keywords": [],
   "author": "",
