@@ -63,6 +63,11 @@ without leading `./` and trailing `/`.
 | Path to the directory into which outputs should be placed, relative to `working-dir`. This directory may then later be used as Docker context for example.
 
 
+| cache-output-dir
+| true
+| If enabled tasks uses or populates cache with the output dir contents (and reports) so that a build can be skipped if the `working-dir` contents did not change.
+
+
 | max-lint-warnings
 | 0
 | Maximum of allowed linting warnings after which eslint will exit with an error. Set to "-1" to never exit with an error due to warnings.
@@ -95,7 +100,7 @@ without leading `./` and trailing `/`.
 
 | copy-node-modules
 | false
-| Whether `node-modules` is copied to the `output-dir` or not. If copied the node modules are in `$output-dir/dist/node_modules`.  For frontend components this should be set to "false", while for backend components this should be set to "true".
+| Whether `node-modules` is copied to the `output-dir` or not. If copied the node modules are in `$output-dir/dist/node_modules`. For frontend components this should be set to "false", while for backend components this should be set to "true".
 
 |===
 
