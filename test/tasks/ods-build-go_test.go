@@ -154,13 +154,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 				AdditionalRuns: []tasktesting.TaskRunCase{{
 					// inherits funcs from primary task only set explicitly
 					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-						subdir := "go-src"
-						ctxt.Params = map[string]string{
-							"go-os":              runtime.GOOS,
-							"go-arch":            runtime.GOARCH,
-							"sonar-quality-gate": "true",
-							"working-dir":        subdir,
-						}
+						// ctxt still in place from prior run
 					},
 					WantRunSuccess: true,
 				}},
