@@ -6,6 +6,10 @@ on:
       - master
   pull_request:
 
+env:
+  # github.repository as <account>/<repo>
+  IMAGE_BASE: ${{ github.repository }}
+
 jobs:
   build-images:
     name: Build ODS images
@@ -36,7 +40,7 @@ jobs:
           file: build/package/Dockerfile.${{ matrix.image }}
           tags: localhost:5000/ods/ods-${{ matrix.image }}:latest
           outputs: type=docker,dest=/tmp/image-ods-${{ matrix.image }}.tar
-      - 
+      -
         name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -48,8 +52,10 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: build-images
+    env:
+      IMAGES: buildah finish go-toolset gradle-toolset helm sonar start pipeline-manager python-toolset node16-typescript-toolset
     steps:
-      - 
+      -
         name: Download image artifacts
         uses: actions/download-artifact@v2
         with:
@@ -64,65 +70,20 @@ jobs:
         working-directory: scripts
         run: ./kind-with-registry.sh
       -
-        name: Push buildah image
+        name: Push images to local registry
         run: |
-          docker load --input /tmp/buildx-image-ods-buildah/image-ods-buildah.tar
-          docker push localhost:5000/ods/ods-buildah:latest
-          docker rmi localhost:5000/ods/ods-buildah:latest
-      -
-        name: Push finish image
-        run: |
-          docker load --input /tmp/buildx-image-ods-finish/image-ods-finish.tar
-          docker push localhost:5000/ods/ods-finish:latest
-          docker rmi localhost:5000/ods/ods-finish:latest
-      -
-        name: Push go-toolset image
-        run: |
-          docker load --input /tmp/buildx-image-ods-go-toolset/image-ods-go-toolset.tar
-          docker push localhost:5000/ods/ods-go-toolset:latest
-          docker rmi localhost:5000/ods/ods-go-toolset:latest
-      -
-        name: Push gradle-toolset image
-        run: |
-          docker load --input /tmp/buildx-image-ods-gradle-toolset/image-ods-gradle-toolset.tar
-          docker push localhost:5000/ods/ods-gradle-toolset:latest
-          docker rmi localhost:5000/ods/ods-gradle-toolset:latest
-      -
-        name: Push helm image
-        run: |
-          docker load --input /tmp/buildx-image-ods-helm/image-ods-helm.tar
-          docker push localhost:5000/ods/ods-helm:latest
-          docker rmi localhost:5000/ods/ods-helm:latest
-      -
-        name: Push sonar image
-        run: |
-          docker load --input /tmp/buildx-image-ods-sonar/image-ods-sonar.tar
-          docker push localhost:5000/ods/ods-sonar:latest
-          docker rmi localhost:5000/ods/ods-sonar:latest
-      -
-        name: Push start image
-        run: |
-          docker load --input /tmp/buildx-image-ods-start/image-ods-start.tar
-          docker push localhost:5000/ods/ods-start:latest
-          docker rmi localhost:5000/ods/ods-start:latest
-      -
-        name: Push pipeline-manager image
-        run: |
-          docker load --input /tmp/buildx-image-ods-pipeline-manager/image-ods-pipeline-manager.tar
-          docker push localhost:5000/ods/ods-pipeline-manager:latest
-          docker rmi localhost:5000/ods/ods-pipeline-manager:latest
-      -
-        name: Push python-toolset image
-        run: |
-          docker load --input /tmp/buildx-image-ods-python-toolset/image-ods-python-toolset.tar
-          docker push localhost:5000/ods/ods-python-toolset:latest
-          docker rmi localhost:5000/ods/ods-python-toolset:latest
-      -
-        name: Push node16-typescript-toolset image
-        run: |
-          docker load --input /tmp/buildx-image-ods-node16-typescript-toolset/image-ods-node16-typescript-toolset.tar
-          docker push localhost:5000/ods/ods-node16-typescript-toolset:latest
-          docker rmi localhost:5000/ods/ods-node16-typescript-toolset:latest
+          images=(${{ env.IMAGES }})
+          for image in ${images[*]}
+          do
+            echo "::group::Push ods-$image to local registry"
+            docker load --input /tmp/buildx-image-ods-$image/image-ods-$image.tar
+            docker push localhost:5000/ods/ods-$image:latest
+            if [[ "${{ github.event_name }}" == 'pull_request' ]]
+            then
+              docker rmi localhost:5000/ods/ods-$image:latest
+            fi
+            echo "::endgroup::"
+          done
       -
         name: Delete image tarballs
         run: |
@@ -134,7 +95,7 @@ jobs:
       -
         name: Install Tekton Core Components
         run: make install-tekton-pipelines
-      - 
+      -
         name: Show disk space
         run: df -h
       -
@@ -146,7 +107,7 @@ jobs:
       -
         name: Spin up SonarQube container
         run: make run-sonarqube
-      - 
+      -
         name: Show disk space
         run: df -h
       -
@@ -172,3 +133,23 @@ jobs:
           go test -v ./pkg/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
           go test -timeout 30m -v ./test/tasks/... -always-keep-tmp-workspaces | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
           go test -timeout 10m -v ./test/e2e/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
+      -
+        name: Log into ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Push images to ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          images=(${{ env.IMAGES }})
+          for image in ${images[*]}
+          do
+            echo "::group::Push ods-$image to ghcr.io"
+            docker tag localhost:5000/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
+            docker push ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
+            echo "::endgroup::"
+          done

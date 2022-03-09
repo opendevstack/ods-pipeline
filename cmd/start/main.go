@@ -84,7 +84,13 @@ func main() {
 	}
 
 	logger.Infof("Cleaning checkout directory ...")
-	err := deleteDirectoryContents(checkoutDir)
+	checkoutDirFSB := FileSystemBase{os.DirFS(checkoutDir), checkoutDir}
+	err := deleteDirectoryContentsSpareCache(checkoutDirFSB, removeFileOrDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger.Infof("Cleaning cache at %s ...", odsCacheDirName)
+	err = cleanCache(checkoutDirFSB, removeFileOrDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -414,28 +420,6 @@ func checkoutAndAssembleContext(
 		log.Fatal(err)
 	}
 	return ctxt, nil
-}
-
-func deleteDirectoryContents(directory string) error {
-	// Open the directory and read all its files.
-	dirRead, err := os.Open(directory)
-	if err != nil {
-		return fmt.Errorf("could not open %s: %w", directory, err)
-	}
-	dirFiles, err := dirRead.Readdir(0)
-	if err != nil {
-		return fmt.Errorf("could not read files in %s: %w", directory, err)
-	}
-
-	// Loop over the directory's files and remove them.
-	for _, f := range dirFiles {
-		filename := filepath.Join(directory, f.Name())
-		err := os.RemoveAll(filename)
-		if err != nil {
-			return fmt.Errorf("could not remove file %s: %w", filename, err)
-		}
-	}
-	return nil
 }
 
 func getCommitSHA(dir string) (string, error) {

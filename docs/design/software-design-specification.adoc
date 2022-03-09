@@ -76,12 +76,14 @@ Input parameters:
 * `sonar-skip`: skips SonarQube analysis
 
 | SDS-TASK-2
-| `ods-go-toolset` contaner image
+| `ods-go-toolset` container image
 | Container image for building Go applications. Based on `ubi8/go-toolset` (SDS-EXT-25), includes SDS-EXT-4,EXT- SDS-EXT-5, SDS-SHARED-3, SDS-TASK-3 and SDS-TASK-25.
 
 | SDS-TASK-3
 | `build-go.sh` shell script
-a| Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
+a| The go module cache is configured to be on the cache location of the PVC by setting environment variable `GOMODCACHE` to `.ods-cache/deps/gomod` (see https://go.dev/ref/mod#module-cache)
+
+Runs `gofmt` (SDS-EXT-3) to check all Go files are formatted.
 
 Runs `golangci-lint` (SDS-EXT-4) to check if there are any lint errors. A report is placed into `.ods/artifacts/lint-reports`.
 
@@ -152,12 +154,14 @@ a| Task to start pipeline. References SDS-TASK-8 and executes SDS-TASK-9.
 Input parameters: TODO
 
 | SDS-TASK-8
-| `ods-start` contaner image
+| `ods-start` container image
 | Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning any previous contents. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
+a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
+
+A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation. 
 
 Context information is stored under `.ods` for each checked out repository:
 
@@ -217,7 +221,7 @@ Input parameters: TODO
 
 | SDS-TASK-14
 | `ods-python-toolset` contaner image
-| Container image to build Python applications. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-14, SDS-EXT-15, SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
+| Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
 
 | SDS-TASK-15
 | `build-python.sh` shell script
@@ -227,7 +231,7 @@ If the `pre-test-script` is set, it executes the given script before running tes
 
 Runs `pytest`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
-Builds Python application (using SDS-EXT-14) into the directory specified by `output-dir`.
+Builds Python application into the directory specified by `output-dir`.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
@@ -258,7 +262,7 @@ Input parameters:
 
 | SDS-TASK-17
 | `ods-node16-typescript-toolset` container image
-| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-EXT-16, SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
 | `build-typescript.sh` shell script
@@ -459,12 +463,6 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Distributed version control system.
 | https://git-scm.com
 
-| SDS-EXT-10
-| OpenJDK Headless
-| 17
-| Reference implementation of version 17 of the Java SE Platform.
-| https://openjdk.java.net/projects/jdk/17/
-
 | SDS-EXT-11
 | Red Hat OpenJDK 17 Image
 | 1.10
@@ -483,23 +481,11 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Clients necessary to make encrypted connections to SSH servers.
 | https://gradle.org
 
-| SDS-EXT-14
-| Python
-| 3.9
-| Interpreted high-level general-purpose programming language.
-| https://www.python.org
-
 | SDS-EXT-15
 | Tar
 | 1.30
 | Used to create and extract archive files.
 | https://www.gnu.org/software/tar/
-
-| SDS-EXT-16
-| Node.js
-| 16
-| Back-end JavaScript runtime environment.
-| https://nodejs.org/
 
 | SDS-EXT-17
 | Skopeo
@@ -566,6 +552,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 3.0.2
 | Git Large File Storage extension for versioning large files.
 | https://git-lfs.github.com/
+
+| SDS-EXT-28
+| Python 3.9 for UBI 8
+| 1
+| Python 3.9 available as container is a base platform for building and running various Python applications and frameworks. It is maintained by Red Hat and updated regularly.
+| https://catalog.redhat.com/software/containers/ubi8/python-39/6065b24eb92fbda3a4c65d8f
 
 |===
 
