@@ -14,19 +14,8 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 
 ## Documentation
 
-The documentation provided by ODS pipeline has three audiences:
-
-* **Admins** install and maintain a central ODS pipeline installation in an OpenShift cluster that can be used by many users.
-
-* **Users** consume an existing central ODS pipeline installation. Users install ODS pipeline resources into a namespace they own to run CI/CD pipelines for their repositories.
-
-* **Contributors** work on the ODS pipeline project itself, for example by improving existing tasks, adding new ones, updating documentation, etc.
-
-**Admin Guide**
-* [Installation & Updating](/docs/admin-installation.adoc)
-
 **User Guide**
-* [Installation & Updating](/docs/user-installation.adoc)
+* [Installation & Updating](/docs/installation.adoc)
 * [Getting Started](/docs/getting-started.adoc)
 * [ODS.YAML Reference](/docs/ods-configuration.adoc)
 * [Task Reference](/docs/tasks)

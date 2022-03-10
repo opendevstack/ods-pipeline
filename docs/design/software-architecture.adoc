@@ -154,9 +154,9 @@ ODS Pipeline runs on Redhat OpenShift Container Platform, and is embedded into a
 
 There is one major deployment (typically in the project's cd-namespace) of the system managed by project administrators.
 
-The installation provides the tasks that projects can consume as `Task` resources. It allows to trigger pipelines in response to Bitbucket events.
+The installation provides the tasks that projects can consume as `Task` resources. It allows triggering pipelines in response to Bitbucket events.
 
-The deployment is described in a Helm chart. For details, see the link:docs/installation.adoc[Installation Guide].
+The deployment is described in a Helm chart. For details, see the link:../installation.adoc[Installation Guide].
 
 == Appendix
 

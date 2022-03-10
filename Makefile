@@ -134,15 +134,7 @@ start-local-env: ## Restart stopped local environment.
 
 ##@ OpenShift
 
-install-ods-central: ## OpenShift only! Apply ODS BuildConfig, ImageStream and Task manifests
-ifeq ($(strip $(namespace)),)
-	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
-	@exit 1
-endif
-	cd scripts && ./install-ods-central-resources.sh -n $(namespace)
-.PHONY: install-ods-central
-
-start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConfig
+start-ods-builds: ## OpenShift only! Start builds for each ODS BuildConfig
 	oc start-build ods-buildah
 	oc start-build ods-finish
 	oc start-build ods-go-toolset
@@ -153,9 +145,9 @@ start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConf
 	oc start-build ods-start
 	oc start-build ods-node16-typescript-toolset
 	oc start-build ods-pipeline-manager
-.PHONY: start-ods-central-builds
+.PHONY: start-ods-builds
 
-##@ User Installation
+##@ Installation
 
 install-cd-namespace: ## Install resources in CD namespace via Helm.
 ifeq ($(strip $(namespace)),)

@@ -1,12 +1,12 @@
-# ODS Pipeline Introduction
+= ODS Pipeline Introduction
 
 ODS provides CI/CD pipeline support based on OpenShift Pipelines. This introduction will walk you through the essentials, and guide you all the way to more advanced topics. Basic knowledge of Kubernetes concepts and OpenShift is assumed. Estimated reading time is about 15 minutes.
 
-## What is OpenShift Pipelines?
+== What is OpenShift Pipelines?
 
 https://www.openshift.com/learn/topics/pipelines[OpenShift Pipelines] is a Kubernetes-style CI/CD solution based on Tekton. It builds on the Tekton building blocks and offers tight integration with OpenShift. The main addition over plain Tekton is a UI in the OpenShift console.
 
-## What is Tekton?
+== What is Tekton?
 
 https://tekton.dev[Tekton] provides a framework to create cloud-native CI/CD pipelines. The building blocks for those pipelines are defined using Kubernetes Custom Resources.
 
@@ -16,9 +16,9 @@ image::https://raw.githubusercontent.com/openshift/pipelines-tutorial/master/doc
 
 At this stage you know just enough about Tekton to continue with this introduction, but if you want to know more about it, you can read the https://tekton.dev/docs/[Tekton docs] and/or follow the https://github.com/openshift/pipelines-tutorial[OpenShift Pipelines tutorial].
 
-## What does ODS bring to the table?
+== What does ODS bring to the table?
 
-In regards to CI/CD, ODS provides two things:
+In regard to CI/CD, ODS provides two things:
 
 * a few Tekton Tasks for use in pipelines
 * a pipeline manager responding to Bitbucket webhook events by triggering pipelines
@@ -29,9 +29,9 @@ The ODS tasks can be used in a pipeline to build, deploy and test your applicati
 
 The tasks are so easy to exchange and compose as Tekton tasks have clearly defined inputs (the parameters), clearly defined outputs (the results) and work on a generic workspace, for which an actual volume is provided to them by the pipeline.
 
-## Which tasks does ODS provide?
+== Which tasks does ODS provide?
 
-An ODS pipeline installation provides you with the following tasks, which are implemented as `ClusterTask` resources, allowing you to use them in any namespace:
+An ODS pipeline installation provides you with the following tasks, which are implemented as `Task` resources:
 
 * `ods-start`: Checkout repository and set Bitbucket build status
 * `ods-build-go`: Build a Go application (includes Sonar scan)
@@ -59,7 +59,7 @@ The produced images are tagged with the Git commit SHA being built. If the task 
 
 The behaviour of each task can be customized by setting parameters. For example, the `ods-package-image` tasks assumes the `Dockerfile` to be located in the `docker` directory by default. You can instruct the task to use a different Docker context by providing the `context-dir` parameter to the task.
 
-## How do I use the tasks provided by ODS?
+== How do I use the tasks provided by ODS?
 
 As you have learned earlier, tasks are referenced by pipelines. Therefore, all you would need to do to use the ODS tasks is to create a pipeline in OpenShift, and reference the tasks you want to execute. Then you'd need to start the pipeline (which creates a `PipelineRun`).
 
@@ -73,19 +73,20 @@ To solve these problems (and a few more ...), ODS ships with another component a
 
 To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yaml` file in the root of your repository. The `ods.yaml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.yaml` file for our Go repository:
 
-```yml
+[source,yml]
+----
 pipeline:
   tasks:
   - name: build-go
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package-image
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-package-image-v0-2-0
     runAfter:
     - build-go
@@ -94,18 +95,18 @@ pipeline:
       workspace: shared-workspace
   - name: deploy-helm
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-2-0
     runAfter:
     - package-image
     workspaces:
     - name: source
       workspace: shared-workspace
-```
+----
 
 You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially due to the usage of `runAfter`.
 
-In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the ODS pipeline manager checks if a pipeline with that name already exists, and either creates a new pipeline or updates the existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows to see pipeline duration trends easily. Finally, the ODS pipeline manager triggers the pipeline, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
+In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the ODS pipeline manager checks if a pipeline with that name already exists, and either creates a new pipeline or updates the existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows seeing pipeline duration trends easily. Finally, the ODS pipeline manager triggers the pipeline, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
 
 image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/trigger_architecture.puml[Trigger Architecture]
 

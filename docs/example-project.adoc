@@ -8,7 +8,7 @@ The goal of this document is to provide a concrete example of a (fake) applicati
 
 For this example, we assume that we deal with a simple todo application. The project key in Bitbucket is `TODO`. The application is made up of two components, a backend (repository `todo-backend`) written in Go, and a frontend (repository `todo-frontend`) written in TypeScript.
 
-The example project is deployed on a single OpenShift cluster which has three OpenShift projects to deploy into: `todo-dev`, `todo-qa` and `todo-prod`. ODS pipeline is installed in the `todo-cd` project as per the link:user-installation.adoc[User Installation Guide].
+The example project is deployed on a single OpenShift cluster which has three OpenShift projects to deploy into: `todo-dev`, `todo-qa` and `todo-prod`. ODS pipeline is installed in the `todo-cd` project as per the link:installation.adoc[Installation Guide].
 
 == Pipeline Configuration
 
@@ -32,14 +32,14 @@ pipeline:
   tasks:
   - name: build-go
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package-image
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-package-image-v0-2-0
     runAfter:
     - build-go
@@ -48,7 +48,7 @@ pipeline:
       workspace: shared-workspace
   - name: deploy-helm
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-2-0
     runAfter:
     - package-image
@@ -73,14 +73,14 @@ pipeline:
   tasks:
   - name: build-typescript
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-typescript-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package-image
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-package-image-v0-2-0
     runAfter:
     - build-typescript
@@ -89,7 +89,7 @@ pipeline:
       workspace: shared-workspace
   - name: deploy-helm
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-2-0
     runAfter:
     - package-image
