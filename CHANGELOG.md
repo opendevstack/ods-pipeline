@@ -37,6 +37,7 @@ listed in the changelog.
 - Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 - Remove Tekton Triggers, moving the required functionality it provided into the new ODS pipeline manager ([#438](https://github.com/opendevstack/ods-pipeline/issues/438))
 - Use UBI8 provided Python 3.9 toolset image ([#457](https://github.com/opendevstack/ods-pipeline/issues/457))
+- Change installation mode from centralized to local/namespaced ([#404](https://github.com/opendevstack/ods-pipeline/pull/404))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
