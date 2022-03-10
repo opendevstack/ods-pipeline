@@ -21,6 +21,7 @@ listed in the changelog.
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
 - Publish images to public registry (ghcr.io) ([#440](https://github.com/opendevstack/ods-pipeline/issues/440))
 - Allow to cache dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
+- Support node production builds in docker context ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
 
 ### Changed
 
