@@ -13,7 +13,7 @@ global:
 # ################################################################################################ #
 images:
   # enable chart containing Openshift image streams and build configs
-  enabled: false
+  enabled: true
 
   # Git
   odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
