@@ -111,8 +111,10 @@ spec:
     resources: {}
     script: |
       set -e
+      cache_build_key=python
       if copy-build-if-cached \
         --cache-output-dir=$(params.cache-output-dir) \
+        --cache-build-key="$cache_build_key" \
         --working-dir=$(params.working-dir) \
         --output-dir=$(params.output-dir) \
         --debug=${DEBUG} ; then
@@ -127,6 +129,7 @@ spec:
         --debug=${DEBUG}
       if [ "$(params.cache-output-dir)" == "true" ]; then
         cache-build \
+          --cache-build-key="$cache_build_key" \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}

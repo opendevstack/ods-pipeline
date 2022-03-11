@@ -83,6 +83,12 @@ spec:
       not change.
     name: cache-output-dir
     type: string
+  - default: all
+    description: If cache-output-dir is enabled then cache-build-variant-key allows
+      to keep multiple builds on the same working dir apart. For go, the cache locations
+      for different target platform and architecture combinations are allready separated.
+    name: cache-build-variant-key
+    type: string
   - default: ""
     description: Script to execute before running tests, relative to the working directory.
     name: pre-test-script
@@ -120,8 +126,10 @@ spec:
     resources: {}
     script: |
       set -e
+      cache_build_key="go-$(params.go-os)-$(params.go-arch)-$(params.cache-build-variant-key)"
       if copy-build-if-cached \
         --cache-output-dir=$(params.cache-output-dir) \
+        --cache-build-key="$cache_build_key" \
         --working-dir=$(params.working-dir) \
         --output-dir=$(params.output-dir) \
         --debug=${DEBUG} ; then
@@ -138,6 +146,7 @@ spec:
         --debug=${DEBUG}
       if [ "$(params.cache-output-dir)" == "true" ]; then
         cache-build \
+          --cache-build-key="$cache_build_key" \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}

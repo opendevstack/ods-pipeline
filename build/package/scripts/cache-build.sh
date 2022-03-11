@@ -10,6 +10,7 @@ CP="${GNU_CP:-cp}"
 
 OUTPUT_DIR="docker"
 WORKING_DIR="."
+CACHE_BUILD_KEY=
 DEBUG="${DEBUG:-false}"
 
 while [[ "$#" -gt 0 ]]; do
@@ -21,11 +22,18 @@ while [[ "$#" -gt 0 ]]; do
     --output-dir) OUTPUT_DIR="$2"; shift;;
     --output-dir=*) OUTPUT_DIR="${1#*=}";;
 
+    --cache-build-key) CACHE_BUILD_KEY="$2"; shift;;
+    --cache-build-key=*) CACHE_BUILD_KEY="${1#*=}";;
+
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ -z "${CACHE_BUILD_KEY}" ]; then
+  echo "Param --cache-build-key is required."; exit 1;
+fi
 
 if [ "${DEBUG}" == "true" ]; then
   set -x
@@ -38,7 +46,7 @@ if [ "${WORKING_DIR}" == "." ]; then
 else
   git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
 fi
-prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$git_sha_working_dir"
+prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
 
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"

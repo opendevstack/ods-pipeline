@@ -82,6 +82,11 @@ without leading `./` and trailing `/`.
 | If enabled tasks uses or populates cache with the output dir contents (and reports) so that a build can be skipped if the `working-dir` contents did not change.
 
 
+| cache-build-variant-key
+| all
+| If cache-output-dir is enabled then cache-build-variant-key allows to keep multiple builds on the same working dir apart. For go, the cache locations for different target platform and architecture combinations are allready separated.
+
+
 | pre-test-script
 | 
 | Script to execute before running tests, relative to the working directory.

@@ -11,6 +11,7 @@ CP="${GNU_CP:-cp}"
 
 OUTPUT_DIR="docker"
 CACHE_OUTPUT_DIR="true"
+CACHE_BUILD_KEY=
 WORKING_DIR="."
 DEBUG="${DEBUG:-false}"
 
@@ -19,6 +20,9 @@ while [[ "$#" -gt 0 ]]; do
 
     --cache-output-dir) CACHE_OUTPUT_DIR="$2"; shift;;
     --cache-output-dir=*) CACHE_OUTPUT_DIR="${1#*=}";;
+
+    --cache-build-key) CACHE_BUILD_KEY="$2"; shift;;
+    --cache-build-key=*) CACHE_BUILD_KEY="${1#*=}";;
 
     --working-dir) WORKING_DIR="$2"; shift;;
     --working-dir=*) WORKING_DIR="${1#*=}";;
@@ -31,6 +35,10 @@ while [[ "$#" -gt 0 ]]; do
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ -z "${CACHE_BUILD_KEY}" ]; then
+  echo "Param --cache-build-key is required."; exit 1;
+fi
 
 if [ "${DEBUG}" == "true" ]; then
   set -x
@@ -48,7 +56,7 @@ if [ "${WORKING_DIR}" == "." ]; then
 else
   git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
 fi
-prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$git_sha_working_dir"
+prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
 if [ ! -d "$prior_output_dir" ]; then
   echo "No prior build output found in cache at $prior_output_dir"
   exit 1  # no message really needed here

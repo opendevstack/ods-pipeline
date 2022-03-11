@@ -134,8 +134,10 @@ spec:
       resources: {}
       script: |
         set -e
+        cache_build_key=typescript
         if copy-build-if-cached \
           --cache-output-dir=$(params.cache-output-dir) \
+          --cache-build-key="$cache_build_key" \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG} ; then
@@ -152,6 +154,7 @@ spec:
           --copy-node-modules=$(params.copy-node-modules)
         if [ "$(params.cache-output-dir)" == "true" ]; then
           cache-build \
+            --cache-build-key="$cache_build_key" \
             --working-dir=$(params.working-dir) \
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
