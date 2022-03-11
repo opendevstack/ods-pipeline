@@ -16,54 +16,85 @@ There is no good reason when only the frontend code changes that the backend bui
 
 == Solution
 
-All tasks shall be enabled to support build skipping.
+Task `ods-start` supports a new cache area `build-task` for storing build outputs and reports of build task.
 
-The following is added to the images of these tasks:
+All tasks shall be enabled to support build skipping. However this may be added over time to allow for quicker adoption on technologies which require less implementation efforts.
 
-- `git`
+The `git` tool is added to the images of these tasks if not yet available.
 
-Task parameter
+The following task parameters are added:
 
-- `cache-output-dir` a boolean defaulting to `'true'`.
+- `cache-build` a boolean defaulting to `'true'`.
 
 The solution builds on the caching mechanism introduced in issue #147.
 
 `ods-start` supports a new area in the cache for the purpose of caching build task outputs.
-This area is below folder `.ods-cache/build-task`.
 
-If `cache-output-dir` is `'true'` build tasks shall copy their build outputs to `.ods-cache/build-task/$(git-sha-working-dir)`, where
+This area is below directory `.ods-cache/build-task` in the working directory of the build scripts (where the ods pipeline PVC is mounted)
 
-- `git-sha-working-dir` is the git sha of the working directory which is determined as follows: `git-sha-working-dir=$(git rev-parse "HEAD:$working_dir")`  (https://stackoverflow.com/a/58600111).
+If `cache-build` is `'true'` build tasks shall copy their build outputs and reports to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
 
-However if `cache-output-dir` is `'true'` and there is prior build output at that location, cached files are made available in the tasks `output-dir`. The cache and output dir will be on the same PVC so that hard linking can be utilized if needed.
+- `<technology-build-key>` is a value to allow humans to easily distinguish for what the artifacts are, while also allowing to have different keys for different versions of a build task. This might be useful for example to separate jar files with different class file versions for example. Such differentiation could be used in later versions. Initially they will likely be simple names such as `go`, `python` etc.
 
-For traceability the task result sets a parameter `build-reused`` to 'true' (or perhaps the git sha). +
-**Question:** as far as I know `ods-finish` expects all build task reports to be available. However one might rather receive a reference to the original build reports instead. This would allow to not keep these reports in the cache. Can ods-finish be changed so that reports of reused builds are not required to be provided again?
+- `<cache-build-key>` allows keeping multiple build tasks associated with the same working directory separate. Such build variants may allow to create builds for different platforms or architectures while keeping the cached files in separate locations. In most cases such a key can be derived from the existing build task's parameters. However if extra control is desired a new task parameter named `cache-build-variant-key` should be provided which is concatenated to the automatically derived key for further distinguishing these build variants.
 
-If either `cache-output-dir` is not `'true'` or prior build output is not in the cache the tasks builds as usual and provides the build output to the `output-dir`.
+- `git-sha-working-dir` is the git sha of the internal tree object of the working directory
 
-Finally if a build happened and `cache-output-dir` is `'true'` the task makes the build output available in the the cache. Again this should be speedy as hard linking should enable avoiding to copy these files. In addition this can likely be implemented out side of the individual task build scripts.
+.`git-sha-working-dir`
+****
+`git-sha-working-dir=$(git rev-parse "HEAD:$working_dir")`
 
-**To be determined **: If feasible: script(s) or go programs could be provided that implements the mentioned logic and would be available in all tasks images.
+This is the git cryptographic hash **(sha) of the internal Git tree object** which stores the working-dir (and all the git managed files and directories beneath it).
+In particular this is **not a git commit hash** which for example last modified that directory.
+For more information see
+
+- https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
+- https://stackoverflow.com/a/55459589
+- https://stackoverflow.com/a/58600111
+****
+
+However if `cache-build` is `'true'` and there is prior build output at that location, cached files are made available in the tasks `output-dir`. The cache and output dir will be on the same PVC so that hard linking can be utilized if needed.
+
+For traceability the tekton build task will have another result named `build-reused-from-location` to the cache folder used or an empty string if no build was reused.+
+
+If either `cache-build` is not `'true'` or prior build output is not in the cache the tasks builds as usual and provides the build output and reports to the `output-dir`.
+
+Finally if a build happened and `cache-build` is `'true'` the task makes the build output available in the cache. Again this should be speedy as hard linking should enable avoiding to copy these files.
+
+The build tasks support proper cleanup by touching file named `.ods-last-used-stamp` when a cache location is used or created.
 
 === Cleanup
 
-`ods-start` is changed to delete prior build output from the cache if it is older than 7 days (if configurable 7 days would be the default).
+`ods-start` is changed to delete prior build output from the cache if it is older than a certain number of days.
+
+The `ods-start` task supports a new parameter:
+
+- `cache-build-task-for-days` an integer number provided as string, which defines the number of days build outputs are cached.  Defaulting to `'7'`. A negative number can be used to clear the build task cache.
 
 == Pro
 
 * Build skipping!
 
-* Flag `cache-output-dir` allows to control build skipping independent of other global caching.
+* Flag `cache-build` allows to control build skipping independent of other global caching.
 
 * Build skipping should have little penalty if no reuse actually occurs.
 
-* The task build scripts can (perhaps) be unaware of build skipping.
+* The task build scripts can be unaware of build skipping.
 
 == Con
 
-* Build output cache cleanup strategy might be too simplistic. For example one could make sure that a new build reusing the output touches the cache to reset the timestamp from which cleanup would be driven.
+* It is not readily apparent why the build step will be skipped while the sonarqube step is redone. The latter ensures that the quality gate attribution occurs for example when a feature branch is merged. Nonetheless there might be a better way!
+
+* The build skipping might surprise users who are not aware of it as it happens rather subtle. One needs to inspect log messages or the task result `build-reused-from-location` to notice it.
+
+* For build skipping to work as expected a build task must not use any parts of the repo outside the `working-dir`. Currently there is nothing that would make such builds fail.
 
 == Alternatives
 
-* An initial proposal was using Nexus to store build outputs, but we did not see value in that while it raised the complexity of the proposal. So this was dismissed.
+An initial proposal was using Nexus to store build outputs. The reasons this was not further pursued was:
+
+* There would be a lot of additional pressure on Nexus as the build outputs can be rather large.
+* There were doubts that the performance would be satisfactory.
+* The complexity of the proposal appeared concerning.
+
+For these reasons this was dismissed.
