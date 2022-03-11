@@ -69,7 +69,7 @@ spec:
     description: If enabled tasks uses or populates cache with the output dir contents
       (and reports) so that a build can be skipped if the `working-dir` contents did
       not change.
-    name: cache-output-dir
+    name: cache-build
     type: string
   - default: "0"
     description: Maximum of allowed linting warnings after which eslint will exit
@@ -152,7 +152,7 @@ spec:
       echo -n "" > $(results.build-reused-from-location.path)
       cache_build_key=typescript
       if copy-build-if-cached \
-        --cache-output-dir=$(params.cache-output-dir) \
+        --cache-build=$(params.cache-build) \
         --cache-build-key="$cache_build_key" \
         --cache-location-used-path=$(results.build-reused-from-location.path) \
         --working-dir=$(params.working-dir) \
@@ -169,7 +169,7 @@ spec:
         --lint-file-ext=$(params.lint-file-ext) \
         --build-dir=$(params.build-dir) \
         --copy-node-modules=$(params.copy-node-modules)
-      if [ "$(params.cache-output-dir)" == "true" ]; then
+      if [ "$(params.cache-build)" == "true" ]; then
         cache-build \
           --cache-build-key="$cache_build_key" \
           --cache-location-used-path=$(results.build-reused-from-location.path) \

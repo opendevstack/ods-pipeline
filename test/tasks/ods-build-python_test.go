@@ -81,7 +81,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
 						"sonar-quality-gate": "true",
-						"cache-output-dir":   "false",
+						"cache-build":        "false",
 					}
 				},
 				WantRunSuccess: true,

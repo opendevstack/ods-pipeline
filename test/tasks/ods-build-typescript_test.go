@@ -107,7 +107,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
 						"output-dir":         "../docker",
-						"cache-output-dir":   "false",
+						"cache-build":        "false",
 					}
 				},
 				WantRunSuccess: true,

@@ -54,7 +54,7 @@ spec:
     description: If enabled tasks uses or populates cache with the output dir contents
       (and reports) so that a build can be skipped if the `working-dir` contents did
       not change.
-    name: cache-output-dir
+    name: cache-build
     type: string
   - default: "120"
     description: Maximum line length.
@@ -118,7 +118,7 @@ spec:
       echo -n "" > $(results.build-reused-from-location.path)
       cache_build_key=python
       if copy-build-if-cached \
-        --cache-output-dir=$(params.cache-output-dir) \
+        --cache-build=$(params.cache-build) \
         --cache-build-key="$cache_build_key" \
         --cache-location-used-path=$(results.build-reused-from-location.path) \
         --working-dir=$(params.working-dir) \
@@ -133,7 +133,7 @@ spec:
         --pre-test-script=$(params.pre-test-script) \
         --output-dir=$(params.output-dir) \
         --debug=${DEBUG}
-      if [ "$(params.cache-output-dir)" == "true" ]; then
+      if [ "$(params.cache-build)" == "true" ]; then
         cache-build \
           --cache-build-key="$cache_build_key" \
           --cache-location-used-path=$(results.build-reused-from-location.path) \

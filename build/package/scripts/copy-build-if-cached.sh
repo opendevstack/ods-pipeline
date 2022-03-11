@@ -10,7 +10,7 @@ set -eu
 CP="${GNU_CP:-cp}"
 
 OUTPUT_DIR="docker"
-CACHE_OUTPUT_DIR="true"
+CACHE_BUILD="true"
 CACHE_BUILD_KEY=
 CACHE_LOCATION_USED_PATH=
 WORKING_DIR="."
@@ -19,8 +19,8 @@ DEBUG="${DEBUG:-false}"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
-    --cache-output-dir) CACHE_OUTPUT_DIR="$2"; shift;;
-    --cache-output-dir=*) CACHE_OUTPUT_DIR="${1#*=}";;
+    --cache-build) CACHE_BUILD="$2"; shift;;
+    --cache-build=*) CACHE_BUILD="${1#*=}";;
 
     --cache-build-key) CACHE_BUILD_KEY="$2"; shift;;
     --cache-build-key=*) CACHE_BUILD_KEY="${1#*=}";;
@@ -50,8 +50,8 @@ if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
-if [ "$CACHE_OUTPUT_DIR" != "true" ]; then
-  echo "Build skipping is not enabled. Continuing with a regular build (CACHE_OUTPUT_DIR==$CACHE_OUTPUT_DIR)"
+if [ "$CACHE_BUILD" != "true" ]; then
+  echo "Build skipping is not enabled. Continuing with a regular build (CACHE_BUILD==$CACHE_BUILD)"
   exit 1
 fi
 
