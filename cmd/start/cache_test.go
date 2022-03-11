@@ -124,9 +124,17 @@ func TestCacheCleaning(t *testing.T) {
 				".ods-cache/build-task/sha-1/.ods-last-used-stamp": {
 					ModTime: timeNow,
 				},
+				".ods-cache/build-task/go/sha-0/a.txt": {},
+				".ods-cache/build-task/go/sha-0/b.txt": {},
+				".ods-cache/build-task/go/sha-1/c.txt": {},
+				".ods-cache/build-task/go/sha-1/.ods-last-used-stamp": {
+					ModTime: timeNow,
+				},
 			},
 			[]string{
-				".ods-cache/build-task/sha-0",
+				".ods-cache/build-task/go/sha-0",
+				".ods-cache/build-task/sha-0/a.txt",
+				".ods-cache/build-task/sha-0/b.txt",
 			},
 		},
 	}
@@ -174,45 +182,68 @@ func TestCleanNotRecentlyUsed(t *testing.T) {
 		},
 		"testCleanNRUWhenNotHavingMarkers": {
 			fstest.MapFS{
-				".a":                     {},
-				"deps/dep1.txt":          {},
-				"deps/go/gd2.txt":        {},
-				"build-task/sha-0/a.txt": {},
-				"build-task/sha-0/b.txt": {},
-				"build-task/sha-1/c.txt": {},
-				"other/something/c.txt":  {},
+				".a":                                   {},
+				"deps/dep1.txt":                        {},
+				"deps/go/gd2.txt":                      {},
+				"build-task/go-arch0/sha-0/a.txt":      {},
+				"build-task/go-arch0/sha-0/b.txt":      {},
+				"build-task/python/sha-1/c.txt":        {},
+				"build-task/unexpected/unexpected.txt": {},
+				"other/something/c.txt":                {},
 			},
 			"build-task",
 			timeNow,
-			2,
+			6,
 			[]string{
-				"build-task/sha-0",
-				"build-task/sha-1",
+				"build-task/go-arch0/sha-0",
+				"build-task/python/sha-1",
+				"build-task/unexpected/unexpected.txt",
 			},
 		},
 		"testCleanNRUWhenWithMarkers": {
 			fstest.MapFS{
-				"build-task/sha-0/.ods-last-used-stamp": {
+				"build-task/go-arch0/sha-0/.ods-last-used-stamp": {
 					ModTime: time.Time(time6DaysAgo),
 				},
-				"build-task/sha-0/a.txt": {},
-				"build-task/sha-0/b.txt": {},
-				"build-task/sha-1/.ods-last-used-stamp": {
+				"build-task/go-arch0/sha-0/a.txt": {},
+				"build-task/go-arch0/sha-0/b.txt": {},
+				"build-task/python/sha-1/.ods-last-used-stamp": {
 					ModTime: time.Time(time8DaysAgo),
 				},
-				"build-task/sha-1/a.txt": {},
-				"build-task/sha-1/b.txt": {},
-				"build-task/sha-2/.ods-last-used-stamp": {
+				"build-task/python/sha-1/a.txt": {},
+				"build-task/python/sha-1/b.txt": {},
+				"build-task/python/sha-2/.ods-last-used-stamp": {
 					ModTime: time.Time(timeMonthAgo),
 				},
-				"build-task/sha-2/c.txt": {},
+				"build-task/python/sha-2/c.txt": {},
+			},
+			"build-task",
+			time7DaysAgo,
+			5,
+			[]string{
+				"build-task/python/sha-1",
+				"build-task/python/sha-2",
+			},
+		},
+		"testCleanNRUWhenWithUpperlevelMarkers": {
+			fstest.MapFS{
+				"build-task/go-arch0/.ods-last-used-stamp": {
+					ModTime: time.Time(time8DaysAgo),
+				},
+				"build-task/go-arch0/unexpected/unexpected.txt": {},
+				"build-task/go-arch0/sha-0/a.txt":               {},
+				"build-task/go-arch0/sha-0/b.txt":               {},
+				"build-task/python/sha-2/.ods-last-used-stamp": {
+					ModTime: time.Time(timeMonthAgo),
+				},
+				"build-task/python/sha-2/c.txt": {},
 			},
 			"build-task",
 			time7DaysAgo,
 			3,
 			[]string{
-				"build-task/sha-1",
-				"build-task/sha-2",
+				"build-task/go-arch0",
+				"build-task/python/sha-2",
 			},
 		},
 	}
@@ -235,12 +266,11 @@ func TestCleanNotRecentlyUsed(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if count != tc.expectedCount {
-				t.Fatalf("expected count %d got %d)", tc.expectedCount, count)
-			}
-
 			if diff := cmp.Diff(tc.expectedRemovals, removed); diff != "" {
 				t.Fatalf("expected (-want +got):\n%s", diff)
+			}
+			if count != tc.expectedCount {
+				t.Fatalf("expected count %d got %d)", tc.expectedCount, count)
 			}
 		})
 	}
