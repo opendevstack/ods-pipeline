@@ -11,6 +11,7 @@ CP="${GNU_CP:-cp}"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 CACHE_BUILD_KEY=
+CACHE_LOCATION_USED_PATH=
 DEBUG="${DEBUG:-false}"
 
 while [[ "$#" -gt 0 ]]; do
@@ -25,6 +26,9 @@ while [[ "$#" -gt 0 ]]; do
     --cache-build-key) CACHE_BUILD_KEY="$2"; shift;;
     --cache-build-key=*) CACHE_BUILD_KEY="${1#*=}";;
 
+    --cache-location-used-path) CACHE_LOCATION_USED_PATH="$2"; shift;;
+    --cache-location-used-path=*) CACHE_LOCATION_USED_PATH="${1#*=}";;
+
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
 
@@ -33,6 +37,8 @@ esac; shift; done
 
 if [ -z "${CACHE_BUILD_KEY}" ]; then
   echo "Param --cache-build-key is required."; exit 1;
+elif [ -z "${CACHE_LOCATION_USED_PATH}" ]; then
+  echo "Param --cache-location-used-path is required."; exit 1;
 fi
 
 if [ "${DEBUG}" == "true" ]; then
@@ -68,4 +74,5 @@ echo "Copying build output to cache: $OUTPUT_DIR to $cache_of_output_dir"
 mkdir -p "$cache_of_output_dir"
 $CP -r --link "$OUTPUT_DIR/." "$cache_of_output_dir"
 
+echo "$prior_output_dir" > "$CACHE_LOCATION_USED_PATH"
 touch "$prior_output_dir/.ods-last-used-stamp"

@@ -65,6 +65,9 @@ spec:
       description: Whether to skip the SonarQube analysis or not.
       type: string
       default: "false"
+  results:
+    - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
+      name: build-reused-from-location
   steps:
     - name: build-python
       # Image is built from build/package/Dockerfile.python-toolset.
@@ -97,10 +100,12 @@ spec:
       resources: {}
       script: |
         set -e
+        echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=python
         if copy-build-if-cached \
           --cache-output-dir=$(params.cache-output-dir) \
           --cache-build-key="$cache_build_key" \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG} ; then
@@ -116,6 +121,7 @@ spec:
         if [ "$(params.cache-output-dir)" == "true" ]; then
           cache-build \
             --cache-build-key="$cache_build_key" \
+            --cache-location-used-path=$(results.build-reused-from-location.path) \
             --working-dir=$(params.working-dir) \
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}

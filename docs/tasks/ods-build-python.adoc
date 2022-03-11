@@ -76,4 +76,11 @@ without leading `./` and trailing `/`.
 
 == Results
 
-N/A
+[cols="1,3"]
+|===
+| Name | Description
+
+| build-reused-from-location
+| The cache location that the build task used. If caching is not enabled this will be an empty string.
+
+|===
