@@ -147,7 +147,7 @@ func TestCacheCleaning(t *testing.T) {
 				func(path string, isDir bool) error {
 					removed = append(removed, path)
 					return nil
-				})
+				}, 7)
 			if err != nil {
 				t.Fatal(err)
 			}
