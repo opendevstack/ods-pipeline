@@ -43,6 +43,7 @@ type options struct {
 	sslVerify                string
 	submodules               string
 	depth                    string
+	cacheBuildTasksForDays   int
 	debug                    bool
 }
 
@@ -64,6 +65,7 @@ func main() {
 	flag.StringVar(&opts.sslVerify, "ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
 	flag.StringVar(&opts.submodules, "submodules", "true", "defines if the resource should initialize and fetch the submodules")
 	flag.StringVar(&opts.depth, "depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
+	flag.IntVar(&opts.cacheBuildTasksForDays, "cache-build-tasks-for-days", 7, "the number of days build outputs are cached. A negative number can be used to clear the cache.")
 	flag.StringVar(&opts.consoleURL, "console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	flag.StringVar(&opts.pipelineRunName, "pipeline-run-name", "", "name of pipeline run")
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
@@ -90,7 +92,7 @@ func main() {
 		log.Fatal(err)
 	}
 	logger.Infof("Cleaning cache at %s ...", odsCacheDirName)
-	err = cleanCache(checkoutDirFSB, removeFileOrDir)
+	err = cleanCache(checkoutDirFSB, removeFileOrDir, opts.cacheBuildTasksForDays)
 	if err != nil {
 		log.Fatal(err)
 	}

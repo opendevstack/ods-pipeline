@@ -119,6 +119,11 @@ by the pipeline manager and cannot be customized by users at this point.*
 | 
 | Name of pipeline run.
 
+
+| cache-build-tasks-for-days
+| 7
+| Number of days build tasks are cached to enable build skipping. A subsequent build reusing the cache resets the time for that cache location.
+
 |===
 
 == Results

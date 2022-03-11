@@ -68,7 +68,7 @@ func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) 
 // there would likely be an area where the build output is kept
 // per git-sha of the working-dir. In this case a suitable cleanup
 // might delete such areas after a certain time (see PR #423).
-func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
+func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) error {
 	_, err := fsb.filesystem.Open(odsCacheDirName)
 	if err != nil && os.IsNotExist(err) {
 		return nil
@@ -111,7 +111,7 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 	if err != nil {
 		return err
 	}
-	keepTimestamp := time.Now().AddDate(0, 0, -7)
+	keepTimestamp := time.Now().AddDate(0, 0, -1*expirationDays)
 	// now delete build task cache
 	_, err = cleanupNotRecentlyUsed(fsCache, odsCacheBuildOutputDirName, keepTimestamp,
 		fnRemoveWithBase)

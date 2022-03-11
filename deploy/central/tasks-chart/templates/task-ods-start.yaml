@@ -108,6 +108,12 @@ spec:
     - name: pipeline-run-name
       description: Name of pipeline run.
       type: string
+    - name: cache-build-tasks-for-days
+      description: >-
+        Number of days build tasks are cached to enable build skipping.
+        A subsequent build reusing the cache resets the time for that cache location.
+      type: string
+      default: '7'
   results:
     - description: The commit SHA that was fetched by this task.
       name: commit
