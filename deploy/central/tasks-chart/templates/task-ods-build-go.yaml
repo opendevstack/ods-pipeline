@@ -73,14 +73,9 @@ spec:
       description: >-
         If enabled tasks uses or populates cache with the output dir contents (and reports) so that
         a build can be skipped if the `working-dir` contents did not change.
+        For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
       type: string
-      default: "true"
-    - name: cache-build-variant-key
-      description: >-
-        If cache-build is enabled then cache-build-variant-key allows to keep multiple builds on the same working dir apart.
-        For go, the cache locations for different target platform and architecture combinations are allready separated.
-      type: string
-      default: "all"
+      default: "false"
     - name: pre-test-script
       description: Script to execute before running tests, relative to the working directory.
       type: string
@@ -114,7 +109,7 @@ spec:
       script: |
         set -e
         echo -n "" > $(results.build-reused-from-location.path)
-        cache_build_key="go-$(params.go-os)-$(params.go-arch)-$(params.cache-build-variant-key)"
+        cache_build_key=go-$(params.go-os)-$(params.go-arch)
         if copy-build-if-cached \
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \

@@ -86,15 +86,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
-				AdditionalRuns: []tasktesting.TaskRunCase{{
-					// inherits funcs from primary task only set explicitly
-					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-						// ctxt still in place from prior run
-					},
-					WantRunSuccess: true,
-				}},
 			},
-			"build typescript app in subdirectory no build caching": {
+			"build typescript app in subdirectory with build caching": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -107,7 +100,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
 						"output-dir":         "../docker",
-						"cache-build":        "false",
+						"cache-build":        "true",
 					}
 				},
 				WantRunSuccess: true,
@@ -132,6 +125,13 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"fail linting typescript app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-lint-error"},
@@ -170,6 +170,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
 						"copy-node-modules": "true",
+						"cache-build":       "true",
 					}
 				},
 				WantRunSuccess: true,
@@ -189,6 +190,13 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						"docker/dist/package-lock.json",
 					)
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"build typescript app with custom build directory": {
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-build-dir"},

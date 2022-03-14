@@ -50,6 +50,58 @@ If the server edition supports it, the branch parameter shall be set, unless the
 | SDS-SHARED-3
 | `supply-sonar-project-properties-default.sh` shell script
 | Checks for `sonar-project.properties` file in the working directory. If that does not exist, the default properties file supplied in the container image is copied into the working directory.
+
+| SDS-SHARED-4
+| `cache-build.sh` shell script
+a| Caches a build's outputs and reports to the `build-task` cache area.
+
+Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
+
+- git_sha_working_dir is the git internal tree hash of the working directory. =$(git rev-parse "HEAD:")
+- CACHE_BUILD_KEY is the value of the input parameter below
+
+Copies reports to `<cache-location>/reports`
+
+Copies build outputs to `<cache-location>/output`
+
+If successful creates file `.ods-last-used-stamp` in the cache location.
+
+Input parameters:
+
+* `working-dir`: the sub directory in the repo whose build is cached.
+* `output-dir`: sets destination directory of built binary. The files inside this directory are cached.
+* `cache-build-key`: key to distinguish build toolset and build variants build from the same working directory for example for different platforms.
+* `cache-location-used-path`: specifies path of the tekton task result parameter in which the location of the cache directory used is stored.
+
+| SDS-SHARED-5
+| `copy-build-if-cached.sh` shell script
+a| Copies build from cache area.
+
+If `cache-build` is not `"true"` then exit with error code 1 to signal that a build could not be retrieved from the cache (as it is not enabled).
+
+Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
+
+- git_sha_working_dir is the git internal tree hash of the working directory. =$(git rev-parse "HEAD:")
+- CACHE_BUILD_KEY is the value of the input parameter below.
+
+If there is no directory at `<cache-location>` exit with error code 1 to signal that a build could not be retrieved from the cache.
+
+Copy reports inside `<cache-location>/reports` to `${ROOT_DIR}/.ods/artifacts`
+
+Copy output files inside `<cache-location>/output` to `$OUTPUT_DIR`
+
+Write the cache-location to file `$CACHE_LOCATION_USED_PATH`.
+
+Touch file `.ods-last-used-stamp` in the cache location so that the cleanup timestamp is reset.
+
+Input parameters:
+
+* `working-dir`: the sub directory in the repo whose build is cached.
+* `output-dir`: sets destination directory of built binary. The files inside this directory are cached.
+* `cache-build`: controls whether build cache is used.
+* `cache-build-key`: key to distinguish build toolset and build variants build from the same working directory for example for different platforms.
+* `cache-location-used-path`: specifies path of the tekton task result parameter in which the location of the cache directory used is stored.
+
 |===
 
 
@@ -61,7 +113,8 @@ If the server edition supports it, the branch parameter shall be set, unless the
 | `ods-build-go` ClusterTask resource
 a| The task defines two steps:
 
-. Build Go (module) applications (referencing SDS-TASK-2 and executing SDS-TASK-3)
+. Build Go (module) applications (referencing SDS-TASK-2 and executing SDS-TASK-3).
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
@@ -74,6 +127,7 @@ Input parameters:
 * `pre-test-script`: specifies script to run prior to tests
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
+* `cache-build`: if 'true' build skipping is enabled.
 
 | SDS-TASK-2
 | `ods-go-toolset` container image
@@ -161,7 +215,7 @@ Input parameters: TODO
 | `start` binary
 a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
 
-A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation. 
+A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation.
 
 Context information is stored under `.ods` for each checked out repository:
 
@@ -214,7 +268,8 @@ Status notification message, webhook URL, content type, HTTP method, and trigger
 | `ods-build-python` ClusterTask resource
 a| The task defines two steps:
 
-. Build Python applications (referencing SDS-TASK-14 and executing SDS-TASK-15)
+. Build Python applications (referencing SDS-TASK-14 and executing SDS-TASK-15).
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters: TODO
@@ -246,7 +301,8 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 | `ods-build-typescript` ClusterTask resource
 a| The task defines two steps:
 
-. Build TypeScript applications (referencing SDS-TASK-17 and executing SDS-TASK-18)
+. Build TypeScript applications (referencing SDS-TASK-17 and executing SDS-TASK-18).
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
@@ -259,6 +315,7 @@ Input parameters:
 * `lint-file-ext`: file extensions to lint
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
+* `cache-build`: if 'true' build skipping is enabled.
 
 | SDS-TASK-17
 | `ods-node16-typescript-toolset` container image

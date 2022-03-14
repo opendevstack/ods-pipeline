@@ -49,8 +49,8 @@ without leading `./` and trailing `/`.
 
 
 | cache-build
-| true
-| If enabled tasks uses or populates cache with the output dir contents (and reports) so that a build can be skipped if the `working-dir` contents did not change.
+| false
+| If enabled tasks uses or populates cache with the output dir contents (and reports) so that a build can be skipped if the `working-dir` contents did not change. For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
 
 
 | max-line-length

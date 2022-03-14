@@ -52,24 +52,24 @@ if [ "${WORKING_DIR}" == "." ]; then
 else
   git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
 fi
-prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
+cache_location_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
 
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
 fi
 
-rm -rvf "$prior_output_dir"  # should be empty as otherwise cache should be used.
-mkdir -p "$prior_output_dir"
+rm -rvf "$cache_location_dir"  # should be empty as otherwise cache should be used.
+mkdir -p "$cache_location_dir"
 
 # Copying reports
-cache_of_reports_dir="$prior_output_dir/reports"
+cache_of_reports_dir="$cache_location_dir/reports"
 ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
 echo "Copying build reports to cache: $ods_artifacts_dir -> $cache_of_reports_dir"
 mkdir -p "$cache_of_reports_dir"
 "$CP" -r --link "$ods_artifacts_dir/." "$cache_of_reports_dir"
 
 # Copying build output
-cache_of_output_dir="$prior_output_dir/output"
+cache_of_output_dir="$cache_location_dir/output"
 echo "Copying build output to cache: $OUTPUT_DIR to $cache_of_output_dir"
 mkdir -p "$cache_of_output_dir"
 start_time=$SECONDS
@@ -77,5 +77,5 @@ start_time=$SECONDS
 elapsed=$(( SECONDS - start_time ))
 echo "Copying took $elapsed seconds"
 
-echo "$prior_output_dir" > "$CACHE_LOCATION_USED_PATH"
-touch "$prior_output_dir/.ods-last-used-stamp"
+echo "$cache_location_dir" > "$CACHE_LOCATION_USED_PATH"
+touch "$cache_location_dir/.ods-last-used-stamp"

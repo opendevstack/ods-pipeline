@@ -65,10 +65,13 @@ spec:
       example.
     name: output-dir
     type: string
-  - default: "true"
+  - default: "false"
     description: If enabled tasks uses or populates cache with the output dir contents
       (and reports) so that a build can be skipped if the `working-dir` contents did
-      not change.
+      not change. For single build repos enabling build caching has limited benefits.
+      For multi build repos enabling this is recommended unless the build is dependant
+      on files outside of the working directory. See ADR caching-build-tasks for more
+      details and workarounds.
     name: cache-build
     type: string
   - default: "0"
