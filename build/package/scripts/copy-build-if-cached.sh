@@ -79,13 +79,16 @@ cache_of_reports_dir="$prior_output_dir/reports"
 ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
 echo "Copying prior build reports from cache: $cache_of_reports_dir to $ods_artifacts_dir"
 mkdir -p "$ods_artifacts_dir"
-$CP -r --link "$cache_of_reports_dir/." "$ods_artifacts_dir"
+"$CP" -r --link "$cache_of_reports_dir/." "$ods_artifacts_dir"
 
 # Copying build output
 cache_of_output_dir="$prior_output_dir/output"
 echo "Copying prior build output from cache: $cache_of_output_dir to $OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
-$CP -r --link "$cache_of_output_dir/." "$OUTPUT_DIR"
+start_time=$SECONDS
+"$CP" -r --link "$cache_of_output_dir/." "$OUTPUT_DIR"
+elapsed=$(( SECONDS - start_time ))
+echo "Copying took $elapsed seconds"
 
 echo "$prior_output_dir" > "$CACHE_LOCATION_USED_PATH"
 touch "$prior_output_dir/.ods-last-used-stamp"
