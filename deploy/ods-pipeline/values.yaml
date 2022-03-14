@@ -15,11 +15,6 @@ images:
   # enable chart containing Openshift image streams and build configs
   enabled: true
 
-  # Git
-  odsPipelineGitRepoUri: https://github.com/opendevstack/ods-pipeline
-  odsPipelineGitRepoRef: v0.2.0
-
-
 
 # ################################################################################################ #
 # SETUP CHART CONFIG                                                                               #
