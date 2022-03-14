@@ -211,12 +211,12 @@ tasks:
   #   sidecars:
   #     # sidecars added to go build task
   #     - Workspaces: null
-  #      image: postgres
-  #      name: postgres-sidecar
-  #      resources:
-  #        limits:
-  #          cpu: 100m
-  #          memory: 128Mi
-  #        requests:
-  #          cpu: 100m
-  #          memory: 128Mi
+  #       image: postgres
+  #       name: postgres-sidecar
+  #       resources:
+  #         limits:
+  #           cpu: 100m
+  #           memory: 128Mi
+  #         requests:
+  #           cpu: 100m
+  #           memory: 128Mi
