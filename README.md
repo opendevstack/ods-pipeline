@@ -14,7 +14,6 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 
 ## Documentation
 
-**User Guide**
 * [Installation & Updating](/docs/installation.adoc)
 * [Getting Started](/docs/getting-started.adoc)
 * [ODS.YAML Reference](/docs/ods-configuration.adoc)
@@ -25,13 +24,6 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
 * [Example Project](/docs/example-project.adoc)
 * [FAQ](https://github.com/opendevstack/ods-pipeline/wiki/FAQ)
-
-**Contributor Guide**
-* [Repository Layout](/docs/repository-layout.adoc)
-* [Development & Running Tests](/docs/development.adoc)
-* [Artifacts](/docs/artifacts.adoc)
-* [Creating an ODS task](/docs/creating-an-ods-task.adoc)
-* [Releasing a new version](/docs/releasing.adoc)
 
 This repository also hosts the design documents that describe ODS pipeline more formally. Those design documents provide more detail and background on goals, requirements and architecture decisions and may be useful for all audiences.
 
@@ -51,3 +43,11 @@ For OpenShift Pipelines releases and its relationship to Tekton and OpenShift ve
 |---|---|---|
 | [0.2](https://github.com/opendevstack/ods-pipeline/milestone/2) | 1.5 | 4.0.0 |
 | [0.1](https://github.com/opendevstack/ods-pipeline/milestone/1) | 1.5 | 4.0.0 |
+
+## Contributing
+
+* [Repository Layout](/docs/repository-layout.adoc)
+* [Development & Running Tests](/docs/development.adoc)
+* [Artifacts](/docs/artifacts.adoc)
+* [Creating an ODS task](/docs/creating-an-ods-task.adoc)
+* [Releasing a new version](/docs/releasing.adoc)
