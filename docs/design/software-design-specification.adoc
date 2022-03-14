@@ -544,7 +544,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-26
 | NodeJS 16 for UBI 8
-| 16
+| 1
 | Node.js 16 available as container is a base platform for building and running various Node.js 16 applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1
 
