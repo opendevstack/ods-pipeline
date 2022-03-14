@@ -117,8 +117,6 @@ pipeline:
       workspace: shared-workspace
 ----
 
-Notice that the `taskRef.kind` is set to `Task`, not `ClusterTask`.
-
 === Customizing how Go applications are built
 
 While ODS offers a task to build Go applications, that task is quite opinionated and does not offer a lot of control for you as a user. For example, it will lint your code with `golangci-lint` and you cannot disable this step. This is by design to allow the platform to make certain assumptions about software created by ODS tasks. However, imagine you have some legacy code that will not pass linting and you are unable to change this (quickly). How would you create a task that does not run the linter?
