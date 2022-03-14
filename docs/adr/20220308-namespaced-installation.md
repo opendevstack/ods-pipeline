@@ -14,7 +14,7 @@ Build tasks are not easily customizable (e.g. with respect to resource consumpti
 
 ## Decision
 
-Abolish a central installation altogether. Provide images from a central registry (ghcr.io).
+Abolish a central installation altogether. Provide images from a central registry (ghcr.io). For a detailed discussion, refer to [#404](https://github.com/opendevstack/ods-pipeline/pull/404).
 
 ## Consequences
 
