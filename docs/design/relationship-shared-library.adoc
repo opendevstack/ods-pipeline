@@ -1,14 +1,14 @@
-# ODS Pipeline vs. ODS Jenkins Shared Library
+= ODS Pipeline vs. ODS Jenkins Shared Library
 
 The link:https://github.com/opendevstack/ods-jenkins-shared-library[ODS Jenkins Shared library] provides pipelines and tasks to support CI/CD flows using Jenkins. ODS Pipeline is an alternative approach using Tekton instead of Jenkins. Therefore, on a high-level, both ODS Pipeline and ODS Jenkins Shared library share the same goals. However, there are many differences between the two options, not only in terms of functionality and maturity, but also in terms of approach and concepts.
 
-## High-Level Comparison
+== High-Level Comparison
 
 The Jenkins shared library can be used in a `Jenkinsfile` to avoid repeatedly creating common tasks such as building a container image from a `Dockerfile` in the Git repository.
 
 In the approach chosen by `ods-pipeline`, the pipeline definition in the `ods.y(a)ml` file is a bit like the `Jenkinsfile`: it defines which steps happen in the CI pipeline. The Tekton tasks provided by `ods-pipeline` (such as `ods-deploy-helm`) are a bit like the stages provided by the shared library (such as `odsComponentPipelineRolloutOpenShiftDeployment`). The main difference between the Jenkins shared library and the Tekton-based approach is that users of Jenkins can script their CI pipeline in the `Jenkinsfile`, whereas Tekton pipelines are only a series of tasks defined in YAML, which is way less flexible. Another important difference is that the Jenkins shared library does not contain any language-specific instructions (such as how to build Java applications or how to build Python applications), in contrast to `ods-pipeline`, which provides one opinionated task per language (e.g. `ods-build-python`).
 
-## Release Manager
+== Release Manager
 
 The concept of multiple component repos and one umbrella repo is the same in both options. With `ods-pipeline`, each individual component repo has an `ods.yml` which defines a pipeline. This pipeline produces artifacts, stored in Nexus, which can be used later by the umbrella repo.
 
@@ -29,24 +29,24 @@ Following are some details on what that means practically:
 
 Finally, a few thoughts on enforcing certain tasks / flexibility / adhering to a standard. This is in the context of GAMP or medical device software, in which a platform would like to ensure certain things to happen before software reaches production.
 
-In general, I see two main approaches to address this:
+In general, we see two main approaches to address this:
 
 1. Introduce next to the pipeline field in ods.yml another field which describes a certain kind of pipeline in which some tasks are predefined and cannot be changed by the user. E.g. a `samdPipeline` or `levaPipeline` could pre-configure a pipeline with certain tasks and allow only very limited customisation.
-2. Use the "release manager / doc gen task" described above to verify certain tasks have run or that certain artifacts are present. E.g. the task could check that there are xUnit test results for all components which are part of the app. Further, the task could check that all tasks of the pipeline are of kind `ClusterTask` and start with `ods-``. Those tasks can be assumed to be qualified. If the user added other tasks, they would need to explicitly opt-in as they need to provide their own qualification documents for those tasks then.
+2. Use the "release manager / doc gen task" described above to verify certain tasks have run or that certain artifacts are present. E.g. the task could check that there are xUnit test results for all components which are part of the app. Further, the task could check that all tasks of the pipeline are of kind `Task` and start with `ods-``. Those tasks can be assumed to be qualified. If the user added other tasks, they would need to explicitly opt-in as they need to provide their own qualification documents for those tasks then.
 
-## Document generation
+== Document generation
 
-At the moment, the orchestration pipeline only sends requests to the doc gen service, which is running in each namespace, and receives rendered documents. I believe that this architecture is needlessly complex for the Tekton approach. Instead of having a long-running service in each namespace which consumes resources and is hard to maintain (as every initiative needs to do that themselves), we could simply call the service classes from the doc gen services directly from the Groovy code of the new "release manager / doc gen task".
+At the moment, the orchestration pipeline only sends requests to the doc gen service, which is running in each namespace, and receives rendered documents. We believe that this architecture is needlessly complex for the Tekton approach. Instead of having a long-running service in each namespace which consumes resources and is hard to maintain (as every initiative needs to do that themselves), we could simply call the service classes from the doc gen services directly from the Groovy code of the new "release manager / doc gen task".
 
-## Quickstarters
+== Quickstarters
 
 Quickstarters currently provide a `Jenkinsfile.template` which will get rendered into the resulting component repository. With `ods-pipeline`, this would be replaced by an `ods.yml` file.
 
-Furhter, the quickstarter provisioning itself is also done by a Jenkins pipline, based on the `Jenkinsfile` in the quickstarter. This also needs to be replaced with something. Right now, the quickstart process consists of creating a repo, and creating OpenShift resources. I would stop creating OpenShift resources in the new world, and simply require each quickstarter to supply a Helm chart that is then deployed automatically with the first pipeline run (we need to be infrastructure-as-code with Helm as no magic export functionality exists like with Tailor). With that in mind, we only need to create a repo. Often, that step includes running tech-specific tasks (e.g. generators). I suggest that quickstarter authors define a TaskRun, which then gets executed. That way they can pick their own container image and do whatever they want, in whatever language they want.
+Further, the quickstarter provisioning itself is also done by a Jenkins pipeline, based on the `Jenkinsfile` in the quickstarter. This also needs to be replaced with something. Right now, the quickstart process consists of creating a repo, and creating OpenShift resources. We would stop creating OpenShift resources in the new world, and simply require each quickstarter to supply a Helm chart that is then deployed automatically with the first pipeline run (we need to be infrastructure-as-code with Helm as no magic export functionality exists like with Tailor). With that in mind, we only need to create a repo. Often, that step includes running tech-specific tasks (e.g. generators). We suggest that quickstarter authors define a TaskRun, which then gets executed. That way they can pick their own container image and do whatever they want, in whatever language they want.
 
 Users will still be able to consume quickstarters via the provisioning app.
 
-Authoring a new quickstarter means potentially creating a new task (say a Rust task). This task would then need to be installed centrally as a ClusterTask like the others. I do not know yet how a less official task could be shared easily ... each namespace would need to install that task separately.
+Authoring a new quickstarter means potentially creating a new task (say a Rust task). We do not know yet how a less official task could be shared easily ... each namespace would need to install that task separately.
 To create such a task, authors need to have:
 
 * expert knowledge of the technology involved in the QS (such as Rust for example)
@@ -55,31 +55,29 @@ To create such a task, authors need to have:
 * enough knowledge of Go to supply an automated test using the test framework
 * some knowledge of any programming language to write the logic of the task. Go would be preferred here but is not required. If it is very little logic, bash will do fine as well.
 
-## Pro's / Con's and Limitations
+== Pro's / Con's and Limitations
 
 The following pro's and con's are from a platform perspective, not necessarily from an individual developer's perspective. Also, these are in relation to the existing shared library approach.
 
-### Pro
+=== Pro
 
 * Tekton is very rigid compared to Jenkins: the task list is a simple array. No crazy scripting possible.
-* There is a very clear separation between "official" tasks at cluster scope and custom tasks which are at namespace scope only. Support teams can easily identify which parts of the pipeline use supported tasks and which don't.
-* Tekton tasks have a pretty clear interface (parameters and results). Updating between versions should be easy and predictable. However we need to be cautious not to depend to much on workspace state.
-* As pipelines cannot define inline tasks (only pipeline runs can), users cannot define how to build an application (e.g. if they want to run a linter or not). Instead users must choose from the official task catalog. This allows to control much better how applications are build and to improve on that process.
+* Tekton tasks have a pretty clear interface (parameters and results). Updating between versions should be easy and predictable. However, we need to be cautious not to depend too much on workspace state.
 * No long-running Jenkins instance which saves 5Gi memory per project
 * No complicated base images - the existing Jenkins solution is a bit brittle where many updates of the base images (be it Jenkins, Java, or something else) broke something down the road
 * Jenkins had only one agent image, which made it hard to use for monorepos using multiple technologies (e.g. TypeScript and Java). The Tekton approach should handle monorepos and multiple repos equally well.
-* The Tekton implementation can run in a pure Kubernetes cluster, allowing the test suite to be executed in GitHub Actions. Also the target cluster does not have to be OpenShift, allowing to deploy into EKS for example.
+* The Tekton implementation can run in a pure Kubernetes cluster, allowing the test suite to be executed in GitHub Actions. Also, the target cluster does not have to be OpenShift, allowing to deploy into EKS for example.
 * The artifact approach avoids the need to run all components in the release manager pipeline (speeding things up) while at the same time storing all relevant information which should be useful for GxP/SaMD.
 
-### Con
+=== Con
 
-* Tekton tasks are only customizable via paramters so many people might need to create their own tasks because the platform cannot cover all use cases.
-* Each task is one pod - this cause performance overhead as spinning up pods is a bit slow. Jenkins spins up only one pod and therefore is faster.
+* Tekton tasks are only customizable via parameters so many people might need to create their own tasks because the platform cannot cover all use cases.
+* Each task is one pod - this causes performance overhead as spinning up pods is a bit slow. Jenkins spins up only one pod and therefore is faster.
 * There is no way to install plugins or use the UI to e.g. see test execution trends.
 
-### Limitations
+=== Limitations
 
-* Pipeline users cannot specify task resources. This was possible in Jenkins and also used by many users. See issue https://github.com/opendevstack/ods-pipeline/issues/195. Currently support is not even on the Tekton roadmap. Only workaround: multiple tasks or high defaults. If that does not work, users must create their own copies of the tasks.
-* Pipeline users cannot specify sidecars. This was possible in Jenkins and also used by many users (e.g. to spin up a database for testing). See issue https://github.com/opendevstack/ods-pipeline/issues/135. Currently support is not even on the Tekton roadmap. Only workaround: multiple tasks. If that does not work (e.g. you need more than one sidecar), users must create their own copies of the tasks.
+* Pipeline users cannot specify task resources dynamically without changing the task at hand. This was possible in Jenkins and also used by many users. See issue https://github.com/opendevstack/ods-pipeline/issues/195. Currently, support is not even on the Tekton roadmap. Only workaround: multiple tasks or high defaults.
+* Pipeline users cannot specify sidecars dynamically without changing the task at hand. This was possible in Jenkins and also used by many users (e.g. to spin up a database for testing). See issue https://github.com/opendevstack/ods-pipeline/issues/135. Currently, support is not even on the Tekton roadmap. Only workaround: multiple tasks.
 * As tasks are pods, one needs a PVC to work on. Using a PVC has an effect on how many pipelines can run in parallel. See issue https://github.com/opendevstack/ods-pipeline/issues/160. It would be possible to implement support for one PVC per repo, or even one PVC per branch.
 

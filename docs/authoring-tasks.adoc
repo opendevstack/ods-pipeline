@@ -12,14 +12,16 @@ ODS provides tasks out-of-the-box that can be used e.g. to build and deploy Go a
 
 If you need more control than the official tasks offer, then creating a custom Tekton task is the way to go. You may also use a Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
 
-== Ceating your own task
+== Creating your own task
 
-A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.yaml`) just like official ODS tasks. The only difference is that ODS tasks are typically available as cluster tasks (available to every namespace) in contrast to your custom task which will only be availble within your own namespace.
+A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.yaml`) just like official ODS tasks.
 
 A task consists of one or more steps, and each step is a container that runs in a pod. Therefore, when you create your task, you will need to define at least one step, which will need to define the container it will execute. For example, if you want to use the `curl` program in your custom task, then you will need to launch a container which has `curl` installed. This means that you either need to find a container image that has the binaries installed that you want to execute, or you need to build a container image first that suits your needs, before using it in your task definition.
 
 The simplest YAML definition of a task looks like this:
-```
+
+[source]
+----
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -31,9 +33,9 @@ spec:
       image: busybox
       script: |
         echo hello world
-```
+----
 
-Of course this doesn't do anything useful in the CI pipeline. Typically you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.
+Of course this doesn't do anything useful in the CI pipeline. Typically, you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.
 
 In the example above, we are using the `busybox` image, which executes what is defined in `script` in a shell (`sh`). Since `echo` is available in `sh`, we can print the words `hello world` to the log output.
 
@@ -62,11 +64,13 @@ In theory you can use pretty much any image that works in OpenShift (e.g. the im
 
 === How do I create my own container image to use in a task?
 
-In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information. You may also use the YAML definitions in `deploy/central/images` as an example.
+In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information. You may also use the YAML definitions in `deploy/ods-pipeline/charts/images` as an example.
+
+Occasionally, you might want to extend the images used in an official tasks, e.g. to deploy additional CA certificates, configure proxy settings, etc. The `images` subchart of `ods-pipeline` provides build configurations that allow you to create images that are based on the official `ods-pipeline` images from ghcr.io. The build configurations include inline Dockerfiles that you can adjust to suit your specific needs.
 
 === How can I test my tasks?
 
-Official ODS tasks are provided with automated tests. These tests are written in Go, and can be executed locally (in a KinD cluster) via `make test`. Each test creates a `TaskRun` with certain parameters and then checks the result of the run and the state of the workspace after the run. This allows to test each task in isolation and before using the task in a pipeline in an actual OpenShift cluster. If you want, you should be able to make use of this task testing framework for your own custom tasks. However this has not been documented yet and likely needs a few adjustments to work well.
+Official ODS tasks are provided with automated tests. These tests are written in Go, and can be executed locally (in a KinD cluster) via `make test`. Each test creates a `TaskRun` with certain parameters and then checks the result of the run and the state of the workspace after the run. This allows to test each task in isolation and before using the task in a pipeline in an actual OpenShift cluster. If you want, you should be able to make use of this task testing framework for your own custom tasks. However, this has not been documented yet and likely needs a few adjustments to work well.
 
 == Examples
 
@@ -113,13 +117,11 @@ pipeline:
       workspace: shared-workspace
 ----
 
-Notice that the `taskRef.kind` is set to `Task` instead of `ClusterTask` (which is used for tasks which are provided by `ods-pipeline`).
-
 === Customizing how Go applications are built
 
 While ODS offers a task to build Go applications, that task is quite opinionated and does not offer a lot of control for you as a user. For example, it will lint your code with `golangci-lint` and you cannot disable this step. This is by design to allow the platform to make certain assumptions about software created by ODS tasks. However, imagine you have some legacy code that will not pass linting and you are unable to change this (quickly). How would you create a task that does not run the linter?
 
-As a first step, locate the `ods-build-go` cluster task in OpenShift ("Pipelines > Tasks > ClusterTasks > ods-build-go-vX.X.X") and copy the YAML. Clean up the YAML to create a new `Task`, e.g. named `build-go`, in your own namespace. A simple task would look like this:
+As a first step, locate the `ods-build-go` task in OpenShift ("Pipelines > Tasks  > ods-build-go-vX.X.X") and copy the YAML. Clean up the YAML to create a new `Task`, e.g. named `build-go`, in your own namespace. A simple task would look like this:
 
 [source,yaml]
 ----

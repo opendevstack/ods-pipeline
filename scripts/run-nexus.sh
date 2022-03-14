@@ -14,7 +14,7 @@ NEXUS_URL=
 IMAGE_NAME="ods-test-nexus"
 CONTAINER_NAME="ods-test-nexus"
 NEXUS_IMAGE_TAG="3.30.1"
-HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -87,8 +87,12 @@ sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" "${SCRIPT_DIR}"/nexus/devel
 runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password.json"
 rm "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
 
+if [ ! -e "${HELM_VALUES_FILE}" ]; then
+    echo "setup:" > "${HELM_VALUES_FILE}"
+fi
+
 {
-    echo "nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'";
-    echo "nexusUsername: '${DEVELOPER_USERNAME}'";
-    echo "nexusPassword: '${DEVELOPER_PASSWORD}'";
+    echo "  nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'";
+    echo "  nexusUsername: '${DEVELOPER_USERNAME}'";
+    echo "  nexusPassword: '${DEVELOPER_PASSWORD}'";
 } >> "${HELM_VALUES_FILE}"

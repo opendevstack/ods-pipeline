@@ -14,7 +14,7 @@ BITBUCKET_SERVER_IMAGE_TAG="7.6.5"
 BITBUCKET_POSTGRES_HOST_PORT="5432"
 BITBUCKET_POSTGRES_CONTAINER_NAME="ods-test-bitbucket-postgres"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
-HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/cd-namespace/chart/values.generated.yaml"
+HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -49,9 +49,13 @@ if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
 fi 
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
+if [ ! -e "${HELM_VALUES_FILE}" ]; then
+    echo "setup:" > "${HELM_VALUES_FILE}"
+fi
+
 {
-  echo "bitbucketUrl: '${BITBUCKET_URL_FULL}'"
-  echo "bitbucketUsername: 'admin'"
-  echo "bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"
-  echo "bitbucketWebhookSecret: 's3cr3t'"
+  echo "  bitbucketUrl: '${BITBUCKET_URL_FULL}'"
+  echo "  bitbucketUsername: 'admin'"
+  echo "  bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"
+  echo "  bitbucketWebhookSecret: 's3cr3t'"
 } >> "${HELM_VALUES_FILE}"

@@ -57,7 +57,7 @@ func TestRenderPipeline(t *testing.T) {
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	gotPipeline, err := renderPipeline(odsConfig, data, "ClusterTask", "-v0-1-0")
+	gotPipeline, err := renderPipeline(odsConfig, data, "Task", "-v0-1-0")
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
 		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
@@ -246,7 +246,7 @@ func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, 
 		Project:       "bar",
 		Token:         "test",
 		WebhookSecret: testWebhookSecret,
-		TaskKind:      "ClusterTask",
+		TaskKind:      "Task",
 		RepoBase:      "https://domain.com",
 		StorageConfig: StorageConfig{
 			Provisioner: "kubernetes.io/aws-ebs",

@@ -8,7 +8,7 @@ The purpose of this document is to describe the technical realization of the giv
 
 == Scope
 
-The following software design specification will provide the technical realization of ODS pipeline version 0.1.
+The following software design specification will provide the technical realization of ODS pipeline version 0.2.0.
 
 == Definitions and Abbreviations
 
@@ -22,9 +22,9 @@ N/A
 
 === Developed components
 
-As described in the architecture, the system is split into two main containers: a central installation and multiple local user installations. This document follows that structure.
+As described in the architecture, the system is installed into local namespaces. This document explains the individual components and their interactions.
 
-==== Central ODS Pipeline Installation
+==== ODS Pipeline Installation
 
 ===== Shared `ods-sonar` image
 
@@ -58,7 +58,7 @@ If the server edition supports it, the branch parameter shall be set, unless the
 [cols="1,1,3"]
 |===
 | SDS-TASK-1
-| `ods-build-go` ClusterTask resource
+| `ods-build-go` Task resource
 a| The task defines two steps:
 
 . Build Go (module) applications (referencing SDS-TASK-2 and executing SDS-TASK-3)
@@ -66,7 +66,7 @@ a| The task defines two steps:
 
 Input parameters:
 
-* `working-dir`: allows to customize which directory is used as the Go module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
+* `working-dir`: allows customizing which directory is used as the Go module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `enable-cgo`: allows to enable `CGO`
 * `go-os`: sets target operating system (`GOOS`)
 * `go-arch`: sets target architecture (`GOARCH`)
@@ -105,7 +105,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 [cols="1,1,3"]
 |===
 | SDS-TASK-4
-| `ods-build-gradle` ClusterTask resource
+| `ods-build-gradle` Task resource
 a| The task defines two steps:
 
 . Build Gradle module  (referencing SDS-TASK-5 and executing SDS-TASK-6)
@@ -113,7 +113,7 @@ a| The task defines two steps:
 
 Input parameters:
 
-* `working-dir`: allows to customize which directory is used as the Gradle module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
+* `working-dir`: allows customizing which directory is used as the Gradle module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `gradle-additional-tasks`: additional gradle tasks to be passed to the gradle build
 * `gradle-options`: options to be passed to the gradle build
 * `output-dir`: sets destination directory of built binary
@@ -121,7 +121,7 @@ Input parameters:
 * `sonar-skip`: skips SonarQube analysis
 
 | SDS-TASK-5
-| `ods-gradle-toolset` contaner image
+| `ods-gradle-toolset` container image
 | Container image for building Gradle modules. Based on `ubi8/openjdk-17` (SDS-EXT-11), includes SDS-EXT-12, SDS-SHARED-3, SDS-TASK-6 and SDS-TASK-26.
 
 | SDS-TASK-6
@@ -130,7 +130,7 @@ a| Builds a Gradle module that provides a gradle build script into `docker/app.j
 
 The destination directory can be changed by exporting the environment variable `ODS_OUTPUT_DIR`.
 
-Runs `gradlew clean build` to build the Gradle module, using optionas and additional tasks as passed from SDS-TASK-4.
+Runs `gradlew clean build` to build the Gradle module, using options and additional tasks as passed from SDS-TASK-4.
 
 Generated unit test reports are placed in the working directory (for SonarQube to pick them up) and copied into `.ods/artifacts/xunit-reports`.
 
@@ -148,7 +148,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 [cols="1,1,3"]
 |===
 | SDS-TASK-7
-| `ods-start` ClusterTask resource
+| `ods-start` Task resource
 a| Task to start pipeline. References SDS-TASK-8 and executes SDS-TASK-9.
 
 Input parameters: TODO
@@ -159,9 +159,9 @@ Input parameters: TODO
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
+a| The task checks out the repository of a given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are shallow and include submodules.
 
-A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation. 
+A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation.
 
 Context information is stored under `.ods` for each checked out repository:
 
@@ -181,13 +181,13 @@ If any child repository is missing a successful pipeline run artifact for the ch
 [cols="1,1,3"]
 |===
 | SDS-TASK-10
-| `ods-finish` ClusterTask resource
+| `ods-finish` Task resource
 a| Task to finish pipeline. References SDS-TASK-11 and executes SDS-TASK-12.
 
 Input parameters: TODO
 
 | SDS-TASK-11
-| `ods-finish` contaner image
+| `ods-finish` container image
 | Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-TASK-12.
 
 | SDS-TASK-12
@@ -211,7 +211,7 @@ Status notification message, webhook URL, content type, HTTP method, and trigger
 [cols="1,1,3"]
 |===
 | SDS-TASK-13
-| `ods-build-python` ClusterTask resource
+| `ods-build-python` Task resource
 a| The task defines two steps:
 
 . Build Python applications (referencing SDS-TASK-14 and executing SDS-TASK-15)
@@ -220,7 +220,7 @@ a| The task defines two steps:
 Input parameters: TODO
 
 | SDS-TASK-14
-| `ods-python-toolset` contaner image
+| `ods-python-toolset` container image
 | Container image to build Python applications. Based on `ubi8/python-39` (SDS-EXT-28), includes SDS-SHARED-3, SDS-TASK-15 and SDS-TASK-27.
 
 | SDS-TASK-15
@@ -240,10 +240,12 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 | Default configuration for Python SonarQube project.
 |===
 
+===== `ods-build-typescript` task
+
 [cols="1,1,3"]
 |===
 | SDS-TASK-16
-| `ods-build-typescript` ClusterTask resource
+| `ods-build-typescript` Task resource
 a| The task defines two steps:
 
 . Build TypeScript applications (referencing SDS-TASK-17 and executing SDS-TASK-18)
@@ -251,7 +253,7 @@ a| The task defines two steps:
 
 Input parameters:
 
-* `working-dir`: allows to customize which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
+* `working-dir`: allows customizing which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `output-dir`: sets destination directory of the build output
 * `build-dir`: sets source directory of the build output
 * `copy-node-modules`: enables copying node_modules directory to the output directory
@@ -274,9 +276,9 @@ If `copy-node-modules` is `true` the `node_modules` directory is copied into the
 
 For traceability package.json and package-lock.json are copied into the `dist` directory inside the output directory as well. This happens at the end of the script execution to avoid confusing the subsequent running of tests.
 
-Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
+Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively. If the artifacts are already found in `.ods/artifacts`, then testing is skipped and the artifacts are copied to the working directory to expose them to SonarQube.
 
-Runs `eslint` to lint to lint the source code and fails if there are any errors or warnings. The files to lint default to all files with an `.js`, `.ts`, `.jsx`, `.tsx` extension inside `src` and can be set by the `lint-file-ext` task parameter. The amount of allowed warnings defaults to 0 and can be set by the `max-lint-warnings` task parameter.
+Runs `eslint` to lint the source code and fails if there are any errors or warnings. The files to lint default to all files with an `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte` extension inside `src` and can be set by the `lint-file-ext` task parameter. The amount of allowed warnings defaults to 0 and can be set by the `max-lint-warnings` task parameter.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
@@ -290,11 +292,11 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 [cols="1,1,3"]
 |===
 | SDS-TASK-19
-| `ods-package-image` ClusterTask resource
+| `ods-package-image` Task resource
 | Builds and scans a container image, then pushes it to a registry. References SDS-TASK-20 and executes SDS-TASK-21.
 
 | SDS-TASK-20
-| `ods-buildah` contaner image
+| `ods-buildah` container image
 | Container image to build, scan and push images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18 and SDS-TASK-21. If the build argument `aquasecScannerUrl` is set, the referenced Aqua Scanner binary is installed into the image as well.
 
 | SDS-TASK-21
@@ -317,11 +319,11 @@ If the Aqua scanner is installed in the base image, the  pushed image shall be s
 [cols="1,1,3"]
 |===
 | SDS-TASK-22
-| `ods-deploy-helm` ClusterTask resource
+| `ods-deploy-helm` Task resource
 | Deploys a Helm chart and promotes images. References SDS-TASK-23 and executes SDS-TASK-24.
 
 | SDS-TASK-23
-| `ods-helm` contaner image
+| `ods-helm` container image
 | Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21, SDS-EXT-23, SDS-EXT-24 and SDS-TASK-24.
 
 | SDS-TASK-24
@@ -344,11 +346,9 @@ Upgrades (or installs) a Helm chart.
 * A values file containing the Git commit SHA is auto-generated and added to the Helm diff/upgrade invocation.
 * Any encrypted secrets files are decrypted on the fly, using the age key provided by the `Secret` identified by the `age-key-secret` parameter (defaulting to `helm-secrets-age-key`). The secret is expected to expose the age key under the `key.txt` field.
 * The "app version" is set to the Git commit SHA and the "version" is set to given `version` if any, otherwise the chart version in `Chart.yaml`.
-* Charts in any of the respositories configured in `ods.y(a)ml` are packaged according to the same rules and added as subcharts.
+* Charts in any of the repositories configured in `ods.y(a)ml` are packaged according to the same rules and added as subcharts.
 * The target namespace may also be external to the cluster in which the pipeline runs. The API server is identified by the `apiServer` field of the environment configuration, and the credential token of `apiCredentialsSecret` is used to authenticate.
 |===
-
-==== Local ODS Pipeline Installation
 
 ===== Pipeline Manager
 
@@ -370,15 +370,16 @@ Upgrades (or installs) a Helm chart.
 | `pipeline-manager` binary
 a| The pipeline manager parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
 
-For Git commits which message instructs to skip CI, no pipelines are triggererd. Instructions may be anywhere in the commit message and may be one of (case insensitive):
+For Git commits of which the commit message instructs skipping CI, no pipelines are triggered. Instructions may be anywhere in the commit message and may be one of (case-insensitive):
 
-```
+[source]
+----
 [ci skip]
 [skip ci]
 ***NO_CI***
-```
+----
 
-A pipeline is created or updated corresponding to the Git branch received in the webhook request. The pipeline name is made out of the component and the sanitized branch. A maximum of 63 characters is respected. Tasks (including `finally` tasks) of the pipline are read from the ODS config file in the repository.
+A pipeline is created or updated corresponding to the Git branch received in the webhook request. The pipeline name is made out of the component and the sanitized branch. A maximum of 63 characters is respected. Tasks (including `finally` tasks) of the pipeline are read from the ODS config file in the repository.
 
 A PVC is created per repository unless it exists already. The name is equal to `ods-workspace-<component>` (shortened to 63 characters if longer). This PVC is then used in the pipeline as a shared workspace.
 

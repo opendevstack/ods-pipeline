@@ -1,9 +1,27 @@
-# deploy
+# Deployment
 
 This directory contains container orchestration deployment configurations and templates.
 
-Manifests in `central` are applied once per cluster by an ODS administrator.
+Manifests in `ods-pipeline` are applied once per project by a project administrator.
 
-Manifests in `cd-namespace` are applied once per cd-namespace by an ODS user.
-The resulting resources in the `cd-namespace` use the resources (e.g. the images)
-installed centrally by an ODS administrator.
+## Subcharts
+
+The `tasks`, `images` and `setup` subcharts are maintained in https://github.com/opendevstack/ods-pipeline, and may be used by project admins to control the deployment of ODS pipeline resources in the respective project namespace in OpenShift.
+
+### Subcharts Contents
+
+The resources are defined using Helm:
+* `BuildConfig` and `ImageStream` resources (in the `images` subchart)
+* `Task` resources (in `tasks` subchart)
+* `ConfigMap` and `Secret` resources used by ODS tasks (in `setup` subchart)
+* ODS pipeline manager (`Service`/`Deployment`) (in `setup` subchart)
+
+The resources of the `images` subchart are only applicable for OpenShift clusters. The subcharts may individually be enabled or disabled via the umbrella chart's `values.yaml`.
+
+### Versioning
+
+In a KinD cluster there are no versions. Images use the implicit `latest` tag. That makes testing and local development easy.
+
+In OpenShift, however, images and tasks are versioned. That provides the greatest stability.
+
+Remember to adjust the `values.yaml` files every time there is a new version.

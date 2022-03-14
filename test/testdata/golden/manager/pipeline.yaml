@@ -24,7 +24,7 @@ spec:
     - name: aggregate-tasks-status
       value: $(tasks.status)
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-finish-v0-1-0
     workspaces:
     - name: source
@@ -77,7 +77,7 @@ spec:
     - name: version
       value: $(params.version)
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-start-v0-1-0
     workspaces:
     - name: source
@@ -93,7 +93,7 @@ spec:
     runAfter:
     - ods-start
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-1-0
     workspaces:
     - name: source
@@ -113,7 +113,7 @@ spec:
     runAfter:
     - go-helm-build
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-1-0
     workspaces:
     - name: source

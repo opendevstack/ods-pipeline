@@ -3,7 +3,6 @@ package tasks
 import (
 	"crypto/sha256"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false,
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
 
 const (
-	taskKindRef = "ClusterTask"
+	taskKindRef = "Task"
 )
 
 func checkODSContext(t *testing.T, repoDir string, want *pipelinectxt.ODSContext) {
@@ -150,9 +149,6 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			tn := taskName
-			if tc.TaskVariant != "" {
-				tn = fmt.Sprintf("%s-%s", taskName, tc.TaskVariant)
-			}
 			if tc.Timeout == 0 {
 				tc.Timeout = 5 * time.Minute
 			}

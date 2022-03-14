@@ -117,7 +117,7 @@ pipeline:
   tasks:
     - name: package-image
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: ods-package-image
       workspaces:
         - name: source

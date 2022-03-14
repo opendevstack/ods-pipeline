@@ -167,24 +167,5 @@ func TestTaskODSBuildGo(t *testing.T) {
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
-			"build go app with redis sidecar": {
-				TaskVariant:         "with-sidecar",
-				WorkspaceDirMapping: map[string]string{"source": "go-redis"},
-				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					wsDir := ctxt.Workspaces["source"]
-					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"sonar-skip":    "true",
-						"sidecar-image": "redis:6.2.5-buster",
-					}
-				},
-				WantRunSuccess: true,
-				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					notWantLogMsg := "No sonar-project.properties present, using default:"
-					if strings.Contains(string(ctxt.CollectedLogs), notWantLogMsg) {
-						t.Fatalf("Did not want:\n%s\n\nGot:\n%s", notWantLogMsg, string(ctxt.CollectedLogs))
-					}
-				},
-			},
 		})
 }
