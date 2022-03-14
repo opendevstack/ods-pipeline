@@ -23,3 +23,5 @@ Every project needs to build images themselves, resulting in the installation be
 1. simpler to understand as there is no admin/user distinction
 2. simpler to install as no collaboration with a cluster admin is required at all
 3. simpler to customize since images are then controlled by users
+
+Projects can use or base their images on public `ods-pipeline` images available via ghcr.io, thus greatly lowering the burden this approach entails.
