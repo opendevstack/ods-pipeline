@@ -129,6 +129,9 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					// inherits funcs from primary task only set explicitly
 					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 						// ctxt still in place from prior run
+						wsDir := ctxt.Workspaces["source"]
+						tasktesting.RemoveAll(t, wsDir, "docker/dist")
+						tasktesting.RemoveAll(t, wsDir, "dist")
 					},
 					WantRunSuccess: true,
 				}},
@@ -194,6 +197,9 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					// inherits funcs from primary task only set explicitly
 					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 						// ctxt still in place from prior run
+						wsDir := ctxt.Workspaces["source"]
+						tasktesting.RemoveAll(t, wsDir, "docker/dist")
+						tasktesting.RemoveAll(t, wsDir, "dist")
 					},
 					WantRunSuccess: true,
 				}},
