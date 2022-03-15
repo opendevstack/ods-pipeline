@@ -45,7 +45,9 @@ ENV HELM_PLUGIN_DIFF_VERSION=3.3.2 \
     TAR_VERSION=1.30 \
     GIT_VERSION=2.27
 
-RUN microdnf install skopeo-${SKOPEO_VERSION}* git-${GIT_VERSION}* tar-${TAR_VERSION}* && microdnf clean all
+# helm-secrets depends on xargs (from GNU findutils) in it's signal handlers,
+# c.f. https://github.com/jkroepke/helm-secrets/blob/main/scripts/commands/helm.sh#L34-L36
+RUN microdnf install skopeo-${SKOPEO_VERSION}* git-${GIT_VERSION}* tar-${TAR_VERSION}* findutils && microdnf clean all
 
 COPY --from=builder /usr/local/bin/deploy-with-helm /usr/local/bin/deploy-with-helm
 COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
