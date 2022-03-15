@@ -2,13 +2,15 @@ FROM registry.access.redhat.com/ubi8/openjdk-17:1.10
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV GRADLE_VERSION=7.3.3
+ENV GRADLE_VERSION=7.3.3 \
+    GRADLE_USER_HOME=/home/gradle/.gradle
 
 ARG GRADLE_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
 ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
 
 USER root
 
+# Install Gradle
 RUN cd /opt && \
     curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
     echo "Checking hash of downloaded gradle distribution" && \
@@ -21,7 +23,12 @@ RUN cd /opt && \
     mkdir -p /tmp/temp-gradle-app && cd /tmp/temp-gradle-app && touch settings.gradle && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
     mkdir -p /home/gradle && \
-    ln -s /root/.gradle /home/gradle/.gradle
+    ln -s /root/.gradle ${GRADLE_USER_HOME}
+
+# Add proxy settings
+COPY build/package/scripts/set_gradle_proxy.sh /usr/local/bin/set_gradle_proxy.sh
+RUN chmod +x /usr/local/bin/set_gradle_proxy.sh && \
+    /usr/local/bin/set_gradle_proxy.sh
 
 # Add scripts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
