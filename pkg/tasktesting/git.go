@@ -94,8 +94,7 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 			t.Fatalf("could not create %s: %s", pipelinectxt.BaseDir, err)
 		}
 	}
-	err := writeFile(filepath.Join(wsDir, ".gitignore"), pipelinectxt.BaseDir+"/")
-	if err != nil {
+	if err := pipelinectxt.WriteGitIgnore(filepath.Join(wsDir, ".gitignore")); err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
 	stdout, stderr, err := command.RunInDir("git", []string{"init"}, wsDir)

@@ -161,6 +161,11 @@ func (o *ODSContext) Copy() *ODSContext {
 	return &n
 }
 
+func WriteGitIgnore(path string) error {
+	ods_pipeline_ignore := fmt.Sprintf("/%s\n/.ods-cache\n", BaseDir)
+	return writeFile(path, ods_pipeline_ignore)
+}
+
 func filenameWithoutExtension(filename string) string {
 	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
