@@ -143,6 +143,7 @@ spec:
         {{- (.Values.typescript).resources | default dict | toYaml | nindent 8 }}
       script: |
         set -e
+        supply-sonar-project-properties-default
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=typescript
         if copy-build-if-cached \

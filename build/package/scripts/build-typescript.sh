@@ -22,7 +22,7 @@ copyLintReport() {
 # the copy commands are based on GNU cp tools
 # On a mac `brew install coreutils` gives `g` prefixed cmd line tools such as gcp
 # to use these define env variable GNU_CP=gcp before invoking this script.
-CP="${GNU_CP:-cp}"  
+CP="${GNU_CP:-cp}"
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
@@ -86,11 +86,11 @@ echo "package-*.json checks ..."
 if [ ! -f package.json ]; then
   echo "File package.json not found"
   exit 1
-fi 
+fi
 if [ ! -f package-lock.json ]; then
   echo "File package-lock.json not found"
   exit 1
-fi 
+fi
 
 echo "Installing dependencies ..."
 npm ci --ignore-scripts
@@ -112,17 +112,17 @@ fi
 echo "Building ..."
 npm run build
 # Copying most build output before testing so
-# that additional modules which may be installed by testing 
+# that additional modules which may be installed by testing
 # is not included.
 # However copying package.json too early can confuse the tests.
 mkdir -p "${OUTPUT_DIR}"
 echo "Copying contents of ${BUILD_DIR} into ${OUTPUT_DIR}/dist ..."
 # see https://unix.stackexchange.com/questions/228597/how-to-copy-a-folder-recursively-in-an-idempotent-way-using-cp
-"$CP" -r "${BUILD_DIR}/." "${OUTPUT_DIR}/dist" 
+"$CP" -r "${BUILD_DIR}/." "${OUTPUT_DIR}/dist"
 
 if [ "${COPY_NODE_MODULES}" = true ]; then
   echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
-  # note "${OUTPUT_DIR}/dist" exists now and node_modules name will be maintained. 
+  # note "${OUTPUT_DIR}/dist" exists now and node_modules name will be maintained.
   "$CP"  -r node_modules "${OUTPUT_DIR}/dist"
 fi
 
@@ -163,6 +163,3 @@ fi
 # to copy this earlier
 echo "Copying package.json and package-lock.json to ${OUTPUT_DIR}/dist ..."
 cp package.json package-lock.json "${OUTPUT_DIR}/dist"
-
-
-supply-sonar-project-properties-default

@@ -113,6 +113,7 @@ spec:
         {{- (.Values.go).resources | default dict | toYaml | nindent 8 }}
       script: |
         set -e
+        supply-sonar-project-properties-default
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=go-$(params.go-os)-$(params.go-arch)
         if copy-build-if-cached \

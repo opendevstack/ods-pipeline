@@ -91,5 +91,3 @@ cp coverage.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}cove
 echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
 cp -rv src "${OUTPUT_DIR}/app"
 cp -rv requirements.txt "${OUTPUT_DIR}/app"
-
-supply-sonar-project-properties-default
