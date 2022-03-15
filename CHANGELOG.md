@@ -22,6 +22,7 @@ listed in the changelog.
 - Publish images to public registry (ghcr.io) ([#440](https://github.com/opendevstack/ods-pipeline/issues/440))
 - Allow to cache dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
 - Support node production builds in docker context ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
+- Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#462](https://github.com/opendevstack/ods-pipeline/pull/462/files?short_path=0fa0831#diff-0fa0831292c2ef53b4313ed4794ad49f4b283325851fdd7246d4d7c8b7a2c356) ). See the `docs/adr/20220314-caching-build-tasks.md` for details.
 
 ### Changed
 
