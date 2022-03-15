@@ -39,6 +39,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
@@ -59,6 +61,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					ctxt.Params = map[string]string{
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
+						"output-dir":         "../docker",
 					}
 				},
 				WantRunSuccess: true,
@@ -75,6 +78,9 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
+						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
@@ -133,6 +139,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						"docker/dist/node_modules/",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 				},
 			},
@@ -158,6 +166,8 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
 					)
 				},
 			},

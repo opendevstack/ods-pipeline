@@ -57,7 +57,7 @@ func TestRenderPipeline(t *testing.T) {
 	var odsConfig *config.ODS
 	err := yaml.Unmarshal(conf, &odsConfig)
 	fatalIfErr(t, err)
-	gotPipeline, err := renderPipeline(odsConfig, data, "ClusterTask", "-v0-1-0")
+	gotPipeline, err := renderPipeline(odsConfig, data, "Task", "-v0-1-0")
 	fatalIfErr(t, err)
 	if diff := cmp.Diff(wantPipeline, gotPipeline); diff != "" {
 		t.Fatalf("renderPipeline() mismatch (-want +got):\n%s", diff)
@@ -232,11 +232,11 @@ func fatalIfErr(t *testing.T, err error) {
 }
 
 type fakePruner struct {
-	called bool
+	called chan bool
 }
 
 func (p *fakePruner) Prune(ctxt context.Context, pipelineRuns []tekton.PipelineRun) error {
-	p.called = true
+	p.called <- true
 	return nil
 }
 
@@ -246,7 +246,7 @@ func testServer(kc kubernetes.ClientInterface, tc tektonClient.ClientInterface, 
 		Project:       "bar",
 		Token:         "test",
 		WebhookSecret: testWebhookSecret,
-		TaskKind:      "ClusterTask",
+		TaskKind:      "Task",
 		RepoBase:      "https://domain.com",
 		StorageConfig: StorageConfig{
 			Provisioner: "kubernetes.io/aws-ebs",
@@ -285,9 +285,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				if p.called {
-					t.Fatal("pruning should not have occured")
-				}
 			},
 		},
 		"invalid JSON is not processed": {
@@ -297,9 +294,6 @@ func TestWebhookHandling(t *testing.T) {
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
-				}
-				if p.called {
-					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -311,9 +305,6 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
 				}
-				if p.called {
-					t.Fatal("pruning should not have occured")
-				}
 			},
 		},
 		"tags are not processed": {
@@ -323,9 +314,6 @@ func TestWebhookHandling(t *testing.T) {
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
-				}
-				if p.called {
-					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -345,9 +333,6 @@ func TestWebhookHandling(t *testing.T) {
 			check: func(t *testing.T, kc *kubernetes.TestClient, tc *tektonClient.TestClient, bc *bitbucket.TestClient, p *fakePruner) {
 				if len(tc.CreatedPipelines) > 0 || len(tc.UpdatedPipelines) > 0 {
 					t.Fatal("no pipeline should have been created/updated")
-				}
-				if p.called {
-					t.Fatal("pruning should not have occured")
 				}
 			},
 		},
@@ -370,7 +355,10 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				if !p.called {
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
 					t.Fatal("pruning should have occured")
 				}
 			},
@@ -414,7 +402,10 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				if !p.called {
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
 					t.Fatal("pruning should have occured")
 				}
 			},
@@ -454,7 +445,10 @@ func TestWebhookHandling(t *testing.T) {
 				if len(tc.CreatedPipelineRuns) != 1 {
 					t.Fatal("exactly one pipeline run should have been created")
 				}
-				if !p.called {
+				select {
+				case <-p.called:
+					t.Log("pruning occured")
+				case <-time.After(10 * time.Second):
 					t.Fatal("pruning should have occured")
 				}
 			},
@@ -505,7 +499,7 @@ func TestWebhookHandling(t *testing.T) {
 			if tc.kubernetesClient == nil {
 				tc.kubernetesClient = &kubernetes.TestClient{}
 			}
-			pruner := &fakePruner{}
+			pruner := &fakePruner{called: make(chan bool)}
 			ts, err := testServer(tc.kubernetesClient, tc.tektonClient, tc.bitbucketClient, pruner)
 			if err != nil {
 				t.Fatal(err)

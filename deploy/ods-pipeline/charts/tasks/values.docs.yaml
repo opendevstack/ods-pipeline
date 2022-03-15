@@ -1,0 +1,10 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  imageTag: 0.2.0
+  taskSuffix: ''
+
+registry: image-registry.openshift-image-registry.svc:5000
+namespace: ods
+pushRegistry: image-registry.openshift-image-registry.svc:5000

@@ -65,6 +65,10 @@ fi
 if [ -n "${GO_ARCH}" ]; then
   export GOARCH="${GO_ARCH}"
 fi
+export GOMODCACHE="$ROOT_DIR/.ods-cache/deps/gomod"
+echo INFO: Using gomodule cache on repo pvc
+echo GOMODCACHE="$GOMODCACHE"
+df -h "$ROOT_DIR"
 
 echo "Checking format ..."
 unformatted=$(gofmt -l .)
@@ -107,6 +111,7 @@ else
   go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
   exitcode=$?
   set -e
+  df -h "$ROOT_DIR"
   if [ -f test-results.txt ]; then
       cat test-results.txt
       go-junit-report < test-results.txt > report.xml

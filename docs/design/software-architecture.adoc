@@ -38,13 +38,9 @@ The following diagram illustrates in more detail how the various components inte
 
 image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/container-system.puml[Software System]
 
-As the diagram above shows, the ODS Pipeline installation is made up of two containers, one centrally installed by the cluster admin, and one locally installed by project admins (once per project). The following diagram shows more detail about the central installation:
+As the diagram above shows, the ODS Pipeline installation is made up of one container installed by project admins (once per project) containing configuration (config maps and secrets), the pipeline manager and task resources (Tekton task definitions and their referenced images). The following diagram shows more detail about the installation:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-central-installation.puml[Central Installation]
-
-The following diagram shows more detail about the local installation:
-
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-local-installation.puml[Local Installation]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-namespaced-installation.puml[Namespaced Installation]
 
 === Interfaces
 
@@ -54,7 +50,7 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | Bitbucket
 | Webhook Trigger
 | HTTP POST request
-| Local ODS Pipeline Installation
+| ODS Pipeline Installation
 | Endpoint is an exposed event listener.
 
 | Task `ods-start`
@@ -156,14 +152,11 @@ ODS Pipeline runs on Redhat OpenShift Container Platform, and is embedded into a
 
 == Deployment
 
-The are two main deployments of the system:
+There is one major deployment (typically in the project's cd-namespace) of the system managed by project administrators.
 
-* a central installation managed by a cluster administrator
-* many local installation managed by project administrators
+The installation provides the tasks that projects can consume as `Task` resources. It allows triggering pipelines in response to Bitbucket events.
 
-The central installation provides the tasks that projects can consume as `ClusterTask` resources. The local installation (in `<project>-cd` namespaces) allow to trigger pipelines in response to Bitbucket events.
-
-Both deployments are described as Helm charts: the central installation is based on `deploy/central` and the local installation is based on `cd-namespace/central`. See the link:docs/admin-installation.adoc[Admin Installation Guide] and the link:docs/user-installation.adoc[User Installation Guide].
+The deployment is described in a Helm chart. For details, see the link:../installation.adoc[Installation Guide].
 
 == Appendix
 

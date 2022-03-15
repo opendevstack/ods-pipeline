@@ -10,9 +10,9 @@ To create a technology-specific Task (e.g. python), the following files should b
 
 - [ ] build/package/Dockerfile.python-toolset - The Dockerfile with the dependencies and runtime.
 - [ ] build/package/scripts/build-python.sh - Bash script to carry out the build, linting, testing operations.
-- [ ] deploy/central/images/images-chart/templates/bc-ods-build-python.yaml - BuildConfig to generate the ods-build-python image.
-- [ ] deploy/central/images/images-chart/templates/is-ods-build-python.yaml - Create ImageStream resource in OpenShift.
-- [ ] deploy/central/tasks-charts/templates/task-ods-build-python.yaml - The Tekton Task.
+- [ ] deploy/ods-pipeline/charts/images/templates/bc-ods-build-python.yaml - BuildConfig to generate the ods-build-python image.
+- [ ] deploy/ods-pipeline/charts/images/templates/is-ods-build-python.yaml - Create ImageStream resource in OpenShift.
+- [ ] deploy/ods-pipeline/charts/tasks/templates/task-ods-build-python.yaml - The Tekton Task.
 - [ ] docs/tasks/task-ods-build-python.adoc - To describe the task and its parameters.
 - [ ] test/tasks/ods-build-python_test.go - A test file to test the behavior of the Tekton Task.
 - [ ] test/testdata/workspaces/python-fastapi-sample-app - Sample application that will be used to test the Task.
@@ -20,6 +20,6 @@ To create a technology-specific Task (e.g. python), the following files should b
 The following files should be **updated**:
 
 - [ ] .github/workflows/main.yaml - Build ods python image and push it to the internal registry.
-- [ ] Makefile - Function 'start-ods-central-builds' start builds for each ODS BuildConfig (only Openshift!)
+- [ ] Makefile - Function 'start-ods-builds' start builds for each ODS BuildConfig (only Openshift!)
 
 // TODO: Elaborate more on how to test a Task

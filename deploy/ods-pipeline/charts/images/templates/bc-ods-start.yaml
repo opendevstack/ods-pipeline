@@ -1,0 +1,24 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ods-start
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'ods-start:{{.Values.global.imageTag}}'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  postCommit: {}
+  strategy:
+    type: Docker
+    dockerStrategy:
+      buildArgs:
+        - name: imageTag
+          value: '{{.Values.global.imageTag}}'
+  source:
+    dockerfile: |-
+      {{- .Files.Get "docker/Dockerfile.start" | nindent 6}}
+  runPolicy: Serial

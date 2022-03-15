@@ -25,7 +25,7 @@ const (
 	tokenEnvVar              = "ACCESS_TOKEN"
 	webhookSecretEnvVar      = "WEBHOOK_SECRET"
 	taskKindEnvVar           = "ODS_TASK_KIND"
-	taskKindDefault          = "ClusterTask"
+	taskKindDefault          = "Task"
 	taskSuffixEnvVar         = "ODS_TASK_SUFFIX"
 	storageProvisionerEnvVar = "ODS_STORAGE_PROVISIONER"
 	storageClassNameEnvVar   = "ODS_STORAGE_CLASS_NAME"

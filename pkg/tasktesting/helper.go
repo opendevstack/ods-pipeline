@@ -48,14 +48,14 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "pipeline", "./chart/values.kind.yaml,./chart/values.generated.yaml")
+	installCDNamespaceResources(t, namespace, "pipeline")
 
 	return clients, namespace
 }
 
-func installCDNamespaceResources(t *testing.T, ns, serviceaccount, valuesFile string) {
+func installCDNamespaceResources(t *testing.T, ns, serviceaccount string) {
 
-	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "-f", valuesFile, "--no-diff"}
+	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "--no-diff"}
 	if testing.Verbose() {
 		scriptArgs = append(scriptArgs, "-v")
 	}

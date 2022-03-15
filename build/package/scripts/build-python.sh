@@ -64,7 +64,6 @@ fi;
 
 echo "Installing test requirements ..."
 # shellcheck source=/dev/null
-. /opt/venv/bin/activate
 pip install --upgrade pip
 pip install -r tests_requirements.txt
 pip check

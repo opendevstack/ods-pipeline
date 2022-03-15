@@ -11,9 +11,7 @@ Person(developer, "Developer")
 
 System_Boundary(pipeline, "ODS Pipeline"){
 
-    Container(local_installation, "Local ODS Pipeline Installation", "Kubernetes resources", "ODS pipeline manager + config maps and secrets")
-
-    Container(central_installation, "Central ODS Pipeline Installation", "Kubernetes resources", "Tekton tasks to use in pipelines, and related images")
+    Container(installation, "ODS Pipeline Installation", "Kubernetes resources", "ODS pipeline manager, config maps and secrets + Tekton tasks to use in pipelines, and related images")
 
     Container(pipeline_run, "Pipeline Run", "PipelineRun Kubernetes resources", "Run of one pipeline")
 
@@ -50,10 +48,9 @@ Rel(pipeline_run, nexus, "uploads artifacts")
 Rel(pipeline_run, sonarqube, "analyzes source code")
 Rel(pipeline_run, aqua, "scans for vulnerabilities")
 Rel(pipeline_run, bitbucket, "checks out source code, sets build status")
-Rel(bitbucket, local_installation, "triggers")
-Rel(local_installation, pipeline_run, "creates")
-Rel(pipeline_run, local_installation, "uses config maps and secrets")
-Rel(pipeline_run, central_installation, "uses tasks")
+Rel(bitbucket, installation, "triggers")
+Rel(installation, pipeline_run, "creates")
+Rel(pipeline_run, installation, "uses config maps, tasks and secrets")
 Rel(pipeline_run, release_namespace, "deploys to")
 Rel(developer, bitbucket, "pushes")
 Rel(pipeline_run, webhook_receiver, "send status notification", $tags="optional")

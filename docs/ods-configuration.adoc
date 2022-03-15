@@ -21,7 +21,7 @@ pipeline:
   tasks:
   - name: backend-build-go
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-2-0
     workspaces:
     - name: source
@@ -30,7 +30,7 @@ pipeline:
 
 Each task reference is just the plain Tekton definition. See the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-tasks-to-the-pipeline[Adding Tasks to the Pipeline] for more information.
 
-A typical central `ods-pipeline` installation offers its task as `CluserTask` resources, therefore the `taskRef.kind` needs to be `ClusterTask`. The value of the `taskRef.name` field depends on the version of `ods-pipeline` that is installed in your cluster. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Cluster Tasks".
+A typical `ods-pipeline` installation offers its task as `Task` resources, therefore the `taskRef.kind` needs to be `Task`. The value of the `taskRef.name` field depends on the version of `ods-pipeline` that is installed in your project. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Tasks".
 
 The pipeline created based on the configuration will have a workspace named `shared-workspace` available, which is backed by a PVC (named `ods-pipeline`) in your namespace.
 
@@ -38,7 +38,7 @@ Next to the tasks you specify, `ods-pipeline` will automatically inject two task
 
 The `ods-finish` task is added as a final task to the pipeline. Final tasks run at the end, regardless whether all previous tasks succeeded. The `ods-finish` sets the Bitbucket build status and deals with Nexus artifacts, etc.
 
-You can also specify further final tasks to be added to the pipeline by specyfing them under `finally`. Example:
+You can also specify further final tasks to be added to the pipeline by specifying them under `finally`. Example:
 
 .ods.yaml
 [source,yaml]
@@ -100,7 +100,7 @@ TIP: If you want to promote images between environments without rebuilding them,
 
 == `repositories`
 
-If your application is made out of multiple components, you may want to have one "umbrella" repository that ties all those components together and deploys the whole application together. In this case, the umbrella repository can specify the subrepositores via the `repositories` field. Example:
+If your application is made out of multiple components, you may want to have one "umbrella" repository that ties all those components together and deploys the whole application together. In this case, the umbrella repository can specify the subrepositories via the `repositories` field. Example:
 
 .ods.yaml
 [source,yaml]
@@ -112,6 +112,6 @@ repositories:
   url: https://bitbucket.acme.org/scm/baz/bar.git
 ----
 
-If the repository does not specify a URL, the repository is assumed to be under the same organisation than the repository hosting the `ods.yaml` file. If no branch is given, `master` is used as a default.
+If the repository does not specify a URL, the repository is assumed to be under the same organisation as the repository hosting the `ods.yaml` file. If no branch is given, `master` is used as a default.
 
 Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.

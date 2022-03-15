@@ -447,8 +447,6 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		log.Println(requestID, fmt.Sprintf("cannot write body: %s", err))
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 // createPipelineRun creates a PipelineRun resource

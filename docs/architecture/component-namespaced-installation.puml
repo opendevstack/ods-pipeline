@@ -1,0 +1,68 @@
+@startuml "namespaced-installation"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+' !include C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+
+Container_Boundary(c1, "Namespaced ODS Pipeline Installation"){
+    Boundary(config, "Configuration & Management") {
+        Component(route, "Route", "Route resource", "External endpoint for Bitbucket webhook")
+        Component(ods_pipeline_manager, "ODS Pipeline Manager", "Custom service", "Manage pipelines")
+        Component(config_maps, "Config Maps", "ConfigMap resources", "Configuration for consumption by pipelines")
+        Component(secrets, "Secrets", "Secret resources", "Secret for consumption by pipelines")
+    }
+
+    Boundary(tasks, "Tasks") {
+        Component(task_build_go, "ods-build-go", "Task", "Builds Go (module) applications")
+        Component(task_build_typescript, "ods-build-typescript", "Task", "Builds TypeScript applications")
+        Component(task_build_python, "ods-build-python", "Task", "Builds Python applications")
+        Component(task_build_gradle, "ods-build-gradle", "Task", "Builds Gradle-based applications")
+        Component(task_package_image, "ods-package-image", "Task", "Packages container images")
+        Component(task_deploy_helm, "ods-deploy-helm", "Task", "Deploys Helm charts")
+        Component(task_start, "ods-start", "Task", "Starts pipeline run (checkout repository, set build status, download artifacts, ...)")
+        Component(task_finish, "ods-finish", "Task", "Finishes pipeline run (set build status, upload artifacts, ...)")
+    }
+
+    Boundary(images, "Images") {
+        Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go 1.16, golangci-lint, build script")
+        Component(image_node16_typescript_toolset, "ods/node16-typescript-toolset", "Container Image", "TypeScript 3, build script")
+        Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python 3, build script")
+        Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
+        Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Aqua scanner")
+        Component(image_helm, "ods/helm", "Container Image", "Helm, Skopeo, deploy script")
+        Component(image_start, "ods/start", "Container Image", "Git, start script")
+        Component(image_finish, "ods/finish", "Container Image", "Finish script")
+        Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
+        Component(image_pipeline_manager, "ods/pipeline-manager", "Container Image", "Webhook receiver and pipeline manager")
+    }
+
+}
+
+Rel(task_build_go, image_go_toolset, "uses")
+Rel(task_build_go, image_sonar, "uses")
+
+Rel(task_build_typescript, image_node16_typescript_toolset, "uses")
+Rel(task_build_typescript, image_sonar, "uses")
+
+Rel(task_build_python, image_python_toolset, "uses")
+Rel(task_build_python, image_sonar, "uses")
+
+Rel(task_build_gradle, image_gradle_toolset, "uses")
+Rel(task_build_gradle, image_sonar, "uses")
+
+Rel(task_package_image, image_buildah, "uses")
+
+Rel(task_deploy_helm, image_helm, "uses")
+
+Rel(task_start, image_start, "uses")
+
+Rel(task_finish, image_finish, "uses")
+
+Rel(ods_pipeline_manager, route, "exposed via")
+
+config_maps -[hidden]- secrets
+
+@enduml

@@ -2,7 +2,7 @@
 
 = Getting Started
 
-This guide explains how you can start to use ODS pipeline in your project. It is assumed you have read the link:introduction.adoc[introduction] and have aleady link:user-installation.adoc[installed] ODS pipeline in an OpenShift project.
+This guide explains how you can start to use ODS pipeline in your project. It is assumed you have read the link:introduction.adoc[introduction] and have aleady link:installation.adoc[installed] ODS pipeline in an OpenShift project.
 
 The guide will look at two scenarios:
 
@@ -86,7 +86,7 @@ def stageUnitTest(def context) {
 }
 ----
 
-Compared to Jenkins, you cannot define any scripts directly in the `ods.yaml` file describing your Tekton pipeline. You may only reference existing tasks and adjust their parameters. As a consequence, the build related stages (`stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild`) are provided by a cluster task (named `ods-build-go-vX`) instead.
+Compared to Jenkins, you cannot define any scripts directly in the `ods.yaml` file describing your Tekton pipeline. You may only reference existing tasks and adjust their parameters. As a consequence, the build related stages (`stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild`) are provided by a task (named `ods-build-go-vX`) instead.
 
 An equivalent `ods.yaml` for the above `Jenkinsfile` looks like this:
 
@@ -106,14 +106,14 @@ pipeline:
   tasks:
   - name: backend-build-go
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: backend-package-image
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-package-image-v0-2-0
     runAfter:
     - backend-build-go
@@ -122,7 +122,7 @@ pipeline:
       workspace: shared-workspace
   - name: backend-deploy
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-2-0
     runAfter:
     - backend-package-image
@@ -136,7 +136,7 @@ What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest
 Building the container image is now done in `ods-package-image-v0-2-0` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:tasks/ods-build-go.adoc[`ods-build-go` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
 
 Finally, the application is deployed in `ods-deploy-helm-v0-2-0` as opposed to `odsComponentStageRolloutOpenShiftDeployment`.
-Let's look at this deployment piece in detail. The new Tekton task makes use of Helm to define and deploy the Kubernetes resources to use. Your existing repository might not define Kubernetes resources at all (this is the default), or they might be expressed as OpenShift templates (in a folder named `openshift`) and applied with link:https://github.com/opendevstack/tailor[Tailor]. ODS pipeline only supports Helm at the moment, and requires the Kuberenetes resources (the Helm "chart") to be under version control as described below in the <<helm-chart,Helm Chart>> section.
+Let's look at this deployment piece in detail. The new Tekton task makes use of Helm to define and deploy the Kubernetes resources to use. Your existing repository might not define Kubernetes resources at all (this is the default), or they might be expressed as OpenShift templates (in a folder named `openshift`) and applied with link:https://github.com/opendevstack/tailor[Tailor]. ODS pipeline only supports Helm at the moment, and requires the Kubernetes resources (the Helm "chart") to be under version control as described below in the <<helm-chart,Helm Chart>> section.
 
 After the `ods.yaml` and the Helm `chart` are added to the repository, the final step is to create a Bitbucket webhook pointing to the ODS pipeline installation. Disable the existing Jenkins webhook setting before creating a new one as described below in the <<webhook-configuration,Webhook Configuration>> section.
 
@@ -162,14 +162,14 @@ pipeline:
   tasks:
   - name: backend-build-go
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-build-go-v0-2-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: backend-package-image
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-package-image-v0-2-0
     runAfter:
     - backend-build-go
@@ -178,7 +178,7 @@ pipeline:
       workspace: shared-workspace
   - name: backend-deploy
     taskRef:
-      kind: ClusterTask
+      kind: Task
       name: ods-deploy-helm-v0-2-0
     runAfter:
     - backend-package-image
