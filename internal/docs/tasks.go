@@ -53,13 +53,13 @@ func renderTemplate(targetDir, targetFilename string, data Task) error {
 	return tmpl.Execute(targetFile, data)
 }
 
-func parseTasks(helmTemplateOutput []byte) ([]*tekton.ClusterTask, error) {
-	var tasks []*tekton.ClusterTask
+func parseTasks(helmTemplateOutput []byte) ([]*tekton.Task, error) {
+	var tasks []*tekton.Task
 
 	tasksBytes := bytes.Split(helmTemplateOutput, []byte("---"))
 
 	for _, taskBytes := range tasksBytes {
-		var t tekton.ClusterTask
+		var t tekton.Task
 		err := yaml.Unmarshal(taskBytes, &t)
 		if err != nil {
 			return nil, err

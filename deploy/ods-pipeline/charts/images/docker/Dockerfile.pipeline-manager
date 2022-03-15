@@ -1,0 +1,3 @@
+ARG imageTag="latest"
+
+FROM ghcr.io/opendevstack/ods-pipeline/ods-pipeline-manager:$imageTag

@@ -33,16 +33,12 @@ lint-go: ## Run golangci-lint.
 .PHONY: lint-go
 
 lint-shell: ## Run shellcheck.
-	shellcheck scripts/*.sh build/package/scripts/* deploy/*/*.sh
+	shellcheck scripts/*.sh build/package/scripts/* deploy/*.sh
 .PHONY: lint-shell
 
 ##@ Building
 
-sidecar-tasks: ## Render sidecar task variants.
-	go run cmd/sidecar-tasks/main.go
-.PHONY: sidecar-tasks
-
-docs: sidecar-tasks ## Render documentation for tasks.
+docs: ## Render documentation for tasks.
 	go run cmd/docs/main.go
 .PHONY: docs
 
@@ -92,7 +88,7 @@ clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.
 
 ##@ KinD (local development environment)
 
-prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube install-ods-tasks-kind ## Prepare local environment from scratch.
+prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube ## Prepare local environment from scratch.
 .PHONY: prepare-local-env
 
 create-kind-with-registry: ## Create KinD cluster with local registry.
@@ -106,10 +102,6 @@ install-tekton-pipelines: ## Install Tekton pipelines in KinD cluster.
 build-and-push-images: ## Build and push images to local registry.
 		cd scripts && ./build-and-push-images.sh
 .PHONY: build-and-push-images
-
-install-ods-tasks-kind: ## KinD only! Apply ODS ClusterTask manifests in KinD
-	cd scripts && ./install-ods-tasks-kind.sh
-.PHONY: install-ods-tasks-kind
 
 run-bitbucket: ## Run Bitbucket server (using timebomb license, in "kind" network).
 	cd scripts && ./run-bitbucket.sh
@@ -130,7 +122,6 @@ run-sonarqube: ## Run SonarQube server (in "kind" network).
 recreate-kind-cluster: ## Recreate KinD cluster including Tekton tasks.
 	cd scripts && ./kind-with-registry.sh --recreate
 	cd scripts && ./install-tekton-pipelines.sh
-	cd scripts && ./install-ods-tasks-kind.sh
 .PHONY: recreate-kind-cluster
 
 stop-local-env: ## Stop local environment.
@@ -143,15 +134,7 @@ start-local-env: ## Restart stopped local environment.
 
 ##@ OpenShift
 
-install-ods-central: ## OpenShift only! Apply ODS BuildConfig, ImageStream and ClusterTask manifests
-ifeq ($(strip $(namespace)),)
-	@echo "Argument 'namespace' is required, e.g. make install-ods-central namespace=ods"
-	@exit 1
-endif
-	cd scripts && ./install-ods-central-resources.sh -n $(namespace)
-.PHONY: install-ods-central
-
-start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConfig
+start-ods-builds: ## OpenShift only! Start builds for each ODS BuildConfig
 	oc start-build ods-buildah
 	oc start-build ods-finish
 	oc start-build ods-go-toolset
@@ -162,9 +145,9 @@ start-ods-central-builds: ## OpenShift only! Start builds for each ODS BuildConf
 	oc start-build ods-start
 	oc start-build ods-node16-typescript-toolset
 	oc start-build ods-pipeline-manager
-.PHONY: start-ods-central-builds
+.PHONY: start-ods-builds
 
-##@ User Installation
+##@ Installation
 
 install-cd-namespace: ## Install resources in CD namespace via Helm.
 ifeq ($(strip $(namespace)),)

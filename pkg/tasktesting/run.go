@@ -34,10 +34,6 @@ type TaskRunCase struct {
 }
 
 type TestCase struct {
-	// TaskVariant allows to target a variant of the task. E.g. the `ods-build-go task`
-	// has a `ods-build-go-with-sidecar` variant. This variant can be targeted by
-	// setting TaskVariant to `with-sidecar`.
-	TaskVariant string
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
 	TaskParamsMapping   map[string]string

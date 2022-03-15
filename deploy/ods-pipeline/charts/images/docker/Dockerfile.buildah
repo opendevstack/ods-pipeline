@@ -1,0 +1,15 @@
+ARG imageTag="latest"
+
+FROM ghcr.io/opendevstack/ods-pipeline/ods-buildah:$imageTag
+
+ARG aquasecScannerUrl
+
+# Optionally install Aqua scanner.
+RUN if [ -z $aquasecScannerUrl ] ; then echo 'Skipping Aqua scanner installation!' ; else echo 'Installing Aqua scanner... getting binary from' $aquasecScannerUrl \
+    && curl -v -L $aquasecScannerUrl -o aquasec \
+    && mv aquasec /usr/local/bin/ \
+    && chmod +x /usr/local/bin/aquasec \
+    && echo 'Aqua scanner version:' \
+    && aquasec version \
+    && echo 'Aqua scanner installation completed!'; \
+    fi

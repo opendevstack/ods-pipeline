@@ -14,15 +14,14 @@ The current version is hardcoded in a few places across the repository. All of t
 === Publishing the release
 Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). The description should be like this:
 
-```
+[source]
+----
 < Note highlights of the release and any breaking changes >
 
 For all changes and more details, please see the [changelog](https://github.com/opendevstack/ods-pipeline/blob/master/CHANGELOG.md#< Add anchor of the released version>).
 
-To update the cluster-wide pipeline installation, refer to the [admin update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/admin-installation.adoc#updating).
-
-To update your project-specific pipeline installation, refer to the [user update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/user-installation.adoc#updating).
-```
+To update your project-specific pipeline installation, refer to the [update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/installation.adoc#updating).
+----
 
 === Attaching binaries to the release
 The `artifact-download` binary should be offered as a pre-built binary for `linux/amd64`, `darwin/amd64` and `windows/amd64`. These can be generated via `make build-artifact-download`, and then uploaded in the GitHub release creation form.
