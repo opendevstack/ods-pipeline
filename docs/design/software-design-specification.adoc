@@ -560,6 +560,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | Python 3.9 available as container is a base platform for building and running various Python applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/python-39/6065b24eb92fbda3a4c65d8f
 
+| SDS-EXT-29
+| GNU findutils
+| 4.6.0
+| Basic directory searching utilities, included due to the dependency of `helm-secrets` on `xargs`
+| https://www.gnu.org/software/findutils/
+
 |===
 
 == Appendix
