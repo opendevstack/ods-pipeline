@@ -562,7 +562,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-29
 | GNU findutils
-| 4.6.0
+| 4.6
 | Basic directory searching utilities, included due to the dependency of `helm-secrets` on `xargs`
 | https://www.gnu.org/software/findutils/
 
