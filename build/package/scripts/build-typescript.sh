@@ -138,17 +138,13 @@ else
   npm run test
 
   mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-  cat build/test-results/test/report.xml
   cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
   mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-  cat build/coverage/clover.xml
   cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-  cat build/coverage/coverage-final.json
   cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-  cat build/coverage/lcov.info
   cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 fi
 
