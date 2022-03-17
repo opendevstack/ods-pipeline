@@ -20,19 +20,16 @@ listed in the changelog.
 - Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
 - Publish images to public registry (ghcr.io) ([#440](https://github.com/opendevstack/ods-pipeline/issues/440))
-- Allow to cache dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
+- Allow to cache dependencies and support for caching go dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
 - Support node production builds in docker context ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
 
 ### Changed
 
 - Use configmap `ods-sonar` to configure SonarQube edition ([#410](https://github.com/opendevstack/ods-pipeline/issues/410))
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
-- Add `build-dir` and `copy-node-modules` parameters to TypeScript build task to make it more suitable for FE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
 - Update gradle version to 7.3.3 to address log4j vulnerability and improved JDK 17 support. ([#395](https://github.com/opendevstack/ods-pipeline/issues/395))
 - Create and use one PVC per repository ([#160](https://github.com/opendevstack/ods-pipeline/issues/160))
-- Leaner NodeJS 16 Typescript image task, removed cypress and its dependencies ([#426](https://github.com/opendevstack/ods-pipeline/issues/426))
 - Update skopeo (from 1.4 to 1.5) and buildah (from 1.22 to 1.23) ([#430](https://github.com/opendevstack/ods-pipeline/issues/430))
-- Use `--ignore-scripts` when building TypeScript apps ([#434](https://github.com/opendevstack/ods-pipeline/issues/434))
 - Prune pipelines and pipeline runs ([#153](https://github.com/opendevstack/ods-pipeline/issues/153)). Note that any pipeline runs created with 0.2.0 or earlier will not be cleaned up and need to be dealt with manually.
 - Log artifact URL after upload ([#384](https://github.com/opendevstack/ods-pipeline/issues/384))
 - Remove Tekton Triggers, moving the required functionality it provided into the new ODS pipeline manager ([#438](https://github.com/opendevstack/ods-pipeline/issues/438))
@@ -40,6 +37,21 @@ listed in the changelog.
 - Change installation mode from centralized to local/namespaced ([#404](https://github.com/opendevstack/ods-pipeline/pull/404))
 - Removed logging of test reports for TypeScript and Python build tasks ([#470](https://github.com/opendevstack/ods-pipeline/issues/470))
 
+#### Typescript changes
+
+Compared to the prior release the following breaking changes were made in the typescript toolset:
+
+- It is now required that both `package.json` and `package-lock.json` are available to the build (see [PR #451](https://github.com/opendevstack/ods-pipeline/pull/451))
+
+- Add `build-dir` and `copy-node-modules` (defaulting to `false`) parameters to TypeScript build task to make it more suitable for FE builds. A non-obvious but breaking change is that files inside the directory specified `build-dir` are now copied to folder `${output-dir}/dist` whereas previously they were copied to `${output-dir}/dist/dist`([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
+
+- Use `--ignore-scripts` when building TypeScript apps ([#434](https://github.com/opendevstack/ods-pipeline/issues/434))
+
+
+- Leaner NodeJS 16 Typescript image task, removed cypress and its dependencies ([#426](https://github.com/opendevstack/ods-pipeline/issues/426))
+
+Non-breaking changes and additions in the typescript toolset are described in those sections.
+    
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
 - Gradle task does not expose Nexus env variables ([#373](https://github.com/opendevstack/ods-pipeline/issues/373))
