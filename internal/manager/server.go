@@ -516,7 +516,7 @@ func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) e
 func pipelineLabels(data PipelineData) map[string]string {
 	return map[string]string{
 		repositoryLabel: data.Repository,
-		gitRefLabel:     data.GitRef,
+		gitRefLabel:     makeValidLabelValue("", data.GitRef, 63),
 		stageLabel:      data.Stage,
 	}
 }
@@ -572,16 +572,19 @@ func determineProject(serverProject string, projectParam string) string {
 // into the name name to make this very unlikely.
 // We cut the pipeline name at 55 chars to allow e.g. pipeline runs to add suffixes.
 func makePipelineName(component string, branch string) string {
+	// 55 is derived from K8s label max length minus room for generateName suffix.
+	return makeValidLabelValue(component+"-", branch, 55)
+}
+
+func makeValidLabelValue(prefix, branch string, maxLength int) string {
 	// Cut all non-alphanumeric characters
 	safeCharsRegex := regexp.MustCompile("[^-a-zA-Z0-9]+")
-	pipeline := component + "-" + safeCharsRegex.ReplaceAllString(
+	result := prefix + safeCharsRegex.ReplaceAllString(
 		strings.Replace(branch, "/", "-", -1),
 		"",
 	)
-
-	// 55 is derived from K8s label max length minus room for generateName suffix.
-	pipeline = fitStringToMaxLength(pipeline, 55)
-	return strings.ToLower(pipeline)
+	result = fitStringToMaxLength(result, maxLength)
+	return strings.ToLower(result)
 }
 
 func makePVCName(component string) string {
