@@ -20,7 +20,7 @@ There is no good reason when only the frontend code changes that the backend bui
 
 Build task caching persists a build's produced files so that future builds can be skipped if the working directory specified in the build task did not change.
 
-The build files (output and reports) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
+The build files (output and ods artifacts) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
 
 By default build task caching is not enabled for the following reasons:
 
@@ -32,7 +32,7 @@ In repos with multiple build tasks you would typically want to enable build task
 **NOTE: Do not enable if your build consumes files in your repo located outside of the `working-dir` and changes of them are not reflected as version controlled file changes in or below the working dir!**
 For example this could happen if you consume code maintained in your multi-repo in several build tasks. To enable build skipping in this case you will have to provide a checksum file of those other areas and check them into the working directory. This should be achievable via a git pre-commit hook.  
 
-Tasks supporting builds skipping will support a parameter `cache-build` which by default is `'false'`. If `cache-build` is `'true'` build tasks shall copy their build outputs and reports to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
+Tasks supporting builds skipping will support a parameter `cache-build` which by default is `'false'`. If `cache-build` is `'true'` build tasks shall copy their build outputs and ods artifacts to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
 
 - `<technology-build-key>` is a value to allow humans to easily distinguish for what the artifacts are, while also allowing to have different keys for different versions of a build task. This might be useful for example to separate jar files with different class file versions for example. Such differentiation could be used in later versions. Initially they will likely be simple names such as `go`, `python` etc.
 
@@ -66,7 +66,7 @@ The build tasks support proper cleanup by touching file named `.ods-last-used-st
 
 ## Consequences
 
-* You can enable build skipping so that build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs and reports.
+* You can enable build skipping so that build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs and other produced artifacts (see artifacts.adoc).
 
 * For build skipping to work as expected a build task must be self contained by their working directory. In particular a build must not use any files of the repo outside the `working-dir`. See also NOTE of section Decision above for more examples and potential workarounds.
 

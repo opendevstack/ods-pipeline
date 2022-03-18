@@ -53,14 +53,14 @@ If the server edition supports it, the branch parameter shall be set, unless the
 
 | SDS-SHARED-4
 | `cache-build.sh` shell script
-a| Caches a build's outputs and reports to the `build-task` cache area.
+a| Caches a build's outputs and ods artigacts to the `build-task` cache area.
 
 Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
 
 - git_sha_working_dir is the git internal tree hash of the working directory. =$(git rev-parse "HEAD:")
 - CACHE_BUILD_KEY is the value of the input parameter below
 
-Copies reports to `<cache-location>/reports`
+Copies artifacts to `<cache-location>/artifacts`
 
 Copies build outputs to `<cache-location>/output`
 
@@ -86,7 +86,7 @@ Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$
 
 If there is no directory at `<cache-location>` exit with error code 1 to signal that a build could not be retrieved from the cache.
 
-Copy reports inside `<cache-location>/reports` to `${ROOT_DIR}/.ods/artifacts`
+Copy artifacts inside `<cache-location>/artifacts` to `${ROOT_DIR}/.ods/artifacts`
 
 Copy output files inside `<cache-location>/output` to `$OUTPUT_DIR`
 

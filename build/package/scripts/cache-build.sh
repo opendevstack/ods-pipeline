@@ -62,12 +62,12 @@ fi
 rm -rvf "$cache_location_dir"  # should be empty as otherwise cache should be used.
 mkdir -p "$cache_location_dir"
 
-# Copying reports
-cache_of_reports_dir="$cache_location_dir/reports"
+# Copying ods artifacts which are mostly reports (see artifacts.adoc)
+cache_of_artifacts_dir="$cache_location_dir/artifacts"
 ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
-echo "Copying build reports to cache: $ods_artifacts_dir -> $cache_of_reports_dir"
-mkdir -p "$cache_of_reports_dir"
-"$CP" -r --link "$ods_artifacts_dir/." "$cache_of_reports_dir"
+echo "Copying build artifacts to cache: $ods_artifacts_dir -> $cache_of_artifacts_dir"
+mkdir -p "$cache_of_artifacts_dir"
+"$CP" -r --link "$ods_artifacts_dir/." "$cache_of_artifacts_dir"
 
 # Copying build output
 cache_of_output_dir="$cache_location_dir/output"

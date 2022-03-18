@@ -72,12 +72,12 @@ if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
 fi
 
-# Copying reports
-cache_of_reports_dir="$cache_location_dir/reports"
+# Copying ods artifacts which are mostly reports (see artifacts.adoc)
+cache_of_artifacts_dir="$cache_location_dir/artifacts"
 ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
-echo "Copying prior build reports from cache: $cache_of_reports_dir to $ods_artifacts_dir"
+echo "Copying prior build artifacts from cache: $cache_of_artifacts_dir to $ods_artifacts_dir"
 mkdir -p "$ods_artifacts_dir"
-"$CP" -r --link "$cache_of_reports_dir/." "$ods_artifacts_dir"
+"$CP" -r --link "$cache_of_artifacts_dir/." "$ods_artifacts_dir"
 
 # Copying build output
 cache_of_output_dir="$cache_location_dir/output"
