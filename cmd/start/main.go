@@ -392,11 +392,11 @@ func checkoutAndAssembleContext(
 	}
 	logger.Infof(string(stdout))
 
-	ods_pipeline_ignore_file := filepath.Join(absCheckoutDir, ".git", "info", "exclude")
-	if err := pipelinectxt.WriteGitIgnore(ods_pipeline_ignore_file); err != nil {
+	odsPipelineIgnoreFile := filepath.Join(absCheckoutDir, ".git", "info", "exclude")
+	if err := pipelinectxt.WriteGitIgnore(odsPipelineIgnoreFile); err != nil {
 		log.Fatal(err)
 	}
-	logger.Infof("Wrote gitignore exclude at %s", ods_pipeline_ignore_file)
+	logger.Infof("Wrote gitignore exclude at %s", odsPipelineIgnoreFile)
 
 	// check git LFS state and maybe pull
 	lfs, err := gitLfsInUse(logger, absCheckoutDir)

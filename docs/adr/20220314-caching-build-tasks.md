@@ -20,7 +20,7 @@ There is no good reason when only the frontend code changes that the backend bui
 
 Build task caching persists a build's produced files so that future builds can be skipped if the working directory specified in the build task did not change.
 
-The build files (output and reports) are cached in a dedicated cash area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
+The build files (output and reports) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
 
 By default build task caching is not enabled for the following reasons:
 

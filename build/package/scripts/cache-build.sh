@@ -47,6 +47,7 @@ fi
 
 ROOT_DIR=$(pwd)
 
+git_sha_working_dir=""
 if [ "${WORKING_DIR}" == "." ]; then
   git_sha_working_dir=$(git rev-parse "HEAD:")
 else

@@ -196,14 +196,3 @@ func cleanupNotRecentlyUsedMaxLevel(
 	}
 	return count, nil
 }
-
-// [proposal: os: add Touch to set access/mod times to current time · Issue #31880 · golang/go](https://github.com/golang/go/issues/31880)  - issue with SMB
-// https://stackoverflow.com/a/35558965 - don't try to check exists first
-
-// func touch(path string) error {
-// 	f, err := os.Create(path)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return f.Close()
-// }
