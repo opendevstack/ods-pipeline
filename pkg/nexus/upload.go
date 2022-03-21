@@ -35,6 +35,5 @@ func (c *Client) Upload(repository, group, file string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not upload component: %w", err)
 	}
-	c.logger().Infof("Successfully uploaded %s to %s", file, link)
 	return link, nil
 }
