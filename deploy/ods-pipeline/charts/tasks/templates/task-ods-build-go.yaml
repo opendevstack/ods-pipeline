@@ -2,6 +2,8 @@ apiVersion: tekton.dev/v1beta1
 kind: '{{default "Task" .Values.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-build-go{{.Values.global.taskSuffix}}'
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   description: |
     Builds Go (module) applications.
