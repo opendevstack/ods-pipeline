@@ -57,6 +57,10 @@ spec:
               value: '{{int .Values.pipelineRunMinKeepHours}}'
             - name: ODS_PRUNE_MAX_KEEP_RUNS
               value: '{{int .Values.pipelineRunMaxKeepRuns}}'
+            - name: ODS_TASK_KIND
+              value: '{{.Values.global.taskSuffix}}'
+            - name: ODS_TASK_SUFFIX
+              value: '{{default "Task" .Values.global.taskKind}}'
           readinessProbe:
             httpGet:
               path: /health

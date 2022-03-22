@@ -14,11 +14,6 @@ RUN cd cmd/pipeline-manager && CGO_ENABLED=0 go build -o /usr/local/bin/pipeline
 # ubi-micro cannot be used as it misses the ca-certificates package.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-ARG taskKind
-ARG taskSuffix
-ENV ODS_TASK_KIND=$taskKind
-ENV ODS_TASK_SUFFIX=$taskSuffix
-
 COPY --from=builder /usr/local/bin/pipeline-manager /usr/local/bin/pipeline-manager
 EXPOSE 8080
 

@@ -6,6 +6,8 @@ global:
   imageTag: 0.2.0
   # Suffix to append to the task name.
   taskSuffix: -v0-2-0
+  # Custom task kind (defaults to "Task")
+  # taskKind: "ClusterTask"
 
 
 # ####################################### #
@@ -184,9 +186,6 @@ tasks:
 
 
   # Optional Values
-
-  # Custom task kind (defaults to "Task")
-  # taskKind: "ClusterTask"
 
   # Custom task prefix (defaults to "ods")
   # taskPrefix: "foo"
