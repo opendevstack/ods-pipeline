@@ -1,5 +1,5 @@
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.taskKind}}'
+kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-build-python{{.Values.global.taskSuffix}}'
   annotations:
