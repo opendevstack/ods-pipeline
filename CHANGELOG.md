@@ -38,6 +38,8 @@ listed in the changelog.
 - Remove Tekton Triggers, moving the required functionality it provided into the new ODS pipeline manager ([#438](https://github.com/opendevstack/ods-pipeline/issues/438))
 - Use UBI8 provided Python 3.9 toolset image ([#457](https://github.com/opendevstack/ods-pipeline/issues/457))
 - Change installation mode from centralized to local/namespaced ([#404](https://github.com/opendevstack/ods-pipeline/pull/404))
+- Removed logging of test reports for TypeScript and Python build tasks ([#470](https://github.com/opendevstack/ods-pipeline/issues/470))
+- Don't remove tasks on `helm` upgrades, rollbacks, etc. ([#477](https://github.com/opendevstack/ods-pipeline/issues/477))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
@@ -45,6 +47,7 @@ listed in the changelog.
 - Gradle build fails when it contains more than one test class ([#414](https://github.com/opendevstack/ods-pipeline/issues/414))
 - Gradle proxy settings are set during prepare-local-env ([#291](https://github.com/opendevstack/ods-pipeline/issues/291))
 - Add `xargs` to helm image as `helm-secrets` depends on it ([#465](https://github.com/opendevstack/ods-pipeline/issues/465))
+- Pipeline creation fails when branch names contain slashes ([#466](https://github.com/opendevstack/ods-pipeline/issues/466))
 
 ## [0.2.0] - 2021-12-22
 ### Added

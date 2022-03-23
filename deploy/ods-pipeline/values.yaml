@@ -1,24 +1,26 @@
-# ################################################################################################ #
-# UMBRELLA                                                                                         #
-# ################################################################################################ #
+# ####################################### #
+# UMBRELLA                                #
+# ####################################### #
 global:
   # Image tag to use for images referenced by tasks.
   imageTag: 0.2.0
   # Suffix to append to the task name.
   taskSuffix: -v0-2-0
+  # Custom task kind (defaults to "Task")
+  # taskKind: "ClusterTask"
 
 
-# ################################################################################################ #
-# IMAGES CHART CONFIG                                                                              #
-# ################################################################################################ #
+# ####################################### #
+# IMAGES CHART CONFIG                     #
+# ####################################### #
 images:
   # enable chart containing Openshift image streams and build configs
   enabled: true
 
 
-# ################################################################################################ #
-# SETUP CHART CONFIG                                                                               #
-# ################################################################################################ #
+# ####################################### #
+# SETUP CHART CONFIG                      #
+# ####################################### #
 setup:
   # enable configuration and management chart
   enabled: true
@@ -143,19 +145,19 @@ setup:
     replicaCount: 1
     image:
       # Image registry from which to pull the pipeline manager container image.
-      registry: image-registry.openshift-image-registry.svc:5000
+      registry: 'image-registry.openshift-image-registry.svc:5000'
       # Namespace from which to pull the pipeline manager container image.
       # If not given, the image is pulled from the release namespace.
-      namespace: ods
+      # namespace: 'ods'
       # Repository (ImageStream) from which to pull the pipeline manager
       # container image.
       # If not given, the image name equals the chart name.
-      repository: ods-pipeline-manager
+      repository: 'ods-pipeline-manager'
       # Pull policy.
-      pullPolicy: Always
+      pullPolicy: 'Always'
       # Image tag to pull.
       # If not given, defaults to the chart appVersion.
-      # tag: "0.2.0"
+      # tag: '0.2.0'
     # Deployment pod resources. Typically these settings should not need to change.
     resources:
       limits:
@@ -167,9 +169,9 @@ setup:
 
 
 
-# ################################################################################################ #
-# TASK CHART CONFIG                                                                                #
-# ################################################################################################ #
+# ####################################### #
+# TASK CHART CONFIG                       #
+# ####################################### #
 tasks:
   # enable task definition chart
   enabled: true
@@ -184,9 +186,6 @@ tasks:
 
 
   # Optional Values
-
-  # Custom task kind (defaults to "Task")
-  # taskKind: "ClusterTask"
 
   # Custom task prefix (defaults to "ods")
   # taskPrefix: "foo"
