@@ -160,18 +160,19 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 	requestID := randStringBytes(6)
-	s.Logger.Infof(requestID, "---START---")
+	s.Logger.Infof("%s ---START---", requestID)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		s.Logger.Errorf(requestID, err.Error())
-		http.Error(w, "could not read body", http.StatusInternalServerError)
+		msg := "could not read body"
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
 	if err := validatePayload(r.Header, body, []byte(s.WebhookSecret)); err != nil {
 		msg := "failed to validate incoming request"
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -179,7 +180,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	req := &requestBitbucket{}
 	if err := json.Unmarshal(body, &req); err != nil {
 		msg := fmt.Sprintf("cannot parse JSON: %s", err)
-		s.Logger.Errorf(requestID, msg)
+		s.Logger.Errorf("%s %s", requestID, msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -208,7 +209,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 				change.Ref.Type,
 				allowedChangeRefType,
 			)
-			s.Logger.Warnf(requestID, msg)
+			s.Logger.Warnf("%s %s", requestID, msg)
 			// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
 			// "some websites use this response for requests they do not wish to handle [...]".
 			http.Error(w, msg, http.StatusTeapot)
@@ -230,7 +231,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		commitSHA = req.PullRequest.FromRef.LatestCommit
 	} else {
 		msg := fmt.Sprintf("Unsupported event key: %s", req.EventKey)
-		s.Logger.Warnf(requestID, msg)
+		s.Logger.Warnf("%s %s", requestID, msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -266,7 +267,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		csha, err := getCommitSHA(s.BitbucketClient, pData.Project, pData.Repository, pData.GitFullRef)
 		if err != nil {
 			msg := "could not get commit SHA"
-			s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+			s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
@@ -277,7 +278,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	skip := shouldSkip(s.BitbucketClient, pData.Project, pData.Repository, commitSHA)
 	if skip {
 		msg := "Commit should be skipped"
-		s.Logger.Infof(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Infof("%s %s: %s", requestID, msg, err)
 		// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
 		// "some websites use this response for requests they do not wish to handle [..]".
 		http.Error(w, msg, http.StatusTeapot)
@@ -286,7 +287,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pData.Project, pData.Repository, commitSHA)
 	if err != nil {
 		msg := "Could not extract PR info"
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -302,7 +303,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		msg := fmt.Sprintf("could not download ODS config for repo %s", pData.Repository)
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -313,7 +314,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		env, err := odsConfig.Environment(pData.Environment)
 		if err != nil {
 			msg := fmt.Sprintf("environment misconfiguration: %s", err)
-			s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+			s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
@@ -328,7 +329,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		_, err := s.TektonClient.CreatePipeline(r.Context(), newPipeline, metav1.CreateOptions{})
 		if err != nil {
 			msg := fmt.Sprintf("cannot create pipeline %s", newPipeline.Name)
-			s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+			s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
@@ -337,7 +338,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 		_, err := s.TektonClient.UpdatePipeline(r.Context(), newPipeline, metav1.UpdateOptions{})
 		if err != nil {
 			msg := fmt.Sprintf("cannot update pipeline %s", newPipeline.Name)
-			s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+			s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
@@ -347,7 +348,7 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	err = s.createPVCIfRequired(r.Context(), pData)
 	if err != nil {
 		msg := "cannot create workspace PVC"
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -356,17 +357,17 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 	// parallel pipeline runs.
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
-	s.Logger.Infof(requestID, fmt.Sprintf("Starting pruning of pipeline runs related to repository %s ...", pData.Repository))
+	s.Logger.Infof("%s Starting pruning of pipeline runs related to repository %s ...", requestID, pData.Repository)
 	ctxt, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	pipelineRuns, err := listPipelineRuns(s.TektonClient, ctxt, pData.Repository)
 	if err != nil {
 		msg := "could not retrieve existing pipeline runs"
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
-	s.Logger.Debugf(requestID, fmt.Sprintf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), pData.Repository))
+	s.Logger.Debugf("%s Found %d pipeline runs related to repository %s.", requestID, len(pipelineRuns.Items), pData.Repository)
 
 	if s.PipelineRunPruner != nil {
 		go func() {
@@ -374,27 +375,27 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 			defer cancel()
 			err = s.PipelineRunPruner.Prune(ctxt, pipelineRuns.Items)
 			if err != nil {
-				s.Logger.Warnf(fmt.Sprintf(
+				s.Logger.Warnf(
 					"Pruning pipeline runs of repository %s failed: %s",
 					pData.Repository, err,
-				))
+				)
 			}
 		}()
 	}
 
-	s.Logger.Infof(requestID, fmt.Sprintf("%+v", pData))
+	s.Logger.Infof("%s %+v", requestID, pData)
 
 	_, err = createPipelineRun(s.TektonClient, r.Context(), pData)
 	if err != nil {
 		msg := "cannot create pipeline run"
-		s.Logger.Errorf(requestID, fmt.Sprintf("%s: %s", msg, err))
+		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(pData)
 	if err != nil {
-		s.Logger.Errorf(requestID, fmt.Sprintf("cannot write body: %s", err))
+		s.Logger.Errorf("%s cannot write body: %s", requestID, err)
 		return
 	}
 }
