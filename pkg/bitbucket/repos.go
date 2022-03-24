@@ -28,11 +28,45 @@ type Repo struct {
 	} `json:"links"`
 }
 
+type RepoPage struct {
+	Size       int    `json:"size"`
+	Limit      int    `json:"limit"`
+	IsLastPage bool   `json:"isLastPage"`
+	Values     []Repo `json:"values"`
+	Start      int    `json:"start"`
+}
+
 type RepoCreatePayload struct {
 	SCMID         string `json:"scmId"`
 	Name          string `json:"name"`
 	Forkable      bool   `json:"forkable"`
 	DefaultBranch string `json:"defaultBranch"`
+}
+
+type RepoClientInterface interface {
+	RepoList(projectKey string) (*RepoPage, error)
+	RepoCreate(projectKey string, payload RepoCreatePayload) (*Repo, error)
+}
+
+// RepoList retrieves repositories from the project corresponding to the supplied projectKey.
+// The authenticated user must have REPO_READ permission for the context repository to call this resource.
+// https://docs.atlassian.com/bitbucket-server/rest/7.13.0/bitbucket-rest.html#idp175
+func (c *Client) RepoList(projectKey string) (*RepoPage, error) {
+
+	urlPath := fmt.Sprintf(
+		"/rest/api/1.0/projects/%s/repos",
+		projectKey,
+	)
+	_, response, err := c.get(urlPath)
+	if err != nil {
+		return nil, err
+	}
+	var repoPage RepoPage
+	err = json.Unmarshal(response, &repoPage)
+	if err != nil {
+		return nil, err
+	}
+	return &repoPage, nil
 }
 
 // RepoCreate creates a new repository. Requires an existing project in which this repository will be created. The only parameters which will be used are name and scmId.

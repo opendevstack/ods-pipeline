@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"time"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
@@ -125,10 +124,7 @@ func (p *pipelineRunPrunerByStage) categorizePipelineRunsByStage(pipelineRuns []
 // If all pipeline runs of one pipeline can be pruned, the pipeline is
 // returned instead of the individual pipeline runs.
 func (s *pipelineRunPrunerByStage) findPrunableResources(pipelineRuns []tekton.PipelineRun) *prunableResources {
-	// Sort pipeline runs by time (descending)
-	sort.Slice(pipelineRuns, func(i, j int) bool {
-		return pipelineRuns[j].CreationTimestamp.Time.Before(pipelineRuns[i].CreationTimestamp.Time)
-	})
+	sortPipelineRunsDescending(pipelineRuns)
 
 	// Apply cleanup to each bucket.
 	prunablePipelines := []string{}
