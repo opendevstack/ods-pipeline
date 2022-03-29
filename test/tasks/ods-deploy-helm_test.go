@@ -99,7 +99,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					if strings.Contains(string(ctxt.CollectedLogs), doNotWantLogMsg) {
 						t.Fatalf("Do not want:\n%s\n\nGot:\n%s", doNotWantLogMsg, string(ctxt.CollectedLogs))
 					}
-					wantLogMsg := "plugin \"diff\" identified at least one change"
+					wantLogMsg := "identified at least one change"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
