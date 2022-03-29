@@ -71,7 +71,8 @@ echo GOMODCACHE="$GOMODCACHE"
 df -h "$ROOT_DIR"
 
 echo "Checking format ..."
-unformatted=$(gofmt -l .)
+# shellcheck disable=SC2046
+unformatted=$(go fmt $(go list ./...))
 if [ -n "${unformatted}" ]; then
   echo "Unformatted files:"
   echo "${unformatted}"

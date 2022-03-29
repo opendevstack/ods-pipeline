@@ -40,6 +40,7 @@ listed in the changelog.
 - Change installation mode from centralized to local/namespaced ([#404](https://github.com/opendevstack/ods-pipeline/pull/404))
 - Removed logging of test reports for TypeScript and Python build tasks ([#470](https://github.com/opendevstack/ods-pipeline/issues/470))
 - Don't remove tasks on `helm` upgrades, rollbacks, etc. ([#477](https://github.com/opendevstack/ods-pipeline/issues/477))
+- Run go fmt over packages, not entire directory ([#484](https://github.com/opendevstack/ods-pipeline/issues/484))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
