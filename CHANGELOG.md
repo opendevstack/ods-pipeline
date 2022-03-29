@@ -47,6 +47,7 @@ listed in the changelog.
 - Gradle task does not expose Nexus env variables ([#373](https://github.com/opendevstack/ods-pipeline/issues/373))
 - Gradle build fails when it contains more than one test class ([#414](https://github.com/opendevstack/ods-pipeline/issues/414))
 - Gradle proxy settings are set during prepare-local-env ([#291](https://github.com/opendevstack/ods-pipeline/issues/291))
+- Add `xargs` to helm image as `helm-secrets` depends on it ([#465](https://github.com/opendevstack/ods-pipeline/issues/465))
 - Pipeline creation fails when branch names contain slashes ([#466](https://github.com/opendevstack/ods-pipeline/issues/466))
 
 ## [0.2.0] - 2021-12-22
