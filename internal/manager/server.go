@@ -27,7 +27,7 @@ const (
 	allowedChangeRefType = "BRANCH"
 	// letterBytes contains letters to use for random strings.
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	// defaultQueuePollInterval defines the queue pill interval in seconds.
+	// defaultQueuePollInterval defines the queue poll interval in seconds.
 	defaultQueuePollIntervalSeconds = 30
 )
 
