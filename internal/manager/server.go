@@ -185,7 +185,7 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 			s.Logger.Infof(
 				"Checking for pending pipeline runs for repository %s ...", r,
 			)
-			s.RunQueue.StartPolling(s, r, 30*time.Second)
+			s.RunQueue.StartPolling(s, r, 10*time.Second)
 		}
 	}()
 	return s, nil

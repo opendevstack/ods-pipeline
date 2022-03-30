@@ -13,7 +13,7 @@ import (
 )
 
 // pipelineRunQueue manages multiple queues. These queues
-// can be polled in vertain intervals.
+// can be polled in certain intervals.
 type pipelineRunQueue struct {
 	queues       map[string]bool
 	pollInterval time.Duration
@@ -31,14 +31,9 @@ func (q *pipelineRunQueue) StartPolling(pt QueueAdvancer, identifier string, max
 	}
 	q.queues[identifier] = true
 
-	maxInitialWaitSeconds := int(maxInitialWait.Seconds())
-	var ticker *time.Ticker
-	if maxInitialWaitSeconds > 1 {
-		initialWaitSeconds := rand.Intn(maxInitialWaitSeconds-1) + 1
-		ticker = time.NewTicker(time.Duration(initialWaitSeconds) * time.Second)
-	} else {
-		ticker = time.NewTicker(time.Second)
-	}
+	wait(maxInitialWait)
+
+	ticker := time.NewTicker(q.pollInterval)
 	go func() {
 		for {
 			select {
@@ -47,8 +42,6 @@ func (q *pipelineRunQueue) StartPolling(pt QueueAdvancer, identifier string, max
 				ticker.Stop()
 				return
 			case <-ticker.C:
-				ticker.Stop()
-				ticker = time.NewTicker(q.pollInterval)
 				q.logger.Debugf("Advancing queue for %s ...", identifier)
 				queueLength, err := pt.AdvanceQueue(identifier)
 				if err != nil {
@@ -76,18 +69,6 @@ type QueueAdvancer interface {
 // not run in parallel.
 type Queue struct {
 	TektonClient tektonClient.ClientPipelineRunInterface
-}
-
-// needsQueueing checks if any run has either:
-// - pending status set OR
-// - is progressing
-func needsQueueing(pipelineRuns *tekton.PipelineRunList) bool {
-	for _, pr := range pipelineRuns.Items {
-		if pr.Spec.Status == tekton.PipelineRunSpecStatusPending || pipelineRunIsProgressing(pr) {
-			return true
-		}
-	}
-	return false
 }
 
 // AdvanceQueue starts the oldest pending pipeline run if there is no
@@ -136,8 +117,31 @@ func (s *Server) AdvanceQueue(repository string) (int, error) {
 	return len(pendingPrs), nil
 }
 
+// needsQueueing checks if any run has either:
+// - pending status set OR
+// - is progressing
+func needsQueueing(pipelineRuns *tekton.PipelineRunList) bool {
+	for _, pr := range pipelineRuns.Items {
+		if pr.Spec.Status == tekton.PipelineRunSpecStatusPending || pipelineRunIsProgressing(pr) {
+			return true
+		}
+	}
+	return false
+}
+
 // pipelineRunIsProgressing returns true if the PR is not done, not pending,
 // not cancelled, and not timed out.
 func pipelineRunIsProgressing(pr tekton.PipelineRun) bool {
 	return !(pr.IsDone() || pr.IsPending() || pr.IsCancelled() || pr.IsTimedOut())
+}
+
+// wait waits for up to maxInitialWait. The exact wait time is
+// pseudo-randomized if maxInitialWait is longer than one second.
+func wait(maxInitialWait time.Duration) {
+	initialWait := time.Second
+	if maxInitialWait > time.Second {
+		initialWait = time.Duration(rand.Intn(int(maxInitialWait.Seconds())-1) + 1)
+	}
+	timer := time.NewTimer(initialWait)
+	<-timer.C
 }
