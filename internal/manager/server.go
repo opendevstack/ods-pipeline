@@ -27,6 +27,8 @@ const (
 	allowedChangeRefType = "BRANCH"
 	// letterBytes contains letters to use for random strings.
 	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// defaultQueuePollInterval defines the queue poll interval in seconds.
+	defaultQueuePollIntervalSeconds = 30
 )
 
 // Server represents this service, and is a global.
@@ -44,6 +46,7 @@ type Server struct {
 	BitbucketClient   bitbucketInterface
 	PipelineRunPruner PipelineRunPruner
 	Mutex             sync.Mutex
+	RunQueue          *pipelineRunQueue
 	Logger            logging.LeveledLoggerInterface
 }
 
@@ -80,6 +83,9 @@ type ServerConfig struct {
 	BitbucketClient bitbucketInterface
 	// PipelineRunPruner is responsible to prune pipeline runs.
 	PipelineRunPruner PipelineRunPruner
+	// PollInterval defines the interval between polling for pending pipelines
+	// in order to start one if possible.
+	PollInterval time.Duration
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
 }
@@ -135,6 +141,14 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 	if serverConfig.Logger == nil {
 		serverConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
+	runQueue := &pipelineRunQueue{
+		queues:       map[string]bool{},
+		pollInterval: time.Duration(defaultQueuePollIntervalSeconds) * time.Second,
+		logger:       serverConfig.Logger,
+	}
+	if serverConfig.PollInterval > 0 {
+		runQueue.pollInterval = serverConfig.PollInterval
+	}
 	s := &Server{
 		KubernetesClient:  serverConfig.KubernetesClient,
 		TektonClient:      serverConfig.TektonClient,
@@ -148,8 +162,32 @@ func NewServer(serverConfig ServerConfig) (*Server, error) {
 		TaskSuffix:        serverConfig.TaskSuffix,
 		StorageConfig:     serverConfig.StorageConfig,
 		PipelineRunPruner: serverConfig.PipelineRunPruner,
+		RunQueue:          runQueue,
 		Logger:            serverConfig.Logger,
 	}
+
+	go func() {
+		s.Logger.Infof(
+			"Retrieving repositories of Bitbucket project %s to check for pending pipeline runs ...",
+			s.Project,
+		)
+		repos, err := getRepoNames(s.BitbucketClient, s.Project)
+		if err != nil {
+			s.Logger.Infof(
+				"could not retrieve repositories from Bitbucket to poll for pending pipeline runs: %s",
+				err,
+			)
+		}
+		s.Logger.Debugf(
+			"Found %d repositories for which to check for pending pipeline runs.", len(repos),
+		)
+		for _, r := range repos {
+			s.Logger.Infof(
+				"Checking for pending pipeline runs for repository %s ...", r,
+			)
+			s.RunQueue.StartPolling(s, r, 10*time.Second)
+		}
+	}()
 	return s, nil
 }
 
@@ -385,12 +423,19 @@ func (s *Server) HandleRoot(w http.ResponseWriter, r *http.Request) {
 
 	s.Logger.Infof("%s %+v", requestID, pData)
 
-	_, err = createPipelineRun(s.TektonClient, r.Context(), pData)
+	needQueueing := needsQueueing(pipelineRuns)
+	_, err = createPipelineRun(s.TektonClient, r.Context(), pData, needQueueing)
 	if err != nil {
 		msg := "cannot create pipeline run"
 		s.Logger.Errorf("%s %s: %s", requestID, msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
+	}
+
+	// if need queueing, then schedule poller
+	if needQueueing {
+		s.Logger.Debugf("%s Start polling mechanism to start pending pipeline when possible ...", requestID)
+		s.RunQueue.StartPolling(s, pData.Repository, 30*time.Second)
 	}
 
 	err = json.NewEncoder(w).Encode(pData)
