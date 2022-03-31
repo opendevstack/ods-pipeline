@@ -1,3 +1,4 @@
+{{if .Values.global.enabledTasks.buildGo }}
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
@@ -118,3 +119,4 @@ spec:
     {{- include "sonar-step" . | indent 4}}
   workspaces:
     - name: source
+{{end}}
