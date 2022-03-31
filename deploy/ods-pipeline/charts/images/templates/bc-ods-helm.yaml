@@ -1,3 +1,4 @@
+{{if or .Values.global.enabledTasks.deployHelm .Values.helm}}
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
@@ -22,3 +23,4 @@ spec:
     dockerfile: |-
       {{- .Files.Get "docker/Dockerfile.helm" | nindent 6}}
   runPolicy: Serial
+{{end}}

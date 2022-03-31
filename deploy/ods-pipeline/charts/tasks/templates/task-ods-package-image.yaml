@@ -1,3 +1,4 @@
+{{if .Values.global.enabledTasks.packageImage }}
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
@@ -161,3 +162,4 @@ spec:
       name: varlibcontainers
   workspaces:
     - name: source
+{{end}}

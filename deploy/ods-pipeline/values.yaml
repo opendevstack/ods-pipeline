@@ -8,6 +8,13 @@ global:
   taskSuffix: -v0-2-0
   # Custom task kind (defaults to "Task")
   # taskKind: "ClusterTask"
+  enabledTasks:
+    buildGo: true
+    buildGradle: true
+    buildPython: true
+    buildTypescript: true
+    packageImage: true
+    deployHelm: true
 
 
 # ####################################### #
@@ -16,6 +23,8 @@ global:
 images:
   # enable chart containing Openshift image streams and build configs
   enabled: true
+  # if needed, enable images even though related tasks are disabled, e.g.
+  # pythonToolset: true
 
 
 # ####################################### #

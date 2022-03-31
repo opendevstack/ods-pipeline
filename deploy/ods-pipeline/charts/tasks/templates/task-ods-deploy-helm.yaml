@@ -1,3 +1,4 @@
+{{if .Values.global.enabledTasks.deployHelm }}
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
@@ -112,3 +113,4 @@ spec:
       workingDir: $(workspaces.source.path)
   workspaces:
     - name: source
+{{end}}
