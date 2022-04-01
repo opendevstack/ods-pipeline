@@ -1,7 +1,10 @@
+{{if .Values.global.enabledTasks.packageImage }}
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.taskKind}}'
+kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-package-image{{.Values.global.taskSuffix}}'
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   description: |
     Packages applications into container images using
@@ -159,3 +162,4 @@ spec:
       name: varlibcontainers
   workspaces:
     - name: source
+{{end}}

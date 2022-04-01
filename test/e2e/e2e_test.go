@@ -108,7 +108,7 @@ func TestE2E(t *testing.T) {
 	fileContent := `
 version: 2022.2.0
 branchToEnvironmentMapping:
-  - branch: master
+  - branch: "*"
     environment: dev
 environments:
   - name: dev
@@ -135,7 +135,7 @@ pipeline:
 		t.Fatal(err)
 	}
 	t.Log("Pushing file to Bitbucket ...")
-	tasktesting.PushFileToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, "master", "ods.yaml")
+	tasktesting.PushFileToBitbucketOrFatal(t, c.KubernetesClientSet, ns, wsDir, "master:feature/test-branch", "ods.yaml")
 	triggerTimeout := time.Minute
 	t.Logf("Waiting %s for pipeline run to be triggered ...", triggerTimeout)
 	pr, err := waitForPipelineRunToBeTriggered(c.TektonClientSet, ns, triggerTimeout)

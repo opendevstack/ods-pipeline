@@ -4,6 +4,13 @@
 global:
   imageTag: 0.2.0
   taskSuffix: ''
+  enabledTasks:
+    buildGo: true
+    buildGradle: true
+    buildPython: true
+    buildTypescript: true
+    packageImage: true
+    deployHelm: true
 
 registry: image-registry.openshift-image-registry.svc:5000
 namespace: ods

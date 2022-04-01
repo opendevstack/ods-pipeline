@@ -82,10 +82,8 @@ rm report.xml coverage.xml &>/dev/null || true
 PYTHONPATH=src python -m pytest --junitxml=report.xml -o junit_family=xunit2 --cov-report term-missing --cov-report xml:coverage.xml --cov=src -o testpaths=tests
 
 mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-cat report.xml
 cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-cat coverage.xml
 cp coverage.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
 
 echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
