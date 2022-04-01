@@ -57,4 +57,7 @@ kubectl -n <namespace> apply -f debug-pod.yaml
 kubectl -n <namespace> exec -it ods-pipeline-debug -- /bin/sh
 ```
 
-The workspace is mounted at `/workspace`. Once you have completed debugging, do not forget to delete the pod again. 
+The workspace is mounted at `/workspace`. Once you have completed debugging, do not forget to delete the pod again:
+```
+kubectl -n <namespace> delete -f debug-pod.yaml
+```
