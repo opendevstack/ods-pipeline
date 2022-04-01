@@ -46,6 +46,10 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
+TMP_ARTIFACTS_DIR="${ROOT_DIR}/.ods/tmp-artifacts"
+# TMP_ARTIFACTS_DIR enables keeping artifacts created by this build 
+# separate from other builds in the same repo to facilitate caching.
+rm -rf "${TMP_ARTIFACTS_DIR}"
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
@@ -81,10 +85,10 @@ echo "Testing ..."
 rm report.xml coverage.xml &>/dev/null || true
 PYTHONPATH=src python -m pytest --junitxml=report.xml -o junit_family=xunit2 --cov-report term-missing --cov-report xml:coverage.xml --cov=src -o testpaths=tests
 
-mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
-mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-cp coverage.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
+mkdir -p "${TMP_ARTIFACTS_DIR}/xunit-reports"
+cp report.xml "${TMP_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+mkdir -p "${TMP_ARTIFACTS_DIR}/code-coverage"
+cp coverage.xml "${TMP_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
 
 echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
 cp -rv src "${OUTPUT_DIR}/app"

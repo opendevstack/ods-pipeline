@@ -8,6 +8,7 @@ set -eu
 # On a mac `brew install coreutils` gives `g` prefixed cmd line tools such as gcp
 # to use these define env variable GNU_CP=gcp before invoking this script.
 CP="${GNU_CP:-cp}"
+LS="${GNU_LS:-ls}"
 
 OUTPUT_DIR="docker"
 CACHE_BUILD="true"
@@ -46,8 +47,10 @@ elif [ -z "${CACHE_LOCATION_USED_PATH}" ]; then
   echo "Param --cache-location-used-path is required."; exit 1;
 fi
 
+CP_VERBOSITY_FLAGS=
 if [ "${DEBUG}" == "true" ]; then
   set -x
+  CP_VERBOSITY_FLAGS="-v"
 fi
 
 if [ "$CACHE_BUILD" != "true" ]; then
@@ -74,17 +77,25 @@ fi
 
 # Copying ods artifacts which are mostly reports (see artifacts.adoc)
 cache_of_artifacts_dir="$cache_location_dir/artifacts"
-ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
-echo "Copying prior build artifacts from cache: $cache_of_artifacts_dir to $ods_artifacts_dir"
-mkdir -p "$ods_artifacts_dir"
-"$CP" -r --link "$cache_of_artifacts_dir/." "$ods_artifacts_dir"
+ODS_ARTIFACTS_DIR="${ROOT_DIR}/.ods/artifacts"
+echo "Copying prior build artifacts from cache: $cache_of_artifacts_dir to $ODS_ARTIFACTS_DIR"
+mkdir -p "$ODS_ARTIFACTS_DIR"
+# "$CP" -v -r --link "$cache_of_artifacts_dir/." "$ODS_ARTIFACTS_DIR"
+"$CP" -v -r "$cache_of_artifacts_dir/." "$ODS_ARTIFACTS_DIR"
 
 # Copying build output
 cache_of_output_dir="$cache_location_dir/output"
+if [ "${DEBUG}" == "true" ]; then
+  echo "-- ls OUTPUT IN CACHE -- "
+  $LS -Ral "$cache_of_output_dir"
+  echo "-- ls OUTPUT_DIR -- "
+  $LS -Ral "$OUTPUT_DIR"
+fi
 echo "Copying prior build output from cache: $cache_of_output_dir to $OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 start_time=$SECONDS
-"$CP" -r --link "$cache_of_output_dir/." "$OUTPUT_DIR"
+# "$CP" $CP_VERBOSITY_FLAGS -r --link "$cache_of_output_dir/." "$OUTPUT_DIR"
+"$CP" $CP_VERBOSITY_FLAGS -r "$cache_of_output_dir/." "$OUTPUT_DIR"
 elapsed=$(( SECONDS - start_time ))
 echo "Copying took $elapsed seconds"
 

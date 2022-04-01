@@ -15,8 +15,8 @@ urlencode() {
 
 copyLintReport() {
   cat eslint-report.txt
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
-  cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+  mkdir -p "${TMP_ARTIFACTS_DIR}/lint-reports"
+  cp eslint-report.txt "${TMP_ARTIFACTS_DIR}/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
 # the copy commands are based on GNU cp tools
@@ -64,6 +64,11 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
+ODS_ARTIFACTS_DIR="${ROOT_DIR}/.ods/artifacts"
+TMP_ARTIFACTS_DIR="${ROOT_DIR}/.ods/tmp-artifacts"
+# TMP_ARTIFACTS_DIR enables keeping artifacts created by this build 
+# separate from other builds in the same repo to facilitate caching.
+rm -rf "${TMP_ARTIFACTS_DIR}"
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
@@ -127,25 +132,25 @@ if [ "${COPY_NODE_MODULES}" = true ]; then
 fi
 
 echo "Testing ..."
-if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+if [ -f "${ODS_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
   # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml" clover.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json" coverage-final.json
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
+  cp "${ODS_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${ODS_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}clover.xml" clover.xml
+  cp "${ODS_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json" coverage-final.json
+  cp "${ODS_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
 else
   npm run test
 
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+  mkdir -p "${TMP_ARTIFACTS_DIR}/xunit-reports"
+  cp build/test-results/test/report.xml "${TMP_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+  mkdir -p "${TMP_ARTIFACTS_DIR}/code-coverage"
+  cp build/coverage/clover.xml "${TMP_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+  cp build/coverage/coverage-final.json "${TMP_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+  cp build/coverage/lcov.info "${TMP_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 fi
 
 # Doing this earlier can confuse jest.

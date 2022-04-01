@@ -3,8 +3,8 @@ set -eu
 
 copyLintReport() {
   cat golangci-lint-report.txt
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
-  cp golangci-lint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+  mkdir -p "${TMP_ARTIFACTS_DIR}/lint-reports"
+  cp golangci-lint-report.txt "${TMP_ARTIFACTS_DIR}/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
 ENABLE_CGO="false"
@@ -48,6 +48,11 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
+ODS_ARTIFACTS_DIR="${ROOT_DIR}/.ods/artifacts"
+TMP_ARTIFACTS_DIR="${ROOT_DIR}/.ods/tmp-artifacts"
+# TMP_ARTIFACTS_DIR enables keeping artifacts created by this build 
+# separate from other builds in the same repo to facilitate caching.
+rm -rf "${TMP_ARTIFACTS_DIR}"
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
@@ -96,11 +101,11 @@ else
 fi
 
 echo "Testing ..."
-if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
+if [ -f "${ODS_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
   echo "Test artifacts already present, skipping tests ..."
   # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
+  cp "${ODS_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
+  cp "${ODS_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
 else
   if [ -n "${PRE_TEST_SCRIPT}" ]; then
     echo "Executing pre-test script ..."
@@ -116,15 +121,15 @@ else
   if [ -f test-results.txt ]; then
       cat test-results.txt
       go-junit-report < test-results.txt > report.xml
-      mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-      cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+      mkdir -p "${TMP_ARTIFACTS_DIR}/xunit-reports"
+      cp report.xml "${TMP_ARTIFACTS_DIR}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
   else
     echo "No test results found"
     exit 1
   fi
   if [ -f coverage.out ]; then
-      mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-      cp coverage.out "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out"
+      mkdir -p "${TMP_ARTIFACTS_DIR}/code-coverage"
+      cp coverage.out "${TMP_ARTIFACTS_DIR}/code-coverage/${ARTIFACT_PREFIX}coverage.out"
   else
     echo "No code coverage found"
     exit 1

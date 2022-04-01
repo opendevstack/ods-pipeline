@@ -121,12 +121,19 @@ spec:
           exit 0
         fi
         # build-python is build/package/scripts/build-python.sh.
+        set +e 
         build-python \
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
         if [ "$(params.cache-build)" == "true" ]; then
           cache-build \
             --cache-build-key="$cache_build_key" \

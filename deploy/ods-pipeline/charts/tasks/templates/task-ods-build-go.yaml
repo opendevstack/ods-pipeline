@@ -128,6 +128,7 @@ spec:
           exit 0
         fi
         # build-go is build/package/scripts/build-go.sh.
+        set +e 
         build-go \
           --working-dir=$(params.working-dir) \
           --enable-cgo=$(params.enable-cgo) \
@@ -136,6 +137,12 @@ spec:
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
         if [ "$(params.cache-build)" == "true" ]; then
           cache-build \
             --cache-build-key="$cache_build_key" \
@@ -143,7 +150,7 @@ spec:
             --working-dir=$(params.working-dir) \
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
-        fi
+        fi        
       workingDir: $(workspaces.source.path)
     {{- include "sonar-step" . | indent 4}}
   workspaces:

@@ -158,6 +158,7 @@ spec:
           exit 0
         fi
         # build-typescript is build/package/scripts/build-typescript.sh.
+        set +e 
         build-typescript \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
@@ -166,6 +167,12 @@ spec:
           --lint-file-ext=$(params.lint-file-ext) \
           --build-dir=$(params.build-dir) \
           --copy-node-modules=$(params.copy-node-modules)
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
         if [ "$(params.cache-build)" == "true" ]; then
           cache-build \
             --cache-build-key="$cache_build_key" \
