@@ -27,6 +27,10 @@ KIND_CLUSTER_NAME="kind"
 RECREATE_KIND_CLUSTER="false"
 REGISTRY_PORT="5000"
 
+# K8S version is aligned with OpenShift GA 4.8.
+# See https://docs.openshift.com/container-platform/4.8/release_notes/ocp-4-8-release-notes.html
+K8S_VERSION="v1.21.1"
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
 
@@ -90,7 +94,7 @@ if [ "${RECREATE_KIND_CLUSTER}" == "true" ]; then
 fi
 
 # create a cluster with the local registry enabled in containerd
-cat <<EOF | kind create cluster --name "${KIND_CLUSTER_NAME}" --config=-
+cat <<EOF | kind create cluster --name "${KIND_CLUSTER_NAME}" --image "kindest/node:${K8S_VERSION}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:

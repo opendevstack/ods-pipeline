@@ -1,7 +1,10 @@
+{{if .Values.global.enabledTasks.buildTypescript }}
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.taskKind}}'
+kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
   name: '{{default "ods" .Values.taskPrefix}}-build-typescript{{.Values.global.taskSuffix}}'
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   description: |
     Builds Typescript applications.
@@ -146,3 +149,4 @@ spec:
     {{- include "sonar-step" . | indent 4}}
   workspaces:
     - name: source
+{{end}}

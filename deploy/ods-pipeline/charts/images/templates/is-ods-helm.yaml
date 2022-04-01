@@ -1,6 +1,8 @@
+{{if or .Values.global.enabledTasks.deployHelm .Values.helm}}
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
   name: ods-helm
   annotations:
     "helm.sh/resource-policy": keep
+{{end}}

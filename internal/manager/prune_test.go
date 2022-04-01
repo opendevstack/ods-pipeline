@@ -77,86 +77,22 @@ func TestPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	prs := []tekton.PipelineRun{
-		{ // not pruned
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-a",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Minute * -1)},
-				Labels: map[string]string{
-					stageLabel:          config.DevStage,
-					tektonPipelineLabel: "p-one",
-				},
-			},
-		},
-		{ // would be pruned by maxKeepRuns, but is protected by minKeepHours
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-b",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Minute * -3)},
-				Labels: map[string]string{
-					stageLabel:          config.DevStage,
-					tektonPipelineLabel: "p-one",
-				},
-			},
-		},
-		{ // pruned
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-c",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Hour * -4)},
-				Labels: map[string]string{
-					stageLabel:          config.DevStage,
-					tektonPipelineLabel: "p-one",
-				},
-			},
-		},
-		{ // pruned through pipeline p-two
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-d",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Hour * -5)},
-				Labels: map[string]string{
-					stageLabel:          config.DevStage,
-					tektonPipelineLabel: "p-two",
-				},
-			},
-		},
-		{ // pruned through pipeline p-two
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-e",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Hour * -6)},
-				Labels: map[string]string{
-					stageLabel:          config.DevStage,
-					tektonPipelineLabel: "p-two",
-				},
-			},
-		},
-		{ // not pruned because different stage (QA)
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-e",
-				CreationTimestamp: metav1.Time{Time: time.Now()},
-				Labels: map[string]string{
-					stageLabel:          config.QAStage,
-					tektonPipelineLabel: "p-three",
-				},
-			},
-		},
-		{ // not pruned because different stage (PROD)
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-f",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Hour * -7)},
-				Labels: map[string]string{
-					stageLabel:          config.ProdStage,
-					tektonPipelineLabel: "p-four",
-				},
-			},
-		},
-		{ // pruned
-			ObjectMeta: metav1.ObjectMeta{
-				Name:              "pr-g",
-				CreationTimestamp: metav1.Time{Time: time.Now().Add(time.Hour * -8)},
-				Labels: map[string]string{
-					stageLabel:          config.ProdStage,
-					tektonPipelineLabel: "p-four",
-				},
-			},
-		},
+		// not pruned
+		pipelineRun("pr-a", "p-one", config.DevStage, time.Now().Add(time.Minute*-1)),
+		// would be pruned by maxKeepRuns, but is protected by minKeepHours
+		pipelineRun("pr-b", "p-one", config.DevStage, time.Now().Add(time.Minute*-3)),
+		// pruned
+		pipelineRun("pr-c", "p-one", config.DevStage, time.Now().Add(time.Hour*-4)),
+		// pruned through pipeline p-two
+		pipelineRun("pr-d", "p-two", config.DevStage, time.Now().Add(time.Hour*-5)),
+		// pruned through pipeline p-two
+		pipelineRun("pr-e", "p-two", config.DevStage, time.Now().Add(time.Hour*-6)),
+		// not pruned because different stage (QA)
+		pipelineRun("pr-e", "p-three", config.QAStage, time.Now()),
+		// not pruned because different stage (PROD)
+		pipelineRun("pr-f", "p-four", config.ProdStage, time.Now().Add(time.Hour*-7)),
+		// pruned
+		pipelineRun("pr-g", "p-four", config.ProdStage, time.Now().Add(time.Hour*-8)),
 	}
 	err = p.Prune(context.TODO(), prs)
 	if err != nil {
@@ -168,5 +104,18 @@ func TestPrune(t *testing.T) {
 	}
 	if diff := cmp.Diff([]string{"p-two"}, tclient.DeletedPipelines); diff != "" {
 		t.Fatalf("p prune mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func pipelineRun(name, pipeline string, stage config.Stage, creationTime time.Time) tekton.PipelineRun {
+	return tekton.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			CreationTimestamp: metav1.Time{Time: creationTime},
+			Labels: map[string]string{
+				stageLabel:          string(stage),
+				tektonPipelineLabel: pipeline,
+			},
+		},
 	}
 }
