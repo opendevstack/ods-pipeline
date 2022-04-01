@@ -73,7 +73,10 @@ UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-results/test"
 if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
     UNIT_TEST_ARTIFACTS_DIR="${ARTIFACTS_DIR}/xunit-reports"
     mkdir -p "${UNIT_TEST_ARTIFACTS_DIR}"
-    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}/${ARTIFACT_PREFIX}"
+    # Each test class produces its own report file, but they contain a qualified package
+    # name in their file name. That way we do not need to add an artifact prefix to
+    # distinguish them with reports from other artifacts of the same repo/pipeline build.
+    cp "${UNIT_TEST_RESULT_DIR}/"*.xml "${UNIT_TEST_ARTIFACTS_DIR}"
 else
   echo "Build failed: no unit test results found in ${UNIT_TEST_RESULT_DIR}"
   exit 1
