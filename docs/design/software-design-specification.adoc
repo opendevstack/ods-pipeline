@@ -432,7 +432,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-4
 | golangci-lint
-| 1.41
+| 1.45
 | golangci-lint is a Go linters aggregator.
 | https://golangci-lint.run
 
