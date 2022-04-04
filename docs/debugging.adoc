@@ -38,15 +38,15 @@ metadata:
   name: ods-pipeline-debug
 spec:
   volumes:
-    - name: ods-pipeline-vol
+    - name: ods-workspace-vol
       persistentVolumeClaim:
-        claimName: ods-pipeline
+        claimName: ods-workspace-<COMPONENT_NAME>
   containers:
     - name: ods-pipeline-debug-container
       image: index.docker.io/crccheck/hello-world
       volumeMounts:
         - mountPath: "/workspace"
-          name: ods-pipeline-vol
+          name: ods-workspace-vol
 
 ----
 
@@ -57,4 +57,7 @@ kubectl -n <namespace> apply -f debug-pod.yaml
 kubectl -n <namespace> exec -it ods-pipeline-debug -- /bin/sh
 ```
 
-The workspace is mounted at `/workspace`. Once you have completed debugging, do not forget to delete the pod again. 
+The workspace is mounted at `/workspace`. Once you have completed debugging, do not forget to delete the pod again:
+```
+kubectl -n <namespace> delete -f debug-pod.yaml
+```
