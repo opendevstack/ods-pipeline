@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,8 +31,16 @@ const (
 	sharedWorkspaceName = "shared-workspace"
 )
 
+// PipelineConfig holds configuration for a triggered pipeline.
+type PipelineConfig struct {
+	PipelineInfo
+	PVC     string `json:"pvc"`
+	Tasks   []tekton.PipelineTask
+	Finally []tekton.PipelineTask
+}
+
 // createPipelineRun creates a PipelineRun resource
-func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, pData PipelineData, needQueueing bool) (*tekton.PipelineRun, error) {
+func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, pData PipelineConfig, needQueueing bool) (*tekton.PipelineRun, error) {
 	pr := &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", pData.Name),
@@ -63,7 +70,7 @@ func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctx
 }
 
 // listPipelineRuns lists pipeline runs associated with repository.
-func listPipelineRuns(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, repository string) (*tekton.PipelineRunList, error) {
+func listPipelineRuns(ctxt context.Context, tektonClient tektonClient.ClientPipelineRunInterface, repository string) (*tekton.PipelineRunList, error) {
 	labelMap := map[string]string{repositoryLabel: repository}
 	return tektonClient.ListPipelineRuns(
 		ctxt, metav1.ListOptions{LabelSelector: labels.Set(labelMap).String()},
@@ -114,7 +121,7 @@ func fitStringToMaxLength(s string, max int) string {
 }
 
 // pipelineLabels returns a map of labels to apply to pipelines and related runs.
-func pipelineLabels(data PipelineData) map[string]string {
+func pipelineLabels(data PipelineConfig) map[string]string {
 	return map[string]string{
 		repositoryLabel: data.Repository,
 		gitRefLabel:     makeValidLabelValue("", data.GitRef, 63),
@@ -122,110 +129,46 @@ func pipelineLabels(data PipelineData) map[string]string {
 	}
 }
 
-func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.TaskKind, taskSuffix string) *tekton.Pipeline {
-
+// assemblePipeline returns a Tekton pipeline based on given PipelineConfig.
+func assemblePipeline(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string) *tekton.Pipeline {
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
-		Name:    "ods-start",
-		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
-		Workspaces: []tekton.WorkspacePipelineTaskBinding{
-			{Name: "source", Workspace: sharedWorkspaceName},
-		},
+		Name:       "ods-start",
+		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
+		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params: []tekton.Param{
-			{
-				Name: "url",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.git-repo-url)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "git-full-ref",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.git-full-ref)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "project",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.project)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "pr-key",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.pr-key)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "pr-base",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.pr-base)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "pipeline-run-name",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(context.pipelineRun.name)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "environment",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.environment)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "version",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(params.version)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
+			tektonStringParam("url", "$(params.git-repo-url)"),
+			tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
+			tektonStringParam("project", "$(params.project)"),
+			tektonStringParam("pr-key", "$(params.pr-key)"),
+			tektonStringParam("pr-base", "$(params.pr-base)"),
+			tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+			tektonStringParam("environment", "$(paramsenvironment)"),
+			tektonStringParam("version", "$(params.version)"),
 		},
 	})
-	if len(odsConfig.Pipeline.Tasks) > 0 {
-		odsConfig.Pipeline.Tasks[0].RunAfter = append(odsConfig.Pipeline.Tasks[0].RunAfter, "ods-start")
-		tasks = append(tasks, odsConfig.Pipeline.Tasks...)
+	if len(cfg.Tasks) > 0 {
+		cfg.Tasks[0].RunAfter = append(cfg.Tasks[0].RunAfter, "ods-start")
+		tasks = append(tasks, cfg.Tasks...)
 	}
 
 	var finallyTasks []tekton.PipelineTask
-	finallyTasks = append(finallyTasks, odsConfig.Pipeline.Finally...)
+	finallyTasks = append(finallyTasks, cfg.Finally...)
 
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
-		Name:    "ods-finish",
-		TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
-		Workspaces: []tekton.WorkspacePipelineTaskBinding{
-			{Name: "source", Workspace: sharedWorkspaceName},
-		},
+		Name:       "ods-finish",
+		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
+		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params: []tekton.Param{
-			{
-				Name: "pipeline-run-name",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(context.pipelineRun.name)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
-			{
-				Name: "aggregate-tasks-status",
-				Value: tekton.ArrayOrString{
-					StringVal: "$(tasks.status)",
-					Type:      tekton.ParamTypeString,
-				},
-			},
+			tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+			tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
 		},
 	})
 
 	p := &tekton.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   data.Name,
-			Labels: pipelineLabels(data),
+			Name:   cfg.Name,
+			Labels: pipelineLabels(cfg),
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: tektonAPIVersion,
@@ -234,84 +177,19 @@ func assemblePipeline(odsConfig *config.ODS, data PipelineData, taskKind tekton.
 		Spec: tekton.PipelineSpec{
 			Description: "ODS",
 			Params: []tekton.ParamSpec{
-				{
-					Name: "repository",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Repository,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "project",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Project,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "component",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Component,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-repo-url",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitURI,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "git-full-ref",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.GitFullRef,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "pr-key",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: strconv.Itoa(data.PullRequestKey),
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "pr-base",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.PullRequestBase,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "environment",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Environment,
-						Type:      tekton.ParamTypeString,
-					},
-				},
-				{
-					Name: "version",
-					Type: "string",
-					Default: &tekton.ArrayOrString{
-						StringVal: data.Version,
-						Type:      tekton.ParamTypeString,
-					},
-				},
+				tektonStringParamSpec("repository", cfg.Repository),
+				tektonStringParamSpec("project", cfg.Project),
+				tektonStringParamSpec("component", cfg.Component),
+				tektonStringParamSpec("git-repo-url", cfg.GitURI),
+				tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
+				tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
+				tektonStringParamSpec("pr-base", cfg.PullRequestBase),
+				tektonStringParamSpec("environment", cfg.Environment),
+				tektonStringParamSpec("version", cfg.Version),
 			},
 			Tasks: tasks,
 			Workspaces: []tekton.PipelineWorkspaceDeclaration{
-				{
-					Name: sharedWorkspaceName,
-				},
+				{Name: sharedWorkspaceName},
 			},
 			Finally: finallyTasks,
 		},
@@ -324,4 +202,32 @@ func sortPipelineRunsDescending(pipelineRuns []tekton.PipelineRun) {
 	sort.Slice(pipelineRuns, func(i, j int) bool {
 		return pipelineRuns[j].CreationTimestamp.Time.Before(pipelineRuns[i].CreationTimestamp.Time)
 	})
+}
+
+// pipelineRunIsProgressing returns true if the PR is not done, not pending,
+// not cancelled, and not timed out.
+func pipelineRunIsProgressing(pr tekton.PipelineRun) bool {
+	return !(pr.IsDone() || pr.IsPending() || pr.IsCancelled() || pr.IsTimedOut())
+}
+
+// tektonStringParam returns a Tekton task parameter.
+func tektonStringParam(name, val string) tekton.Param {
+	return tekton.Param{Name: name, Value: tekton.ArrayOrString{Type: "string", StringVal: val}}
+}
+
+// tektonStringParam returns a Tekton task parameter spec.
+func tektonStringParamSpec(name, defaultVal string) tekton.ParamSpec {
+	return tekton.ParamSpec{
+		Name: name,
+		Type: "string",
+		Default: &tekton.ArrayOrString{
+			Type: tekton.ParamTypeString, StringVal: defaultVal,
+		}}
+}
+
+// tektonDefaultWorkspaceBindings returns the default workspace bindings for a task.
+func tektonDefaultWorkspaceBindings() []tekton.WorkspacePipelineTaskBinding {
+	return []tekton.WorkspacePipelineTaskBinding{
+		{Name: "source", Workspace: sharedWorkspaceName},
+	}
 }

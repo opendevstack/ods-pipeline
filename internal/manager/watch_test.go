@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -9,69 +10,6 @@ import (
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// fakeAdvancerDone is always done advancing the queue.
-type fakeAdvancerDone struct {
-	Logger logging.LeveledLoggerInterface
-}
-
-func (f *fakeAdvancerDone) AdvanceQueue(repository string) (int, error) {
-	return 0, nil
-}
-
-func TestPollIdentifier(t *testing.T) {
-	p := &pipelineRunQueue{
-		queues: map[string]bool{
-			"a": true,
-			"b": false,
-		},
-		pollInterval: time.Second,
-		logger:       &logging.LeveledLogger{Level: logging.LevelNull},
-	}
-	f := &fakeAdvancerDone{
-		Logger: &logging.LeveledLogger{Level: logging.LevelNull},
-	}
-	p.StartPolling(f, "a", time.Second)
-	p.StartPolling(f, "b", time.Second)
-	if !p.queues["a"] {
-		t.Fatal("polling state for 'a' should be true")
-	}
-	if !p.queues["b"] {
-		t.Fatal("polling state for 'b' should be true")
-	}
-}
-
-// fakeAdvancerSteps can be called a few times before it is done advancing the queue.
-type fakeAdvancerSteps struct {
-	count  int
-	Logger logging.LeveledLoggerInterface
-}
-
-func (f *fakeAdvancerSteps) AdvanceQueue(repository string) (int, error) {
-	if f.count < 2 {
-		f.count++
-		return 1, nil
-	}
-	return 0, nil
-}
-
-func TestAdvanceQueueAndQuit(t *testing.T) {
-	p := &pipelineRunQueue{
-		queues:       map[string]bool{},
-		pollInterval: time.Millisecond,
-		logger:       &logging.LeveledLogger{Level: logging.LevelNull},
-	}
-	f := &fakeAdvancerSteps{
-		Logger: &logging.LeveledLogger{Level: logging.LevelNull},
-	}
-	done := p.StartPolling(f, "a", time.Second)
-	select {
-	case <-done:
-		t.Log("quit occured")
-	case <-time.After(5 * time.Second):
-		t.Fatal("quit should have occured")
-	}
-}
 
 func TestAdvanceQueue(t *testing.T) {
 	tests := map[string]struct {
@@ -136,8 +74,13 @@ func TestAdvanceQueue(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tclient := &tektonClient.TestClient{PipelineRuns: tc.runs}
-			s := &Server{TektonClient: tclient, Logger: &logging.LeveledLogger{Level: logging.LevelNull}}
-			queueLength, err := s.AdvanceQueue("a")
+			w := &Watcher{
+				TektonClient: tclient,
+				Logger:       &logging.LeveledLogger{Level: logging.LevelNull},
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			queueLength, err := w.advanceQueue(ctx, "a")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -146,7 +89,7 @@ func TestAdvanceQueue(t *testing.T) {
 					t.Fatal("should have updated one run")
 				}
 				if tclient.UpdatedPipelineRuns[0] != tc.wantStart {
-					t.Fatalf("should have updated run '%s'", tc.wantStart)
+					t.Fatalf("should have updated run '%s', got '%s'", tc.wantStart, tclient.UpdatedPipelineRuns[0])
 				}
 			} else {
 				if len(tclient.UpdatedPipelineRuns) > 0 {

@@ -87,9 +87,9 @@ func shouldSkip(bitbucketClient bitbucket.CommitClientInterface, projectKey, rep
 	return isCiSkipInCommitMessage(c.Message)
 }
 
-// getRepoNames retrieves the name of all repositories within the project
+// GetRepoNames retrieves the name of all repositories within the project
 // identified by projectKey.
-func getRepoNames(bitbucketClient bitbucket.RepoClientInterface, projectKey string) ([]string, error) {
+func GetRepoNames(bitbucketClient bitbucket.RepoClientInterface, projectKey string) ([]string, error) {
 	repos := []string{}
 	rl, err := bitbucketClient.RepoList(projectKey)
 	if err != nil {
