@@ -20,15 +20,15 @@ listed in the changelog.
 - Add notifications via configurable webhook call from `ods-finish` ([#140](https://github.com/opendevstack/ods-pipeline/issues/140))
 - Git LFS support enabled ([#420](https://github.com/opendevstack/ods-pipeline/issues/420))
 - Publish images to public registry (ghcr.io) ([#440](https://github.com/opendevstack/ods-pipeline/issues/440))
-- Allow to cache dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
-- Support node production builds in docker context ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
+- Allow to cache dependencies and support for caching go dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
+- Support node production builds in docker context. It is now required that both `package.json` and `package-lock.json` are available to the build. ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
 - Allow to select which tasks (and related BC/IS resources) to install ([#486](https://github.com/opendevstack/ods-pipeline/issues/486))
 
 ### Changed
 
 - Use configmap `ods-sonar` to configure SonarQube edition ([#410](https://github.com/opendevstack/ods-pipeline/issues/410))
 - Prevent existing image streams from being cleaned up if they are renamed in future versions ([#366](https://github.com/opendevstack/ods-pipeline/issues/366))
-- Add `build-dir` and `copy-node-modules` parameters to TypeScript build task to make it more suitable for FE builds ([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
+- Add `build-dir` and `copy-node-modules` (defaulting to `false`) parameters to TypeScript build task to make it more suitable for FE builds. A non-obvious but breaking change is that files inside the directory specified `build-dir` are now copied to folder `${output-dir}/dist` whereas previously they were copied to `${output-dir}/dist/dist`([#356](https://github.com/opendevstack/ods-pipeline/issues/356))
 - Update gradle version to 7.3.3 to address log4j vulnerability and improved JDK 17 support. ([#395](https://github.com/opendevstack/ods-pipeline/issues/395))
 - Create and use one PVC per repository ([#160](https://github.com/opendevstack/ods-pipeline/issues/160))
 - Leaner NodeJS 16 Typescript image task, removed cypress and its dependencies ([#426](https://github.com/opendevstack/ods-pipeline/issues/426))
