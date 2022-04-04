@@ -80,8 +80,7 @@ cache_of_artifacts_dir="$cache_location_dir/artifacts"
 ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
 echo "Copying prior build artifacts from cache: $cache_of_artifacts_dir to $ods_artifacts_dir"
 mkdir -p "$ods_artifacts_dir"
-"$CP" -v -r --link "$cache_of_artifacts_dir/." "$ods_artifacts_dir"
-# "$CP" -v -r "$cache_of_artifacts_dir/." "$ods_artifacts_dir"
+"$CP" -v -r "$cache_of_artifacts_dir/." "$ods_artifacts_dir"
 
 # Copying build output
 cache_of_output_dir="$cache_location_dir/output"
@@ -94,8 +93,7 @@ fi
 echo "Copying prior build output from cache: $cache_of_output_dir to $OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 start_time=$SECONDS
-"$CP" $CP_VERBOSITY_FLAGS -r --link "$cache_of_output_dir/." "$OUTPUT_DIR"
-# "$CP" $CP_VERBOSITY_FLAGS -r "$cache_of_output_dir/." "$OUTPUT_DIR"
+"$CP" $CP_VERBOSITY_FLAGS -r "$cache_of_output_dir/." "$OUTPUT_DIR"
 elapsed=$(( SECONDS - start_time ))
 echo "Copying took $elapsed seconds"
 
