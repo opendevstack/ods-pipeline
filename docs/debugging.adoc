@@ -38,7 +38,7 @@ metadata:
   name: ods-pipeline-debug
 spec:
   volumes:
-    - name: ods-workspace-<COMPONENT_NAME>-vol
+    - name: ods-workspace-vol
       persistentVolumeClaim:
         claimName: ods-workspace-<COMPONENT_NAME>
   containers:
@@ -46,7 +46,7 @@ spec:
       image: index.docker.io/crccheck/hello-world
       volumeMounts:
         - mountPath: "/workspace"
-          name: ods-workspace-<COMPONENT_NAME>-vol
+          name: ods-workspace-vol
 
 ----
 
