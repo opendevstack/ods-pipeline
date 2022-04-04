@@ -63,7 +63,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					}
 				},
 			},
-			"build python fastapi app no build caching": {
+			"build python fastapi app with build caching": {
 				WorkspaceDirMapping: map[string]string{"source": "python-fastapi-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
