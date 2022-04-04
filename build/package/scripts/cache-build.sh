@@ -68,19 +68,19 @@ mkdir -p "$cache_location_dir"
 # Copying ods artifacts which are mostly reports (see artifacts.adoc)
 # TODO: consistent casing and naming across scripts regarding dir variables
 cache_of_artifacts_dir="$cache_location_dir/artifacts"
-TMP_ARTIFACTS_DIR="${ROOT_DIR}/.ods/tmp-artifacts"
-echo "Copying build artifacts to cache: $TMP_ARTIFACTS_DIR -> $cache_of_artifacts_dir"
+tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
+echo "Copying build artifacts to cache: $tmp_artifacts_dir -> $cache_of_artifacts_dir"
 mkdir -p "$cache_of_artifacts_dir"
-# "$CP" -v -r --link "$TMP_ARTIFACTS_DIR/." "$cache_of_artifacts_dir"
-"$CP" -v -r "$TMP_ARTIFACTS_DIR/." "$cache_of_artifacts_dir"
+"$CP" -v -r --link "$tmp_artifacts_dir/." "$cache_of_artifacts_dir"
+# "$CP" -v -r "$tmp_artifacts_dir/." "$cache_of_artifacts_dir"
 
 # Copying build output
 cache_of_output_dir="$cache_location_dir/output"
 echo "Copying build output to cache: $OUTPUT_DIR to $cache_of_output_dir"
 mkdir -p "$cache_of_output_dir"
 start_time=$SECONDS
-# "$CP" $CP_VERBOSITY_FLAGS -r --link "$OUTPUT_DIR/." "$cache_of_output_dir"
-"$CP" $CP_VERBOSITY_FLAGS -r "$OUTPUT_DIR/." "$cache_of_output_dir"
+"$CP" $CP_VERBOSITY_FLAGS -r --link "$OUTPUT_DIR/." "$cache_of_output_dir"
+# "$CP" $CP_VERBOSITY_FLAGS -r "$OUTPUT_DIR/." "$cache_of_output_dir"
 elapsed=$(( SECONDS - start_time ))
 echo "Copying took $elapsed seconds"
 if [ "${DEBUG}" == "true" ]; then

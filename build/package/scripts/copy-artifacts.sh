@@ -21,11 +21,11 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
-ODS_ARTIFACTS_DIR="${ROOT_DIR}/.ods/artifacts"
-TMP_ARTIFACTS_DIR="${ROOT_DIR}/.ods/tmp-artifacts"
+ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
+tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
 
 # Copying ods artifacts which are mostly reports (see artifacts.adoc)
-echo "Copying build artifacts from $TMP_ARTIFACTS_DIR to $ODS_ARTIFACTS_DIR"
-mkdir -p "$ODS_ARTIFACTS_DIR"
-# "$CP" -v -r --link "$TMP_ARTIFACTS_DIR/." "$ODS_ARTIFACTS_DIR"
-"$CP" -v -r "$TMP_ARTIFACTS_DIR/." "$ODS_ARTIFACTS_DIR"
+echo "Copying build artifacts from $tmp_artifacts_dir to $ods_artifacts_dir"
+mkdir -p "$ods_artifacts_dir"
+"$CP" -v -r --link "$tmp_artifacts_dir/." "$ods_artifacts_dir"
+# "$CP" -v -r "$tmp_artifacts_dir/." "$ods_artifacts_dir"
