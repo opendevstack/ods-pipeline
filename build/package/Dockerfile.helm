@@ -10,6 +10,15 @@ ENV HELM_VERSION=3.5.2 \
     AGE_VERSION=1.0.0 \
     GOBIN=/usr/local/bin
 
+# Build Go binary.
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+COPY cmd cmd
+COPY internal internal
+COPY pkg pkg
+RUN cd cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
+
 # Install Helm.
 RUN mkdir -p /tmp/helm \
     && cd /tmp \
@@ -19,13 +28,6 @@ RUN mkdir -p /tmp/helm \
     && chmod a+x /usr/local/bin/helm \
     && helm version \
     && helm env
-
-# Add Go binaries.
-COPY go.* .
-COPY cmd cmd
-COPY internal internal
-COPY pkg pkg
-RUN cd cmd/deploy-with-helm && CGO_ENABLED=0 go build -o /usr/local/bin/deploy-with-helm
 
 # Install sops.
 RUN go install go.mozilla.org/sops/v3/cmd/sops@v${SOPS_VERSION} \

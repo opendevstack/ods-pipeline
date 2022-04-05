@@ -44,6 +44,7 @@ listed in the changelog.
 - Don't remove tasks on `helm` upgrades, rollbacks, etc. ([#477](https://github.com/opendevstack/ods-pipeline/issues/477))
 - Run go fmt over packages, not entire directory ([#484](https://github.com/opendevstack/ods-pipeline/issues/484))
 - Update `golangci-lint` from 1.41 to 1.45 ([#497](https://github.com/opendevstack/ods-pipeline/pull/497))
+- Improve build time of subsequent local container image builds ([#499](https://github.com/opendevstack/ods-pipeline/pull/499))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))

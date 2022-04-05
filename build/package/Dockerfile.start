@@ -10,6 +10,16 @@ ENV TEKTON_VERSION=0.24.0 \
     KO_APP=/ko-app \
     GIT_LFS_VERSION=3.0.2
 
+# Build Go binary.
+RUN mkdir -p /etc/go
+COPY go.mod /etc/go/
+COPY go.sum /etc/go/
+RUN cd /etc/go && go mod download
+COPY cmd /etc/go/cmd
+COPY internal /etc/go/internal
+COPY pkg /etc/go/pkg
+RUN cd /etc/go/cmd/start && CGO_ENABLED=0 go build -o /usr/local/bin/ods-start
+
 RUN mkdir -p $TEKTONCD_PATH && \
     cd /tmp && \
     curl -LO https://github.com/tektoncd/pipeline/archive/refs/tags/v$TEKTON_VERSION.tar.gz && \
@@ -28,14 +38,6 @@ RUN cd /tmp \
 
 RUN CGO_ENABLED=0 go build -o /tmp/openshift-pipelines-git-init ./cmd/git-init && \
     mkdir ${KO_APP} && cp /tmp/openshift-pipelines-git-init ${KO_APP}/${BINARY}
-
-# Add Go binaries
-RUN mkdir -p /etc/go
-COPY go.* /etc/go/
-COPY cmd /etc/go/cmd
-COPY internal /etc/go/internal
-COPY pkg /etc/go/pkg
-RUN cd /etc/go/cmd/start && CGO_ENABLED=0 go build -o /usr/local/bin/ods-start
 
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
