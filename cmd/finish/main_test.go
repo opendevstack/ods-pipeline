@@ -37,7 +37,7 @@ func TestUploadArtifacts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt)
+	err = uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, options{aggregateTasksStatus: "Succeeded"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,6 +47,18 @@ func TestUploadArtifacts(t *testing.T) {
 	wantFile := "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/image-digests/foo.json"
 	if !nexusRepoContains(nexusClient.URLs[nexusRepo], wantFile) {
 		t.Fatalf("want: %s, got: %s", wantFile, nexusClient.URLs[nexusRepo][0])
+	}
+
+	err = uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, options{pipelineRunName: "pipelineRun", aggregateTasksStatus: "Failed"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nexusClient.URLs[nexusRepo]) != 2 {
+		t.Fatalf("expected one additional file upload, got: %v", nexusClient.URLs[nexusRepo])
+	}
+	wantFile = "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/failed-pipelineRun-artifacts/image-digests/foo.json"
+	if !nexusRepoContains(nexusClient.URLs[nexusRepo], wantFile) {
+		t.Fatalf("want: %s, got: %s", wantFile, nexusClient.URLs[nexusRepo][1])
 	}
 }
 
