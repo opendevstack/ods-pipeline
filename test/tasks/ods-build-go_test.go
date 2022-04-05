@@ -14,6 +14,7 @@ import (
 )
 
 func TestTaskODSBuildGo(t *testing.T) {
+	goProverb := "Don't communicate by sharing memory, share memory by communicating."
 	runTaskTestCases(t,
 		"ods-build-go",
 		[]tasktesting.Service{
@@ -59,8 +60,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if string(b) != "Hello World" {
-						t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+					if string(b) != goProverb {
+						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
 				},
 			},
@@ -103,8 +104,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if string(b) != "Hello World" {
-						t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+					if string(b) != goProverb {
+						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
 				},
 			},
