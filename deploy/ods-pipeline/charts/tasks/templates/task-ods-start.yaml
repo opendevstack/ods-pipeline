@@ -118,7 +118,7 @@ spec:
   steps:
     - name: ods-start
       # Image is built from build/package/Dockerfile.start.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-start:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-start:{{.Values.global.imageTag}}'
       env:
         - name: HOME
           value: '/tekton/home'
