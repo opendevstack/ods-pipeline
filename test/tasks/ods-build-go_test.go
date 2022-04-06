@@ -64,6 +64,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
 				},
+				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					cleanModcache(t, wsDir)
+				},
 			},
 			"build go app in subdirectory": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
@@ -84,6 +88,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
+
 					subdir := "go-src"
 					binary := fmt.Sprintf("%s/docker/app", subdir)
 
@@ -108,6 +113,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
 				},
+				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					cleanModcache(t, wsDir)
+				},
 			},
 			"fail linting go app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app-lint-error"},
@@ -130,6 +139,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 					checkFileContent(t, wsDir, ".ods/artifacts/lint-reports/report.txt", wantLintReportContent)
 				},
+				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					cleanModcache(t, wsDir)
+				},
 			},
 			"build go app with pre-test script": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
@@ -147,6 +160,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 
 					wantFile := "docker/test.txt"
 					checkFilesExist(t, wsDir, wantFile)
+				},
+				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					cleanModcache(t, wsDir)
 				},
 			},
 			"build go app in PR": {
@@ -167,6 +184,21 @@ func TestTaskODSBuildGo(t *testing.T) {
 					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
+				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					cleanModcache(t, wsDir)
+				},
 			},
 		})
+}
+
+func cleanModcache(t *testing.T, workspace string) {
+	_, stderr, err := command.RunWithExtraEnvs(
+		"go", []string{"clean", "-modcache"}, []string{
+			fmt.Sprintf("GOMODCACHE=%s/%s", workspace, ".ods-cache/deps/gomod"),
+		},
+	)
+	if err != nil {
+		t.Fatalf("could not clean up modcache: %s, stderr: %s", err, string(stderr))
+	}
 }
