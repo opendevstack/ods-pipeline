@@ -132,27 +132,25 @@ start-local-env: ## Restart stopped local environment.
 	cd scripts && ./start-local-env.sh
 .PHONY: start-local-env
 
+deploy: ## Install ODS pipeline resources in namespace.
+ifeq ($(strip $(namespace)),)
+	@echo "Argument 'namespace' is required, e.g. make deploy namespace=foo-cd"
+	@exit 1
+endif
+	cd scripts && ./install-inside-kind.sh -n $(namespace)
+.PHONY: deploy
+
 ##@ OpenShift
 
-start-ods-builds: ## OpenShift only! Start builds for each ODS BuildConfig
+start-ods-builds: ## Start builds for each ODS BuildConfig
 	oc start-build ods-buildah
 	oc start-build ods-finish
 	oc start-build ods-go-toolset
 	oc start-build ods-gradle-toolset
 	oc start-build ods-helm
+	oc start-build ods-node16-typescript-toolset
+	oc start-build ods-pipeline-manager
 	oc start-build ods-python-toolset
 	oc start-build ods-sonar
 	oc start-build ods-start
-	oc start-build ods-node16-typescript-toolset
-	oc start-build ods-pipeline-manager
 .PHONY: start-ods-builds
-
-##@ Installation
-
-install-cd-namespace: ## Install resources in CD namespace via Helm.
-ifeq ($(strip $(namespace)),)
-	@echo "Argument 'namespace' is required, e.g. make install-cd-namespace namespace=foo-cd"
-	@exit 1
-endif
-	cd scripts && ./install-cd-namespace-resources.sh -n $(namespace)
-.PHONY: install-cd-namespace

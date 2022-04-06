@@ -17,7 +17,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-go",
 		[]tasktesting.Service{
-			tasktesting.Nexus,
 			tasktesting.SonarQube,
 		},
 		map[string]tasktesting.TestCase{
