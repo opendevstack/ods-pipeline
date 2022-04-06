@@ -61,7 +61,7 @@ func installCDNamespaceResources(t *testing.T, ns, serviceaccount string) {
 	}
 
 	stdout, stderr, err := command.Run(
-		filepath.Join(projectpath.Root, "scripts/install-cd-namespace-resources.sh"),
+		filepath.Join(projectpath.Root, "scripts/install-inside-kind.sh"),
 		scriptArgs,
 	)
 
