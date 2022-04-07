@@ -2,13 +2,9 @@
 :sectnums:
 :toc:
 
-== Purpose
+== Purpose and Scope
 
 The purpose of this document is to describe the software system, including all functional and non-functional requirements. It states what is needed in terms of features, functions, performance, constraints, and quality.
-
-== Scope
-
-The following software requirements specification will provide the requirements for ODS pipeline version 0.1.
 
 == Definitions and Abbreviations
 

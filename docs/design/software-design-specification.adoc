@@ -2,13 +2,9 @@
 :sectnums:
 :toc:
 
-== Purpose
+== Purpose and Scope
 
 The purpose of this document is to describe the technical realization of the given software system architecture and the software requirements. It states how the design meets the requirements.
-
-== Scope
-
-The following software design specification will provide the technical realization of ODS pipeline version 0.2.0.
 
 == Definitions and Abbreviations
 
