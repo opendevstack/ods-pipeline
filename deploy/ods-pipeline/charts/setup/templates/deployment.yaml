@@ -18,7 +18,7 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/secret-bitbucket-auth.yaml") . | sha256sum }}
     spec:
       containers:
-        - name: {{.Chart.Name}}
+        - name: pipeline-manager
           securityContext: {}
           image: "{{.Values.pipelineManager.image.registry}}/{{.Values.pipelineManager.image.namespace | default .Release.Namespace}}/{{.Values.pipelineManager.image.repository | default .Chart.Name}}:{{.Values.pipelineManager.image.tag | default .Chart.AppVersion}}"
           imagePullPolicy: {{.Values.pipelineManager.image.pullPolicy}}
