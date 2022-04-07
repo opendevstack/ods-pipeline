@@ -70,7 +70,8 @@ The following pro's and con's are mostly from a platform perspective, not necess
 * The artifact approach avoids the need to run all components in the release manager pipeline (speeding things up) while at the same time storing all relevant information which should be useful for GxP/SaMD.
 * Possibility to run in and deploy to Kubernetes as well as OpenShift
 * Support for Helm instead of Tailor
-* Third party dependency caching (only used in Go task so far) and build skipping in multi-repo builds (only in PR state so far) 
+* Third party dependency caching (only used in Go task so far) and build skipping in multi-repo builds (only in PR state so far)
+* Easy notification of pipeline status in MS Teams channel
 
 === Con
 
