@@ -91,7 +91,7 @@ spec:
   steps:
     - name: build-go-binary
       # Image is built from build/package/Dockerfile.go-toolset.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-go-toolset:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-go-toolset:{{.Values.global.imageTag}}'
       env:
         - name: HOME
           value: '/tekton/home'

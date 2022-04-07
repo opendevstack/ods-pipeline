@@ -106,7 +106,7 @@ spec:
   steps:
     - name: build-typescript
       # Image is built from build/package/Dockerfile.node-xx-typescript-toolset.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-node$(params.node-version)-typescript-toolset:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-node$(params.node-version)-typescript-toolset:{{.Values.global.imageTag}}'
       env:
         - name: HOME
           value: '/tekton/home'

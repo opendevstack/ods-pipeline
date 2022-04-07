@@ -69,7 +69,7 @@ spec:
   steps:
     - name: build-python
       # Image is built from build/package/Dockerfile.python-toolset.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-python-toolset:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-python-toolset:{{.Values.global.imageTag}}'
       env:
         - name: HOME
           value: '/tekton/home'

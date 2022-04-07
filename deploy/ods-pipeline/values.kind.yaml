@@ -61,17 +61,16 @@ setup:
 ##
 tasks:
   enabled: true
-  # Default values for chart.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-
-  # To test with the latest public ods-pipeline images, set global.imageTag to 'latest' and use
-  #
+  # To test with the latest public ods-pipeline images, set global.imageTag to 'latest' and use:
   # registry: ghcr.io
   # namespace: opendevstack/ods-pipeline
 
   registry: localhost:5000
+  namespace: ods
   pushRegistry: kind-registry.kind:5000
 
+##
+# images chart
+##
 images:
   enabled: false
