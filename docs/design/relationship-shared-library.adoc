@@ -77,7 +77,7 @@ The following pro's and con's are from a platform perspective, not necessarily f
 
 === Limitations
 
-* Pipeline users cannot specify task resources dynamically without changing the task at hand. This was possible in Jenkins and also used by many users. See issue https://github.com/opendevstack/ods-pipeline/issues/195. Currently, support is not even on the Tekton roadmap. Only workaround: multiple tasks or high defaults.
-* Pipeline users cannot specify sidecars dynamically without changing the task at hand. This was possible in Jenkins and also used by many users (e.g. to spin up a database for testing). See issue https://github.com/opendevstack/ods-pipeline/issues/135. Currently, support is not even on the Tekton roadmap. Only workaround: multiple tasks.
-* As tasks are pods, one needs a PVC to work on. Using a PVC has an effect on how many pipelines can run in parallel. See issue https://github.com/opendevstack/ods-pipeline/issues/160. It would be possible to implement support for one PVC per repo, or even one PVC per branch.
+* OpenShift Pipelines does not provide a way to override task resources from a `Pipeline` resource. Tekton has added support for this in `PipelineRun` and `TaskRun` resources recently, but this new version is not picked up by OpenShift Pipelines yet. ODS Pipeline provides a workaround by allowing task resources to be defined via the Helm chart.
+* Tekton does not provide a way to specify sidecars from a `Pipeline` resource. ODS Pipeline provides a workaround by allowing task sidecards to be defined via the Helm chart.
+* As tasks are pods, one needs a PVC to work on. Using a PVC has an effect on how many pipelines can run in parallel. At the moment, ODS Pipeline supports one PVC per repo. This prevents parallel runs for different branches.
 
