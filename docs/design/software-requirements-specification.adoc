@@ -121,10 +121,10 @@ a| The task shall store context information for each checked out repository (suc
 | The task shall set the Bitbucket build status to "failed" or "successful", depending on whether all tasks succeeded or not. The build status shall link back to the pipeline run.
 
 | SRS-TASK-FINISH-2
-| The task shall create an artifact representing the pipeline run provided that all tasks succeeded.
+| The task shall create an artifact representing the pipeline run.
 
 | SRS-TASK-FINISH-3
-| The task shall upload all artifacts to Nexus, associating them with the checked out commit, provided that all tasks succeeded.
+| The task shall upload all artifacts to Nexus, associating them with the checked out commit.
 
 | SRS-TASK-FINISH-4
 | The task shall send a notification to a configured webhook about the pipeline run status.
