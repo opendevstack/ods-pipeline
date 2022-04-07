@@ -2,99 +2,114 @@ package manager
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Label set by Tekton identifying the pipeline of a run
+	// tektonPipelineLabel is set by Tekton identifying the pipeline of a run
 	tektonPipelineLabel = "tekton.dev/pipeline"
+	// pruneDelay defines when pruning kicks in after a pipeline was triggered.
+	pruneDelay = time.Minute
+	// pruneTimeout defines how long pruning is allowed to take before it gets cancelled.
+	pruneTimeout = 5 * time.Minute
 )
 
-// PipelineRunPruner is the interface for a pruner implementation.
-type PipelineRunPruner interface {
-	// Prune removes pipeline runs (and potentially pipelines) from the
-	// given list of pipeline runs based on a strategy as decided by the
-	// implemnter.
-	Prune(ctxt context.Context, pipelineRuns []tekton.PipelineRun) error
-}
-
-// PipelineRunPrunerByStage prunes pipeline runs by target stage.
-// It's behaviour can be controlled through minKeepHours and maxKeepRuns.
-// When pruning, it keeps maxKeepRuns number of pipeline runs per stage,
-// however it always keeps all pipelines less than minKeepHours old.
+// Pruner prunes pipeline runs by target stage.
+// It's behaviour can be controlled through MinKeepHours and MaxKeepRuns.
+// When pruning, it keeps MaxKeepRuns number of pipeline runs per stage,
+// however it always keeps all pipelines less than MinKeepHours old.
 // If pruning would prune all pipeline runs of one pipeline (identified by
 // label "tekton.dev/pipeline"), then the pipeline is pruned instead (removing
 // all dependent pipeline runs through propagation).
-type pipelineRunPrunerByStage struct {
-	client tektonClient.ClientInterface
-	logger logging.LeveledLoggerInterface
-	// minKeepHours specifies the minimum hours to keep a pipeline run.
-	// This setting has precendence over maxKeepRuns.
-	minKeepHours int
-	// maxKeepRuns is the maximum number of pipeline runs to keep per stage.
-	maxKeepRuns int
+type Pruner struct {
+	// TriggeredRepos receives repo names for each triggered repository.
+	TriggeredRepos chan string
+	// TektonClient is a client to interact with Tekton.
+	TektonClient tektonClient.ClientInterface
+	Logger       logging.LeveledLoggerInterface
+	// MinKeepHours specifies the minimum hours to keep a pipeline run.
+	// This setting has precendence over MaxKeepRuns.
+	MinKeepHours int
+	// MaxKeepRuns is the maximum number of pipeline runs to keep per stage.
+	MaxKeepRuns   int
+	upcomingPrune map[string]time.Time
 }
 
+// prunableResources holds pipelines and runs that can be pruned.
 type prunableResources struct {
 	pipelineRuns []string
 	pipelines    []string
 }
 
-// NewPipelineRunPrunerByStage returns an instance of pipelineRunPrunerByStage.
-func NewPipelineRunPrunerByStage(
-	client tektonClient.ClientInterface,
-	logger logging.LeveledLoggerInterface,
-	minKeepHours, maxKeepRuns int) (*pipelineRunPrunerByStage, error) {
-	if client == nil {
-		return nil, errors.New("tekton client is required")
-	}
-	if logger == nil {
-		return nil, errors.New("logger is required")
-	}
-	if minKeepHours < 1 {
-		return nil, fmt.Errorf("minKeepHours must be at least 1, got %d", minKeepHours)
-	}
-	if maxKeepRuns < 1 {
-		return nil, fmt.Errorf("maxKeepRuns must be at least 1, got %d", maxKeepRuns)
-	}
-	return &pipelineRunPrunerByStage{
-		client:       client,
-		logger:       logger,
-		minKeepHours: minKeepHours,
-		maxKeepRuns:  maxKeepRuns,
-	}, nil
+// pruner is an interface to facilitate testing.
+type pruner interface {
+	prune(ctx context.Context, repository string) error
 }
 
-// Prune prunes runs within pipelineRuns which can be cleaned up according to
-// the strategy in pipelineRunPrunerByStage.
-func (p *pipelineRunPrunerByStage) Prune(ctxt context.Context, pipelineRuns []tekton.PipelineRun) error {
-	p.logger.Debugf("Prune settings: minKeepHours=%d maxKeepRuns=%d", p.minKeepHours, p.maxKeepRuns)
-	prByStage := p.categorizePipelineRunsByStage(pipelineRuns)
+// Run starts the pruning process by calling run. This indirection facilitates
+// testing.
+func (p *Pruner) Run(ctx context.Context) {
+	p.run(ctx, p, pruneDelay)
+}
+
+// run actually starts the pruning process.
+func (p *Pruner) run(ctx context.Context, pr pruner, delay time.Duration) {
+	p.upcomingPrune = make(map[string]time.Time)
+	p.Logger.Debugf("Prune settings: MinKeepHours=%d MaxKeepRuns=%d", p.MinKeepHours, p.MaxKeepRuns)
+	for {
+		select {
+		case repo := <-p.TriggeredRepos:
+			// Avoid pruning if pruning for this repo is already planned.
+			if t, ok := p.upcomingPrune[repo]; ok && t.After(time.Now()) {
+				break
+			}
+			p.upcomingPrune[repo] = time.Now().Add(delay)
+			time.AfterFunc(delay, func() {
+				err := pr.prune(ctx, repo)
+				if err != nil {
+					p.Logger.Errorf(err.Error())
+				}
+			})
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// prune prunes runs within pipelineRuns which can be cleaned up according to
+// the strategy in Pruner.
+func (p *Pruner) prune(ctx context.Context, repository string) error {
+	ctxt, cancel := context.WithTimeout(ctx, pruneTimeout)
+	defer cancel()
+	pipelineRuns, err := listPipelineRuns(ctxt, p.TektonClient, repository)
+	if err != nil {
+		return err
+	}
+	p.Logger.Debugf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), repository)
+	prByStage := p.categorizePipelineRunsByStage(pipelineRuns.Items)
 	for stage, prs := range prByStage {
-		p.logger.Debugf("Calculating prunable pipelines / pipeline runs for stage %s ...", stage)
+		p.Logger.Debugf("Calculating prunable pipelines / pipeline runs for stage %s ...", stage)
 		prunable := p.findPrunableResources(prs)
 
-		p.logger.Debugf("Pruning %d \"%s\" stage pipelines and their dependent runs ...", len(prunable.pipelines), stage)
+		p.Logger.Debugf("Pruning %d \"%s\" stage pipelines and their dependent runs ...", len(prunable.pipelines), stage)
 		for _, name := range prunable.pipelines {
 			err := p.prunePipeline(ctxt, name)
 			if err != nil {
-				p.logger.Warnf("Failed to prune pipeline %s: %s", name, err)
+				p.Logger.Warnf("Failed to prune pipeline %s: %s", name, err)
 			}
 		}
 
-		p.logger.Debugf("Pruning %d \"%s\" stage pipeline runs ...", len(prunable.pipelineRuns), stage)
+		p.Logger.Debugf("Pruning %d \"%s\" stage pipeline runs ...", len(prunable.pipelineRuns), stage)
 		for _, name := range prunable.pipelineRuns {
 			err := p.pruneRun(ctxt, name)
 			if err != nil {
-				p.logger.Warnf("Failed to prune pipeline run %s: %s", name, err)
+				p.Logger.Warnf("Failed to prune pipeline run %s: %s", name, err)
 			}
 		}
 	}
@@ -103,7 +118,7 @@ func (p *pipelineRunPrunerByStage) Prune(ctxt context.Context, pipelineRuns []te
 
 // categorizePipelineRunsByStage assigns the given pipelineRuns into buckets
 // by target stages (DEV, QA, PROD).
-func (p *pipelineRunPrunerByStage) categorizePipelineRunsByStage(pipelineRuns []tekton.PipelineRun) map[string][]tekton.PipelineRun {
+func (p *Pruner) categorizePipelineRunsByStage(pipelineRuns []tekton.PipelineRun) map[string][]tekton.PipelineRun {
 	pipelineRunsByStage := map[string][]tekton.PipelineRun{
 		string(config.DevStage):  {},
 		string(config.QAStage):   {},
@@ -112,7 +127,7 @@ func (p *pipelineRunPrunerByStage) categorizePipelineRunsByStage(pipelineRuns []
 	for _, pr := range pipelineRuns {
 		stage := pr.Labels[stageLabel]
 		if _, ok := pipelineRunsByStage[stage]; !ok {
-			p.logger.Warnf("Unknown stage '%s' for pipeline run %s", stage, pr.Name)
+			p.Logger.Warnf("Unknown stage '%s' for pipeline run %s", stage, pr.Name)
 		}
 		pipelineRunsByStage[stage] = append(pipelineRunsByStage[stage], pr)
 	}
@@ -123,21 +138,21 @@ func (p *pipelineRunPrunerByStage) categorizePipelineRunsByStage(pipelineRuns []
 // pipeline runs. Returned resources are either pipelines or pipeline runs.
 // If all pipeline runs of one pipeline can be pruned, the pipeline is
 // returned instead of the individual pipeline runs.
-func (s *pipelineRunPrunerByStage) findPrunableResources(pipelineRuns []tekton.PipelineRun) *prunableResources {
+func (s *Pruner) findPrunableResources(pipelineRuns []tekton.PipelineRun) *prunableResources {
 	sortPipelineRunsDescending(pipelineRuns)
 
 	// Apply cleanup to each bucket.
 	prunablePipelines := []string{}
 	prunablePipelineRuns := []string{}
 
-	cutoff := time.Now().Add(time.Duration(s.minKeepHours*-1) * time.Hour)
+	cutoff := time.Now().Add(time.Duration(s.MinKeepHours*-1) * time.Hour)
 	protectedRuns := []tekton.PipelineRun{}
 	prunableRuns := []tekton.PipelineRun{}
 	// Categorize runs as either "protected" or "prunable".
-	// A run is protected if it is newer than the cutoff time, or if maxKeepRuns
+	// A run is protected if it is newer than the cutoff time, or if MaxKeepRuns
 	// is not reached yet.
 	for _, p := range pipelineRuns {
-		if p.CreationTimestamp.Time.After(cutoff) || len(protectedRuns) < s.maxKeepRuns {
+		if p.CreationTimestamp.Time.After(cutoff) || len(protectedRuns) < s.MaxKeepRuns {
 			protectedRuns = append(protectedRuns, p)
 		} else {
 			prunableRuns = append(prunableRuns, p)
@@ -173,25 +188,25 @@ func pipelineIsProtected(pipelineName string, protected []tekton.PipelineRun) bo
 
 // pruneRun removes the pipeline run identified by name. The deletion is
 // propagated to dependents.
-func (p *pipelineRunPrunerByStage) pruneRun(ctxt context.Context, name string) error {
-	p.logger.Debugf("Pruning pipeline run %s ...", name)
-	ppPolicy := v1.DeletePropagationForeground
-	return p.client.DeletePipelineRun(
+func (p *Pruner) pruneRun(ctxt context.Context, name string) error {
+	p.Logger.Debugf("Pruning pipeline run %s ...", name)
+	ppPolicy := metav1.DeletePropagationForeground
+	return p.TektonClient.DeletePipelineRun(
 		ctxt,
 		name,
-		v1.DeleteOptions{PropagationPolicy: &ppPolicy},
+		metav1.DeleteOptions{PropagationPolicy: &ppPolicy},
 	)
 }
 
 // prunePipeline removes the pipeline identified by name. The deletion is
 // propagated to dependents.
-func (p *pipelineRunPrunerByStage) prunePipeline(ctxt context.Context, name string) error {
-	p.logger.Debugf("Pruning pipeline %s and its dependent runs ...", name)
-	ppPolicy := v1.DeletePropagationForeground
-	return p.client.DeletePipeline(
+func (p *Pruner) prunePipeline(ctxt context.Context, name string) error {
+	p.Logger.Debugf("Pruning pipeline %s and its dependent runs ...", name)
+	ppPolicy := metav1.DeletePropagationForeground
+	return p.TektonClient.DeletePipeline(
 		ctxt,
 		name,
-		v1.DeleteOptions{PropagationPolicy: &ppPolicy},
+		metav1.DeleteOptions{PropagationPolicy: &ppPolicy},
 	)
 }
 

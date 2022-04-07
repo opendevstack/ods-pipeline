@@ -19,7 +19,7 @@ const (
 )
 
 // createPVCIfRequired if it does not exist yet
-func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) error {
+func (s *Scheduler) createPVCIfRequired(ctxt context.Context, pData PipelineConfig) error {
 	_, err := s.KubernetesClient.GetPersistentVolumeClaim(ctxt, pData.PVC, metav1.GetOptions{})
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
@@ -47,6 +47,7 @@ func (s *Server) createPVCIfRequired(ctxt context.Context, pData PipelineData) e
 		if s.StorageConfig.Provisioner != "" {
 			pvc.Annotations[storageProvisionerAnnotation] = s.StorageConfig.Provisioner
 		}
+		s.Logger.Debugf("Creating PVC %s ...", pvc)
 		_, err := s.KubernetesClient.CreatePersistentVolumeClaim(ctxt, pvc, metav1.CreateOptions{})
 		if err != nil {
 			return err

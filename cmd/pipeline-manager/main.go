@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,6 +17,7 @@ import (
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 const (
@@ -36,6 +38,9 @@ const (
 	pruneMinKeepHoursDefault = 48
 	pruneMaxKeepRunsEnvVar   = "ODS_PRUNE_MAX_KEEP_RUNS"
 	pruneMaxKeepRunsDefault  = 20
+	initialWatchWait         = 10 * time.Second
+	// Allow a few concurrent pipeline triggers before blocking.
+	channelBufferSize = 5
 )
 
 func init() {
@@ -50,7 +55,13 @@ func main() {
 }
 
 func serve() error {
-	log.Println("Booting")
+	var logger logging.LeveledLoggerInterface
+	if os.Getenv("DEBUG") == "true" {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+	}
+	logger.Infof("Booting ...")
 
 	repoBase := os.Getenv(repoBaseEnvVar)
 	if repoBase == "" {
@@ -119,52 +130,77 @@ func serve() error {
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
 
-	// TODO: Use this logger in the manager as well, not just in the pruner.
-	var logger logging.LeveledLoggerInterface
-	if os.Getenv("DEBUG") == "true" {
-		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
-	} else {
-		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
-	}
+	// triggeredReposChan is used to communicate repos for which pipelines
+	// have been triggered between receiver and pruner.
+	triggeredReposChan := make(chan string, channelBufferSize)
+	// triggeredPipelinesChan is used to communicate triggered pipelines from
+	// the receiver to the scheduler.
+	triggeredPipelinesChan := make(chan manager.PipelineConfig, channelBufferSize)
+	// pendingRunReposChan is used to communicate repos for which pipeline runs
+	// are pending between scheduler and watcher.
+	pendingRunReposChan := make(chan string, channelBufferSize)
 
-	pruner, err := manager.NewPipelineRunPrunerByStage(
-		tClient,
-		logger,
-		pruneMinKeepHours,
-		pruneMaxKeepRuns,
-	)
-	if err != nil {
-		return fmt.Errorf("could not create pruner: %w", err)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	server, err := manager.NewServer(manager.ServerConfig{
-		Namespace:     namespace,
-		Project:       project,
-		RepoBase:      repoBase,
-		Token:         token,
-		WebhookSecret: webhookSecret,
-		TaskKind:      taskKind,
-		TaskSuffix:    taskSuffix,
+	s := &manager.Scheduler{
+		TriggeredPipelines: triggeredPipelinesChan,
+		PendingRunRepos:    pendingRunReposChan,
+		TektonClient:       tClient,
+		KubernetesClient:   kClient,
+		Logger:             logger,
+		TaskKind:           tekton.TaskKind(taskKind),
+		TaskSuffix:         taskSuffix,
 		StorageConfig: manager.StorageConfig{
 			Provisioner: storageProvisioner,
 			ClassName:   storageClassName,
 			Size:        storageSize,
 		},
-		KubernetesClient:  kClient,
-		TektonClient:      tClient,
-		BitbucketClient:   bitbucketClient,
-		PipelineRunPruner: pruner,
-		Logger:            logger,
-	})
-	if err != nil {
-		return err
 	}
+	go s.Run(ctx)
 
-	log.Println("Ready to accept requests")
+	p := &manager.Pruner{
+		TriggeredRepos: triggeredReposChan,
+		TektonClient:   tClient,
+		Logger:         logger,
+		MinKeepHours:   pruneMinKeepHours,
+		MaxKeepRuns:    pruneMaxKeepRuns,
+	}
+	go p.Run(ctx)
+
+	w := &manager.Watcher{
+		PendingRunRepos: pendingRunReposChan,
+		Queues:          map[string]bool{},
+		TektonClient:    tClient,
+		Logger:          logger,
+	}
+	go w.Run(ctx)
+	// As there is no persistent state, check for queued pipeline runs for all
+	// repositories belonging to the Bitbucket project after booting.
+	time.AfterFunc(initialWatchWait, func() {
+		repos, err := manager.GetRepoNames(bitbucketClient, project)
+		if err != nil {
+			logger.Warnf(err.Error())
+		}
+		for _, r := range repos {
+			pendingRunReposChan <- r
+		}
+	})
+
+	r := &manager.BitbucketWebhookReceiver{
+		TriggeredPipelines: triggeredPipelinesChan,
+		Logger:             logger,
+		BitbucketClient:    bitbucketClient,
+		WebhookSecret:      webhookSecret,
+		Namespace:          namespace,
+		Project:            project,
+		RepoBase:           repoBase,
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", http.HandlerFunc(health))
-	mux.Handle("/", http.HandlerFunc(server.HandleRoot))
+	mux.Handle("/bitbucket", http.HandlerFunc(r.Handle))
+	logger.Infof("Ready to accept requests!")
 	return http.ListenAndServe(":8080", mux)
 }
 
