@@ -29,7 +29,7 @@ Then, use `git subtree` to get the required sources. The following commands may 
 
 [source]
 ----
-pipelineGitRef=master # Pick the version you want to install
+pipelineGitRef=v0.3.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -113,7 +113,7 @@ You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 
 [source]
 ----
-pipelineGitRef=v0.2.0 # Pick the version you want to install
+pipelineGitRef=v0.3.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -126,4 +126,4 @@ Now, compare if any new values have been introduced and update the values and se
 
 Afterwards you can update the resources via `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml`. You may also use `--dry-run` to see the changes first.
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-1-1` to `ods-build-go-v0-2-0`.
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-2-0` to `ods-build-go-v0-3-0`.

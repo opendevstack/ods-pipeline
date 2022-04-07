@@ -9,6 +9,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-04-07
+
 ### Added
 
 - Apply labels to pipelines allowing easier identification for cleanup ([#358](https://github.com/opendevstack/ods-pipeline/issues/358))
