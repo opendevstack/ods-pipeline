@@ -57,7 +57,7 @@ To create such a task, authors need to have:
 
 == Pro's / Con's and Limitations
 
-The following pro's and con's are from a platform perspective, not necessarily from an individual developer's perspective. Also, these are in relation to the existing shared library approach.
+The following pro's and con's are mostly from a platform perspective, not necessarily from an individual developer's perspective. Also, these are in relation to the existing shared library approach.
 
 === Pro
 
@@ -68,6 +68,9 @@ The following pro's and con's are from a platform perspective, not necessarily f
 * Jenkins had only one agent image, which made it hard to use for monorepos using multiple technologies (e.g. TypeScript and Java). The Tekton approach should handle monorepos and multiple repos equally well.
 * The Tekton implementation can run in a pure Kubernetes cluster, allowing the test suite to be executed in GitHub Actions. Also, the target cluster does not have to be OpenShift, allowing to deploy into EKS for example.
 * The artifact approach avoids the need to run all components in the release manager pipeline (speeding things up) while at the same time storing all relevant information which should be useful for GxP/SaMD.
+* Possibility to run in and deploy to Kubernetes as well as OpenShift
+* Support for Helm instead of Tailor
+* Third party dependency caching (only used in Go task so far) and build skipping in multi-repo builds (only in PR state so far) 
 
 === Con
 
