@@ -133,7 +133,7 @@ spec:
   description: Custom Go (module) applications build task.
   steps:
     - name: build-go-binary
-      image: '{{.Values.registry}}/ods/ods-go-toolset:v0.2.0'
+      image: 'registry.example.com:5000/my-namespace/ods-go-toolset:latest'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -144,5 +144,7 @@ spec:
   workspaces:
     - name: source
 ----
+
+NOTE: You'll need to adjust the `image` value to point to an image e.g. in an OpenShift image stream or in an external registry.
 
 You might want to base the `script` on the build scripts provided by the official tasks. They are all located in link:https://github.com/opendevstack/ods-pipeline/tree/master/build/package/scripts[build/package/scripts].
