@@ -78,7 +78,7 @@ func TestE2E(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	webhookURL := fmt.Sprintf("http://%s:%d", ipAddress, nodePort)
+	webhookURL := fmt.Sprintf("http://%s:%d/bitbucket", ipAddress, nodePort)
 	t.Logf("Bitbucket webhook URL will be set to %s", webhookURL)
 
 	// Create webhook in Bitbucket.

@@ -216,7 +216,7 @@ ODS pipeline only supports deploying Kubernetes resources with Helm at the momen
 To setup a webhook, go to "Repository Settings > Webhooks" and create a new webhook:
 
 * "Name": choose any name you wish, e.g. `ods-pipeline`
-* "URL": enter the URL of the route of your event listener
+* "URL": enter the URL of the route of your event listener, followed by `/bitbucket`, e.g. `https://ods-pipeline.example.com/bitbucket`
 * "Secret": enter the value of the `secret` field in the OpenShift `ods-bitbucket-webhook` Secret.
 
 Select the "Repository: Push" and "Pull request: Opened" events and save the configuration.

@@ -1,7 +1,7 @@
 {{- define "sonar-step"}}
 - name: scan-with-sonar
   # Image is built from build/package/Dockerfile.sonar.
-  image: '{{.Values.registry}}/{{.Values.namespace}}/ods-sonar:{{.Values.global.imageTag}}'
+  image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-sonar:{{.Values.global.imageTag}}'
   env:
     - name: HOME
       value: '/tekton/home'

@@ -12,7 +12,6 @@
     "repoBase": "https://domain.com",
     "gitURI": "https://domain.com/foo/foo-bar.git",
     "namespace": "bar-cd",
-    "pvc": "ods-workspace-bar",
     "trigger-event": "repo:refs_changed",
     "comment": "",
     "prKey": 0,

@@ -185,19 +185,21 @@ tasks:
   # enable task definition chart
   enabled: true
 
-  # Default values for chart.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-
+  # Registry to pull task images from.
   registry: image-registry.openshift-image-registry.svc:5000
-  namespace: ods
-  pushRegistry: image-registry.openshift-image-registry.svc:5000
 
-
-  # Optional Values
+  # ImageStream to pull task images from.
+  # If images are not located within OpenShift image streams, this maps to
+  # the organisation under which the images are hosted.
+  # If not set, defaults to the Helm release namespace.
+  # namespace: ods
 
   # Custom task prefix (defaults to "ods")
   # taskPrefix: "foo"
+
+  # Registry to push images to from ods-package-image task.
+  # If not set, defaults to the value of "registry".
+  # pushRegistry: image-registry.openshift-image-registry.svc:5000
 
   # To define build task specific sidecars and quotas, add resources/sidecar section(s) per task,
   # e.g.

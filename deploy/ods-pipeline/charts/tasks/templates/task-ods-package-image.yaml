@@ -46,7 +46,7 @@ spec:
     - name: registry
       description: Image registry to push image to.
       type: string
-      default: '{{.Values.pushRegistry}}'
+      default: '{{default .Values.registry .Values.pushRegistry}}'
     - name: image-stream
       description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
       type: string
@@ -85,7 +85,7 @@ spec:
   steps:
     - name: build-and-push-image
       # Image is built from build/package/Dockerfile.buildah.
-      image: '{{.Values.registry}}/{{.Values.namespace}}/ods-buildah:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-buildah:{{.Values.global.imageTag}}'
       env:
         - name: HOME
           value: '/tekton/home'

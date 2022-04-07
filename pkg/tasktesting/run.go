@@ -42,6 +42,7 @@ type TestCase struct {
 	WantSetupFail  bool
 	PreRunFunc     func(t *testing.T, ctxt *TaskRunContext)
 	PostRunFunc    func(t *testing.T, ctxt *TaskRunContext)
+	CleanupFunc    func(t *testing.T, ctxt *TaskRunContext)
 	AdditionalRuns []TaskRunCase
 	Timeout        time.Duration
 }
@@ -132,6 +133,10 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 		Clients:    testOpts.Clients,
 		Workspaces: taskWorkspaces,
 		Params:     tc.TaskParamsMapping,
+	}
+
+	if tc.CleanupFunc != nil {
+		defer tc.CleanupFunc(t, testCaseContext)
 	}
 
 	tasks := []TaskRunCase{}
