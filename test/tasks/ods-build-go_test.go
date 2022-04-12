@@ -110,8 +110,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if string(b) != "Hello World" {
-						t.Fatalf("Got: %+v, want: %+v.", string(b), "Hello World")
+					if string(b) != goProverb {
+						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
 				},
 				AdditionalRuns: []tasktesting.TaskRunCase{{

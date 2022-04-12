@@ -83,6 +83,7 @@ test-e2e: ## Run testsuite of end-to-end pipeline run.
 .PHONY: test-e2e
 
 clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.
+	chmod -R u+w test/testdata/workspaces/workspace-*
 	rm -rf test/testdata/workspaces/workspace-*
 .PHONY: clear-tmp-workspaces
 
