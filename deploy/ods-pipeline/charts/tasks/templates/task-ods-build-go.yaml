@@ -20,8 +20,7 @@ spec:
       config file as described in the
       link:https://golangci-lint.run/usage/configuration/[configuration documentation].
     - Tests are executed. A potential `vendor` directory is excluded. Test
-      results are converted into xUnit format. If test artifacts are already present for
-      the current Git commit SHA, testing is skipped.
+      results are converted into xUnit format.
     - Application binary (named `app`) is built and placed into the directory
       specified by `output-dir`.
 

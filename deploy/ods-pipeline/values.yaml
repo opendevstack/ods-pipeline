@@ -3,9 +3,9 @@
 # ####################################### #
 global:
   # Image tag to use for images referenced by tasks.
-  imageTag: 0.2.0
+  imageTag: 0.3.0
   # Suffix to append to the task name.
-  taskSuffix: -v0-2-0
+  taskSuffix: -v0-3-0
   # Custom task kind (defaults to "Task")
   # taskKind: "ClusterTask"
   enabledTasks:
@@ -166,7 +166,7 @@ setup:
       pullPolicy: 'Always'
       # Image tag to pull.
       # If not given, defaults to the chart appVersion.
-      # tag: '0.2.0'
+      # tag: 'latest'
     # Deployment pod resources. Typically these settings should not need to change.
     resources:
       limits:

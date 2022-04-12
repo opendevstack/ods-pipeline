@@ -48,7 +48,6 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
-ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
 tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
 # tmp_artifacts_dir enables keeping artifacts created by this build 
 # separate from other builds in the same repo to facilitate caching.
@@ -101,43 +100,35 @@ else
 fi
 
 echo "Testing ..."
-if [ -f "${ods_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
-  echo "Test artifacts already present, skipping tests ..."
-  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ods_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ods_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
-else
-  if [ -n "${PRE_TEST_SCRIPT}" ]; then
-    echo "Executing pre-test script ..."
-    ./"${PRE_TEST_SCRIPT}"
-  fi
-  GOPKGS=$(go list ./... | grep -v /vendor)
-  set +e
-  rm coverage.out test-results.txt report.xml &>/dev/null
-  go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
-  exitcode=$?
-  set -e
-  df -h "$ROOT_DIR"
-  if [ -f test-results.txt ]; then
-      cat test-results.txt
-      go-junit-report < test-results.txt > report.xml
-      mkdir -p "${tmp_artifacts_dir}/xunit-reports"
-      cp report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
-  else
-    echo "No test results found"
-    exit 1
-  fi
-  if [ -f coverage.out ]; then
-      mkdir -p "${tmp_artifacts_dir}/code-coverage"
-      cp coverage.out "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage.out"
-  else
-    echo "No code coverage found"
-    exit 1
-  fi
-  if [ $exitcode != 0 ]; then
-    exit $exitcode
-  fi
+if [ -n "${PRE_TEST_SCRIPT}" ]; then
+  echo "Executing pre-test script ..."
+  ./"${PRE_TEST_SCRIPT}"
 fi
-
+GOPKGS=$(go list ./... | grep -v /vendor)
+set +e
+rm coverage.out test-results.txt report.xml &>/dev/null
+go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
+exitcode=$?
+set -e
+df -h "$ROOT_DIR"
+if [ -f test-results.txt ]; then
+    cat test-results.txt
+    go-junit-report < test-results.txt > report.xml
+    mkdir -p "${tmp_artifacts_dir}/xunit-reports"
+    cp report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+else
+  echo "No test results found"
+  exit 1
+fi
+if [ -f coverage.out ]; then
+    mkdir -p "${tmp_artifacts_dir}/code-coverage"
+    cp coverage.out "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage.out"
+else
+  echo "No code coverage found"
+  exit 1
+fi
+if [ $exitcode != 0 ]; then
+  exit $exitcode
+fi
 echo "Building ..."
 go build -gcflags "all=-trimpath=$(pwd)" -o "${OUTPUT_DIR}/app"

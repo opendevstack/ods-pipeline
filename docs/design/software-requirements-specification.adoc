@@ -2,13 +2,9 @@
 :sectnums:
 :toc:
 
-== Purpose
+== Purpose and Scope
 
 The purpose of this document is to describe the software system, including all functional and non-functional requirements. It states what is needed in terms of features, functions, performance, constraints, and quality.
-
-== Scope
-
-The following software requirements specification will provide the requirements for ODS pipeline version 0.1.
 
 == Definitions and Abbreviations
 
@@ -125,10 +121,10 @@ a| The task shall store context information for each checked out repository (suc
 | The task shall set the Bitbucket build status to "failed" or "successful", depending on whether all tasks succeeded or not. The build status shall link back to the pipeline run.
 
 | SRS-TASK-FINISH-2
-| The task shall create an artifact representing the pipeline run provided that all tasks succeeded.
+| The task shall create an artifact representing the pipeline run.
 
 | SRS-TASK-FINISH-3
-| The task shall upload all artifacts to Nexus, associating them with the checked out commit, provided that all tasks succeeded.
+| The task shall upload all artifacts to Nexus, associating them with the checked out commit.
 
 | SRS-TASK-FINISH-4
 | The task shall send a notification to a configured webhook about the pipeline run status.
@@ -150,7 +146,6 @@ a| The task shall run Go tests, creating code coverage and xUnit report.
 * The user shall be able to run a script prior to tests.
 * Vendored packages shall be excluded from the tests.
 * Artifacts shall be made available to SonarQube and designated for upload to Nexus.
-* If tests already ran for the commit being built, testing shall be skipped.
 
 | SRS-TASK-BUILD-GO-4
 a| The task shall build a Go module based Go binary.

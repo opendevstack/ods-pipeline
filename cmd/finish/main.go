@@ -233,7 +233,7 @@ func uploadArtifacts(
 			} else {
 				nexusGroup := artifactGroup(ctxt, artifactsSubDir, opts)
 				localFile := filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
-				logger.Infof("Uploading %s to Nexus repository %s, group %s ...\n", localFile, nexusRepository, nexusGroup)
+				logger.Infof("Uploading %s to Nexus repository %s, group %s ...", localFile, nexusRepository, nexusGroup)
 				link, err := nexusClient.Upload(nexusRepository, nexusGroup, localFile)
 				if err != nil {
 					return err

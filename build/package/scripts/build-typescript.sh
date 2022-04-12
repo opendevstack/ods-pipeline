@@ -64,7 +64,6 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
-ods_artifacts_dir="${ROOT_DIR}/.ods/artifacts"
 tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
 # tmp_artifacts_dir enables keeping artifacts created by this build 
 # separate from other builds in the same repo to facilitate caching.
@@ -132,26 +131,17 @@ if [ "${COPY_NODE_MODULES}" = true ]; then
 fi
 
 echo "Testing ..."
-if [ -f "${ods_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
-  echo "Test artifacts already present, skipping tests ..."
-  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ods_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ods_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}clover.xml" clover.xml
-  cp "${ods_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json" coverage-final.json
-  cp "${ods_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
-else
-  npm run test
+npm run test
 
-  mkdir -p "${tmp_artifacts_dir}/xunit-reports"
-  cp build/test-results/test/report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+mkdir -p "${tmp_artifacts_dir}/xunit-reports"
+cp build/test-results/test/report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-  mkdir -p "${tmp_artifacts_dir}/code-coverage"
-  cp build/coverage/clover.xml "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+mkdir -p "${tmp_artifacts_dir}/code-coverage"
+cp build/coverage/clover.xml "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-  cp build/coverage/coverage-final.json "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+cp build/coverage/coverage-final.json "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-  cp build/coverage/lcov.info "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}lcov.info"
-fi
+cp build/coverage/lcov.info "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 
 # Doing this earlier can confuse jest.
 # test build_typescript_app_with_custom_build_directory fails with

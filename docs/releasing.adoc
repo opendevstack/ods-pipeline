@@ -20,8 +20,10 @@ Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). T
 
 For all changes and more details, please see the [changelog](https://github.com/opendevstack/ods-pipeline/blob/master/CHANGELOG.md#< Add anchor of the released version>).
 
-To update your project-specific pipeline installation, refer to the [update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/installation.adoc#updating).
+To update your ODS pipeline installation, refer to the [update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/installation.adoc#updating).
 ----
+
+NOTE: When a Git tag is created, container images are built automatically and pushed to ghcr.io.
 
 === Attaching binaries to the release
 The `artifact-download` binary should be offered as a pre-built binary for `linux/amd64`, `darwin/amd64` and `windows/amd64`. These can be generated via `make build-artifact-download`, and then uploaded in the GitHub release creation form.

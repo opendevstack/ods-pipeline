@@ -229,7 +229,7 @@ func TestAssemblePipeline(t *testing.T) {
 						tektonStringParam("pr-key", "$(params.pr-key)"),
 						tektonStringParam("pr-base", "$(params.pr-base)"),
 						tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-						tektonStringParam("environment", "$(paramsenvironment)"),
+						tektonStringParam("environment", "$(params.environment)"),
 						tektonStringParam("version", "$(params.version)"),
 					},
 					Workspaces: tektonDefaultWorkspaceBindings(),

@@ -2,13 +2,9 @@
 :sectnums:
 :toc:
 
-== Purpose
+== Purpose and Scope
 
 The purpose of this document is to describe the architecture of the software system. It shall provide a graphical overview of the software system, its structure and interfaces to internal and external components.
-
-== Scope
-
-The following software architecture will provide the architecture of ODS pipeline version 0.1.
 
 == Definitions and Abbreviations
 

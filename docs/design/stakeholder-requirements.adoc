@@ -2,13 +2,9 @@
 :sectnums:
 :toc:
 
-== Purpose
+== Purpose and Scope
 
-The purpose of this document is to describe the high-level stakeholder requirements.
-
-== Scope
-
-The following requirements apply for ODS pipeline version 0.1.
+The purpose of this document is to describe the high-level stakeholder requirements of ODS Pipeline.
 
 == Definitions and Abbreviations
 

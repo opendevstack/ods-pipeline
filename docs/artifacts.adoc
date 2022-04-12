@@ -19,7 +19,7 @@ Pipelines create artifacts based on the source code they work on. Artifacts are 
 
 Pipelines write artifacts into `.ods/artifacts/<TYPE>/<ARTIFACT>`. This folder is uploaded to Nexus in the final task. If a pipeline starts, Nexus is searched for artifacts for the current revision and artifacts are placed into `.ods/artifacts`.
 
-Some activities inside tasks/steps may be skipped depending in existing artifacts (e.g. no need to re-run tests if xUnit files are present, no need to re-build image if manifest exists, etc.).
+Some activities inside tasks/steps may be skipped depending on existing artifacts (e.g. no need to re-build image if manifest exists, etc.).
 
 == Storage
 
