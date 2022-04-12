@@ -146,7 +146,6 @@ a| The task shall run Go tests, creating code coverage and xUnit report.
 * The user shall be able to run a script prior to tests.
 * Vendored packages shall be excluded from the tests.
 * Artifacts shall be made available to SonarQube and designated for upload to Nexus.
-* If tests already ran for the commit being built, testing shall be skipped.
 
 | SRS-TASK-BUILD-GO-4
 a| The task shall build a Go module based Go binary.

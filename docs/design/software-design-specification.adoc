@@ -272,7 +272,7 @@ If `copy-node-modules` is `true` the `node_modules` directory is copied into the
 
 For traceability package.json and package-lock.json are copied into the `dist` directory inside the output directory as well. This happens at the end of the script execution to avoid confusing the subsequent running of tests.
 
-Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively. If the artifacts are already found in `.ods/artifacts`, then testing is skipped and the artifacts are copied to the working directory to expose them to SonarQube.
+Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
 Runs `eslint` to lint the source code and fails if there are any errors or warnings. The files to lint default to all files with an `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte` extension inside `src` and can be set by the `lint-file-ext` task parameter. The amount of allowed warnings defaults to 0 and can be set by the `max-lint-warnings` task parameter.
 

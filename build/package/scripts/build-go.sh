@@ -96,42 +96,35 @@ else
 fi
 
 echo "Testing ..."
-if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
-  echo "Test artifacts already present, skipping tests ..."
-  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out" coverage.out
+if [ -n "${PRE_TEST_SCRIPT}" ]; then
+  echo "Executing pre-test script ..."
+  ./"${PRE_TEST_SCRIPT}"
+fi
+GOPKGS=$(go list ./... | grep -v /vendor)
+set +e
+rm coverage.out test-results.txt report.xml &>/dev/null
+go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
+exitcode=$?
+set -e
+df -h "$ROOT_DIR"
+if [ -f test-results.txt ]; then
+    cat test-results.txt
+    go-junit-report < test-results.txt > report.xml
+    mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+    cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 else
-  if [ -n "${PRE_TEST_SCRIPT}" ]; then
-    echo "Executing pre-test script ..."
-    ./"${PRE_TEST_SCRIPT}"
-  fi
-  GOPKGS=$(go list ./... | grep -v /vendor)
-  set +e
-  rm coverage.out test-results.txt report.xml &>/dev/null
-  go test -v -coverprofile=coverage.out "$GOPKGS" > test-results.txt 2>&1
-  exitcode=$?
-  set -e
-  df -h "$ROOT_DIR"
-  if [ -f test-results.txt ]; then
-      cat test-results.txt
-      go-junit-report < test-results.txt > report.xml
-      mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-      cp report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
-  else
-    echo "No test results found"
-    exit 1
-  fi
-  if [ -f coverage.out ]; then
-      mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-      cp coverage.out "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out"
-  else
-    echo "No code coverage found"
-    exit 1
-  fi
-  if [ $exitcode != 0 ]; then
-    exit $exitcode
-  fi
+  echo "No test results found"
+  exit 1
+fi
+if [ -f coverage.out ]; then
+    mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+    cp coverage.out "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage.out"
+else
+  echo "No code coverage found"
+  exit 1
+fi
+if [ $exitcode != 0 ]; then
+  exit $exitcode
 fi
 
 echo "Building ..."

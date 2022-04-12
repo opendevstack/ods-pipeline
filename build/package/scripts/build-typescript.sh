@@ -127,26 +127,17 @@ if [ "${COPY_NODE_MODULES}" = true ]; then
 fi
 
 echo "Testing ..."
-if [ -f "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" ]; then
-  echo "Test artifacts already present, skipping tests ..."
-  # Copy artifacts to working directory so that the SonarQube scanner can pick them up later.
-  cp "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml" report.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml" clover.xml
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json" coverage-final.json
-  cp "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info" lcov.info
-else
-  npm run test
+npm run test
 
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-  cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
+cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-  cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
+cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-  cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-  cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
-fi
+cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 
 # Doing this earlier can confuse jest.
 # test build_typescript_app_with_custom_build_directory fails with
