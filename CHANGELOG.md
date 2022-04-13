@@ -25,6 +25,7 @@ listed in the changelog.
 - Allow to cache dependencies and support for caching go dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
 - Support node production builds in docker context. It is now required that both `package.json` and `package-lock.json` are available to the build. ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
 - Allow to select which tasks (and related BC/IS resources) to install ([#486](https://github.com/opendevstack/ods-pipeline/issues/486))
+- Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461). See the `docs/adr/20220314-caching-build-tasks.md`for details.
 - Upload artifacts of unsuccessful pipeline runs as well ([#379](https://github.com/opendevstack/ods-pipeline/issues/379))
 
 ### Changed

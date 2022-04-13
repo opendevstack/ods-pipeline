@@ -46,6 +46,13 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: cache-build
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
+        a build can be skipped if the `working-dir` contents did not change.
+        For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
+      type: string
+      default: "false"
     - name: max-line-length
       description: Maximum line length.
       type: string
@@ -62,6 +69,9 @@ spec:
       description: Whether to skip the SonarQube analysis or not.
       type: string
       default: "false"
+  results:
+    - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
+      name: build-reused-from-location
   {{- with ((.Values.python).sidecars) }}
   sidecars:
     {{- toYaml . | nindent 4 }}
@@ -98,14 +108,40 @@ spec:
       resources:
         {{- (.Values.python).resources | default dict | toYaml | nindent 8 }}
       script: |
-
+        supply-sonar-project-properties-default
+        echo -n "" > $(results.build-reused-from-location.path)
+        cache_build_key=python
+        if copy-build-if-cached \
+          --cache-build=$(params.cache-build) \
+          --cache-build-key="$cache_build_key" \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG} ; then
+          exit 0
+        fi
         # build-python is build/package/scripts/build-python.sh.
+        set +e 
         build-python \
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
+        if [ "$(params.cache-build)" == "true" ]; then
+          cache-build \
+            --cache-build-key="$cache_build_key" \
+            --cache-location-used-path=$(results.build-reused-from-location.path) \
+            --working-dir=$(params.working-dir) \
+            --output-dir=$(params.output-dir) \
+            --debug=${DEBUG}
+        fi
       workingDir: $(workspaces.source.path)
     {{- include "sonar-step" . | indent 4}}
   workspaces:

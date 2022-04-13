@@ -15,14 +15,14 @@ urlencode() {
 
 copyLintReport() {
   cat eslint-report.txt
-  mkdir -p "${ROOT_DIR}/.ods/artifacts/lint-reports"
-  cp eslint-report.txt "${ROOT_DIR}/.ods/artifacts/lint-reports/${ARTIFACT_PREFIX}report.txt"
+  mkdir -p "${tmp_artifacts_dir}/lint-reports"
+  cp eslint-report.txt "${tmp_artifacts_dir}/lint-reports/${ARTIFACT_PREFIX}report.txt"
 }
 
 # the copy commands are based on GNU cp tools
 # On a mac `brew install coreutils` gives `g` prefixed cmd line tools such as gcp
 # to use these define env variable GNU_CP=gcp before invoking this script.
-CP="${GNU_CP:-cp}"  
+CP="${GNU_CP:-cp}"
 BUILD_DIR="dist"
 OUTPUT_DIR="docker"
 WORKING_DIR="."
@@ -64,6 +64,10 @@ if [ "${DEBUG}" == "true" ]; then
 fi
 
 ROOT_DIR=$(pwd)
+tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
+# tmp_artifacts_dir enables keeping artifacts created by this build 
+# separate from other builds in the same repo to facilitate caching.
+rm -rf "${tmp_artifacts_dir}"
 if [ "${WORKING_DIR}" != "." ]; then
   cd "${WORKING_DIR}"
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
@@ -86,11 +90,11 @@ echo "package-*.json checks ..."
 if [ ! -f package.json ]; then
   echo "File package.json not found"
   exit 1
-fi 
+fi
 if [ ! -f package-lock.json ]; then
   echo "File package-lock.json not found"
   exit 1
-fi 
+fi
 
 echo "Installing dependencies ..."
 npm ci --ignore-scripts
@@ -112,32 +116,32 @@ fi
 echo "Building ..."
 npm run build
 # Copying most build output before testing so
-# that additional modules which may be installed by testing 
+# that additional modules which may be installed by testing
 # is not included.
 # However copying package.json too early can confuse the tests.
 mkdir -p "${OUTPUT_DIR}"
 echo "Copying contents of ${BUILD_DIR} into ${OUTPUT_DIR}/dist ..."
 # see https://unix.stackexchange.com/questions/228597/how-to-copy-a-folder-recursively-in-an-idempotent-way-using-cp
-"$CP" -r "${BUILD_DIR}/." "${OUTPUT_DIR}/dist" 
+"$CP" -r "${BUILD_DIR}/." "${OUTPUT_DIR}/dist"
 
 if [ "${COPY_NODE_MODULES}" = true ]; then
   echo "Copying node_modules to ${OUTPUT_DIR}/dist/node_modules ..."
-  # note "${OUTPUT_DIR}/dist" exists now and node_modules name will be maintained. 
+  # note "${OUTPUT_DIR}/dist" exists now and node_modules name will be maintained.
   "$CP"  -r node_modules "${OUTPUT_DIR}/dist"
 fi
 
 echo "Testing ..."
 npm run test
 
-mkdir -p "${ROOT_DIR}/.ods/artifacts/xunit-reports"
-cp build/test-results/test/report.xml "${ROOT_DIR}/.ods/artifacts/xunit-reports/${ARTIFACT_PREFIX}report.xml"
+mkdir -p "${tmp_artifacts_dir}/xunit-reports"
+cp build/test-results/test/report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 
-mkdir -p "${ROOT_DIR}/.ods/artifacts/code-coverage"
-cp build/coverage/clover.xml "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}clover.xml"
+mkdir -p "${tmp_artifacts_dir}/code-coverage"
+cp build/coverage/clover.xml "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}clover.xml"
 
-cp build/coverage/coverage-final.json "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
+cp build/coverage/coverage-final.json "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage-final.json"
 
-cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT_PREFIX}lcov.info"
+cp build/coverage/lcov.info "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 
 # Doing this earlier can confuse jest.
 # test build_typescript_app_with_custom_build_directory fails with
@@ -150,6 +154,3 @@ cp build/coverage/lcov.info "${ROOT_DIR}/.ods/artifacts/code-coverage/${ARTIFACT
 # to copy this earlier
 echo "Copying package.json and package-lock.json to ${OUTPUT_DIR}/dist ..."
 cp package.json package-lock.json "${OUTPUT_DIR}/dist"
-
-
-supply-sonar-project-properties-default

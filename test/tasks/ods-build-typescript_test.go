@@ -87,6 +87,55 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 				},
 			},
+			"build typescript app in subdirectory with build caching": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					// Setup subdir in "monorepo"
+					subdir := "ts-src"
+					createAppInSubDirectory(t, wsDir, subdir, "typescript-sample-app")
+
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"sonar-quality-gate": "true",
+						"working-dir":        subdir,
+						"output-dir":         "../docker",
+						"cache-build":        "true",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					subdir := "ts-src"
+
+					checkFilesExist(t, wsDir,
+						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-clover.xml", subdir)),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage-final.json", subdir)),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-lcov.info", subdir)),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
+						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
+						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
+					)
+
+					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+						wsDir := ctxt.Workspaces["source"]
+						tasktesting.RemoveAll(t, wsDir, "docker/dist")
+						tasktesting.RemoveAll(t, wsDir, "dist")
+					},
+					WantRunSuccess: true,
+				}},
+			},
 			"fail linting typescript app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-lint-error"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -124,6 +173,7 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
 						"copy-node-modules": "true",
+						"cache-build":       "true",
 					}
 				},
 				WantRunSuccess: true,
@@ -143,6 +193,16 @@ func TestTaskODSBuildTypescript(t *testing.T) {
 						"docker/dist/package-lock.json",
 					)
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+						wsDir := ctxt.Workspaces["source"]
+						tasktesting.RemoveAll(t, wsDir, "docker/dist")
+						tasktesting.RemoveAll(t, wsDir, "dist")
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"build typescript app with custom build directory": {
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app-build-dir"},

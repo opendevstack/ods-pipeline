@@ -20,15 +20,20 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
 	odsCacheDirName             = ".ods-cache"
 	odsCacheDependenciesDirName = "deps"
+	odsCacheBuildOutputDirName  = "build-task"
+	odsCacheLastUsedTimestamp   = ".ods-last-used-stamp"
 )
 
 type FileSystemBase struct {
@@ -63,7 +68,7 @@ func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) 
 // there would likely be an area where the build output is kept
 // per git-sha of the working-dir. In this case a suitable cleanup
 // might delete such areas after a certain time (see PR #423).
-func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
+func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) error {
 	_, err := fsb.filesystem.Open(odsCacheDirName)
 	if err != nil && os.IsNotExist(err) {
 		return nil
@@ -98,8 +103,96 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc) error {
 			return remove
 		}
 	}
-	return deleteDirRecursiveWithSkip(
+	fnRemoveWithBase := withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove)
+	err = deleteDirRecursiveWithSkip(
 		fsCache,
 		dirEntryFunc,
-		withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove))
+		fnRemoveWithBase)
+	if err != nil {
+		return err
+	}
+	keepTimestamp := time.Now().AddDate(0, 0, -1*expirationDays)
+	// now delete build task cache
+	_, err = cleanupNotRecentlyUsed(fsCache, odsCacheBuildOutputDirName, keepTimestamp,
+		fnRemoveWithBase)
+	return err
+}
+
+// build scripts cache their build to the following dir:
+// prior_output_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
+// - root is at .ods-cache
+// - parentDir is build-task which we consider at level 0
+// So the dir with the marker files are expected at level 2
+// The following method cleans such directories if they have not
+// been recently used.
+func cleanupNotRecentlyUsed(
+	root fs.FS,
+	parentDir string,
+	keepTimestamp time.Time,
+	fnRemove RemoveFunc,
+) (int, error) {
+	return cleanupNotRecentlyUsedMaxLevel(root, parentDir, keepTimestamp, fnRemove, 1)
+}
+
+func cleanupNotRecentlyUsedMaxLevel(
+	root fs.FS,
+	parentDir string,
+	keepTimestamp time.Time,
+	fnRemove RemoveFunc,
+	maxLevel int,
+) (int, error) {
+	level := strings.Count(parentDir, string(os.PathSeparator)) // https://stackoverflow.com/a/33619038
+	count := 0
+	dirEntries, err := fs.ReadDir(root, parentDir)
+	if err != nil && os.IsNotExist(err) {
+		return count, nil
+	}
+	if err != nil {
+		return count, fmt.Errorf("could not read files in %s: %w", parentDir, err)
+	}
+	// Loop over the directory's files and remove stray files and
+	// directories if they are not recently used or incomplete
+	for _, f := range dirEntries {
+		count += 1
+		path := filepath.Join(parentDir, f.Name())
+		clean := false
+		enterDir := false
+		if f.IsDir() {
+			timestamp := filepath.Join(path, odsCacheLastUsedTimestamp)
+			fileInfo, err := fs.Stat(root, timestamp)
+			if err != nil && os.IsNotExist(err) {
+				if level < maxLevel {
+					enterDir = true
+				} else {
+					// This code is expected to not run at the same time as build tasks.
+					// Therefore no coordination for the case is needed where a build
+					// task populates a folder, while this code wants to delete it.
+					//
+					// As a consequence we can clean dirs without marker file
+					// which will clean up dirs that have only been partially written.
+					// we could use the creation time of the dir to not do this
+					// right away but this is not yet implemented.
+					clean = true
+				}
+			} else {
+				lastUsed := fileInfo.ModTime()
+				clean = lastUsed.Before(keepTimestamp)
+			}
+		} else {
+			clean = true
+		}
+		if clean {
+			log.Printf("Cleaning %s", path)
+			if err = fnRemove(path, f.IsDir()); err != nil {
+				return count, err
+			}
+		} else if enterDir {
+			enterCount, err := cleanupNotRecentlyUsedMaxLevel(root, path, keepTimestamp, fnRemove, maxLevel)
+			if err != nil {
+				return count, fmt.Errorf("could not enter directory %s: %w", path, err)
+			}
+			count += enterCount
+		}
+	}
+	return count, nil
 }

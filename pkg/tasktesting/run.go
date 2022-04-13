@@ -26,16 +26,25 @@ type TestOpts struct {
 	AlwaysKeepTmpWorkspaces bool
 }
 
+type TaskRunCase struct {
+	WantRunSuccess bool
+	WantSetupFail  bool
+	PreRunFunc     func(t *testing.T, ctxt *TaskRunContext)
+	PostRunFunc    func(t *testing.T, ctxt *TaskRunContext)
+}
+
 type TestCase struct {
 	// Map workspace name of task to local directory under test/testdata/workspaces.
 	WorkspaceDirMapping map[string]string
 	TaskParamsMapping   map[string]string
-	WantRunSuccess      bool
-	WantSetupFail       bool
-	PreRunFunc          func(t *testing.T, ctxt *TaskRunContext)
-	PostRunFunc         func(t *testing.T, ctxt *TaskRunContext)
-	CleanupFunc         func(t *testing.T, ctxt *TaskRunContext)
-	Timeout             time.Duration
+	// The fields until AdditionalRuns are the same as for AdditionalRuns TaskRunCase so that single task tests do not require another level. The goal is to only require the extra level if needed. Could this be avoided?
+	WantRunSuccess bool
+	WantSetupFail  bool
+	PreRunFunc     func(t *testing.T, ctxt *TaskRunContext)
+	PostRunFunc    func(t *testing.T, ctxt *TaskRunContext)
+	CleanupFunc    func(t *testing.T, ctxt *TaskRunContext)
+	AdditionalRuns []TaskRunCase
+	Timeout        time.Duration
 }
 
 type TaskRunContext struct {
@@ -48,33 +57,7 @@ type TaskRunContext struct {
 	CollectedLogs []byte
 }
 
-func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
-	// Set default timeout for running the test
-	if testOpts.Timeout == 0 {
-		testOpts.Timeout = 120 * time.Second
-	}
-
-	taskWorkspaces := map[string]string{}
-	for wn, wd := range tc.WorkspaceDirMapping {
-		tempDir, err := InitWorkspace(wn, wd)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("Workspace is in %s", tempDir)
-		taskWorkspaces[wn] = tempDir
-	}
-
-	testCaseContext := &TaskRunContext{
-		Namespace:  testOpts.Namespace,
-		Clients:    testOpts.Clients,
-		Workspaces: taskWorkspaces,
-		Params:     tc.TaskParamsMapping,
-	}
-
-	if tc.CleanupFunc != nil {
-		defer tc.CleanupFunc(t, testCaseContext)
-	}
-
+func runTask(t *testing.T, testOpts TestOpts, taskWorkspaces map[string]string, testCaseContext *TaskRunContext, tc TaskRunCase) {
 	if tc.PreRunFunc != nil {
 		tc.PreRunFunc(t, testCaseContext)
 	}
@@ -126,11 +109,60 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	if tc.PostRunFunc != nil {
 		tc.PostRunFunc(t, testCaseContext)
 	}
+}
+
+func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
+
+	// Set default timeout for running the test
+	if testOpts.Timeout == 0 {
+		testOpts.Timeout = 120 * time.Second
+	}
+
+	taskWorkspaces := map[string]string{}
+	for wn, wd := range tc.WorkspaceDirMapping {
+		tempDir, err := InitWorkspace(wn, wd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("Workspace is in %s", tempDir)
+		taskWorkspaces[wn] = tempDir
+	}
+
+	testCaseContext := &TaskRunContext{
+		Namespace:  testOpts.Namespace,
+		Clients:    testOpts.Clients,
+		Workspaces: taskWorkspaces,
+		Params:     tc.TaskParamsMapping,
+	}
+
+	if tc.CleanupFunc != nil {
+		defer tc.CleanupFunc(t, testCaseContext)
+	}
+
+	tasks := []TaskRunCase{}
+	tasks = append(tasks, TaskRunCase{
+		WantRunSuccess: tc.WantRunSuccess,
+		WantSetupFail:  tc.WantSetupFail,
+		PreRunFunc:     tc.PreRunFunc,
+		PostRunFunc:    tc.PostRunFunc,
+	})
+	for _, ttc := range tc.AdditionalRuns {
+		if ttc.PostRunFunc == nil {
+			ttc.PostRunFunc = tc.PostRunFunc
+		}
+		if ttc.PreRunFunc == nil {
+			ttc.PreRunFunc = tc.PreRunFunc
+		}
+		tasks = append(tasks, ttc)
+	}
+	for _, ttc := range tasks {
+		runTask(t, testOpts, taskWorkspaces, testCaseContext, ttc)
+	}
 
 	if !testOpts.AlwaysKeepTmpWorkspaces {
 		// Clean up only if test is successful
 		for _, wd := range taskWorkspaces {
-			err = os.RemoveAll(wd)
+			err := os.RemoveAll(wd)
 			if err != nil {
 				t.Fatal(err)
 			}

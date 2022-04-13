@@ -57,12 +57,66 @@ func TestTaskODSBuildPython(t *testing.T) {
 					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
 					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
-
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
 				},
+			},
+			"build python fastapi app with build caching": {
+				WorkspaceDirMapping: map[string]string{"source": "python-fastapi-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"sonar-quality-gate": "true",
+						"cache-build":        "true",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+
+					checkFilesExist(t, wsDir,
+						"docker/app/main.py",
+						"docker/app/requirements.txt",
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+					)
+
+					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					wantContains := string(wantContainsBytes)
+
+					wantContains = strings.ReplaceAll(wantContains, "\t", "")
+					wantContains = strings.ReplaceAll(wantContains, "\n", "")
+					wantContains = strings.ReplaceAll(wantContains, " ", "")
+
+					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
+					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+
+					// This is not available when build skipping as the default is
+					// supplied on the second repeat.
+					// Not sure whether the check is significant in the first place.
+					// wantLogMsg := "No sonar-project.properties present, using default:"
+					// if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+					// 	t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+					// }
+				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"build python fastapi app in subdirectory": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},

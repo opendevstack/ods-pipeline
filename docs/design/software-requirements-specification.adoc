@@ -110,7 +110,7 @@ a| The task shall store context information for each checked out repository (suc
 | The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
 
 | SRS-TASK-START-6
-| The task shall support caching. Caching shall enable persisting build dependencies.
+| The task shall support caching. Caching shall enable persisting build dependencies. Caching shall enable to reuse build outputs and artifacts if a build tasks runs when the associated working directory has not changed.
 |===
 
 ==== Task `ods-finish`
@@ -160,6 +160,9 @@ a| The task shall build a Go module based Go binary.
 
 | SRS-TASK-BUILD-GO-6
 | See SRS-TASK-SHARED-2.
+
+| SRS-TASK-BUILD-GO-7
+| See SRS-TASK-SHARED-3.
 
 |===
 
@@ -211,6 +214,9 @@ a| The task shall build a Python application.
 | SRS-TASK-BUILD-PYTHON-5
 | See SRS-TASK-SHARED-2.
 
+| SRS-TASK-BUILD-PYTHON-6
+| See SRS-TASK-SHARED-3.
+
 |===
 
 ==== Task `ods-build-typescript`
@@ -232,6 +238,9 @@ a| The task shall build a TypeScript application.
 
 | SRS-TASK-BUILD-TYPESCRIPT-4
 | See SRS-TASK-SHARED-2.
+
+| SRS-TASK-BUILD-TYPESCRIPT-5
+| See SRS-TASK-SHARED-3.
 
 |===
 
@@ -297,6 +306,9 @@ a| The task shall analyze the source code statically using SonarQube.
 a| The task shall be able to run in a subdirectory of the checked out repository.
 
 * Artifacts and SonarQube project names shall reflect the subdirectory to avoid name clashes.
+
+| SRS-TASK-SHARED-3
+a| The task shall be able to optionally use a build output and report cache so that future execution of build scripts can be skipped if the subdirectory of the checked out repository did not change.
 
 |===
 

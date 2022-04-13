@@ -71,6 +71,13 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	return ctxt
 }
 
+func RemoveAll(t *testing.T, path ...string) {
+	f := filepath.Join(path...)
+	if err := os.RemoveAll(f); err != nil {
+		t.Fatalf("could not remove %s, %s", f, err)
+	}
+}
+
 // SetupBitbucketRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
 func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string) *pipelinectxt.ODSContext {
 	initAndCommitOrFatal(t, wsDir)
@@ -94,8 +101,7 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 			t.Fatalf("could not create %s: %s", pipelinectxt.BaseDir, err)
 		}
 	}
-	err := writeFile(filepath.Join(wsDir, ".gitignore"), pipelinectxt.BaseDir+"/")
-	if err != nil {
+	if err := pipelinectxt.WriteGitIgnore(filepath.Join(wsDir, ".gitignore")); err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
 	stdout, stderr, err := command.RunInDir("git", []string{"init"}, wsDir)
