@@ -1,0 +1,12 @@
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+
+ARG toscaOrchestratorUrl
+
+ENV TOSCA_CISERVICE_VERSION="v0.3.4"
+
+RUN curl -L -o /usr/bin/toscactl "https://github.com/Boehringer-Ingelheim/toscaci/releases/download/${TOSCA_CISERVICE_VERSION}/toscactl-linux-amd64" && \
+    chmod +x /usr/bin/toscactl && \
+    microdnf install gettext && microdnf clean all
+
+RUN mkdir -p /etc/tosca && \
+    echo "orchestratorURL: ${toscaOrchestratorUrl}\ntestTimeout: 30m" > /etc/tosca/config.yml
