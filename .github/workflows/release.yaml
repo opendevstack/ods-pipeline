@@ -11,8 +11,21 @@ env:
   IMAGE_BASE: ${{ github.repository }}
 
 jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - id: createImageTag
+        name: Create image tag
+        run: |
+          IMAGE_TAG=$(echo ${{ github.event.release.tag_name }} | sed 's/v//')
+          echo "::set-output name=imageTag::$IMAGE_TAG"
+    outputs:
+      imageTag: ${{ steps.createImageTag.outputs.imageTag }}
+
   build:
     name: Build and release images
+    needs: setup
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -49,4 +62,4 @@ jobs:
           context: .
           file: build/package/Dockerfile.${{ matrix.image }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/ods-${{ matrix.image }}:${{ github.event.release.tag_name }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/ods-${{ matrix.image }}:${{ needs.setup.outputs.imageTag }}
