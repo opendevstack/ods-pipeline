@@ -92,7 +92,7 @@ spec:
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-helm:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-helm:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: DEBUG
           valueFrom:

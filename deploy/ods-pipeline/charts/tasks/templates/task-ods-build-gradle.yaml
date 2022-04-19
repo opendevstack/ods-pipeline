@@ -146,7 +146,7 @@ spec:
   steps:
     - name: build-gradle-binary
       # Image is built from build/package/Dockerfile.gradle-toolset.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-gradle-toolset:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-gradle-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: DEBUG
           valueFrom:

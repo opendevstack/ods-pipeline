@@ -8,7 +8,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-go-toolset:{{.Values.global.imageTag}}'
+      name: 'ods-go-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -18,7 +18,7 @@ spec:
     dockerStrategy:
       buildArgs:
         - name: imageTag
-          value: '{{.Values.global.imageTag}}'
+          value: '{{.Values.global.imageTag | default .Chart.AppVersion}}'
   source:
     dockerfile: |-
       {{- .Files.Get "docker/Dockerfile.go-toolset" | nindent 6}}
