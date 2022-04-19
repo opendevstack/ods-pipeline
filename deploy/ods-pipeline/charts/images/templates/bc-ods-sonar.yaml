@@ -7,7 +7,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-sonar:{{.Values.global.imageTag}}'
+      name: 'ods-sonar:{{.Values.global.imageTag | default .Chart.AppVersion}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -17,7 +17,7 @@ spec:
     dockerStrategy:
       buildArgs:
         - name: imageTag
-          value: '{{.Values.global.imageTag}}'
+          value: '{{.Values.global.imageTag | default .Chart.AppVersion}}'
   source:
     dockerfile: |-
       {{- .Files.Get "docker/Dockerfile.sonar" | nindent 6}}

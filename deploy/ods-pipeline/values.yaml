@@ -2,8 +2,8 @@
 # UMBRELLA                                #
 # ####################################### #
 global:
-  # Image tag to use for images referenced by tasks.
-  imageTag: 0.3.0
+  # Image tag to use for images referenced by tasks (defaults to the chart appVersion).
+  imageTag: ''
   # Suffix to append to the task name.
   taskSuffix: -v0-3-0
   # Custom task kind (defaults to "Task")

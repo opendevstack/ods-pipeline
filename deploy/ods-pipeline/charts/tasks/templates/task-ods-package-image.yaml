@@ -85,7 +85,7 @@ spec:
   steps:
     - name: build-and-push-image
       # Image is built from build/package/Dockerfile.buildah.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-buildah:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-buildah:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
