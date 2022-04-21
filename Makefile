@@ -42,16 +42,20 @@ docs: ## Render documentation for tasks.
 	go run cmd/docs/main.go
 .PHONY: docs
 
-build-artifact-download: build-artifact-download-linux build-artifact-download-darwin build-artifact-download-windows ## Build artifact-download binary for each supported OS/arch.
+build-artifact-download: build-artifact-download-linux build-artifact-download-darwin-amd64 build-artifact-download-darwin-arm64 build-artifact-download-windows ## Build artifact-download binary for each supported OS/arch.
 .PHONY: build-artifact-download
 
 build-artifact-download-linux: ## Build artifact-download Linux binary.
 	cd scripts && ./build-artifact-download.sh --go-os=linux --go-arch=amd64
 .PHONY: build-artifact-download-linux
 
-build-artifact-download-darwin: ## Build artifact-download macOS binary.
+build-artifact-download-darwin-amd64: ## Build artifact-download macOS binary (Intel).
 	cd scripts && ./build-artifact-download.sh --go-os=darwin --go-arch=amd64
-.PHONY: build-artifact-download-darwin
+.PHONY: build-artifact-download-darwin-amd64
+
+build-artifact-download-darwin-arm64: ## Build artifact-download macOS binary (Apple Silicon).
+	cd scripts && ./build-artifact-download.sh --go-os=darwin --go-arch=arm64
+.PHONY: build-artifact-download-darwin-arm64
 
 build-artifact-download-windows: ## Build artifact-download Windows binary.
 	cd scripts && ./build-artifact-download.sh --go-os=windows --go-arch=amd64

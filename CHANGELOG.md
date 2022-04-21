@@ -12,6 +12,7 @@ listed in the changelog.
 ### Added
 
 - Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461). See the `docs/adr/20220314-caching-build-tasks.md`for details.
+- Provide Apple silicon builds of artifact-download binary ([#510](https://github.com/opendevstack/ods-pipeline/issues/510)
 
 ### Changed
 
