@@ -9,6 +9,12 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461). See the `docs/adr/20220314-caching-build-tasks.md`for details.
+- Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))
+- Remove test skipping from TypeScript build task ([#494](https://github.com/opendevstack/ods-pipeline/issues/494))
+
 ### Changed
 
 - Default imageTag to appVersion + release images without leading v ([#504](https://github.com/opendevstack/ods-pipeline/issues/504))
@@ -29,7 +35,6 @@ listed in the changelog.
 - Allow to cache dependencies and support for caching go dependencies ([#147](https://github.com/opendevstack/ods-pipeline/issues/147)). See also proposal on caching ([#412](https://github.com/opendevstack/ods-pipeline/pull/412))
 - Support node production builds in docker context. It is now required that both `package.json` and `package-lock.json` are available to the build. ([#357](https://github.com/opendevstack/ods-pipeline/issues/357))
 - Allow to select which tasks (and related BC/IS resources) to install ([#486](https://github.com/opendevstack/ods-pipeline/issues/486))
-- Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461). See the `docs/adr/20220314-caching-build-tasks.md`for details.
 - Upload artifacts of unsuccessful pipeline runs as well ([#379](https://github.com/opendevstack/ods-pipeline/issues/379))
 
 ### Changed
@@ -53,8 +58,6 @@ listed in the changelog.
 - Update `golangci-lint` from 1.41 to 1.45 ([#497](https://github.com/opendevstack/ods-pipeline/pull/497))
 - Improve build time of subsequent local container image builds ([#499](https://github.com/opendevstack/ods-pipeline/pull/499))
 - Refactor pipeline manager. This moves the endpoint of the webhook receiver to `/bitbucket`, as a consequence every webhook configuration in Bitbucket needs to be updated ([#491](https://github.com/opendevstack/ods-pipeline/issues/491))
-- Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))
-- Remove test skipping from TypeScript build task ([#494](https://github.com/opendevstack/ods-pipeline/issues/494))
 
 ### Fixed
 - Cannot enable debug mode in some tasks ([#377](https://github.com/opendevstack/ods-pipeline/issues/377))
