@@ -46,15 +46,15 @@ build-artifact-download: build-artifact-download-linux build-artifact-download-d
 .PHONY: build-artifact-download
 
 build-artifact-download-linux: ## Build artifact-download Linux binary.
-	cd cmd/artifact-download && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-linux-amd64
+	cd scripts && ./build-artifact-download.sh --go-os=linux --go-arch=amd64
 .PHONY: build-artifact-download-linux
 
 build-artifact-download-darwin: ## Build artifact-download macOS binary.
-	cd cmd/artifact-download && GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-darwin-amd64
+	cd scripts && ./build-artifact-download.sh --go-os=darwin --go-arch=amd64
 .PHONY: build-artifact-download-darwin
 
 build-artifact-download-windows: ## Build artifact-download Windows binary.
-	cd cmd/artifact-download && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -gcflags "all=-trimpath=$(CURDIR);$(shell go env GOPATH)" -o artifact-download-windows-amd64.exe
+	cd scripts && ./build-artifact-download.sh --go-os=windows --go-arch=amd64
 .PHONY: build-artifact-download-windows
 
 ##@ Testing

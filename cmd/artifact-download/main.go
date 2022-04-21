@@ -31,6 +31,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// Version information injected at build time.
+var Version string
+var GitCommit string
+
 // options configures the program.
 // The struct is filled from the flags this program handles.
 type options struct {
@@ -73,7 +77,8 @@ func main() {
 	flag.Parse()
 
 	if opts.version {
-		fmt.Println("0.3.0")
+		fmt.Println("Version:", Version)
+		fmt.Println("Commit: ", GitCommit)
 		os.Exit(0)
 	}
 
