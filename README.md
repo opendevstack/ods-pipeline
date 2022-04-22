@@ -14,19 +14,23 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 
 ## Documentation
 
+### Getting Started
 * [Installation & Updating](/docs/installation.adoc)
 * [Getting Started](/docs/getting-started.adoc)
-* [ODS.YAML Reference](/docs/ods-configuration.adoc)
-* [Task Reference](/docs/tasks)
+* [Example Project](/docs/example-project.adoc)
+
+### Technical Reference
+* [Configuration (ods.yaml)](/docs/ods-configuration.adoc)
+* [Tasks](/docs/tasks)
+
+### How-To Guides
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)
 * [Accessing artifacts](/docs/accessing-artifacts.adoc)
 * [Debugging](/docs/debugging.adoc)
 * [Authoring Tasks](/docs/authoring-tasks.adoc)
-* [Example Project](/docs/example-project.adoc)
 * [FAQ](https://github.com/opendevstack/ods-pipeline/wiki/FAQ)
 
-This repository also hosts the design documents that describe ODS pipeline more formally. Those design documents provide more detail and background on goals, requirements and architecture decisions.
-
+### Background Information
 * [Stakeholder Requirements](/docs/design/stakeholder-requirements.adoc)
 * [Software Architecture](/docs/design/software-architecture.adoc)
 * [Software Requirements Specification](/docs/design/software-requirements-specification.adoc)
