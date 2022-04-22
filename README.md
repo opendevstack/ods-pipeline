@@ -27,7 +27,7 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)
 * [Accessing artifacts](/docs/accessing-artifacts.adoc)
 * [Debugging](/docs/debugging.adoc)
-* [Authoring Tasks](/docs/authoring-tasks.adoc)
+* [Authoring your own tasks](/docs/authoring-tasks.adoc)
 * [FAQ](https://github.com/opendevstack/ods-pipeline/wiki/FAQ)
 
 ### Background Information
