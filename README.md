@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This repository provides an alternative OpenDevStack CI/CD pipeline based on OpenShift Pipelines. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
+ODS Pipeline provides a  CI/CD pipeline based on OpenShift Pipelines as an alternative to Jenkins. This repository contains everything that relates to it, such as Tekton tasks, container images, Go packages, services, documentation, ...
 
 The [ODS Pipeline Introduction](/docs/introduction.adoc) describes what ODS pipeline is and how it works. It is important to understand this before looking at further documentation or any other repository content.
 
@@ -16,12 +16,16 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 
 ### Getting Started
 * [Installation & Updating](/docs/installation.adoc)
-* [Getting Started](/docs/getting-started.adoc)
+* [Add ODS Pipeline to a repository](/docs/add-to-repository.adoc)
+* [Convert an ODS quickstarter based component](/docs/convert-quickstarter-component.adoc)
 * [Example Project](/docs/example-project.adoc)
 
 ### Technical Reference
-* [Configuration (ods.yaml)](/docs/ods-configuration.adoc)
-* [Tasks](/docs/tasks)
+* [Repository configuration (ods.yaml)](/docs/ods-configuration.adoc)
+* Plumbing tasks: [ods-start](/docs/tasks/ods-start.adoc), [ods-finish](/docs/tasks/ods-finish.adoc)
+* Build tasks: [ods-build-go](/docs/tasks/ods-build-go.adoc), [ods-build-gradle](/docs/tasks/ods-build-gradle.adoc), [ods-build-python](/docs/tasks/ods-build-python.adoc), [ods-build-typescript](/docs/tasks/ods-build-typescript.adoc)
+* Package tasks: [ods-package-image](/docs/tasks/ods-package-image.adoc)
+* Deploy tasks: [ods-deploy-helm](/docs/tasks/ods-deploy-helm.adoc)
 
 ### How-To Guides
 * [Working with secrets in Helm](/docs/helm-secrets.adoc)

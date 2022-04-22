@@ -1,0 +1,96 @@
+= Adding ODS Pipeline to a repository
+
+This guide explains how you can start to use ODS pipeline for your repository. It is assumed you have read the link:introduction.adoc[introduction] and have aleady link:installation.adoc[installed] ODS pipeline in an OpenShift project.
+
+The following uses an Go application for demonstration purposes, however the general steps apply for any other technology as well:
+
+1. Add `ods.yaml`
+2. Create Helm Chart
+3. Configure Webhook
+
+TIP: If your repository was provisioned by an ODS quickstarter, you might want to follow the link:convert-quickstarter-component.adoc[convert an ODS quickstarter based component] instructions instead.
+
+== Add `ods.yaml`
+
+Add an `ods.yaml` file like the following to the root of the repository:
+
+.ods.yaml
+[source,yaml]
+----
+branchToEnvironmentMapping:
+- branch: master
+  environment: dev
+
+environments:
+- name: dev
+  namespace: foo-dev
+  stage: dev
+
+pipeline:
+  tasks:
+  - name: backend-build-go
+    taskRef:
+      kind: Task
+      name: ods-build-go-v0-3-0
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-package-image
+    taskRef:
+      kind: Task
+      name: ods-package-image-v0-3-0
+    runAfter:
+    - backend-build-go
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: backend-deploy
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm-v0-3-0
+    runAfter:
+    - backend-package-image
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
+
+The only Go specific task is `ods-build-go-v0-3-0`, if you use another technology, exchange the task for another one such as `ods-build-gradle-v0-3-0`.
+
+The `ods-package-image-v0-3-0` task assumes the Docker context in the `docker` directory, and the `Dockerfile` located inside that folder. Therefore, create a directory `docker` and create a `Dockerfile` inside like this one:
+
+.Dockerfile
+[source]
+----
+FROM alpine
+
+COPY app app
+
+EXPOSE 8080
+
+CMD ["./app"]
+----
+
+NOTE: `ods-build-go-v0-3-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-3-0` task.
+
+== Create Helm Chart
+
+The `ods-deploy-helm-v0-3-0` requires a Helm chart to be present to deploy the Kubernetes resources for the application. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository].
+
+== Configure Webhook
+
+The final step is to create a Bitbucket webhook pointing to the ODS pipeline installation. To do this, go to "Repository Settings > Webhooks" and create a new webhook:
+
+* "Name": choose any name you wish, e.g. `ods-pipeline`
+* "URL": enter the URL of the route of your event listener, followed by `/bitbucket`, e.g. `https://ods-pipeline.example.com/bitbucket`
+* "Secret": enter the value of the `secret` field in the OpenShift `ods-bitbucket-webhook` Secret.
+
+Select the "Repository: Push" and "Pull request: Opened" events and save the configuration.
+
+Once both `ods.yaml` and webhook configuration exist, any push in that repo will trigger the pipeline described in `ods.yaml`.
+
+== Next Steps
+
+Once you have done your first steps, consult the link:ods-configuration.adoc[`ods.yaml` reference] and the link:tasks/[tasks reference] for more information.
+
+For an end-to-end example, have a look at the link:example-project.adoc[example project].
