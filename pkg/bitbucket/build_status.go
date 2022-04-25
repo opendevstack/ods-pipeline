@@ -36,7 +36,7 @@ func (c *Client) BuildStatusCreate(gitCommit string, payload BuildStatusCreatePa
 		return fmt.Errorf("request returned error: %w", err)
 	}
 	if statusCode != 204 {
-		return fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
+		return fmtStatusCodeError(statusCode, response)
 	}
 	return nil
 }
@@ -72,15 +72,13 @@ func (c *Client) BuildStatusList(gitCommit string) (*BuildStatusPage, error) {
 		var buildStatusPage BuildStatusPage
 		err = json.Unmarshal(response, &buildStatusPage)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-			)
+			return nil, wrapUnmarshalError(err, statusCode, response)
 		}
 		return &buildStatusPage, nil
 	case 401:
 		return nil, fmt.Errorf("you are not permitted to get the build status of git commit %s", gitCommit)
 	default:
-		return nil, fmt.Errorf("unexpected status code %d", statusCode)
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 
 }
