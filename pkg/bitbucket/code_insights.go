@@ -66,9 +66,7 @@ func (c *Client) InsightReportCreate(projectKey, repositorySlug, commitID, key s
 	var insightReport InsightReport
 	err = json.Unmarshal(response, &insightReport)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &insightReport, nil
 }

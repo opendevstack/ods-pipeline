@@ -48,9 +48,7 @@ func (c *Client) ProjectCreate(payload ProjectCreatePayload) (*Project, error) {
 	var project Project
 	err = json.Unmarshal(response, &project)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &project, nil
 }

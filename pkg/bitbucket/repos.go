@@ -57,14 +57,17 @@ func (c *Client) RepoList(projectKey string) (*RepoPage, error) {
 		"/rest/api/1.0/projects/%s/repos",
 		projectKey,
 	)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var repoPage RepoPage
 	err = json.Unmarshal(response, &repoPage)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &repoPage, nil
 }
@@ -80,14 +83,15 @@ func (c *Client) RepoCreate(projectKey string, payload RepoCreatePayload) (*Repo
 	}
 	statusCode, response, err := c.post(urlPath, b)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, fmt.Errorf("create %s: %w", projectKey, err)
+	}
+	if statusCode != 201 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var repo Repo
 	err = json.Unmarshal(response, &repo)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &repo, nil
 }

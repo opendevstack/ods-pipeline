@@ -60,14 +60,17 @@ func (c *Client) BranchList(projectKey string, repositorySlug string, params Bra
 		repositorySlug,
 		q.Encode(),
 	)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var branchPage BranchPage
 	err = json.Unmarshal(response, &branchPage)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &branchPage, nil
 }

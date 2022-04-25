@@ -18,6 +18,7 @@ listed in the changelog.
 
 - Default imageTag to appVersion + release images without leading v ([#504](https://github.com/opendevstack/ods-pipeline/issues/504))
 - Display both version and Git commit SHA in `artifact-download -version` ([#507](https://github.com/opendevstack/ods-pipeline/issues/507))
+- Add more context to Bitbucket client errors ([#515](https://github.com/opendevstack/ods-pipeline/issues/515))
 
 ### Removed
 

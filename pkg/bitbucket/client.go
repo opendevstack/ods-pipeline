@@ -100,3 +100,13 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+c.clientConfig.APIToken)
 	return c.httpClient.Do(req)
 }
+
+// wrapUnmarshalError wraps err and includes statusCode/response.
+func wrapUnmarshalError(err error, statusCode int, response []byte) error {
+	return fmt.Errorf("unmarshal: %w. status code: %d, body: %s", err, statusCode, string(response))
+}
+
+// fmtStatusCodeError returns an error containing statusCode/response.
+func fmtStatusCodeError(statusCode int, response []byte) error {
+	return fmt.Errorf("status code: %d, body: %s", statusCode, string(response))
+}
