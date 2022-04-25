@@ -12,13 +12,16 @@ listed in the changelog.
 ### Added
 
 - Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461). See the `docs/adr/20220314-caching-build-tasks.md`for details.
-- Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))
-- Remove test skipping from TypeScript build task ([#494](https://github.com/opendevstack/ods-pipeline/issues/494))
 
 ### Changed
 
 - Default imageTag to appVersion + release images without leading v ([#504](https://github.com/opendevstack/ods-pipeline/issues/504))
 - Display both version and Git commit SHA in `artifact-download -version` ([#507](https://github.com/opendevstack/ods-pipeline/issues/507))
+
+### Removed
+
+- Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))
+- Remove test skipping from TypeScript build task ([#494](https://github.com/opendevstack/ods-pipeline/issues/494))
 
 ## [0.3.0] - 2022-04-07
 
