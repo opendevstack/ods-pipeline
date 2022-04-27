@@ -31,12 +31,14 @@ RUN cd /tmp \
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-ENV SONAR_EDITION="community"
+ENV SONAR_EDITION="community" \
+    OPENSSL_VERSION=1.1
 
-RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
+RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* java-11-openjdk-headless which && microdnf clean all
 
 COPY --from=builder /usr/local/bin/sonar /usr/local/bin/sonar
 COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli
 COPY --from=builder /usr/local/cnes/cnesreport.jar /usr/local/cnes/cnesreport.jar
-
 ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
+
+USER 1001

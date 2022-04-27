@@ -19,6 +19,8 @@ spec:
       buildArgs:
         - name: imageTag
           value: '{{.Values.global.imageTag | default .Chart.AppVersion}}'
+        - name: privateCertServer
+          value: '{{.Values.privateCertServer}}'
   source:
     dockerfile: |-
       {{- .Files.Get "docker/Dockerfile.helm" | nindent 6}}

@@ -71,7 +71,10 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS pipeline shall support applications stored in either multiple repositories or a monorepo.
 
 | SHR-12
-| ODS pipeline shall function in Kubernetes and OpenShift clusters in a corporate context.
+| ODS pipeline shall function in Kubernetes (1.21+) and OpenShift (4.8+) clusters.
+
+| SHR-13
+| ODS pipeline shall function in a corporate context (private CA, HTTP proxies).
 |===
 
 == Appendix
