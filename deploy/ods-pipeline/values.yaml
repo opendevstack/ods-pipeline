@@ -23,6 +23,8 @@ global:
 images:
   # enable chart containing Openshift image streams and build configs
   enabled: true
+  # When using a local/private CA, specify the server (incl. port!) to pull the root CA cert from.
+  # privateCertServer: 'example.com:443'
   # if needed, enable images even though related tasks are disabled, e.g.
   # pythonToolset: true
 

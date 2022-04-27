@@ -13,3 +13,10 @@ RUN if [ -z $aquasecScannerUrl ] ; then echo 'Skipping Aqua scanner installation
     && aquasec version \
     && echo 'Aqua scanner installation completed!'; \
     fi
+
+ARG privateCertServer
+USER root
+RUN if [ -n "${privateCertServer}" ]; then openssl s_client -showcerts -connect "${privateCertServer}" </dev/null \
+    | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "/etc/pki/ca-trust/source/anchors/${privateCertServer%:*}.pem" && \
+    update-ca-trust; fi
+USER 1001

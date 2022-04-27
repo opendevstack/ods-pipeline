@@ -26,4 +26,4 @@ RUN chmod +x /usr/local/bin/build-go && \
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/go.properties /usr/local/default-sonar-project.properties
 
-USER default
+USER 1001
