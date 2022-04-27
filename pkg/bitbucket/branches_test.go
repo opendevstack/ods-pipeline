@@ -24,6 +24,7 @@ func TestBranchList(t *testing.T) {
 		t.Fatalf("got %d, want %d", l.Size, 1)
 	}
 
+	// check status code error is handled properly
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/branches",
 		500, "bitbucket/error.txt",
@@ -34,6 +35,7 @@ func TestBranchList(t *testing.T) {
 		t.Fatalf("got error: %s. want: %s", err, want)
 	}
 
+	// check incorrect body is handled properly
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/branches",
 		200, "bitbucket/error.txt",

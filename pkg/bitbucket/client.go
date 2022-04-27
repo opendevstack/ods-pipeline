@@ -88,11 +88,14 @@ func (c *Client) logger() logging.LeveledLoggerInterface {
 func (c *Client) doRequest(req *http.Request) (int, []byte, error) {
 	res, err := c.do(req)
 	if err != nil {
-		return 500, nil, fmt.Errorf("got error %s", err)
+		return 500, nil, fmt.Errorf("%s %s: %w", req.Method, req.URL, err)
 	}
 	defer res.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		err = fmt.Errorf("read %s: %w", req.URL, err)
+	}
 	return res.StatusCode, responseBody, err
 }
 
@@ -109,4 +112,9 @@ func wrapUnmarshalError(err error, statusCode int, response []byte) error {
 // fmtStatusCodeError returns an error containing statusCode/response.
 func fmtStatusCodeError(statusCode int, response []byte) error {
 	return fmt.Errorf("status code: %d, body: %s", statusCode, string(response))
+}
+
+// wrapRequestError wraps an error for a request.
+func wrapRequestError(err error) error {
+	return fmt.Errorf("request: %w", err)
 }

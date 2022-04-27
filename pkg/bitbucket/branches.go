@@ -62,7 +62,7 @@ func (c *Client) BranchList(projectKey string, repositorySlug string, params Bra
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
 	if statusCode != 200 {
 		return nil, fmtStatusCodeError(statusCode, response)

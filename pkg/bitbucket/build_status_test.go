@@ -61,6 +61,7 @@ func TestBuildStatusList(t *testing.T) {
 		t.Fatalf("got %d, want %d", l.Size, 1)
 	}
 
+	// check status code error is handled properly
 	srv.EnqueueResponse(
 		t, "/rest/build-status/1.0/commits/"+sha,
 		500, "bitbucket/error.txt",
@@ -71,6 +72,7 @@ func TestBuildStatusList(t *testing.T) {
 		t.Fatalf("got error: %s. want: %s", err, want)
 	}
 
+	// check incorrect body is handled properly
 	srv.EnqueueResponse(
 		t, "/rest/build-status/1.0/commits/"+sha,
 		200, "bitbucket/error.txt",

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+
+	"golang.org/x/exp/slices"
 )
 
 type Tag struct {
@@ -56,23 +58,43 @@ func (c *Client) TagList(projectKey string, repositorySlug string, params TagLis
 
 	urlPath := fmt.Sprintf(
 		"/rest/api/1.0/projects/%s/repos/%s/tags?%s",
-		projectKey,
-		repositorySlug,
-		q.Encode(),
+		projectKey, repositorySlug, q.Encode(),
 	)
+	//var tagPage TagPage
+	return getResource[TagPage](c, urlPath)
+
+	// statusCode, response, err := c.get(urlPath)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("get %s: %w", urlPath, err)
+	// }
+	// if statusCode != 200 {
+	// 	return nil, fmtStatusCodeError(statusCode, response)
+	// }
+	// var tagPage TagPage
+	// err = json.Unmarshal(response, &tagPage)
+	// if err != nil {
+	// 	return nil, wrapUnmarshalError(err, statusCode, response)
+	// }
+	// return &tagPage, nil
+}
+
+func getResource[T any](c *Client, urlPath string, expectedStatus ...int) (*T, error) {
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
-	if statusCode != 200 {
+	if len(expectedStatus) == 0 {
+		expectedStatus = append(expectedStatus, 200)
+	}
+	if !slices.Contains(expectedStatus, statusCode) {
 		return nil, fmtStatusCodeError(statusCode, response)
 	}
-	var tagPage TagPage
-	err = json.Unmarshal(response, &tagPage)
+	var resource T
+	err = json.Unmarshal(response, &resource)
 	if err != nil {
 		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
-	return &tagPage, nil
+	return &resource, nil
 }
 
 // TagGet retrieves a tag in the specified repository..
@@ -82,23 +104,22 @@ func (c *Client) TagGet(projectKey string, repositorySlug string, name string) (
 
 	urlPath := fmt.Sprintf(
 		"/rest/api/1.0/projects/%s/repos/%s/tags/%s",
-		projectKey,
-		repositorySlug,
-		name,
+		projectKey, repositorySlug, name,
 	)
-	statusCode, response, err := c.get(urlPath)
-	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
-	}
-	if statusCode != 200 {
-		return nil, fmtStatusCodeError(statusCode, response)
-	}
-	var tag Tag
-	err = json.Unmarshal(response, &tag)
-	if err != nil {
-		return nil, wrapUnmarshalError(err, statusCode, response)
-	}
-	return &tag, nil
+	return getResource[Tag](c, urlPath)
+	// statusCode, response, err := c.get(urlPath)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("get %s: %w", urlPath, err)
+	// }
+	// if statusCode != 200 {
+	// 	return nil, fmtStatusCodeError(statusCode, response)
+	// }
+	// var tag Tag
+	// err = json.Unmarshal(response, &tag)
+	// if err != nil {
+	// 	return nil, wrapUnmarshalError(err, statusCode, response)
+	// }
+	// return &tag, nil
 }
 
 // TagCreate creates a tag in the specified repository.
@@ -116,14 +137,14 @@ func (c *Client) TagCreate(projectKey string, repositorySlug string, payload Tag
 	}
 	statusCode, response, err := c.post(urlPath, b)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, fmt.Errorf("create %s: %w", urlPath, err)
 	}
 	// This endpoint returns 200 based on the documentation and testing. This is
 	// contrary to other endpoints which return 201. Therefore we allow both,
 	// just in case Atlassian changes their mind in the future to use a proper
 	// status code also for this endpoint.
 	if statusCode != 201 && statusCode != 200 {
-		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var tag Tag
 	err = json.Unmarshal(response, &tag)

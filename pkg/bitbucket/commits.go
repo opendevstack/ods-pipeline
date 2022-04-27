@@ -132,7 +132,7 @@ func (c *Client) CommitList(projectKey string, repositorySlug string, params Com
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
 	if statusCode != 200 {
 		return nil, fmtStatusCodeError(statusCode, response)
@@ -157,7 +157,7 @@ func (c *Client) CommitGet(projectKey, repositorySlug, commitID string) (*Commit
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
 	if statusCode != 200 {
 		return nil, fmtStatusCodeError(statusCode, response)
@@ -182,7 +182,7 @@ func (c *Client) CommitPullRequestList(projectKey, repositorySlug, commitID stri
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
 	if statusCode != 200 {
 		return nil, fmtStatusCodeError(statusCode, response)

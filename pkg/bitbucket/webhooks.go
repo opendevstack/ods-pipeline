@@ -36,10 +36,10 @@ func (c *Client) WebhookCreate(projectKey, repositorySlug string, payload Webhoo
 	}
 	statusCode, response, err := c.post(urlPath, b)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, fmt.Errorf("get %s: %w", urlPath, err)
 	}
 	if statusCode != 201 {
-		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var webhook Webhook
 	err = json.Unmarshal(response, &webhook)

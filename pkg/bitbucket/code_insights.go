@@ -39,6 +39,10 @@ type InsightReportData struct {
 	Type  string      `json:"type"`
 }
 
+type CodeInsightsClientInterface interface {
+	InsightReportCreate(projectKey, repositorySlug, commitID, key string, payload InsightReportCreatePayload) (*InsightReport, error)
+}
+
 // InsightReportCreate creates a new insight report, or replace the existing one if a report already exists for the given repository, commit, and report key. A request to replace an existing report will be rejected if the authenticated user was not the creator of the specified report.
 // The report key should be a unique string chosen by the reporter and should be unique enough not to potentially clash with report keys from other reporters. We recommend using reverse DNS namespacing or a similar standard to ensure that collision is avoided.
 //
@@ -57,11 +61,11 @@ func (c *Client) InsightReportCreate(projectKey, repositorySlug, commitID, key s
 	}
 	statusCode, response, err := c.put(urlPath, b)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, wrapRequestError(err)
 	}
 	if statusCode != 200 {
 		c.clientConfig.Logger.Debugf("Request Body:\n%s", string(b))
-		return nil, fmt.Errorf("request returned unexpected response code: %d, body: %s", statusCode, string(response))
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var insightReport InsightReport
 	err = json.Unmarshal(response, &insightReport)
