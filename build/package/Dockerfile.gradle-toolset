@@ -44,4 +44,9 @@ RUN chmod +x /usr/local/bin/build-gradle && \
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/gradle.properties /usr/local/default-sonar-project.properties
 
+ARG privateCertServer
+USER root
+RUN if [ -n "${privateCertServer}" ]; then openssl s_client -showcerts -connect "${privateCertServer}" </dev/null \
+    | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "/etc/pki/ca-trust/source/anchors/${privateCertServer%:*}.pem" && \
+    update-ca-trust; fi
 USER 1001
