@@ -499,7 +499,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | gcc/gcc-c++
 | 8.5
 | Optimizing compiler supporting various programming languages, required for CGO.
-| https://foo
+| https://gcc.gnu.org
 
 | SDS-EXT-7
 | sonar-scanner
@@ -535,7 +535,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | openssh-clients
 | 8.0
 | Clients necessary to make encrypted connections to SSH servers.
-| https://gradle.org
+| https://www.openssh.com
 
 | SDS-EXT-15
 | Tar
