@@ -49,14 +49,15 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | SHR-2
 | ODS Pipeline shall provide a task supporting to build JDK-based applications (such as Java, Kotlin) using Gradle:
 
-- statically analyse Java source code files
+- statically analyse Java source code files using SonarQube
 -	run the Gradle build task (running tests and producing executable JAR files)
 
 
 | SHR-3
 | ODS Pipeline shall provide a task supporting to build Python applications:
 
--	statically analyse Python source code files using mypy/flake8
+- lint Python source code files using mypy/flake8
+-	statically analyse Python source code files using SonarQube
 -	run pytest
 
 
@@ -64,7 +65,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS Pipeline shall provide a task supporting to build Node.JS applications using NPM:
 
 -	lint JavaScript/TypeScript source code files using eslint
--	statically analyse JavaScript/TypeScript source code files
+-	statically analyse JavaScript/TypeScript source code files using SonarQube
 -	run the NPM test script
 -	run the NPM build task
 
