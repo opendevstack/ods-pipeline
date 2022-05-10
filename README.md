@@ -45,7 +45,7 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 
 ## Compatibility
 
-For OpenShift Pipelines releases and its relationship to Tekton and OpenShift versions, see https://docs.openshift.com/container-platform/4.8/cicd/pipelines/op-release-notes.html
+For OpenShift Pipelines releases and its relationship to Tekton and OpenShift versions, see https://docs.openshift.com/container-platform/latest/cicd/pipelines/op-release-notes.html
 
 | ods-pipeline | OpenShift Pipelines | ODS Core/Quickstarters |
 |---|---|---|

@@ -85,3 +85,10 @@ The following pro's and con's are mostly from a platform perspective, not necess
 * Tekton does not provide a way to specify sidecars from a `Pipeline` resource. ODS Pipeline provides a workaround by allowing task sidecards to be defined via the Helm chart.
 * As tasks are pods, one needs a PVC to work on. Using a PVC has an effect on how many pipelines can run in parallel. At the moment, ODS Pipeline supports one PVC per repo. This prevents parallel runs for different branches.
 
+== Key Learnings from the Jenkins shared library
+
+* Do not build components in parallel. The Jenkins release manager builds all components in parallel to assemble a promotable package. This is very challenging in terms of quotas.
+* Do not commit into the repository being built. This leads may lead to another run being triggered and should be avoided, plus it requires being able to push into the repo.
+* Do not export OpenShift resources on-the-fly. This is error prone, non-traceable and potentially even dangerous. Resources must be specified explicitly in the repository upfront.
+* Do not control too much. Use standard functionality and do not add to many checks / assumptions on top. Otherwise developers are frustrated because of all the magic and limitations imposed, which may not be relevant for their use case.
+* Testing must be supported really well. Tasks must be testable in isolation, locally, and automated on GitHub. It is not enough to mock everything. Tests must be possible on different levels of integration (e.g. against real SQ instances)
