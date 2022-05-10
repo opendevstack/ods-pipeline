@@ -28,7 +28,7 @@ As described in the architecture, the system is installed into local namespaces.
 |===
 | SDS-SHARED-1
 | `ods-sonar` container image
-| Container image for SQ scanning. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7 and SDS-EXT-8).
+| Container image for SQ scanning. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7, SDS-EXT-8 and SDS-EXT-30).
 
 | SDS-SHARED-2
 | `sonar` binary
@@ -172,7 +172,7 @@ Input parameters:
 
 | SDS-TASK-5
 | `ods-gradle-toolset` container image
-| Container image for building Gradle modules. Based on `ubi8/openjdk-17` (SDS-EXT-11), includes SDS-EXT-12, SDS-SHARED-3, SDS-TASK-6 and SDS-TASK-26.
+| Container image for building Gradle modules. Based on `ubi8/openjdk-17` (SDS-EXT-11), includes SDS-EXT-12, SDS-EXT-30, SDS-SHARED-3, SDS-TASK-6 and SDS-TASK-26.
 
 | SDS-TASK-6
 | `build-gradle.sh` shell script
@@ -205,7 +205,7 @@ Input parameters: TODO
 
 | SDS-TASK-8
 | `ods-start` container image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27 and SDS-TASK-9.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27, SDS-EXT-30 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
@@ -238,7 +238,7 @@ Input parameters: TODO
 
 | SDS-TASK-11
 | `ods-finish` container image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-TASK-12.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-30 and SDS-TASK-12.
 
 | SDS-TASK-12
 | `finish` binary
@@ -377,7 +377,7 @@ If the Aqua scanner is installed in the base image, the  pushed image shall be s
 
 | SDS-TASK-23
 | `ods-helm` container image
-| Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21, SDS-EXT-23, SDS-EXT-24 and SDS-TASK-24.
+| Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21, SDS-EXT-23, SDS-EXT-24, SDS-EXT-30 and SDS-TASK-24.
 
 | SDS-TASK-24
 | `deploy-with-helm` binary
@@ -417,7 +417,7 @@ Upgrades (or installs) a Helm chart.
 
 | SDS-PIPELINE-MANAGER-3
 | `ods-pipeline-manager` container image
-| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-PIPELINE-MANAGER-4.
+| Container image to intercept Tekton Trigger events coming from Bitbucket webhooks. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-30 and SDS-PIPELINE-MANAGER-4.
 
 | SDS-PIPELINE-MANAGER-4
 | `pipeline-manager` binary
@@ -620,6 +620,12 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 | 4.6
 | Basic directory searching utilities, included due to the dependency of `helm-secrets` on `xargs`
 | https://www.gnu.org/software/findutils/
+
+| SDS-EXT-30
+| OpenSSL
+| 1.1
+| Toolkit for general-purpose cryptography and secure communication.
+| https://www.openssl.org
 
 |===
 

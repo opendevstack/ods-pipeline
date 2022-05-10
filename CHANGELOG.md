@@ -19,6 +19,9 @@ listed in the changelog.
 - Default imageTag to appVersion + release images without leading v ([#504](https://github.com/opendevstack/ods-pipeline/issues/504))
 - Display both version and Git commit SHA in `artifact-download -version` ([#507](https://github.com/opendevstack/ods-pipeline/issues/507))
 
+### Fixed
+- Pipelines fail in clusters with private / self-signed certificates ([#518](https://github.com/opendevstack/ods-pipeline/issues/518))
+
 ### Removed
 
 - Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))

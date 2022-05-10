@@ -2,13 +2,16 @@ FROM registry.access.redhat.com/ubi8/openjdk-17:1.10
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV GRADLE_VERSION=7.3.3 \
+ENV OPENSSL_VERSION=1.1 \
+    GRADLE_VERSION=7.3.3 \
     GRADLE_USER_HOME=/home/gradle/.gradle
 
 ARG GRADLE_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
 ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
 
 USER root
+
+RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* && microdnf clean all
 
 # Install Gradle
 RUN cd /opt && \
@@ -23,6 +26,8 @@ RUN cd /opt && \
     mkdir -p /tmp/temp-gradle-app && cd /tmp/temp-gradle-app && touch settings.gradle && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
     mkdir -p /home/gradle && \
+    chown -R 1001:0 /home/gradle $HOME && \
+    chmod -R g=u /home/gradle $HOME && \
     ln -s /root/.gradle ${GRADLE_USER_HOME}
 
 # Add proxy settings
@@ -38,3 +43,5 @@ RUN chmod +x /usr/local/bin/build-gradle && \
 
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/gradle.properties /usr/local/default-sonar-project.properties
+
+USER 1001
