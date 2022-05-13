@@ -19,6 +19,7 @@ listed in the changelog.
 - Default imageTag to appVersion + release images without leading v ([#504](https://github.com/opendevstack/ods-pipeline/issues/504))
 - Display both version and Git commit SHA in `artifact-download -version` ([#507](https://github.com/opendevstack/ods-pipeline/issues/507))
 - Add more context to Bitbucket client errors ([#515](https://github.com/opendevstack/ods-pipeline/issues/515))
+- Update skopeo to 1.6 and buildah to 1.24 ([#519](https://github.com/opendevstack/ods-pipeline/issues/519))
 
 ### Fixed
 - Pipelines fail in clusters with private / self-signed certificates ([#518](https://github.com/opendevstack/ods-pipeline/issues/518))
