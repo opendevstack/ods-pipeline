@@ -180,7 +180,7 @@ func serve() error {
 	time.AfterFunc(initialWatchWait, func() {
 		repos, err := manager.GetRepoNames(bitbucketClient, project)
 		if err != nil {
-			logger.Warnf(err.Error())
+			logger.Warnf("get repo names to check for queued runs: %s", err)
 		}
 		for _, r := range repos {
 			pendingRunReposChan <- r

@@ -93,7 +93,7 @@ func GetRepoNames(bitbucketClient bitbucket.RepoClientInterface, projectKey stri
 	repos := []string{}
 	rl, err := bitbucketClient.RepoList(projectKey)
 	if err != nil {
-		return repos, err
+		return repos, fmt.Errorf("list repos of project %s: %w", projectKey, err)
 	}
 	for _, n := range rl.Values {
 		repos = append(repos, n.Name)

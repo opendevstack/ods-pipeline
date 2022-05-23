@@ -130,14 +130,17 @@ func (c *Client) CommitList(projectKey string, repositorySlug string, params Com
 		repositorySlug,
 		q.Encode(),
 	)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var commitPage CommitPage
 	err = json.Unmarshal(response, &commitPage)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &commitPage, nil
 }
@@ -154,14 +157,15 @@ func (c *Client) CommitGet(projectKey, repositorySlug, commitID string) (*Commit
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var commit Commit
 	err = json.Unmarshal(response, &commit)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &commit, nil
 }
@@ -178,14 +182,15 @@ func (c *Client) CommitPullRequestList(projectKey, repositorySlug, commitID stri
 	)
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, fmt.Errorf("request returned error: %w", err)
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var prPage PullRequestPage
 	err = json.Unmarshal(response, &prPage)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &prPage, nil
 }

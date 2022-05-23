@@ -60,14 +60,17 @@ func (c *Client) TagList(projectKey string, repositorySlug string, params TagLis
 		repositorySlug,
 		q.Encode(),
 	)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var tagPage TagPage
 	err = json.Unmarshal(response, &tagPage)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &tagPage, nil
 }
@@ -83,14 +86,17 @@ func (c *Client) TagGet(projectKey string, repositorySlug string, name string) (
 		repositorySlug,
 		name,
 	)
-	_, response, err := c.get(urlPath)
+	statusCode, response, err := c.get(urlPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieve %s: %w", urlPath, err)
+	}
+	if statusCode != 200 {
+		return nil, fmtStatusCodeError(statusCode, response)
 	}
 	var tag Tag
 	err = json.Unmarshal(response, &tag)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &tag, nil
 }
@@ -122,9 +128,7 @@ func (c *Client) TagCreate(projectKey string, repositorySlug string, payload Tag
 	var tag Tag
 	err = json.Unmarshal(response, &tag)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &tag, nil
 }

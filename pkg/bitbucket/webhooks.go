@@ -44,9 +44,7 @@ func (c *Client) WebhookCreate(projectKey, repositorySlug string, payload Webhoo
 	var webhook Webhook
 	err = json.Unmarshal(response, &webhook)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal response: %w. status code: %d, body: %s", err, statusCode, string(response),
-		)
+		return nil, wrapUnmarshalError(err, statusCode, response)
 	}
 	return &webhook, nil
 }

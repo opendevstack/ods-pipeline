@@ -1,0 +1,16 @@
+{
+    "size": 1,
+    "limit": 25,
+    "isLastPage": true,
+    "values": [
+        {
+            "state": "SUCCESSFUL",
+            "key": "REPO-MASTER",
+            "name": "REPO-MASTER-42",
+            "url": "https://bamboo.example.com/browse/REPO-MASTER-42",
+            "description": "Changes by John Doe",
+            "dateAdded": 1621231641519
+        }
+    ],
+    "start": 0
+}
