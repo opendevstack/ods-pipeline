@@ -40,8 +40,8 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | SHR-1
 | ODS Pipeline shall provide a task supporting to build Go applications:
 
--	lint Go source code files using golangci-lint
--	statically analyse Go source code files using SonarQube
+-	lint Go source code files
+-	statically analyse Go source code files
 -	run the Go test tool
 -	build executable Go binaries
 
@@ -49,35 +49,35 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | SHR-2
 | ODS Pipeline shall provide a task supporting to build JDK-based applications (such as Java, Kotlin) using Gradle:
 
-- statically analyse Java source code files using SonarQube
+- statically analyse Java source code files
 -	run the Gradle build task (running tests and producing executable JAR files)
 
 
 | SHR-3
 | ODS Pipeline shall provide a task supporting to build Python applications:
 
-- lint Python source code files using mypy/flake8
--	statically analyse Python source code files using SonarQube
+- lint Python source code files
+-	statically analyse Python source code files
 -	run pytest
 
 
 | SHR-4
 | ODS Pipeline shall provide a task supporting to build Node.JS applications using NPM:
 
--	lint JavaScript/TypeScript source code files using eslint
--	statically analyse JavaScript/TypeScript source code files using SonarQube
+-	lint JavaScript/TypeScript source code files
+-	statically analyse JavaScript/TypeScript source code files
 -	run the NPM test script
 -	run the NPM build task
 
 
 | SHR-5
-| ODS Pipeline shall provide a task building container images (e.g., using artifacts produced by SHR-1, SHR-2, SHR-3 or SHR-4 and other source files). The images shall be scanned for known vulnerabilities against an Aqua server instance (according the applicable Aqua security policy).
+| ODS Pipeline shall provide a task building container images (e.g., using artifacts produced by SHR-1, SHR-2, SHR-3 or SHR-4 and other source files). The images shall be scanned for known vulnerabilities.
 
 | SHR-6
 | ODS Pipeline shall provide a task deploying Helm charts. The release namespace may be in the same cluster or an external cluster.
 
 | SHR-7
-| ODS Pipeline shall retain immutable artifacts of activities performed by its tasks in Nexus. Artifacts shall include, but are not limited to, test results (xUnit), linting results, static analysis results, image digests and deployment configuration changes.
+| ODS Pipeline shall retain immutable artifacts of activities performed by its tasks in an artifact repository. Artifacts shall include, but are not limited to, test results (xUnit), linting results, static analysis results, image digests and deployment configuration changes.
 
 | SHR-8
 | ODS Pipeline shall trigger pipeline runs from Git pushes into a Bitbucket repository via a webhook mechanism. The tasks making up the pipeline shall be defined in a file inside the repository itself.
@@ -86,7 +86,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS Pipeline shall provide feedback about its status in Bitbucket and, if installed in OpenShift, in the Console UI.
 
 | SHR-10
-| ODS Pipeline shall provide easy access to artifacts stored in Nexus of each application version.
+| ODS Pipeline shall provide easy access to artifacts stored in an artifact repository of each application version.
 
 | SHR-11
 | ODS Pipeline shall support applications stored in either multiple Git repositories or in a single Git monorepo.
