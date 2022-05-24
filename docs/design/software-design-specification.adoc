@@ -515,7 +515,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-9
 | Git
-| 2.27
+| 2.31
 | Distributed version control system.
 | https://git-scm.com
 
@@ -545,13 +545,13 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-17
 | Skopeo
-| 1.5
+| 1.6
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
 | SDS-EXT-18
 | Buildah
-| 1.23
+| 1.24
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 
