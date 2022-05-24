@@ -51,6 +51,5 @@ fi
 
 {
     echo "  sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'"
-    echo "  sonarUsername: '${SONAR_USERNAME}'"
     echo "  sonarAuthToken: '${token}'"
 } >> "${HELM_VALUES_FILE}"
