@@ -515,7 +515,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 
 | SDS-EXT-9
 | Git
-| 2.27
+| 2.31
 | Distributed version control system.
 | https://git-scm.com
 
