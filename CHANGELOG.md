@@ -28,6 +28,7 @@ listed in the changelog.
 
 - Remove test skipping from Go build task ([#493](https://github.com/opendevstack/ods-pipeline/issues/493))
 - Remove test skipping from TypeScript build task ([#494](https://github.com/opendevstack/ods-pipeline/issues/494))
+- Remove `sonarUsername` from `values.yaml` as only the auth token is used ([#514](https://github.com/opendevstack/ods-pipeline/issues/514))
 
 ## [0.3.0] - 2022-04-07
 

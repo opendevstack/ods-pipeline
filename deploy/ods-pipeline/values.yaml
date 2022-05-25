@@ -61,8 +61,6 @@ setup:
   # Sonar
   # SonarQube URL (including scheme). Example: https://sonarqube.example.com.
   sonarUrl: ''
-  # SonarQube username. Example: developer.
-  sonarUsername: ''
   # SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
   sonarEdition: 'community'
 
@@ -83,7 +81,7 @@ setup:
 
   # Notification Webhook
   notification:
-    # notifications are disabled by default, i.e. the ConfigMap won't be installed
+    # Whether notifications should be sent to the URL specified below or not.
     enabled: false
     # URL of the configured webhook
     url: 'http://example.com'
