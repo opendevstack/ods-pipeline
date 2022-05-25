@@ -35,6 +35,11 @@ Individual task test can be executed like this:
 go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks -v -count=1
 ```
 
+Further, if you only want to run one test case from the map of test cases, this can be done like this:
+```
+go test -run ^TestTaskODSBuildTypescript/build_backend_javascript_app$ github.com/opendevstack/pipeline/test/tasks -v -count=1
+```
+
 Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too.
 These dependencies are explicitly set for each test suite and at the beginning of each test suite it will be checked if all required services are running. The tests will fail if at least one service is not running.
 
