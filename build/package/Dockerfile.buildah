@@ -23,7 +23,7 @@ ENV BUILDAH_VERSION=1.24 \
 COPY --from=builder /usr/local/bin/ods-build-push-image /usr/local/bin/ods-build-push-image
 
 # Don't include container-selinux and remove directories used by yum that are just taking up space.
-RUN useradd build \
+RUN useradd -u 1001 build \
     && dnf -y module enable container-tools:rhel8 \
     && dnf -y update \
     && dnf -y reinstall shadow-utils \
@@ -41,8 +41,9 @@ RUN chmod 644 /etc/containers/containers.conf \
     && touch /var/lib/shared/vfs-layers/layers.lock
 
 # Define uid/gid ranges for our user https://github.com/containers/buildah/issues/3053
-RUN echo -e "build:1:999\nbuild:1001:64535" > /etc/subuid \
-    && echo -e "build:1:999\nbuild:1001:64535" > /etc/subgid \
+# Also see https://github.com/containers/buildah/commit/41d384c3bc77d1a9b2a365c057f3186742597363.
+RUN echo -e "build:1:1000\nbuild:1002:64535" > /etc/subuid \
+    && echo -e "build:1:1000\nbuild:1002:64535" > /etc/subgid \
     && mkdir -p /home/build/.local/share/containers \
     && chown -R build:build /home/build
 
@@ -52,3 +53,5 @@ VOLUME /home/build/.local/share/containers
 # Set an environment variable to default to chroot isolation for RUN
 # instructions and "buildah run".
 ENV BUILDAH_ISOLATION=chroot
+
+USER 1001
