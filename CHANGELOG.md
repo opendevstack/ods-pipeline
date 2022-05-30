@@ -21,6 +21,7 @@ listed in the changelog.
 - Add more context to Bitbucket client errors ([#515](https://github.com/opendevstack/ods-pipeline/issues/515))
 - Update skopeo to 1.6, buildah to 1.24 and git to 2.31 ([#519](https://github.com/opendevstack/ods-pipeline/issues/519))
 - Update Go to 1.17 ([#528](https://github.com/opendevstack/ods-pipeline/issues/528))
+- Rename `ods-build-typescript` task to `ods-build-npm` ([#503](https://github.com/opendevstack/ods-pipeline/issues/503))
 
 ### Fixed
 - Pipelines fail in clusters with private / self-signed certificates ([#518](https://github.com/opendevstack/ods-pipeline/issues/518))

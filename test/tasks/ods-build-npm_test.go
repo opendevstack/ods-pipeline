@@ -12,9 +12,9 @@ import (
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
-func TestTaskODSBuildTypescript(t *testing.T) {
+func TestTaskODSBuildNPM(t *testing.T) {
 	runTaskTestCases(t,
-		"ods-build-typescript",
+		"ods-build-npm",
 		[]tasktesting.Service{
 			tasktesting.Nexus,
 			tasktesting.SonarQube,

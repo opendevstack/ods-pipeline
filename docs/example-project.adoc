@@ -30,28 +30,28 @@ environments:
 
 pipeline:
   tasks:
-  - name: build-go
+  - name: build
     taskRef:
       kind: Task
       name: ods-build-go-v0-3-0
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: package-image
+  - name: package
     taskRef:
       kind: Task
       name: ods-package-image-v0-3-0
     runAfter:
-    - build-go
+    - build
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: deploy-helm
+  - name: deploy
     taskRef:
       kind: Task
       name: ods-deploy-helm-v0-3-0
     runAfter:
-    - package-image
+    - package
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -71,28 +71,28 @@ environments:
 
 pipeline:
   tasks:
-  - name: build-typescript
+  - name: build
     taskRef:
       kind: Task
-      name: ods-build-typescript-v0-3-0
+      name: ods-build-npm-v0-3-0
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: package-image
+  - name: package
     taskRef:
       kind: Task
       name: ods-package-image-v0-3-0
     runAfter:
-    - build-typescript
+    - build
     workspaces:
     - name: source
       workspace: shared-workspace
-  - name: deploy-helm
+  - name: deploy
     taskRef:
       kind: Task
       name: ods-deploy-helm-v0-3-0
     runAfter:
-    - package-image
+    - package
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -131,7 +131,7 @@ environments:
 
 pipeline:
   tasks:
-  - name: deploy-helm
+  - name: deploy
     taskRef:
       kind: ClusterTask
       name: ods-deploy-helm-v0-3-0

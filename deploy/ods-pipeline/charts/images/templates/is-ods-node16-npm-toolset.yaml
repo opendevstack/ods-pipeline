@@ -1,0 +1,8 @@
+{{if or .Values.global.enabledTasks.buildNPM .Values.node16NPMToolset}}
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: ods-node16-npm-toolset
+  annotations:
+    "helm.sh/resource-policy": keep
+{{end}}
