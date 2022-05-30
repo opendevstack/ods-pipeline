@@ -89,12 +89,15 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS Pipeline shall provide easy access to artifacts stored in an artifact repository of each application version.
 
 | SHR-11
-| ODS Pipeline shall support applications stored in either multiple Git repositories or in a single Git monorepo.
+| ODS Pipeline shall support applications with multiple components each stored in their own Git repository.
 
 | SHR-12
-| ODS pipeline shall function in Kubernetes (1.21+) and OpenShift (4.8+) clusters.
+| ODS Pipeline shall support applications with multiple components stored together in a single Git monorepo.
 
 | SHR-13
+| ODS pipeline shall function in Kubernetes (Tekton v0.24+) and OpenShift (OpenShift Pipelines v1.5+) clusters.
+
+| SHR-14
 | ODS Pipeline shall function in a corporate context (supporting HTTP proxies and private certificates).
 |===
 
