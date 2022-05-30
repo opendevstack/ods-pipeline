@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "lint": "echo 'no linting'",
     "build": "mkdir -p dist && cp -r src dist/",
     "test": "JEST_JUNIT_OUTPUT_DIR='build/test-results/test' JEST_JUNIT_OUTPUT_NAME='report.xml' npx jest --reporters=default --reporters=jest-junit --coverage --coverageDirectory=build/coverage --forceExit",
     "start": "node dist/src/index.js"

@@ -23,6 +23,7 @@ listed in the changelog.
 - Update Go to 1.17 ([#528](https://github.com/opendevstack/ods-pipeline/issues/528))
 - Rename `ods-build-typescript` task to `ods-build-npm` ([#503](https://github.com/opendevstack/ods-pipeline/issues/503))
 - Implement global caching for Gradle build task ([#490](https://github.com/opendevstack/ods-pipeline/issues/490))
+- Run `lint` script instead of `eslint` directly ([#532](https://github.com/opendevstack/ods-pipeline/issues/532))
 
 ### Fixed
 - Pipelines fail in clusters with private / self-signed certificates ([#518](https://github.com/opendevstack/ods-pipeline/issues/518))

@@ -224,22 +224,25 @@ a| The task shall build a Python application.
 [cols="1,3"]
 |===
 | SRS-TASK-BUILD-NPM-1
-a| The task shall run test, creating code coverage and xUnit reports.
+| The task shall run the NPM lint script.
+
+| SRS-TASK-BUILD-NPM-2
+a| The task shall run the NPM test script, creating code coverage and xUnit reports.
 
 * Artifacts shall be made available to SonarQube and designated for upload to Nexus.
 
-| SRS-TASK-BUILD-NPM-2
+| SRS-TASK-BUILD-NPM-3
 a| The task shall build a Node.JS application using NPM.
 
 * Destination directory shall be customizable
 
-| SRS-TASK-BUILD-NPM-3
+| SRS-TASK-BUILD-NPM-4
 | See SRS-TASK-SHARED-1.
 
-| SRS-TASK-BUILD-NPM-4
+| SRS-TASK-BUILD-NPM-5
 | See SRS-TASK-SHARED-2.
 
-| SRS-TASK-BUILD-NPM-5
+| SRS-TASK-BUILD-NPM-6
 | See SRS-TASK-SHARED-3.
 
 |===

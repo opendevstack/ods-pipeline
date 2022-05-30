@@ -28,8 +28,6 @@ OUTPUT_DIR="docker"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
-MAX_LINT_WARNINGS="0"
-LINT_FILE_EXT=".js,.ts,.jsx,.tsx,.svelte"
 COPY_NODE_MODULES="false"
 
 while [[ "$#" -gt 0 ]]; do
@@ -43,12 +41,6 @@ while [[ "$#" -gt 0 ]]; do
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
-
-    --max-lint-warnings) MAX_LINT_WARNINGS="$2"; shift;;
-    --max-lint-warnings=*) MAX_LINT_WARNINGS="${1#*=}";;
-
-    --lint-file-ext) LINT_FILE_EXT="$2"; shift;;
-    --lint-file-ext=*) LINT_FILE_EXT="${1#*=}";;
 
     --build-dir) BUILD_DIR="$2"; shift;;
     --build-dir=*) BUILD_DIR="${1#*=}";;
@@ -101,7 +93,7 @@ npm ci --ignore-scripts
 
 echo "Linting ..."
 set +e
-npx eslint src --ext "${LINT_FILE_EXT}" --format compact --max-warnings "${MAX_LINT_WARNINGS}" > eslint-report.txt
+npm run lint > eslint-report.txt
 exitcode=$?
 set -e
 

@@ -331,7 +331,7 @@ For traceability package.json and package-lock.json are copied into the `dist` d
 
 Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
 
-Runs `eslint` to lint the source code and fails if there are any errors or warnings. The files to lint default to all files with an `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte` extension inside `src` and can be set by the `lint-file-ext` task parameter. The amount of allowed warnings defaults to 0 and can be set by the `max-lint-warnings` task parameter.
+Runs `npm run lint` to lint the source code. If there are any errors or warnings, the script should exit with a non-zero exit code.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
