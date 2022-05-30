@@ -1,14 +1,14 @@
-{{if or .Values.global.enabledTasks.buildTypescript .Values.node16TypescriptToolset}}
+{{if or .Values.global.enabledTasks.buildNPM .Values.node16NPMToolset}}
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: ods-node16-typescript-toolset
+  name: ods-node16-npm-toolset
 spec:
   nodeSelector: null
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-node16-typescript-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      name: 'ods-node16-npm-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -23,6 +23,6 @@ spec:
           value: '{{.Values.privateCertServer}}'
   source:
     dockerfile: |-
-      {{- .Files.Get "docker/Dockerfile.node16-typescript-toolset" | nindent 6}}
+      {{- .Files.Get "docker/Dockerfile.node16-npm-toolset" | nindent 6}}
   runPolicy: Serial
 {{end}}

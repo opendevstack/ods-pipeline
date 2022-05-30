@@ -12,7 +12,7 @@ global:
     buildGo: true
     buildGradle: true
     buildPython: true
-    buildTypescript: true
+    buildNPM: true
     packageImage: true
     deployHelm: true
 

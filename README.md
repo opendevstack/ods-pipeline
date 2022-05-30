@@ -23,7 +23,7 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 ### Technical Reference
 * [Repository configuration (ods.yaml)](/docs/ods-configuration.adoc)
 * Plumbing tasks: [ods-start](/docs/tasks/ods-start.adoc), [ods-finish](/docs/tasks/ods-finish.adoc)
-* Build tasks: [ods-build-go](/docs/tasks/ods-build-go.adoc), [ods-build-gradle](/docs/tasks/ods-build-gradle.adoc), [ods-build-python](/docs/tasks/ods-build-python.adoc), [ods-build-typescript](/docs/tasks/ods-build-typescript.adoc)
+* Build tasks: [ods-build-go](/docs/tasks/ods-build-go.adoc), [ods-build-gradle](/docs/tasks/ods-build-gradle.adoc), [ods-build-npm](/docs/tasks/ods-build-npm.adoc), [ods-build-python](/docs/tasks/ods-build-python.adoc)
 * Package tasks: [ods-package-image](/docs/tasks/ods-package-image.adoc)
 * Deploy tasks: [ods-deploy-helm](/docs/tasks/ods-deploy-helm.adoc)
 

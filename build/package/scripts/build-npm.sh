@@ -144,7 +144,7 @@ cp build/coverage/coverage-final.json "${tmp_artifacts_dir}/code-coverage/${ARTI
 cp build/coverage/lcov.info "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}lcov.info"
 
 # Doing this earlier can confuse jest.
-# test build_typescript_app_with_custom_build_directory fails with
+# test build_javascript_app_with_custom_build_directory fails with
 #  jest-haste-map: Haste module naming collision: src
 #    The following files share their name; please adjust your hasteImpl:
 #      * <rootDir>/package.json

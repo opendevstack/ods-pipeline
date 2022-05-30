@@ -291,21 +291,21 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 | Default configuration for Python SonarQube project.
 |===
 
-===== `ods-build-typescript` task
+===== `ods-build-npm` task
 
 [cols="1,1,3"]
 |===
 | SDS-TASK-16
-| `ods-build-typescript` Task resource
+| `ods-build-npm` Task resource
 a| The task defines two steps:
 
-. Build TypeScript applications (referencing SDS-TASK-17 and executing SDS-TASK-18).
+. Build Node.js applications using NPM (referencing SDS-TASK-17 and executing SDS-TASK-18).
   This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
 
-* `working-dir`: allows customizing which directory is used as the TypeScript module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
+* `working-dir`: allows customizing which directory is used as the Node.js module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
 * `output-dir`: sets destination directory of the build output
 * `build-dir`: sets source directory of the build output
 * `copy-node-modules`: enables copying node_modules directory to the output directory
@@ -316,11 +316,11 @@ Input parameters:
 * `cache-build`: if 'true' build skipping is enabled.
 
 | SDS-TASK-17
-| `ods-node16-typescript-toolset` container image
-| Container image to build TypeScript applications. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| `ods-node16-npm-toolset` container image
+| Container image to build Node.js applications using NPM. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
-| `build-typescript.sh` shell script
+| `build-npm.sh` shell script
 a| Checks that package.json and package-lock.json exist to require best practice of using lock files. See also https://github.com/opendevstack/ods-pipeline/discussions/411
 
 Runs `npm run build`, and copies the files inside the directory specified in `build-dir` into directory `dist` which is placed into the directory specified by `output-dir`.
@@ -336,8 +336,8 @@ Runs `eslint` to lint the source code and fails if there are any errors or warni
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
 | SDS-TASK-28
-| `typescript.properties` properties file
-| Default configuration for TypeScript SonarQube project.
+| `npm.properties` properties file
+| Default configuration for NPM SonarQube project.
 |===
 
 ==== `ods-package-image` task
