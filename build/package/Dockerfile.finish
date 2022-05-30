@@ -18,3 +18,5 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 ENV OPENSSL_VERSION=1.1
 COPY --from=builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
 RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* && microdnf clean all
+
+USER 1001
