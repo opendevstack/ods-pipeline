@@ -22,8 +22,8 @@ while [[ "$#" -gt 0 ]]; do
     --gradle-additional-tasks) GRADLE_ADDITIONAL_TASKS="$2"; shift;;
     --gradle-additional-tasks=*) GRADLE_ADDITIONAL_TASKS="${1#*=}";;
 
-    # Gradle project properties ref: https://docs.gradle.org/7.3.3/userguide/build_environment.html#sec:gradle_configuration_properties
-    # Gradle options ref: https://docs.gradle.org/7.3.3/userguide/command_line_interface.html
+    # Gradle project properties ref: https://docs.gradle.org/7.4.2/userguide/build_environment.html#sec:gradle_configuration_properties
+    # Gradle options ref: https://docs.gradle.org/7.4.2/userguide/command_line_interface.html
     --gradle-options) GRADLE_OPTIONS="$2"; shift;;
     --gradle-options=*) GRADLE_OPTIONS="${1#*=}";;
 
@@ -43,6 +43,8 @@ echo "Using NEXUS_URL=$NEXUS_URL"
 echo "Using GRADLE_OPTS=$GRADLE_OPTS"
 echo "Using GRADLE_USER_HOME=$GRADLE_USER_HOME"
 echo "Using ARTIFACTS_DIR=$ARTIFACTS_DIR"
+
+set-gradle-proxy
 
 echo
 cd "${WORKING_DIR}"
