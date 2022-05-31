@@ -9,7 +9,7 @@ ODS pipeline follows https://semver.org[Semantic Versioning 2.0.0]. This means b
 == Release Process
 
 === Preparing the release
-The current version is hardcoded in a few places across the repository. All of these places must be updated immediately for a release. Until more detailed instructions are available, see the https://github.com/opendevstack/ods-pipeline/commit/b1e953506dc6ab5add5b0b3dd97ad0f6253ba87e[commit releasing 0.2.0] as a reference.
+The current version is hardcoded in a few places across the repository. All of these places must be updated immediately for a release. Until more detailed instructions are available, see the https://github.com/opendevstack/ods-pipeline/commit/542c7e205e13766f603ef47b21b9e44c32236fee[commit releasing 0.3.0] as a reference.
 
 === Publishing the release
 Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). The description should be like this:
