@@ -3,7 +3,7 @@ set -eu
 
 # To carry out normal operations like running ODS Tekton Tasks,
 # we need the ODS tasks images available in the KinD cluster.
-REGISTRY="localhost:5000"
+REGISTRY="localhost:5001"
 NAMESPACE="ods"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
