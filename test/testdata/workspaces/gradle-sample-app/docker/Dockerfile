@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/openjdk-17-runtime:1.10
+FROM registry.access.redhat.com/ubi8/openjdk-17-runtime:1.13
 
 COPY app.jar app.jar
 

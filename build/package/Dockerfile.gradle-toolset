@@ -1,13 +1,13 @@
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.10
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.13
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV OPENSSL_VERSION=1.1 \
-    GRADLE_VERSION=7.3.3 \
-    GRADLE_USER_HOME=/home/gradle/.gradle
+    GRADLE_VERSION=7.4.2 \
+    GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle
 
-ARG GRADLE_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
-ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=b586e04868a22fd817c8971330fec37e298f3242eb85c374181b12d637f80302
+ARG GRADLE_DOWNLOAD_SHA256=29e49b10984e585d8118b7d0bc452f944e386458df27371b49b4ac1dec4b7fda
+ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=29e49b10984e585d8118b7d0bc452f944e386458df27371b49b4ac1dec4b7fda
 
 USER root
 
@@ -25,21 +25,18 @@ RUN cd /opt && \
     echo "Loading gradle cache with gradlew  ${GRADLE_VERSION} distribution" && \
     mkdir -p /tmp/temp-gradle-app && cd /tmp/temp-gradle-app && touch settings.gradle && \
     gradle wrapper --gradle-distribution-sha256-sum ${GRADLE_WRAPPER_DOWNLOAD_SHA256} && ./gradlew -version && \
-    mkdir -p /home/gradle && \
-    chown -R 1001:0 /home/gradle $HOME && \
-    chmod -R g=u /home/gradle $HOME && \
-    ln -s /root/.gradle ${GRADLE_USER_HOME}
+    chown -R 1001:0 /workspace/source $HOME && \
+    chmod -R g=u /workspace/source $HOME
 
-# Add proxy settings
-COPY build/package/scripts/set_gradle_proxy.sh /usr/local/bin/set_gradle_proxy.sh
-RUN chmod +x /usr/local/bin/set_gradle_proxy.sh && \
-    /usr/local/bin/set_gradle_proxy.sh
+VOLUME /workspace/source
 
 # Add scripts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
+COPY build/package/scripts/set-gradle-proxy.sh /usr/local/bin/set-gradle-proxy
 RUN chmod +x /usr/local/bin/build-gradle && \
-    chmod +x /usr/local/bin/supply-sonar-project-properties-default
+    chmod +x /usr/local/bin/supply-sonar-project-properties-default && \
+    chmod +x /usr/local/bin/set-gradle-proxy
 
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/gradle.properties /usr/local/default-sonar-project.properties

@@ -4,6 +4,9 @@
 
 Builds Gradle applications.
 
+The gradle build by default caches the downloaded version of the gradle wrapper and dependencies in the cache location of
+the PVC by setting the environment variable `GRADLE_USER_HOME` to `/workspace/source/.ods-cache/deps/gradle`. 
+
 The following steps are executed:
 
 - build gradle application, using `gradlew clean build`, which includes tests execution and coverage report generation
@@ -115,12 +118,12 @@ without leading `./` and trailing `/`.
 
 | gradle-options
 | --no-daemon --stacktrace
-| Options to be passed to the gradle build. (See ref: https://docs.gradle.org/7.3.3/userguide/command_line_interface.html#sec:command_line_debugging)
+| Options to be passed to the gradle build. (See ref: https://docs.gradle.org/7.4.2/userguide/command_line_interface.html#sec:command_line_debugging)
 
 
 | gradle-opts-env
 | -Dorg.gradle.jvmargs=-Xmx512M
-| Will be exposed to the build via `GRADLE_OPTS` environment variable. Specifies JVM arguments to use when starting the Gradle client VM. The client VM only handles command line input/output, so it is rare that one would need to change its VM options. You can still use this to change the settings for the Gradle daemon which runs the actual build by setting the according Gradle properties by `-D`. If you want to set the JVM arguments for the actual build you would do this via `-Dorg.gradle.jvmargs=-Xmx1024M` (See ref: https://docs.gradle.org/7.3.3/userguide/build_environment.html#sec:gradle_configuration_properties).
+| Will be exposed to the build via `GRADLE_OPTS` environment variable. Specifies JVM arguments to use when starting the Gradle client VM. The client VM only handles command line input/output, so it is rare that one would need to change its VM options. You can still use this to change the settings for the Gradle daemon which runs the actual build by setting the according Gradle properties by `-D`. If you want to set the JVM arguments for the actual build you would do this via `-Dorg.gradle.jvmargs=-Xmx1024M` (See ref: https://docs.gradle.org/7.4.2/userguide/build_environment.html#sec:gradle_configuration_properties).
 
 
 | output-dir

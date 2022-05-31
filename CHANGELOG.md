@@ -22,9 +22,11 @@ listed in the changelog.
 - Update skopeo to 1.6, buildah to 1.24 and git to 2.31 ([#519](https://github.com/opendevstack/ods-pipeline/issues/519))
 - Update Go to 1.17 ([#528](https://github.com/opendevstack/ods-pipeline/issues/528))
 - Rename `ods-build-typescript` task to `ods-build-npm` ([#503](https://github.com/opendevstack/ods-pipeline/issues/503))
+- Implement global caching for Gradle build task ([#490](https://github.com/opendevstack/ods-pipeline/issues/490))
 
 ### Fixed
 - Pipelines fail in clusters with private / self-signed certificates ([#518](https://github.com/opendevstack/ods-pipeline/issues/518))
+- HTTP_PROXY setting is not taken into account when building the gradle-toolset image via a wrapper image in the target cluster. ([#530](https://github.com/opendevstack/ods-pipeline/pull/530))
 
 ### Removed
 
