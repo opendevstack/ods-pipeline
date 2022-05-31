@@ -25,7 +25,7 @@ if [ -z "${VERSION}" ]; then
 fi
 
 OUTFILE="artifact-download-${GO_OS}-${GO_ARCH}"
-if [ "${OUTFILE}" == "windows" ]; then
+if [ "${GO_OS}" == "windows" ]; then
     OUTFILE="${OUTFILE}.exe"
 fi
 
