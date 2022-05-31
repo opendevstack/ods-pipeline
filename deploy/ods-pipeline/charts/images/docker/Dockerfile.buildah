@@ -3,6 +3,9 @@ ARG imageTag="latest"
 FROM ghcr.io/opendevstack/ods-pipeline/ods-buildah:$imageTag
 
 ARG aquasecScannerUrl
+ARG privateCertServer
+
+USER root
 
 # Optionally install Aqua scanner.
 RUN if [ -z $aquasecScannerUrl ] ; then echo 'Skipping Aqua scanner installation!' ; else echo 'Installing Aqua scanner... getting binary from' $aquasecScannerUrl \
@@ -14,9 +17,8 @@ RUN if [ -z $aquasecScannerUrl ] ; then echo 'Skipping Aqua scanner installation
     && echo 'Aqua scanner installation completed!'; \
     fi
 
-ARG privateCertServer
-USER root
 RUN if [ -n "${privateCertServer}" ]; then openssl s_client -showcerts -connect "${privateCertServer}" </dev/null \
     | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "/etc/pki/ca-trust/source/anchors/${privateCertServer%:*}.pem" && \
     update-ca-trust; fi
+
 USER 1001

@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Wrapper image cannot write aquasec binary ([#539](https://github.com/opendevstack/ods-pipeline/issues/539))
+
+
 ## [0.4.0] - 2022-05-31
 
 ### Added
