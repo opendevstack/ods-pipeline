@@ -299,7 +299,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 | `ods-build-npm` Task resource
 a| The task defines two steps:
 
-. Build Node.js applications using NPM (referencing SDS-TASK-17 and executing SDS-TASK-18).
+. Build Node.js applications using npm (referencing SDS-TASK-17 and executing SDS-TASK-18).
   This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
@@ -317,7 +317,7 @@ Input parameters:
 
 | SDS-TASK-17
 | `ods-node16-npm-toolset` container image
-| Container image to build Node.js applications using NPM. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
+| Container image to build Node.js applications using npm. Based on `ubi8/nodejs-16` (SDS-EXT-26), includes SDS-SHARED-3, SDS-TASK-18 and SDS-TASK-28.
 
 | SDS-TASK-18
 | `build-npm.sh` shell script
@@ -337,7 +337,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
 | SDS-TASK-28
 | `npm.properties` properties file
-| Default configuration for NPM SonarQube project.
+| Default configuration for npm SonarQube project.
 |===
 
 ==== `ods-package-image` task

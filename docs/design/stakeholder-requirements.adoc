@@ -62,12 +62,12 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 
 
 | SHR-4
-| ODS Pipeline shall provide a task supporting to build Node.JS applications using NPM:
+| ODS Pipeline shall provide a task supporting to build Node.JS applications using npm:
 
 -	lint JavaScript/TypeScript source code files
 -	statically analyse JavaScript/TypeScript source code files
--	run the NPM test script
--	run the NPM build task
+-	run the npm test script
+-	run the npm build task
 
 
 | SHR-5

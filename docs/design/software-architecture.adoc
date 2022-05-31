@@ -77,7 +77,7 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | Download dependencies
 | HTTP
 | Nexus
-| Nexus serves as a proxy for third party dependencies (e.g. hosted on NPM), and serves private dependencies hosted in Nexus as well.
+| Nexus serves as a proxy for third party dependencies (e.g. hosted on npm), and serves private dependencies hosted in Nexus as well.
 
 | Task `ods-package-image`
 | Scan for vulnerabilities

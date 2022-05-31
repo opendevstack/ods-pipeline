@@ -2,7 +2,7 @@
 
 = ods-build-npm
 
-Builds Node.js applications using NPM.
+Builds Node.js applications using npm.
 
 The following steps are executed:
 
@@ -16,7 +16,7 @@ For linting to work there needs to be a `lint` task in the `package.json` file,
 for example `npx eslint src --format compact`, together with a config file
 (`eslintrc.json` or similar) at the root of the working directory. This can
 be done by running `eslint --init` or by following the
-ink:https://eslint.org/docs/user-guide/getting-started[official documentation]
+link:https://eslint.org/docs/user-guide/getting-started[official documentation]
 
 The exact build recipe can be found at
 link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-npm.sh[build/package/scripts/build-npm.sh].
