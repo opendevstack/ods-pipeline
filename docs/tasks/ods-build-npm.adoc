@@ -2,18 +2,21 @@
 
 = ods-build-npm
 
-Builds Node.js applications using NPM.
+Builds Node.js applications using npm.
 
 The following steps are executed:
 
 - checks that package.json and package-lock.json exists to require best practice of using lock files. See also link:https://github.com/opendevstack/ods-pipeline/discussions/411[discussion 411]
-- linting using `eslint`
+- linting using `npm run lint`
 - build application, using `npm run build`
 - test execution
 - SonarQube quality scan
 
-For `eslint` to work there needs to be a config file (`eslintrc.json` or similar) at the root of the working directory.
-This can be done by running `eslint --init` or by following the link:https://eslint.org/docs/user-guide/getting-started[official documentation]
+For linting to work there needs to be a `lint` task in the `package.json` file,
+for example `npx eslint src --format compact`, together with a config file
+(`eslintrc.json` or similar) at the root of the working directory. This can
+be done by running `eslint --init` or by following the
+link:https://eslint.org/docs/user-guide/getting-started[official documentation]
 
 The exact build recipe can be found at
 link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-npm.sh[build/package/scripts/build-npm.sh].
@@ -66,16 +69,6 @@ without leading `./` and trailing `/`.
 | cache-build
 | false
 | If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that a build can be skipped if the `working-dir` contents did not change. For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
-
-
-| max-lint-warnings
-| 0
-| Maximum of allowed linting warnings after which eslint will exit with an error. Set to "-1" to never exit with an error due to warnings.
-
-
-| lint-file-ext
-| .js,.ts,.jsx,.tsx,.svelte
-| File extensions to lint separated by a comma.
 
 
 | sonar-quality-gate

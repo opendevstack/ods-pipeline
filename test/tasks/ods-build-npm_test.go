@@ -112,7 +112,7 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					checkFilesExist(t, wsDir, wantFile)
 
 					wantLintReportContent := "/workspace/source/src/index.ts: line 3, col 31, Warning - Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)\n\n1 problem"
-					checkFileContent(t, wsDir, filepath.Join(pipelinectxt.LintReportsPath, "report.txt"), wantLintReportContent)
+					checkFileContentContains(t, wsDir, filepath.Join(pipelinectxt.LintReportsPath, "report.txt"), wantLintReportContent)
 				},
 			},
 			"fail pulling image if unsupported node version is specified": {

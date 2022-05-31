@@ -36,7 +36,7 @@ An ODS pipeline installation provides you with the following tasks, which are im
 * `ods-start`: Checkout repository and set Bitbucket build status
 * `ods-build-go`: Build a Go application (includes Sonar scan)
 * `ods-build-gradle`: Build a JDK based application using Gradle (includes Sonar scan)
-* `ods-build-npm`: Build a Node.js based application using NPM (includes Sonar scan)
+* `ods-build-npm`: Build a Node.js based application using npm (includes Sonar scan)
 * `ods-build-python`: Build a Python application (includes Sonar scan)
 * `ods-package-image`: Package application into container image (includes optional Aqua scan)
 * `ods-deploy-helm`: Deploy a Helm chart
