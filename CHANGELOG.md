@@ -9,6 +9,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-05-31
+
 ### Added
 
 - Support for optional build task caching. The main use case is to avoid lengthy builds in repos with multiple build tasks ([#461](https://github.com/opendevstack/ods-pipeline/issues/461)). See the `docs/adr/20220314-caching-build-tasks.md`for details.

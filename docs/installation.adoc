@@ -29,7 +29,7 @@ Then, use `git subtree` to get the required sources. The following commands may 
 
 [source]
 ----
-pipelineGitRef=v0.3.0 # Pick the version you want to install
+pipelineGitRef=v0.4.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -113,7 +113,7 @@ You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 
 [source]
 ----
-pipelineGitRef=v0.3.0 # Pick the version you want to install
+pipelineGitRef=v0.4.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
