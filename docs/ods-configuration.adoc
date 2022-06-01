@@ -92,6 +92,8 @@ branchToEnvironmentMapping:
 
 In this case, the `master` branch will be deployed to the environment with the name `development`.
 
+The `branch` field also supports wildcard suffix match: use `&#42;` to match any branch, or e.g. `release/*` to match all branches that are prefixed with `release/`.
+
 TIP: If you want to promote images between environments without rebuilding them, ensure that you are merging without merge commits (fast-forward, `--ff-only`).
 
 == `version`
