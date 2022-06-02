@@ -458,6 +458,21 @@ The OpenShift namespace is used to retrieve configuration and secrets required t
 For all repositories in scope, the artifacts in the corresponding groups in Nexus are downloaded to the local host. The files are placed into `artifacts-out/<TAG>` (customizable via `--output`).
 |===
 
+===== Installation / Update
+
+[cols="1,1,3"]
+|===
+| SDS-SETUP-1
+| Helm chart `ods-pipeline`
+a| The Helm chart consists of three subhcharts:
+
+* `images`: Contains `BuildConfig`/`ImageStream` resources
+* `tasks`: Contains `Task` resources
+* `setup`: Contains resources related to the pipeline manager and config maps / secrets supporting pipeline runs
+
+The `images` chart is only used within an OpenShift context. It contains a `post-install/upgrade` hook which starts builds for all available `BuildConfig` resources to automatically build new container images to be used in tasks and the pipeline manager.
+|===
+
 
 === Third-party components
 

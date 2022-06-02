@@ -27,6 +27,11 @@ images:
   # privateCertServer: 'example.com:443'
   # if needed, enable images even though related tasks are disabled, e.g.
   # pythonToolset: true
+  # autoBuild controls whether builds for all BuildConfig resources are started
+  # automatically after a successful Helm upgrade. autoBuild is enabled by default.
+  # autoBuild: true
+  # autoBuildImage allows to override the image used for starting builds.
+  # autoBuildImage: 'quay.io/openshift/origin-cli:4.9'
 
 
 # ####################################### #

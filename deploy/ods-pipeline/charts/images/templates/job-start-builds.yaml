@@ -1,0 +1,31 @@
+{{if default true .Values.autoBuild}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ods-start-builds
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  template:
+    spec:
+      serviceAccountName: pipeline
+      restartPolicy: Never
+      containers:
+      - name: post-upgrade-job
+        image: '{{.Values.autoBuildImage | default "quay.io/openshift/origin-cli:4.10"}}'
+        command: ["/bin/sh","-c"]
+        # Attempt to start builds for all possible build configs. Some may not
+        # actually exist, but the failure will simply be ignored.
+        args: ["oc start-build ods-buildah;
+                oc start-build ods-finish;
+                oc start-build ods-go-toolset;
+                oc start-build ods-gradle-toolset;
+                oc start-build ods-helm;
+                oc start-build ods-node16-npm-toolset;
+                oc start-build ods-pipeline-manager;
+                oc start-build ods-python-toolset;
+                oc start-build ods-sonar;
+                oc start-build ods-start"]
+{{end}}
