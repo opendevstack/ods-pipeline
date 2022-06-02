@@ -166,8 +166,8 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	skip := shouldSkip(s.BitbucketClient, pInfo.Project, pInfo.Repository, commitSHA)
 	if skip {
-		msg := "Commit should be skipped"
-		s.Logger.Infof("%s: %s", msg, err)
+		msg := fmt.Sprintf("Commit %s should be skipped", commitSHA)
+		s.Logger.Infof(msg)
 		// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
 		// "some websites use this response for requests they do not wish to handle [..]".
 		http.Error(w, msg, http.StatusTeapot)
