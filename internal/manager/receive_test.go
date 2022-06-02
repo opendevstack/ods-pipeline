@@ -161,7 +161,7 @@ func TestWebhookHandling(t *testing.T) {
 				},
 			},
 			wantStatus:         http.StatusTeapot,
-			wantBody:           "Commit should be skipped",
+			wantBody:           "Commit 0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f should be skipped",
 			wantPipelineConfig: false,
 		},
 		"repo:refs_changed triggers pipeline": {
