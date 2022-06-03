@@ -12,6 +12,7 @@ listed in the changelog.
 ### Fixed
 - Wrapper image cannot write aquasec binary ([#539](https://github.com/opendevstack/ods-pipeline/issues/539))
 - When a commit is skipped, the log message contains weird output ([#542](https://github.com/opendevstack/ods-pipeline/issues/542))
+- `imageTag` not defaulting to `.Chart.AppVersion` in `ods-finish` task ([#547](https://github.com/opendevstack/ods-pipeline/issues/547))
 
 
 ## [0.4.0] - 2022-05-31
