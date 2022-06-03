@@ -34,7 +34,7 @@ spec:
   steps:
     - name: ods-finish
       # Image is built from build/package/Dockerfile.finish.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-finish:{{.Values.global.imageTag}}'
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-finish:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
