@@ -3,6 +3,8 @@ kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
   name: ods-helm
+  labels:
+    {{- include "chart.labels" . | nindent 4}}
 spec:
   nodeSelector: null
   output:
