@@ -22,7 +22,7 @@ pipeline:
   - name: backend-build-go
     taskRef:
       kind: Task
-      name: ods-build-go-v0-3-0
+      name: ods-build-go-v0-4-0
     workspaces:
     - name: source
       workspace: shared-workspace

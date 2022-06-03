@@ -126,4 +126,4 @@ Now, compare if any new values have been introduced and update the values and se
 
 Afterwards you can update the resources via `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml`. You may also use `--dry-run` to see the changes first.
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-2-0` to `ods-build-go-v0-3-0`.
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-3-0` to `ods-build-go-v0-4-0`.
