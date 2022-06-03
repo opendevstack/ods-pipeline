@@ -26,5 +26,6 @@ tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
 
 # Copying ods artifacts which are mostly reports (see artifacts.adoc)
 echo "Copying build artifacts from $tmp_artifacts_dir to $ods_artifacts_dir"
+mkdir -p "$tmp_artifacts_dir"
 mkdir -p "$ods_artifacts_dir"
 "$CP" -v -r "$tmp_artifacts_dir/." "$ods_artifacts_dir"

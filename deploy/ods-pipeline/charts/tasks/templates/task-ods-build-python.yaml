@@ -63,6 +63,15 @@ spec:
       description: Script to execute before running tests, relative to the working directory.
       type: string
       default: ""
+    - name: build-script
+      description: >-
+        Build script to execute. The
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-python.sh[default script]
+        is located in the container image. If you specify a relative path
+        instead, it will be resolved from the workspace. See the task definition
+        for details how the build script is invoked.
+      type: string
+      default: "/usr/local/bin/build-python"
     - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
       type: string
@@ -122,9 +131,9 @@ spec:
           --debug=${DEBUG} ; then
           exit 0
         fi
-        # build-python is build/package/scripts/build-python.sh.
+        # Default build script is build/package/scripts/build-python.sh.
         set +e 
-        build-python \
+        $(params.build-script) \
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
           --pre-test-script=$(params.pre-test-script) \

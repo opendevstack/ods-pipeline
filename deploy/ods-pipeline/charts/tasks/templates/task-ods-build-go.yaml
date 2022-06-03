@@ -80,6 +80,15 @@ spec:
         For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
       type: string
       default: "false"
+    - name: build-script
+      description: >-
+        Build script to execute. The
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-go.sh[default script]
+        is located in the container image. If you specify a relative path
+        instead, it will be resolved from the workspace. See the task definition
+        for details how the build script is invoked.
+      type: string
+      default: "/usr/local/bin/build-go"
     - name: pre-test-script
       description: Script to execute before running tests, relative to the working directory.
       type: string
@@ -128,9 +137,9 @@ spec:
           --debug=${DEBUG} ; then
           exit 0
         fi
-        # build-go is build/package/scripts/build-go.sh.
+        # Default build script is build/package/scripts/build-go.sh.
         set +e 
-        build-go \
+        $(params.build-script) \
           --working-dir=$(params.working-dir) \
           --enable-cgo=$(params.enable-cgo) \
           --go-os=$(params.go-os) \
