@@ -14,6 +14,7 @@ listed in the changelog.
 - When a commit is skipped, the log message contains weird output ([#542](https://github.com/opendevstack/ods-pipeline/issues/542))
 - `imageTag` not defaulting to `.Chart.AppVersion` in `ods-finish` task ([#547](https://github.com/opendevstack/ods-pipeline/issues/547))
 - `taskSuffix` defaults to `-v0-3-0` in release 0.4.0 ([#546](https://github.com/opendevstack/ods-pipeline/issues/546))
+- Add (missing) common labels to resources in images and tasks charts ([#543](https://github.com/opendevstack/ods-pipeline/issues/543))
 
 
 ## [0.4.0] - 2022-05-31

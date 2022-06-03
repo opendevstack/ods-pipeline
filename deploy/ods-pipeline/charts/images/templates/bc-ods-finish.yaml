@@ -2,6 +2,8 @@ kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
   name: ods-finish
+  labels:
+    {{- include "chart.labels" . | nindent 4}}
 spec:
   nodeSelector: null
   output:
