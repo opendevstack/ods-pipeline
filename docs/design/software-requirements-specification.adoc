@@ -59,6 +59,9 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 
 | SRS-GENERAL-4
 | ODS Pipeline shall function within corporate networks (HTTP proxy, private CA).
+
+| SRS-GENERAL-5
+| ODS Pipeline shall automatically build container images after installation / update.
 |===
 
 === Pipeline Manager Requirements

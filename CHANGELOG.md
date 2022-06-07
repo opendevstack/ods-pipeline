@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Automatically build images after Helm upgrade ([#525](https://github.com/opendevstack/ods-pipeline/issues/525))
+
 ### Fixed
 - Wrapper image cannot write aquasec binary ([#539](https://github.com/opendevstack/ods-pipeline/issues/539))
 - When a commit is skipped, the log message contains weird output ([#542](https://github.com/opendevstack/ods-pipeline/issues/542))
