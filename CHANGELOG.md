@@ -13,6 +13,10 @@ listed in the changelog.
 
 - Automatically build images after Helm upgrade ([#525](https://github.com/opendevstack/ods-pipeline/issues/525))
 
+### Changed
+
+- Avoid need to specify `imageTag` and `taskSuffix` in `values.yaml` ([#551](https://github.com/opendevstack/ods-pipeline/issues/551))
+
 ### Fixed
 - Wrapper image cannot write aquasec binary ([#539](https://github.com/opendevstack/ods-pipeline/issues/539))
 - When a commit is skipped, the log message contains weird output ([#542](https://github.com/opendevstack/ods-pipeline/issues/542))

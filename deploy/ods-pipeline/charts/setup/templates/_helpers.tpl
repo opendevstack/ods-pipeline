@@ -60,3 +60,15 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the task suffix.
+See https://github.com/Masterminds/sprig/issues/53#issuecomment-483414063.
+*/}}
+{{- define "taskSuffix" -}}
+{{- if kindIs "invalid" .Values.global.taskSuffix }}
+{{- printf "-v%s" (.Chart.AppVersion | replace "." "-") }}
+{{- else }}
+{{- .Values.global.taskSuffix }}
+{{- end }}
+{{- end }}

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: '{{default "Task" .Values.global.taskKind}}'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-finish{{.Values.global.taskSuffix}}'
+  name: '{{default "ods" .Values.taskPrefix}}-finish{{- include "taskSuffix" .}}'
   labels:
     {{- include "chart.labels" . | nindent 4}}
   annotations:
