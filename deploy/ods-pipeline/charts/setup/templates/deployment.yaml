@@ -60,7 +60,7 @@ spec:
             - name: ODS_TASK_KIND
               value: '{{default "Task" .Values.global.taskKind}}'
             - name: ODS_TASK_SUFFIX
-              value: '{{.Values.global.taskSuffix}}'
+              value: '{{- include "taskSuffix" .}}'
           readinessProbe:
             httpGet:
               path: /health

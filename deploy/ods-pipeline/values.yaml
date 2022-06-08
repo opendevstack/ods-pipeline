@@ -3,11 +3,14 @@
 # ####################################### #
 global:
   # Image tag to use for images referenced by tasks (defaults to the chart appVersion).
-  imageTag: ''
-  # Suffix to append to the task name.
-  taskSuffix: -v0-4-0
+  # imageTag: ''
+  # Suffix to append to the task name. If not set, the sufix will be computed
+  # from the chart appVersion in the form "-vMAJOR-MINOR-PATCH".
+  # taskSuffix: -latest
   # Custom task kind (defaults to "Task")
   # taskKind: "ClusterTask"
+  # enabledTasks controls which tasks will be installed. Set the tasks you do
+  # not want to install to false.
   enabledTasks:
     buildGo: true
     buildGradle: true
