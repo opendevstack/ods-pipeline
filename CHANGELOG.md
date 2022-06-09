@@ -11,6 +11,7 @@ listed in the changelog.
 
 ### Fixed
 - Pipeline runs are not pruned ([#557](https://github.com/opendevstack/ods-pipeline/issues/557))
+- Pipeline pods are listed under deployment pods ([#555](https://github.com/opendevstack/ods-pipeline/issues/555))
 
 ## [0.5.0] - 2022-06-09
 
