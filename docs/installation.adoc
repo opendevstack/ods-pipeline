@@ -29,7 +29,7 @@ Then, use `git subtree` to get the required sources. The following commands may 
 
 [source]
 ----
-pipelineGitRef=v0.4.0 # Pick the version you want to install
+pipelineGitRef=v0.5.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -115,7 +115,7 @@ You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 
 [source]
 ----
-pipelineGitRef=v0.4.0 # Pick the version you want to install
+pipelineGitRef=v0.5.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -130,4 +130,4 @@ Afterwards you can update the resources via `./install.sh -n <your_cd_namespace>
 
 NOTE: After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-3-0` to `ods-build-go-v0-4-0`.
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-4-0` to `ods-build-go-v0-5-0`.

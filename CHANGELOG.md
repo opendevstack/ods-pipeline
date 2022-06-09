@@ -9,6 +9,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.5.0] - 2022-06-09
+
 ### Added
 
 - Automatically build images after Helm upgrade ([#525](https://github.com/opendevstack/ods-pipeline/issues/525))

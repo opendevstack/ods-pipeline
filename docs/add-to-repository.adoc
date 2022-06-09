@@ -31,14 +31,14 @@ pipeline:
   - name: backend-build-go
     taskRef:
       kind: Task
-      name: ods-build-go-v0-4-0
+      name: ods-build-go-v0-5-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: backend-package-image
     taskRef:
       kind: Task
-      name: ods-package-image-v0-4-0
+      name: ods-package-image-v0-5-0
     runAfter:
     - backend-build-go
     workspaces:
@@ -47,7 +47,7 @@ pipeline:
   - name: backend-deploy
     taskRef:
       kind: Task
-      name: ods-deploy-helm-v0-4-0
+      name: ods-deploy-helm-v0-5-0
     runAfter:
     - backend-package-image
     workspaces:
@@ -55,9 +55,9 @@ pipeline:
       workspace: shared-workspace
 ----
 
-The only Go specific task is `ods-build-go-v0-4-0`, if you use another technology, exchange the task for another one such as `ods-build-gradle-v0-4-0`.
+The only Go specific task is `ods-build-go-v0-5-0`, if you use another technology, exchange the task for another one such as `ods-build-gradle-v0-5-0`.
 
-The `ods-package-image-v0-4-0` task assumes the Docker context in the `docker` directory, and the `Dockerfile` located inside that folder. Therefore, create a directory `docker` and create a `Dockerfile` inside like this one:
+The `ods-package-image-v0-5-0` task assumes the Docker context in the `docker` directory, and the `Dockerfile` located inside that folder. Therefore, create a directory `docker` and create a `Dockerfile` inside like this one:
 
 .Dockerfile
 [source]
@@ -71,11 +71,11 @@ EXPOSE 8080
 CMD ["./app"]
 ----
 
-NOTE: `ods-build-go-v0-4-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-4-0` task.
+NOTE: `ods-build-go-v0-5-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-5-0` task.
 
 == Create Helm Chart
 
-The `ods-deploy-helm-v0-4-0` requires a Helm chart to be present to deploy the Kubernetes resources for the application. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository].
+The `ods-deploy-helm-v0-5-0` requires a Helm chart to be present to deploy the Kubernetes resources for the application. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository].
 
 == Configure Webhook
 
