@@ -26,7 +26,9 @@ type StorageConfig struct {
 type Scheduler struct {
 	// Channel to read newly received runs from
 	TriggeredPipelines chan PipelineConfig
-	// Channel to send pending runs on
+	// Channel to send triggered repos on (signalling to start pruning)
+	TriggeredRepos chan string
+	// Channel to send pending runs on (singalling to start watching)
 	PendingRunRepos  chan string
 	TektonClient     tektonClient.ClientInterface
 	KubernetesClient kubernetesClient.ClientInterface
@@ -98,6 +100,8 @@ func (s *Scheduler) schedule(ctx context.Context, pData PipelineConfig) bool {
 		s.Logger.Errorf(err.Error())
 		return false
 	}
+	// Trigger pruning
+	s.TriggeredRepos <- pData.Repository
 	return needQueueing
 }
 
