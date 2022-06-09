@@ -136,6 +136,15 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: build-script
+      description: >-
+        Build script to execute. The
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-gradle.sh[default script]
+        is located in the container image. If you specify a relative path
+        instead, it will be resolved from the workspace. See the task definition
+        for details how the build script is invoked.
+      type: string
+      default: "/usr/local/bin/build-gradle"
     - name: sonar-quality-gate
       description: Whether the SonarQube quality gate needs to pass for the task to succeed.
       type: string
@@ -182,8 +191,8 @@ spec:
       resources:
         {{- (.Values.gradle).resources | default dict | toYaml | nindent 8 }}
       script: |
-        # build-gradle is build/package/scripts/build-gradle.sh.
-        build-gradle \
+        # Default build script is build/package/scripts/build-gradle.sh.
+        $(params.build-script) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --gradle-additional-tasks="$(params.gradle-additional-tasks)" \

@@ -121,6 +121,7 @@ Input parameters:
 * `go-arch`: sets target architecture (`GOARCH`)
 * `output-dir`: sets destination directory of built binary
 * `pre-test-script`: specifies script to run prior to tests
+* `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
 * `cache-build`: if 'true' build skipping is enabled.
@@ -167,6 +168,7 @@ Input parameters:
 * `gradle-additional-tasks`: additional gradle tasks to be passed to the gradle build
 * `gradle-options`: options to be passed to the gradle build
 * `output-dir`: sets destination directory of built binary
+* `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
 
@@ -268,7 +270,9 @@ a| The task defines two steps:
   This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
-Input parameters: TODO
+Input parameters:
+
+* `build-script`: specifies path to build script
 
 | SDS-TASK-14
 | `ods-python-toolset` container image
@@ -311,6 +315,7 @@ Input parameters:
 * `copy-node-modules`: enables copying node_modules directory to the output directory
 * `max-lint-warnings`: maximum of allowed linting warnings after which eslint will exit with an error
 * `lint-file-ext`: file extensions to lint
+* `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
 * `cache-build`: if 'true' build skipping is enabled.

@@ -81,6 +81,11 @@ without leading `./` and trailing `/`.
 | If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that a build can be skipped if the `working-dir` contents did not change. For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
 
 
+| build-script
+| /usr/local/bin/build-go
+| Build script to execute. The link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-go.sh[default script] is located in the container image. If you specify a relative path instead, it will be resolved from the workspace. See the task definition for details how the build script is invoked.
+
+
 | pre-test-script
 | 
 | Script to execute before running tests, relative to the working directory.

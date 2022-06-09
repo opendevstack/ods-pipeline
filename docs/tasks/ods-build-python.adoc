@@ -63,6 +63,11 @@ without leading `./` and trailing `/`.
 | Script to execute before running tests, relative to the working directory.
 
 
+| build-script
+| /usr/local/bin/build-python
+| Build script to execute. The link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-python.sh[default script] is located in the container image. If you specify a relative path instead, it will be resolved from the workspace. See the task definition for details how the build script is invoked.
+
+
 | sonar-quality-gate
 | false
 | Whether quality gate needs to pass.

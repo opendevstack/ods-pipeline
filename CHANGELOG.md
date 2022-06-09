@@ -12,6 +12,7 @@ listed in the changelog.
 ### Added
 
 - Automatically build images after Helm upgrade ([#525](https://github.com/opendevstack/ods-pipeline/issues/525))
+- Allow to use build script located in repository ([#536](https://github.com/opendevstack/ods-pipeline/issues/536))
 
 ### Changed
 

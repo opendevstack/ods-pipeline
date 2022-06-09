@@ -167,6 +167,9 @@ a| The task shall build a Go module based Go binary.
 | SRS-TASK-BUILD-GO-7
 | See SRS-TASK-SHARED-3.
 
+| SRS-TASK-BUILD-GO-8
+| See SRS-TASK-SHARED-4.
+
 |===
 
 ==== Task `ods-build-gradle`
@@ -190,6 +193,9 @@ a| The task shall run tests, creating code coverage and xUnit report.
 
 | SRS-TASK-BUILD-GRADLE-4
 | See SRS-TASK-SHARED-2.
+
+| SRS-TASK-BUILD-GRADLE-5
+| See SRS-TASK-SHARED-4.
 
 |===
 
@@ -220,6 +226,9 @@ a| The task shall build a Python application.
 | SRS-TASK-BUILD-PYTHON-6
 | See SRS-TASK-SHARED-3.
 
+| SRS-TASK-BUILD-PYTHON-7
+| See SRS-TASK-SHARED-4.
+
 |===
 
 ==== Task `ods-build-npm`
@@ -247,6 +256,9 @@ a| The task shall build a Node.JS application using npm.
 
 | SRS-TASK-BUILD-NPM-6
 | See SRS-TASK-SHARED-3.
+
+| SRS-TASK-BUILD-NPM-7
+| See SRS-TASK-SHARED-4.
 
 |===
 
@@ -315,6 +327,9 @@ a| The task shall be able to run in a subdirectory of the checked out repository
 
 | SRS-TASK-SHARED-3
 a| The task shall be able to optionally use a build output and report cache so that future execution of build scripts can be skipped if the subdirectory of the checked out repository did not change.
+
+| SRS-TASK-SHARED-4
+a| The task shall be configurable to use a build script located in the workspace instead of the built-in build script.
 
 |===
 
