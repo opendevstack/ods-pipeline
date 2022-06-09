@@ -9,7 +9,7 @@ ODS pipeline follows https://semver.org[Semantic Versioning 2.0.0]. This means b
 == Release Process
 
 === Preparing the release
-The current version is hardcoded in a few places across the repository. All of these places must be updated immediately for a release. Until more detailed instructions are available, see the https://github.com/opendevstack/ods-pipeline/commit/cebc254b759026ad484c05bb530dde5354e2d97f[commit releasing 0.4.0] as a reference. Commit the changes and push to the `master` branch.
+The current version is hardcoded in a few places across the repository. All of these places must be updated for a release (search for `X.Y.Z` and `X-Y-Z`, ignoring the `test` directory). See the https://github.com/opendevstack/ods-pipeline/commit/49e0934fcd35b35439a4adb993fb2adbcb0d7107[commit releasing 0.5.0] as a reference. Commit the changes and push to the `master` branch.
 
 === Publishing the release
 Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). The description should be like this:
@@ -28,6 +28,6 @@ NOTE: When a Git tag is created, container images are built automatically and pu
 NOTE: Do not attach binaries yet, this should be done after the release is published.
 
 === Attaching binaries to the release
-The `artifact-download` binary should be offered as a pre-built binary for `linux/amd64`, `darwin/amd64` and `windows/amd64`. These can be generated via `make build-artifact-download`, and then uploaded in the GitHub release creation form.
+The `artifact-download` binary should be offered as a pre-built binary for `linux/amd64`, `darwin/amd64`, `darwin/arm64` and `windows/amd64`. These can be generated via `make build-artifact-download`, and then uploaded in the GitHub release creation form.
 
 NOTE: Ensure to pull before running the `make` target so that you have the created Git tag available locally. Building from the Git tag ensures that the version information in the binary is correct.
