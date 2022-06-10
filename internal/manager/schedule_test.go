@@ -17,7 +17,8 @@ func TestSchedule(t *testing.T) {
 
 	cfg := PipelineConfig{
 		PipelineInfo: PipelineInfo{
-			Name: "pipeline",
+			Name:       "pipeline",
+			Repository: "repo",
 		},
 		PVC: "pvc",
 	}
@@ -87,7 +88,8 @@ func TestSchedule(t *testing.T) {
 					ClassName:   "class",
 					Size:        "1Gi",
 				},
-				Logger: &logging.LeveledLogger{Level: logging.LevelNull},
+				Logger:         &logging.LeveledLogger{Level: logging.LevelNull},
+				TriggeredRepos: make(chan string, 100),
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -104,6 +106,9 @@ func TestSchedule(t *testing.T) {
 			}
 			if len(tc.tektonClient.CreatedPipelineRuns) != 1 {
 				t.Fatal("one pipeline run should have been created")
+			}
+			if gotTriggered := <-s.TriggeredRepos; gotTriggered != "repo" {
+				t.Fatal("channel should have received the repository name")
 			}
 			if tc.wantQueuedRun != gotQueued {
 				t.Fatalf("want queued: %v, got: %v", tc.wantQueuedRun, gotQueued)

@@ -145,6 +145,7 @@ func serve() error {
 
 	s := &manager.Scheduler{
 		TriggeredPipelines: triggeredPipelinesChan,
+		TriggeredRepos:     triggeredReposChan,
 		PendingRunRepos:    pendingRunReposChan,
 		TektonClient:       tClient,
 		KubernetesClient:   kClient,

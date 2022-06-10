@@ -9,6 +9,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Pipeline runs are not pruned ([#557](https://github.com/opendevstack/ods-pipeline/issues/557))
 
 ## [0.5.0] - 2022-06-09
 
