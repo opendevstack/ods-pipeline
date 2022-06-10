@@ -51,13 +51,15 @@ setup:
   debug: 'false'
 
   # Bitbucket
-  # Bitbucket URL (including scheme). Example: https://bitbucket.example.com.
+  # Bitbucket URL (including scheme, without trailing slash).
+  # Example: https://bitbucket.example.com.
   bitbucketUrl: ''
   # Bitbucket username. Example: cd_user.
   bitbucketUsername: ''
 
   # Nexus
-  # Nexus URL (including scheme). Example: https://nexus.example.com.
+  # Nexus URL (including scheme, without trailing slash).
+  # Example: https://nexus.example.com.
   nexusUrl: ''
   # Nexus username. Example: developer.
   nexusUsername: ''
@@ -67,13 +69,15 @@ setup:
   nexusPermanentRepository: 'ods-permanent-artifacts'
 
   # Sonar
-  # SonarQube URL (including scheme). Example: https://sonarqube.example.com.
+  # SonarQube URL (including scheme, without trailing slash).
+  # Example: https://sonarqube.example.com.
   sonarUrl: ''
   # SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
   sonarEdition: 'community'
 
   # Aqua
-  # Aqua URL (including scheme). Example: https://aqua.example.com.
+  # Aqua URL (including scheme, without trailing slash).
+  # Example: https://aqua.example.com.
   # Leave empty when not using Aqua.
   aquaUrl: ''
   # Aqua registry name.
@@ -84,7 +88,7 @@ setup:
   aquaUsername: ''
 
   # Cluster
-  # URL (including scheme) of the OpenShift Web Console.
+  # URL (including scheme, without trailing slash) of the OpenShift Web Console.
   consoleUrl: 'http://example.com'
 
   # Notification Webhook
