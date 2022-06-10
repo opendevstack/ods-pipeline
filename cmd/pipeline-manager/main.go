@@ -125,7 +125,7 @@ func serve() error {
 	}
 
 	// Initialize Bitbucket client.
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: token,
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})

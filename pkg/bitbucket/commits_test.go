@@ -11,7 +11,7 @@ func TestCommitGet(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits/"+sha,
@@ -30,7 +30,7 @@ func TestCommitGet(t *testing.T) {
 func TestCommitList(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits",
@@ -51,7 +51,7 @@ func TestCommitPullRequestList(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/commits/"+sha+"/pull-requests",

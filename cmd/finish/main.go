@@ -75,11 +75,14 @@ func main() {
 	}
 
 	logger.Infof("Setting Bitbucket build status ...")
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
 		Logger:   logger,
 	})
+	if err != nil {
+		log.Fatal("bitbucket client:", err)
+	}
 	pipelineRunURL := fmt.Sprintf(
 		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
 		opts.consoleURL,

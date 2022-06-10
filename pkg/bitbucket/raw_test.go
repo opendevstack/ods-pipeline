@@ -12,7 +12,7 @@ func TestRawGet(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	tests := map[string]struct {
 		EnqueuedPath       string

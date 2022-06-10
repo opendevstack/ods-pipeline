@@ -15,7 +15,7 @@ func TestInsightReportCreate(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/insights/1.0/projects/PRJ/repos/my-repo/commits/"+sha+"/reports/report.key",

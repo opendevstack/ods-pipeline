@@ -10,7 +10,7 @@ import (
 func TestBranchList(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/branches",

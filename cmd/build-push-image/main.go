@@ -340,17 +340,20 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	}
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
 		Logger:   logger,
 	})
+	if err != nil {
+		return fmt.Errorf("bitbucket client: %w", err)
+	}
 	reportKey := "org.opendevstack.aquasec"
 	scanResult := bitbucket.InsightReportFail
 	if success {
 		scanResult = bitbucket.InsightReportPass
 	}
-	_, err := bitbucketClient.InsightReportCreate(
+	_, err = bitbucketClient.InsightReportCreate(
 		ctxt.Project,
 		ctxt.Repository,
 		ctxt.GitCommitSHA,

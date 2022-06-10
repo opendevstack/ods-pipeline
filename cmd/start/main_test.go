@@ -23,10 +23,13 @@ func TestApplyVersionTags(t *testing.T) {
 	}
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: "s3cr3t", // does not matter
 		BaseURL:  srv.Server.URL,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := map[string]struct {
 		env             *config.Environment
