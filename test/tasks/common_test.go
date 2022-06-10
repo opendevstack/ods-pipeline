@@ -171,11 +171,14 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarP
 		t.Fatalf("could not get SonarQube token: %s", err)
 	}
 
-	sonarClient := sonar.NewClient(&sonar.ClientConfig{
+	sonarClient, err := sonar.NewClient(&sonar.ClientConfig{
 		APIToken:      sonarToken,
 		BaseURL:       "http://localhost:9000", // use localhost instead of ods-test-sonarqube.kind!
 		ServerEdition: "community",
 	})
+	if err != nil {
+		t.Fatalf("sonar client: %s", err)
+	}
 
 	if qualityGateFlag {
 		qualityGateResult, err := sonarClient.QualityGateGet(
