@@ -9,6 +9,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+- Trailing slash in service URLs is not handled properly ([#526](https://github.com/opendevstack/ods-pipeline/issues/526))
+
 ## [0.5.1] - 2022-06-10
 
 ### Fixed
