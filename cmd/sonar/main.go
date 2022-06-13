@@ -57,13 +57,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	sonarClient := sonar.NewClient(&sonar.ClientConfig{
+	sonarClient, err := sonar.NewClient(&sonar.ClientConfig{
 		APIToken:      opts.sonarAuthToken,
 		BaseURL:       opts.sonarURL,
 		ServerEdition: opts.sonarEdition,
 		Debug:         opts.debug,
 		Logger:        logger,
 	})
+	if err != nil {
+		log.Fatal("sonar client:", err)
+	}
 
 	err = sonarScan(logger, opts, ctxt, sonarClient)
 	if err != nil {

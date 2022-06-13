@@ -10,7 +10,7 @@ func TestComputeEngineTaskGet(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	c := testClient(srv.Server.URL)
+	c := testClient(t, srv.Server.URL)
 
 	tests := map[string]struct {
 		Fixture    string

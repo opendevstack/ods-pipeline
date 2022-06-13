@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -20,6 +21,7 @@ type Client struct {
 	rm           nexusrm.RM
 	httpClient   *http.Client
 	clientConfig *ClientConfig
+	baseURL      *url.URL
 }
 
 // ClientConfig configures a Nexus client.
@@ -46,8 +48,12 @@ type ClientInterface interface {
 
 // NewClient initializes a Nexus client.
 func NewClient(clientConfig *ClientConfig) (*Client, error) {
+	baseURL, err := url.Parse(clientConfig.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse base URL: %w", err)
+	}
 	rm, err := nexusrm.New(
-		clientConfig.BaseURL,
+		baseURL.String(),
 		clientConfig.Username,
 		clientConfig.Password,
 	)
@@ -69,13 +75,17 @@ func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelError}
 	}
-
-	return &Client{rm: rm, clientConfig: clientConfig, httpClient: httpClient}, nil
+	return &Client{
+		rm:           rm,
+		clientConfig: clientConfig,
+		httpClient:   httpClient,
+		baseURL:      baseURL,
+	}, nil
 }
 
 // URL returns the Nexus instance URL targeted by this client.
 func (c *Client) URL() string {
-	return c.clientConfig.BaseURL
+	return c.baseURL.String()
 }
 
 // Username returns the username used by this client.

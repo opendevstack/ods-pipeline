@@ -24,5 +24,9 @@ func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string
 		t.Fatalf("could not create Bitbucket client config: %s", err)
 	}
 	bcc.BaseURL = strings.Replace(bcc.BaseURL, BitbucketKinDHost, "localhost", 1)
-	return bitbucket.NewClient(bcc)
+	bc, err := bitbucket.NewClient(bcc)
+	if err != nil {
+		t.Fatalf("bitbucket client: %s", err)
+	}
+	return bc
 }

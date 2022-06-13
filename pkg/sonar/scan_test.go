@@ -9,7 +9,7 @@ import (
 
 func TestExtractComputeEngineTaskID(t *testing.T) {
 
-	c := testClient("")
+	c := testClient(t, "")
 	want := "AVAn5RKqYwETbXvgas-I"
 	fixture := filepath.Join(projectpath.Root, "test/testdata/fixtures/sonar", ReportTaskFilename)
 	got, err := c.ExtractComputeEngineTaskID(fixture)

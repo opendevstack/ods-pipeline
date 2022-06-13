@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ type ClientInterface interface {
 type Client struct {
 	httpClient   *http.Client
 	clientConfig *ClientConfig
+	baseURL      *url.URL
 }
 
 type ClientConfig struct {
@@ -38,7 +40,7 @@ type ClientConfig struct {
 	Logger logging.LeveledLoggerInterface
 }
 
-func NewClient(clientConfig *ClientConfig) *Client {
+func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{}
@@ -54,10 +56,15 @@ func NewClient(clientConfig *ClientConfig) *Client {
 	if clientConfig.ServerEdition == "" {
 		clientConfig.ServerEdition = "community"
 	}
+	baseURL, err := url.Parse(clientConfig.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse base URL: %w", err)
+	}
 	return &Client{
 		httpClient:   httpClient,
 		clientConfig: clientConfig,
-	}
+		baseURL:      baseURL,
+	}, nil
 }
 
 // ProjectKey returns the SonarQube project key for given context and artifact prefix.
@@ -76,9 +83,12 @@ func (c *Client) logger() logging.LeveledLoggerInterface {
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
-	u := c.clientConfig.BaseURL + urlPath
+	u, err := c.baseURL.Parse(urlPath)
+	if err != nil {
+		return 0, nil, fmt.Errorf("parse URL path: %w", err)
+	}
 	c.logger().Debugf("GET %s", u)
-	req, err := http.NewRequest("GET", u, nil)
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}

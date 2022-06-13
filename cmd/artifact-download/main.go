@@ -133,7 +133,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create Bitbucket client config: %s. Are you logged into the cluster?", err)
 	}
-	bitbucketClient := bitbucket.NewClient(bcc)
+	bitbucketClient, err := bitbucket.NewClient(bcc)
+	if err != nil {
+		log.Fatal("bitbucket client:", err)
+	}
 
 	err = run(logger, opts, nexusClient, nr, bitbucketClient, workingDir)
 	if err != nil {

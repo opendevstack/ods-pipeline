@@ -12,7 +12,7 @@ func TestBuildStatusCreate(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	payload := BuildStatusCreatePayload{
 		State:       "INPROGRESS",
@@ -47,7 +47,7 @@ func TestBuildStatusList(t *testing.T) {
 
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/build-status/1.0/commits/"+sha,

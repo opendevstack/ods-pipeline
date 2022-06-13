@@ -9,7 +9,7 @@ import (
 func TestRepoCreate(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/PRJ/repos",
@@ -30,7 +30,7 @@ func TestRepoCreate(t *testing.T) {
 func TestRepoList(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/PRJ/repos",

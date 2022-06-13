@@ -2,6 +2,8 @@ package tekton
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,4 +40,22 @@ func (c *Client) UpdatePipelineRun(ctxt context.Context, pipelineRun *tekton.Pip
 func (c *Client) DeletePipelineRun(ctxt context.Context, name string, options metav1.DeleteOptions) error {
 	c.logger().Debugf("Delete pipeline run %s", name)
 	return c.pipelineRunsClient().Delete(ctxt, name, options)
+}
+
+// PipelineRunURL returns an URL to the pipeline run given in opts.
+func PipelineRunURL(consoleURL, namespace, name string) (string, error) {
+	cURL, err := url.Parse(consoleURL)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL: %w", err)
+	}
+	cPath := fmt.Sprintf(
+		"/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
+		namespace,
+		name,
+	)
+	fullURL, err := cURL.Parse(cPath)
+	if err != nil {
+		return "", fmt.Errorf("parse URL path: %w", err)
+	}
+	return fullURL.String(), nil
 }

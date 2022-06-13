@@ -9,7 +9,7 @@ import (
 func TestTagCreate(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/PRJ/repos/my-repo/tags",
@@ -30,7 +30,7 @@ func TestTagCreate(t *testing.T) {
 func TestTagList(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/tags",
@@ -49,7 +49,7 @@ func TestTagList(t *testing.T) {
 func TestTagGet(t *testing.T) {
 	srv, cleanup := testserver.NewTestServer(t)
 	defer cleanup()
-	bitbucketClient := testClient(srv.Server.URL)
+	bitbucketClient := testClient(t, srv.Server.URL)
 
 	srv.EnqueueResponse(
 		t, "/rest/api/1.0/projects/myproject/repos/my-repo/tags/release-2.0.0",

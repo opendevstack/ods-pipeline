@@ -158,11 +158,11 @@ func main() {
 			}
 			fmt.Println(string(stdout))
 
-			aquaScanUrl := fmt.Sprintf(
-				"%s/#/images/%s/%s/vulns",
-				opts.aquaURL, url.QueryEscape(opts.aquaRegistry), url.QueryEscape(aquaImage),
-			)
-			fmt.Printf("Aqua vulnerability report is at %s ...\n", aquaScanUrl)
+			asu, err := aquaScanURL(opts, aquaImage)
+			if err != nil {
+				log.Fatal("aqua scan URL:", err)
+			}
+			fmt.Printf("Aqua vulnerability report is at %s ...\n", asu)
 
 			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
 			if err != nil {
@@ -170,7 +170,7 @@ func main() {
 			}
 
 			fmt.Println("Creating Bitbucket code insight report ...")
-			err = createBitbucketInsightReport(opts, aquaScanUrl, scanSuccessful, ctxt)
+			err = createBitbucketInsightReport(opts, asu, scanSuccessful, ctxt)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -340,17 +340,20 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	}
-	bitbucketClient := bitbucket.NewClient(&bitbucket.ClientConfig{
+	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: opts.bitbucketAccessToken,
 		BaseURL:  opts.bitbucketURL,
 		Logger:   logger,
 	})
+	if err != nil {
+		return fmt.Errorf("bitbucket client: %w", err)
+	}
 	reportKey := "org.opendevstack.aquasec"
 	scanResult := bitbucket.InsightReportFail
 	if success {
 		scanResult = bitbucket.InsightReportPass
 	}
-	_, err := bitbucketClient.InsightReportCreate(
+	_, err = bitbucketClient.InsightReportCreate(
 		ctxt.Project,
 		ctxt.Repository,
 		ctxt.GitCommitSHA,
@@ -415,4 +418,21 @@ func writeImageDigestToResults(imageDigest string) error {
 func aquasecInstalled() bool {
 	_, err := exec.LookPath(aquasecBin)
 	return err == nil
+}
+
+// aquaScanURL returns an URL to the given aquaImage.
+func aquaScanURL(opts options, aquaImage string) (string, error) {
+	aquaURL, err := url.Parse(opts.aquaURL)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL: %w", err)
+	}
+	aquaPath := fmt.Sprintf(
+		"/#/images/%s/%s/vulns",
+		url.QueryEscape(opts.aquaRegistry), url.QueryEscape(aquaImage),
+	)
+	fullURL, err := aquaURL.Parse(aquaPath)
+	if err != nil {
+		return "", fmt.Errorf("parse URL path: %w", err)
+	}
+	return fullURL.String(), nil
 }

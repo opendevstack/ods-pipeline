@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -15,6 +16,7 @@ import (
 type Client struct {
 	httpClient   *http.Client
 	clientConfig *ClientConfig
+	baseURL      *url.URL
 }
 
 type ClientConfig struct {
@@ -27,7 +29,7 @@ type ClientConfig struct {
 	Logger logging.LeveledLoggerInterface
 }
 
-func NewClient(clientConfig *ClientConfig) *Client {
+func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{}
@@ -47,10 +49,15 @@ func NewClient(clientConfig *ClientConfig) *Client {
 	if clientConfig.Logger == nil {
 		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
+	baseURL, err := url.Parse(clientConfig.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse base URL: %w", err)
+	}
 	return &Client{
 		httpClient:   httpClient,
 		clientConfig: clientConfig,
-	}
+		baseURL:      baseURL,
+	}, nil
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {
@@ -66,13 +73,16 @@ func (c *Client) put(urlPath string, payload []byte) (int, []byte, error) {
 }
 
 func (c *Client) createRequest(method, urlPath string, payload []byte) (int, []byte, error) {
-	u := c.clientConfig.BaseURL + urlPath
+	u, err := c.baseURL.Parse(urlPath)
+	if err != nil {
+		return 0, nil, fmt.Errorf("parse URL path: %w", err)
+	}
 	c.logger().Debugf("%s %s", method, u)
 	var requestBody io.Reader
 	if payload != nil {
 		requestBody = bytes.NewReader(payload)
 	}
-	req, err := http.NewRequest(method, u, requestBody)
+	req, err := http.NewRequest(method, u.String(), requestBody)
 	if err != nil {
 		return 0, nil, fmt.Errorf("could not create request: %s", err)
 	}
