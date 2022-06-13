@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -463,22 +462,4 @@ func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string)
 	}
 	logger.Infof(string(stdout))
 	return err
-}
-
-// pipelineRunURL returns an URL to the pipeline run given in opts.
-func pipelineRunURL(ctxt *pipelinectxt.ODSContext, opts options) (string, error) {
-	consoleURL, err := url.Parse(opts.consoleURL)
-	if err != nil {
-		return "", fmt.Errorf("parse base URL: %w", err)
-	}
-	consolePath := fmt.Sprintf(
-		"/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		ctxt.Namespace,
-		opts.pipelineRunName,
-	)
-	fullURL, err := consoleURL.Parse(consolePath)
-	if err != nil {
-		return "", fmt.Errorf("parse URL path: %w", err)
-	}
-	return fullURL.String(), nil
 }

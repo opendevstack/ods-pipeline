@@ -129,6 +129,9 @@ func serve() error {
 		APIToken: token,
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
 	})
+	if err != nil {
+		return fmt.Errorf("bitbucket client: %w", err)
+	}
 
 	// triggeredReposChan is used to communicate repos for which pipelines
 	// have been triggered between receiver and pruner.

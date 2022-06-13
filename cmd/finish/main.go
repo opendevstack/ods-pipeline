@@ -139,7 +139,7 @@ func main() {
 	if notificationClient.ShouldNotify(opts.aggregateTasksStatus) {
 		err = notificationClient.CallWebhook(ctx, notification.PipelineRunResult{
 			PipelineRunName: opts.pipelineRunName,
-			PipelineRunURL:  pipelineRunURL,
+			PipelineRunURL:  prURL,
 			OverallStatus:   opts.aggregateTasksStatus,
 			ODSContext:      ctxt,
 		})
