@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,17 +150,17 @@ func main() {
 	if err != nil {
 		log.Fatal("bitbucket client:", err)
 	}
-	pipelineRunURL := fmt.Sprintf(
-		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		opts.consoleURL,
-		ctxt.Namespace,
-		opts.pipelineRunName,
-	)
+
+	prURL, err := pipelineRunURL(ctxt, opts)
+	if err != nil {
+		log.Fatal("pipeline run URL:", err)
+	}
+
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       bitbucket.BuildStatusInProgress,
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
-		URL:         pipelineRunURL,
+		URL:         prURL,
 		Description: "ODS Pipeline Build",
 	})
 	if err != nil {
@@ -461,4 +462,22 @@ func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string)
 	}
 	logger.Infof(string(stdout))
 	return err
+}
+
+// pipelineRunURL returns an URL to the pipeline run given in opts.
+func pipelineRunURL(ctxt *pipelinectxt.ODSContext, opts options) (string, error) {
+	consoleURL, err := url.Parse(opts.consoleURL)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL: %w", err)
+	}
+	consolePath := fmt.Sprintf(
+		"/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
+		ctxt.Namespace,
+		opts.pipelineRunName,
+	)
+	fullURL, err := consoleURL.Parse(consolePath)
+	if err != nil {
+		return "", fmt.Errorf("parse URL path: %w", err)
+	}
+	return fullURL.String(), nil
 }
