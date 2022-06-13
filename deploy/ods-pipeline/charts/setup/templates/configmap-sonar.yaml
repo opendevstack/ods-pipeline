@@ -5,5 +5,5 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4}}
 data:
-  url: '{{.Values.sonarUrl}}'
+  url: '{{.Values.sonarUrl | trimSuffix "/"}}'
   edition: '{{.Values.sonarEdition | default "community" }}'

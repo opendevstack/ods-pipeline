@@ -5,4 +5,4 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4}}
 data:
-  consoleUrl: '{{.Values.consoleUrl}}'
+  consoleUrl: '{{.Values.consoleUrl | trimSuffix "/"}}'
