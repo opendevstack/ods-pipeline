@@ -13,6 +13,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/repository"
+	"github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -151,7 +152,7 @@ func main() {
 		log.Fatal("bitbucket client:", err)
 	}
 
-	prURL, err := pipelineRunURL(ctxt, opts)
+	prURL, err := tekton.PipelineRunURL(opts.consoleURL, ctxt.Namespace, opts.pipelineRunName)
 	if err != nil {
 		log.Fatal("pipeline run URL:", err)
 	}

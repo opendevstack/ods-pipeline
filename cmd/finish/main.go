@@ -10,6 +10,7 @@ import (
 
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/notification"
+	"github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -83,17 +84,17 @@ func main() {
 	if err != nil {
 		log.Fatal("bitbucket client:", err)
 	}
-	pipelineRunURL := fmt.Sprintf(
-		"%s/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
-		opts.consoleURL,
-		ctxt.Namespace,
-		opts.pipelineRunName,
-	)
+
+	prURL, err := tekton.PipelineRunURL(opts.consoleURL, ctxt.Namespace, opts.pipelineRunName)
+	if err != nil {
+		log.Fatal("pipeline run URL:", err)
+	}
+
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       getBitbucketBuildStatus(opts.aggregateTasksStatus),
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
-		URL:         pipelineRunURL,
+		URL:         prURL,
 		Description: "ODS Pipeline Build",
 	})
 	if err != nil {
