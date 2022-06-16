@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 const (
@@ -44,15 +45,41 @@ type LeveledLogger struct {
 	// values are not guaranteed to be stable.
 	Level Level
 
+	// Whether to add a timestamp or not.
+	Timestamp bool
+
+	// Tag to prefix message with.
+	Tag string
+
 	// Internal testing use only.
+	ClockOverride  clock
 	StderrOverride io.Writer
 	StdoutOverride io.Writer
+}
+
+// clock exists to stub the current time in tests.
+type clock interface {
+	Now() time.Time
+}
+
+func (l *LeveledLogger) timestampPrefix() string {
+	if l.Timestamp {
+		return l.now().Format(time.RFC3339) + " | "
+	}
+	return ""
+}
+
+func (l *LeveledLogger) tagPrefix() string {
+	if l.Tag != "" {
+		return l.Tag + ": "
+	}
+	return ""
 }
 
 // Debugf logs a debug message using Printf conventions.
 func (l *LeveledLogger) Debugf(format string, v ...interface{}) {
 	if l.Level >= LevelDebug {
-		fmt.Fprintf(l.stdout(), "[DEBUG] "+format+"\n", v...)
+		fmt.Fprintf(l.stdout(), l.timestampPrefix()+"DEBUG | "+l.tagPrefix()+format+"\n", v...)
 	}
 }
 
@@ -60,21 +87,32 @@ func (l *LeveledLogger) Debugf(format string, v ...interface{}) {
 func (l *LeveledLogger) Errorf(format string, v ...interface{}) {
 	// Infof logs a debug message using Printf conventions.
 	if l.Level >= LevelError {
-		fmt.Fprintf(l.stderr(), "[ERROR] "+format+"\n", v...)
+		fmt.Fprintf(l.stderr(), l.timestampPrefix()+"ERROR | "+l.tagPrefix()+format+"\n", v...)
 	}
 }
 
 // Infof logs an informational message using Printf conventions.
 func (l *LeveledLogger) Infof(format string, v ...interface{}) {
 	if l.Level >= LevelInfo {
-		fmt.Fprintf(l.stdout(), "[INFO] "+format+"\n", v...)
+		fmt.Fprintf(l.stdout(), l.timestampPrefix()+"INFO  | "+l.tagPrefix()+format+"\n", v...)
 	}
 }
 
 // Warnf logs a warning message using Printf conventions.
 func (l *LeveledLogger) Warnf(format string, v ...interface{}) {
 	if l.Level >= LevelWarn {
-		fmt.Fprintf(l.stderr(), "[WARN] "+format+"\n", v...)
+		fmt.Fprintf(l.stderr(), l.timestampPrefix()+"WARN  | "+l.tagPrefix()+format+"\n", v...)
+	}
+}
+
+func (l *LeveledLogger) WithTag(tag string) *LeveledLogger {
+	return &LeveledLogger{
+		Level:          l.Level,
+		Timestamp:      l.Timestamp,
+		Tag:            tag,
+		ClockOverride:  l.ClockOverride,
+		StdoutOverride: l.StdoutOverride,
+		StderrOverride: l.StderrOverride,
 	}
 }
 
@@ -92,6 +130,14 @@ func (l *LeveledLogger) stdout() io.Writer {
 	}
 
 	return os.Stdout
+}
+
+func (l *LeveledLogger) now() time.Time {
+	if l.ClockOverride != nil {
+		return l.ClockOverride.Now()
+	}
+
+	return time.Now()
 }
 
 // LeveledLoggerInterface provides a basic leveled logging interface for
@@ -112,6 +158,9 @@ type LeveledLoggerInterface interface {
 
 	// Warnf logs a warning message using Printf conventions.
 	Warnf(format string, v ...interface{})
+
+	// WithTag returns a new LeveledLogger based on the current one but with given tag.
+	WithTag(tag string) *LeveledLogger
 }
 
 type SimpleLogger interface {
