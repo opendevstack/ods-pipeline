@@ -57,9 +57,9 @@ func main() {
 func serve() error {
 	var logger logging.LeveledLoggerInterface
 	if os.Getenv("DEBUG") == "true" {
-		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+		logger = &logging.LeveledLogger{Timestamp: true, Level: logging.LevelDebug}
 	} else {
-		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+		logger = &logging.LeveledLogger{Timestamp: true, Level: logging.LevelInfo}
 	}
 	logger.Infof("Booting ...")
 
@@ -152,7 +152,7 @@ func serve() error {
 		PendingRunRepos:    pendingRunReposChan,
 		TektonClient:       tClient,
 		KubernetesClient:   kClient,
-		Logger:             logger,
+		Logger:             logger.WithTag("scheduler"),
 		TaskKind:           tekton.TaskKind(taskKind),
 		TaskSuffix:         taskSuffix,
 		StorageConfig: manager.StorageConfig{
@@ -166,7 +166,7 @@ func serve() error {
 	p := &manager.Pruner{
 		TriggeredRepos: triggeredReposChan,
 		TektonClient:   tClient,
-		Logger:         logger,
+		Logger:         logger.WithTag("pruner"),
 		MinKeepHours:   pruneMinKeepHours,
 		MaxKeepRuns:    pruneMaxKeepRuns,
 	}
@@ -176,7 +176,7 @@ func serve() error {
 		PendingRunRepos: pendingRunReposChan,
 		Queues:          map[string]bool{},
 		TektonClient:    tClient,
-		Logger:          logger,
+		Logger:          logger.WithTag("watcher"),
 	}
 	go w.Run(ctx)
 	// As there is no persistent state, check for queued pipeline runs for all
@@ -193,7 +193,7 @@ func serve() error {
 
 	r := &manager.BitbucketWebhookReceiver{
 		TriggeredPipelines: triggeredPipelinesChan,
-		Logger:             logger,
+		Logger:             logger.WithTag("receiver"),
 		BitbucketClient:    bitbucketClient,
 		WebhookSecret:      webhookSecret,
 		Namespace:          namespace,

@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Add timestamp and tag to log messages in pipeline manager deployment ([#554](https://github.com/opendevstack/ods-pipeline/issues/554))
+
 ### Fixed
 - Trailing slash in service URLs is not handled properly ([#526](https://github.com/opendevstack/ods-pipeline/issues/526))
 
