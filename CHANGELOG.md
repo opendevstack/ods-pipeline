@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.
+
 ### Changed
 
 - Add timestamp and tag to log messages in pipeline manager deployment ([#554](https://github.com/opendevstack/ods-pipeline/issues/554))
@@ -28,7 +32,6 @@ listed in the changelog.
 
 - Automatically build images after Helm upgrade ([#525](https://github.com/opendevstack/ods-pipeline/issues/525))
 - Allow to use build script located in repository ([#536](https://github.com/opendevstack/ods-pipeline/issues/536))
-- Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.
 
 ### Changed
 
