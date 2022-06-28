@@ -2,7 +2,8 @@ FROM registry.access.redhat.com/ubi8/openjdk-17:1.13
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV OPENSSL_VERSION=1.1 \
+ENV GIT_VERSION=2.31 \
+    OPENSSL_VERSION=1.1 \
     GRADLE_VERSION=7.4.2 \
     GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle
 
@@ -11,7 +12,7 @@ ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=29e49b10984e585d8118b7d0bc452f944e386458df273
 
 USER root
 
-RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* && microdnf clean all
+RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* git-${GIT_VERSION}* && microdnf clean all
 
 # Install Gradle
 RUN cd /opt && \
@@ -31,10 +32,16 @@ RUN cd /opt && \
 VOLUME /workspace/source
 
 # Add scripts
+COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
+COPY build/package/scripts/copy-build-if-cached.sh /usr/local/bin/copy-build-if-cached
+COPY build/package/scripts/copy-artifacts.sh /usr/local/bin/copy-artifacts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
 COPY build/package/scripts/set-gradle-proxy.sh /usr/local/bin/set-gradle-proxy
 RUN chmod +x /usr/local/bin/build-gradle && \
+    chmod +x /usr/local/bin/cache-build && \
+    chmod +x /usr/local/bin/copy-build-if-cached && \
+    chmod +x /usr/local/bin/copy-artifacts && \
     chmod +x /usr/local/bin/supply-sonar-project-properties-default && \
     chmod +x /usr/local/bin/set-gradle-proxy
 
