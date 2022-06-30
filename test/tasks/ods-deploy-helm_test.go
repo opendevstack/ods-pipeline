@@ -95,7 +95,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					}
 
 					// Verify log output massaging
-					doNotWantLogMsg := "/usr/local/helm/plugins/helm-secrets/scripts/commands/helm.sh: line 34: xargs: command not found"
+					doNotWantLogMsg := "plugin \"diff\" exited with error"
 					if strings.Contains(string(ctxt.CollectedLogs), doNotWantLogMsg) {
 						t.Fatalf("Do not want:\n%s\n\nGot:\n%s", doNotWantLogMsg, string(ctxt.CollectedLogs))
 					}

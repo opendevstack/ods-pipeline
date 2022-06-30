@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -35,21 +34,6 @@ const (
 	// required by helm secrets plugin.
 	ageKeyFilePath = "./key.txt"
 )
-
-// confusingHelmDiffMessage is the message Helm prints when helm-diff is
-// configured to exit with a non-zero exit code when drift is detected,
-// provided helm-secrets is also installed but no secrets are decrypted.
-const confusingHelmDiffMessage = `Error: identified at least one change, exiting with non-zero exit code (detailed-exitcode parameter enabled)
-Error: plugin "diff" exited with error
-Error: plugin "secrets" exited with error`
-
-// confusingHelmDiffDecryptionMessage is like confusingHelmDiffMessage but occurs
-// when helm-secrets is required to decrypt secrets to perform the diff.
-const confusingHelmDiffDecryptionMessage = `Error: identified at least one change, exiting with non-zero exit code (detailed-exitcode parameter enabled)
-Error: plugin "diff" exited with error
-
-/usr/local/helm/plugins/helm-secrets/scripts/commands/helm.sh: line 34: xargs: command not found
-Error: plugin "secrets" exited with error`
 
 type options struct {
 	// Location of Helm chart directory.
@@ -395,7 +379,7 @@ func main() {
 	}
 	// Replace confusing stderr messages while still printing stderr in general
 	// to surface any other issues that might be logged there.
-	diffStderr := replaceConfusingHelmLogMessages(stderr)
+	diffStderr := cleanHelmDiffOutput(stderr)
 	fmt.Println(string(stdout))
 	fmt.Println(string(diffStderr))
 	err = writeDeploymentArtifact(stdout, "diff", opts.chartDir, targetConfig.Name)
@@ -455,25 +439,6 @@ func getChartVersion(contextVersion string, hc *helmChart) string {
 		return contextVersion
 	}
 	return hc.Version
-}
-
-// replaceConfusingHelmLogMessages replaces confusing stderr messages with
-// easier to understand ones. The tests in ods-deploy-helm_test.go ensure this
-// still works when Helm is upgraded.
-func replaceConfusingHelmLogMessages(logs []byte) []byte {
-	cleaned := bytes.Replace(
-		logs,
-		[]byte(confusingHelmDiffMessage),
-		[]byte("plugin \"diff\" identified at least one change"),
-		1,
-	)
-	cleaned = bytes.Replace(
-		cleaned,
-		[]byte(confusingHelmDiffDecryptionMessage),
-		[]byte("plugin \"diff\" identified at least one change"),
-		1,
-	)
-	return cleaned
 }
 
 func artifactFilename(filename, chartDir, targetEnv string) string {
