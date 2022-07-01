@@ -16,6 +16,8 @@ listed in the changelog.
 ### Changed
 
 - Add timestamp and tag to log messages in pipeline manager deployment ([#554](https://github.com/opendevstack/ods-pipeline/issues/554))
+- Perform 3-way merge in `install.sh` script ([#569](https://github.com/opendevstack/ods-pipeline/issues/569))
+- Repurpose `diff-flags` parameter of `deploy-helm` task and use 3-way merge in diff by default ([#574](https://github.com/opendevstack/ods-pipeline/issues/574) and [#569](https://github.com/opendevstack/ods-pipeline/issues/569))
 
 ### Fixed
 - Trailing slash in service URLs is not handled properly ([#526](https://github.com/opendevstack/ods-pipeline/issues/526))

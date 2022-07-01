@@ -76,11 +76,11 @@ spec:
       type: string
       default: ''
     - name: diff-flags
-      description: Flags to pass to `helm diff upgrade`. Note that `--detailed-exitcode` and `--no-color` are automatically set and cannot be removed. Changes should be aligned with `upgrade-flags` as needed.
+      description: Flags to pass to `helm diff upgrade` in addition to the ones specified via the `upgrade-flags` parameter. Note that the flags `--detailed-exitcode` and `--no-color` are automatically set and cannot be removed. If flags unknown to `helm diff` are passed, they are ignored.
       type: string
-      default: '--install'
+      default: '--three-way-merge'
     - name: upgrade-flags
-      description: Flags to pass to `helm upgrade`. Changes should be aligned with `diff-flags` as needed.
+      description: Flags to pass to `helm upgrade`.
       type: string
       default: '--install --wait'
     - name: age-key-secret
