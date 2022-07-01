@@ -93,6 +93,9 @@ clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.
 
 ##@ KinD (local development environment)
 
+prepare-personal-env: create-kind-with-registry build-and-push-images install-tekton-pipelines ## Prepare personal env from scratch
+.PHONY: prepare-local-env
+
 prepare-local-env: create-kind-with-registry build-and-push-images install-tekton-pipelines run-bitbucket run-nexus run-sonarqube ## Prepare local environment from scratch.
 .PHONY: prepare-local-env
 
