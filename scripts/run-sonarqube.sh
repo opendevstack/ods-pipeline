@@ -27,10 +27,30 @@ esac; shift; done
 
 echo "Run container using image tag ${SONAR_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
+
 cd "${SCRIPT_DIR}"/sonarqube
-docker build -t ${IMAGE_NAME} .
+
+if [ "$(uname -m)" = "arm64" ]; then
+    SONAR_ARM_IMAGE_NAME="ods-test-sonarqube-arm"
+    if [ "$(docker images -q ${SONAR_ARM_IMAGE_NAME}:${SONAR_IMAGE_TAG} 2> /dev/null)" == "" ]; then
+        echo "Building SonarQube arm64 image ..."
+        rm -rf docker-sonarqube || true
+        git clone https://github.com/SonarSource/docker-sonarqube
+        cd docker-sonarqube
+        git checkout refs/tags/9.4.0 # Last available Git tag
+        cd 9/community
+        docker build -t sonarqube-arm:${SONAR_IMAGE_TAG} .
+        cd "${SCRIPT_DIR}"/sonarqube
+        docker build -t ${SONAR_ARM_IMAGE_NAME}:${SONAR_IMAGE_TAG} --build-arg=from=sonarqube-arm:${SONAR_IMAGE_TAG} .
+    else
+        echo "Using existing ${SONAR_ARM_IMAGE_NAME}:${SONAR_IMAGE_TAG} image"
+    fi
+    IMAGE_NAME="${SONAR_ARM_IMAGE_NAME}"
+else
+    docker build -t ${IMAGE_NAME}:${SONAR_IMAGE_TAG} --build-arg=from=sonarqube:${SONAR_IMAGE_TAG} .
+fi
 cd - &> /dev/null
-docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" ${IMAGE_NAME}
+docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_PORT}:9000" ${IMAGE_NAME}:${SONAR_IMAGE_TAG}
 
 SONARQUBE_URL="http://localhost:${HOST_PORT}"
 if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
