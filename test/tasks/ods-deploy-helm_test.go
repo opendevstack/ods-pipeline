@@ -70,11 +70,8 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						filepath.Join(pipelinectxt.DeploymentsPath, "diff-dev.txt"),
 						"Release was not present in Helm.  Diff will show entire contents as new.",
 						"Deployment (apps) has been added",
-						"# Source: helm-sample-app/templates/deployment.yaml",
 						"Secret (v1) has been added",
-						"# Source: helm-sample-app/templates/secret.yaml",
 						"Service (v1) has been added",
-						"# Source: helm-sample-app/templates/service.yaml",
 					)
 					checkFileContentContains(
 						t, wsDir,

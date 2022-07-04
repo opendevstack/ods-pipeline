@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/internal/file"
@@ -23,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -40,7 +38,7 @@ type options struct {
 	chartDir string
 	// Name of Helm release.
 	releaseName string
-	// Flags to pass to `helm diff upgrade` (in addition to default ones).
+	// Flags to pass to `helm diff upgrade` (in addition to default ones and upgrade flags).
 	diffFlags string
 	// Flags to pass to `helm upgrade`.
 	upgradeFlags string
@@ -60,7 +58,7 @@ func main() {
 	opts := options{}
 	flag.StringVar(&opts.chartDir, "chart-dir", "", "Chart dir")
 	flag.StringVar(&opts.releaseName, "release-name", "", "Name of Helm release")
-	flag.StringVar(&opts.diffFlags, "diff-flags", "", "Flags to pass to `helm diff upgrade` (in addition to default ones)")
+	flag.StringVar(&opts.diffFlags, "diff-flags", "", "Flags to pass to `helm diff upgrade` (in addition to default ones and upgrade flags)")
 	flag.StringVar(&opts.upgradeFlags, "upgrade-flags", "", "Flags to pass to `helm upgrade`")
 	flag.StringVar(&opts.ageKeySecret, "age-key-secret", "", "Name of the secret containing the age key to use for helm-secrets")
 	flag.StringVar(&opts.ageKeySecretField, "age-key-secret-field", "key.txt", "Name of the field in the secret holding the age private key")
@@ -354,24 +352,13 @@ func main() {
 	}
 
 	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
-	helmDiffArgs := []string{
-		"--namespace=" + releaseNamespace,
-		"secrets",
-		"diff",
-		"upgrade",
-		"--detailed-exitcode",
-		"--no-color",
-	}
-	helmDiffFlags, err := shlex.Split(opts.diffFlags)
+	helmDiffArgs, err := assembleHelmDiffArgs(
+		releaseNamespace, releaseName, helmArchive,
+		opts, valuesFiles, cliValues,
+	)
 	if err != nil {
-		log.Fatalf("could not parse diff flags (%s): %s", opts.diffFlags, err)
+		log.Fatal(err)
 	}
-	helmDiffArgs = append(helmDiffArgs, helmDiffFlags...)
-	for _, vf := range valuesFiles {
-		helmDiffArgs = append(helmDiffArgs, fmt.Sprintf("--values=%s", vf))
-	}
-	helmDiffArgs = append(helmDiffArgs, cliValues...)
-	helmDiffArgs = append(helmDiffArgs, releaseName, helmArchive)
 	stdout, stderr, err = runHelmCmd(helmDiffArgs, targetConfig, opts.debug)
 	if err == nil {
 		fmt.Println("no diff ...")
@@ -388,21 +375,13 @@ func main() {
 	}
 
 	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
-	helmUpgradeArgs := []string{
-		"--namespace=" + releaseNamespace,
-		"secrets",
-		"upgrade",
-	}
-	helmUpgradeFlags, err := shlex.Split(opts.upgradeFlags)
+	helmUpgradeArgs, err := assembleHelmUpgradeArgs(
+		releaseNamespace, releaseName, helmArchive,
+		opts, valuesFiles, cliValues,
+	)
 	if err != nil {
-		log.Fatalf("could not parse upgrade flags (%s): %s", opts.upgradeFlags, err)
+		log.Fatal(err)
 	}
-	helmUpgradeArgs = append(helmUpgradeArgs, helmUpgradeFlags...)
-	for _, vf := range valuesFiles {
-		helmUpgradeArgs = append(helmUpgradeArgs, fmt.Sprintf("--values=%s", vf))
-	}
-	helmUpgradeArgs = append(helmUpgradeArgs, cliValues...)
-	helmUpgradeArgs = append(helmUpgradeArgs, releaseName, helmArchive)
 	stdout, stderr, err = runHelmCmd(helmUpgradeArgs, targetConfig, opts.debug)
 	if err != nil {
 		fmt.Println(string(stderr))
@@ -413,32 +392,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-type helmChart struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
-
-func getHelmChart(filename string) (*helmChart, error) {
-	y, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("could not read chart: %w", err)
-	}
-
-	var hc *helmChart
-	err = yaml.Unmarshal(y, &hc)
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal: %w", err)
-	}
-	return hc, nil
-}
-
-func getChartVersion(contextVersion string, hc *helmChart) string {
-	if len(contextVersion) > 0 && contextVersion != pipelinectxt.WIP {
-		return contextVersion
-	}
-	return hc.Version
 }
 
 func artifactFilename(filename, chartDir, targetEnv string) string {
@@ -471,33 +424,6 @@ func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []by
 	return errBytes, err
 }
 
-func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (outBytes, errBytes []byte, err error) {
-	if debug {
-		args = append([]string{"--debug"}, args...)
-	}
-	printableArgs := args
-	if targetConfig.APIServer != "" {
-		printableArgs = append(
-			[]string{
-				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
-				"--kube-token=***",
-			},
-			args...,
-		)
-		args = append(
-			[]string{
-				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
-				fmt.Sprintf("--kube-token=%s", targetConfig.APIToken),
-			},
-			args...,
-		)
-	}
-	fmt.Println(helmBin, strings.Join(printableArgs, " "))
-
-	var extraEnvs = []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)}
-	return command.RunWithExtraEnvs(helmBin, args, extraEnvs)
-}
-
 func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -512,33 +438,6 @@ func getTrimmedFileContent(filename string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
-}
-
-func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string, debug bool) (string, error) {
-	hc, err := getHelmChart(filepath.Join(chartDir, "Chart.yaml"))
-	if err != nil {
-		return "", fmt.Errorf("could not read chart: %w", err)
-	}
-	chartVersion := getChartVersion(ctxtVersion, hc)
-	packageVersion := fmt.Sprintf("%s+%s", chartVersion, gitCommitSHA)
-	helmPackageArgs := []string{
-		"package",
-		fmt.Sprintf("--app-version=%s", gitCommitSHA),
-		fmt.Sprintf("--version=%s", packageVersion),
-	}
-	if debug {
-		helmPackageArgs = append(helmPackageArgs, "--debug")
-	}
-	stdout, stderr, err := command.Run(helmBin, append(helmPackageArgs, chartDir))
-	if err != nil {
-		return "", fmt.Errorf(
-			"could not package chart %s. stderr: %s, err: %s", chartDir, string(stderr), err,
-		)
-	}
-	fmt.Println(string(stdout))
-
-	helmArchive := fmt.Sprintf("%s-%s.tgz", hc.Name, packageVersion)
-	return helmArchive, nil
 }
 
 func collectImageDigests(imageDigestsDir string) ([]string, error) {
