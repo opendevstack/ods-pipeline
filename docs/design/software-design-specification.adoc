@@ -476,6 +476,10 @@ a| The Helm chart consists of three subhcharts:
 * `setup`: Contains resources related to the pipeline manager and config maps / secrets supporting pipeline runs
 
 The `images` chart is only used within an OpenShift context. It contains a `post-install/upgrade` hook which starts builds for all available `BuildConfig` resources to automatically build new container images to be used in tasks and the pipeline manager.
+
+| SDS-SETUP-2
+| `web-terminal-install.sh` script
+a| The script is supposed to be downloaded and piped into bash. The script installs the prerequisites not already present in the Web Terminal image (`helm-diff`, `helm-secrets`, `sops`, `age`), clones the Git repository and then runs `./install.sh`.
 |===
 
 
