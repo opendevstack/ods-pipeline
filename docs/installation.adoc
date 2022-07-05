@@ -122,7 +122,7 @@ You may also use `--dry-run` to see the changes first. After you ran the script,
 
 ==== Without external API access
 
-If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[quay.io/wto/web-terminal-tooling:next] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
+If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[`quay.io/wto/web-terminal-tooling:next`] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
 
 [source]
 ----
@@ -184,7 +184,7 @@ You may also use `--dry-run` to see the changes first. After you ran the script,
 
 ==== Without external API access
 
-If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[quay.io/wto/web-terminal-tooling:next] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
+If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[`quay.io/wto/web-terminal-tooling:next`] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
 
 [source]
 ----
