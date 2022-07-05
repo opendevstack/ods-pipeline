@@ -12,6 +12,7 @@ listed in the changelog.
 ### Added
 
 - Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.
+- Add script to install from inside an OpenShift Web Terminal ([#581](https://github.com/opendevstack/ods-pipeline/issues/581))
 
 ### Changed
 

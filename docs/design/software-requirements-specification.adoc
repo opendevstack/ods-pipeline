@@ -52,7 +52,7 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 | ODS Pipeline shall be installable in Kubernetes (1.21+) clusters with Tekton (0.24+) installed.
 
 | SRS-GENERAL-2
-| ODS Pipeline shall be installable in OpenShift (4.8+) clusters with the OpenShift Pipelines (1.5+) operator installed.
+| ODS Pipeline shall be installable in OpenShift (4.8+) clusters with the OpenShift Pipelines (1.6+) operator installed.
 
 | SRS-GENERAL-3
 | ODS Pipeline shall be installable without cluster admin permissions.
@@ -62,6 +62,9 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 
 | SRS-GENERAL-5
 | ODS Pipeline shall automatically build container images after installation / update.
+
+| SRS-GENERAL-6
+| ODS Pipeline shall support installation from within an OpenShift Web Terminal when the OpenShift API cannot be accessed from outside the cluster.
 |===
 
 === Pipeline Manager Requirements
