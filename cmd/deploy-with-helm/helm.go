@@ -22,6 +22,9 @@ const helmDiffDetectedMarker = `Error: identified at least one change, exiting w
 // desiredDiffMessage is the message that should be presented to the user.
 const desiredDiffMessage = `plugin "diff" identified at least one change`
 
+// exit code returned from helm-diff when diff is detected.
+const diffExitCode = 2
+
 type helmChart struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`

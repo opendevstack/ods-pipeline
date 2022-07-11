@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -360,9 +362,13 @@ func main() {
 		log.Fatal(err)
 	}
 	stdout, stderr, err = runHelmCmd(helmDiffArgs, targetConfig, opts.debug)
-	if err == nil {
-		fmt.Println("no diff ...")
+	if err == nil { // exit code 0 returned
+		fmt.Println("No diff detected, skipping helm upgrade.")
 		os.Exit(0)
+	}
+	var ee *exec.ExitError
+	if errors.As(err, &ee) && ee.ExitCode() != diffExitCode { // exit code 1 returned
+		log.Fatalf("%s\n%s", err, string(ee.Stderr))
 	}
 	// Replace confusing stderr messages while still printing stderr in general
 	// to surface any other issues that might be logged there.

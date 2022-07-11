@@ -142,6 +142,19 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatalf("Want ENV username = %s, got: %s", wantEnvValue, gotEnvValue)
 					}
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+					PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						wantLogMsg := "No diff detected, skipping helm upgrade"
+						if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+							t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+						}
+					},
+				}},
 			},
 		},
 	)
