@@ -23,7 +23,8 @@ listed in the changelog.
 ### Fixed
 - Trailing slash in service URLs is not handled properly ([#526](https://github.com/opendevstack/ods-pipeline/issues/526))
 - Helm diff result log filtering does not work anymore ([#563](https://github.com/opendevstack/ods-pipeline/issues/563))
-- Handle diff error and diff detection separately ([#584](https://github.com/opendevstack/ods-pipeline/issues/584))
+- Handle Helm diff error and diff detection separately ([#584](https://github.com/opendevstack/ods-pipeline/issues/584))
+- Handle Aqua error and compliance problems separately ([#586](https://github.com/opendevstack/ods-pipeline/issues/586))
 
 ## [0.5.1] - 2022-06-10
 
