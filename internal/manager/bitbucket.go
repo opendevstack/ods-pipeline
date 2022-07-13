@@ -12,38 +12,6 @@ type bitbucketInterface interface {
 	bitbucket.RepoClientInterface
 }
 
-type repository struct {
-	Project struct {
-		Key string `json:"key"`
-	} `json:"project"`
-	Slug string `json:"slug"`
-}
-type requestBitbucket struct {
-	EventKey   string     `json:"eventKey"`
-	Repository repository `json:"repository"`
-	Changes    []struct {
-		Type string `json:"type"`
-		Ref  struct {
-			ID        string `json:"id"`
-			DisplayID string `json:"displayId"`
-			Type      string `json:"type"`
-		} `json:"ref"`
-		FromHash string `json:"fromHash"`
-		ToHash   string `json:"toHash"`
-	} `json:"changes"`
-	PullRequest *struct {
-		FromRef struct {
-			Repository   repository `json:"repository"`
-			ID           string     `json:"id"`
-			DisplayID    string     `json:"displayId"`
-			LatestCommit string     `json:"latestCommit"`
-		} `json:"fromRef"`
-	} `json:"pullRequest"`
-	Comment *struct {
-		Text string `json:"text"`
-	} `json:"comment"`
-}
-
 func getCommitSHA(bitbucketClient bitbucket.CommitClientInterface, project, repository, gitFullRef string) (string, error) {
 	commitList, err := bitbucketClient.CommitList(project, repository, bitbucket.CommitListParams{
 		Until: gitFullRef,

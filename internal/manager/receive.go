@@ -3,7 +3,6 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -11,11 +10,6 @@ import (
 	intrepo "github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
-)
-
-const (
-	// allowedChangeRefType is the Bitbucket change ref handled by this service.
-	allowedChangeRefType = "BRANCH"
 )
 
 // BitbucketWebhookReceiver receives webhook requests from Bitbucket.
@@ -34,6 +28,11 @@ type BitbucketWebhookReceiver struct {
 	Project string
 	// RepoBase is the common URL base of all repositories on Bitbucket.
 	RepoBase string
+}
+
+type ParseGitEvent struct {
+	PInfo     PipelineInfo
+	CommitSHA string
 }
 
 // PipelineInfo holds information about a triggered pipeline.
@@ -59,99 +58,9 @@ type PipelineInfo struct {
 
 // Handle handles Bitbucket requests. It extracts pipeline data from the request
 // body and sends the gained data to the scheduler.
-func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		msg := "could not read body"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	if err := validatePayload(r.Header, body, []byte(s.WebhookSecret)); err != nil {
-		msg := "failed to validate incoming request"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	req := &requestBitbucket{}
-	if err := json.Unmarshal(body, &req); err != nil {
-		msg := fmt.Sprintf("cannot parse JSON: %s", err)
-		s.Logger.Errorf(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	var repo string
-	var gitRef string
-	var gitFullRef string
-	var project string
-	var projectParam string
-	var component string
-	var commitSHA string
-	commentText := ""
-
-	if req.EventKey == "repo:refs_changed" {
-		repo = strings.ToLower(req.Repository.Slug)
-		change := req.Changes[0]
-		gitRef = strings.ToLower(change.Ref.DisplayID)
-		gitFullRef = change.Ref.ID
-
-		projectParam = req.Repository.Project.Key
-		commitSHA = change.ToHash
-
-		if change.Ref.Type != allowedChangeRefType {
-			msg := fmt.Sprintf(
-				"Skipping change ref type %s, only %s is supported",
-				change.Ref.Type,
-				allowedChangeRefType,
-			)
-			s.Logger.Warnf(msg)
-			// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
-			// "some websites use this response for requests they do not wish to handle [...]".
-			http.Error(w, msg, http.StatusTeapot)
-			return
-		}
-	} else if strings.HasPrefix(req.EventKey, "pr:") {
-		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
-		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
-		gitFullRef = req.PullRequest.FromRef.ID
-
-		projectParam = req.PullRequest.FromRef.Repository.Project.Key
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if req.Comment != nil {
-			commentText = req.Comment.Text
-		}
-		commitSHA = req.PullRequest.FromRef.LatestCommit
-	} else {
-		msg := fmt.Sprintf("Unsupported event key: %s", req.EventKey)
-		s.Logger.Warnf(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-
-	project = determineProject(s.Project, projectParam)
-	component = strings.TrimPrefix(repo, project+"-")
-	pInfo := PipelineInfo{
-		Name:       makePipelineName(component, gitRef),
-		Project:    project,
-		Component:  component,
-		Repository: repo,
-		GitRef:     gitRef,
-		GitFullRef: gitFullRef,
-		RepoBase:   s.RepoBase,
-		// Assemble GitURI from scratch instead of using user-supplied URI to
-		// protect against attacks from external Bitbucket servers and/or projects.
-		GitURI:       fmt.Sprintf("%s/%s/%s.git", s.RepoBase, project, repo),
-		Namespace:    s.Namespace,
-		TriggerEvent: req.EventKey,
-		Comment:      commentText,
-	}
-
+func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request, parsedGitInfo *ParseGitEvent) {
+	pInfo := parsedGitInfo.PInfo
+	commitSHA := parsedGitInfo.CommitSHA
 	if len(commitSHA) == 0 {
 		csha, err := getCommitSHA(s.BitbucketClient, pInfo.Project, pInfo.Repository, pInfo.GitFullRef)
 		if err != nil {
@@ -215,7 +124,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	cfg := PipelineConfig{
 		PipelineInfo: pInfo,
-		PVC:          makePVCName(component),
+		PVC:          makePVCName(pInfo.Component),
 		Tasks:        odsConfig.Pipeline.Tasks,
 		Finally:      odsConfig.Pipeline.Finally,
 	}
@@ -226,15 +135,6 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		s.Logger.Errorf("cannot write body: %s", err)
 		return
 	}
-}
-
-// determineProject returns the project from given serverProject/projectParam.
-func determineProject(serverProject, projectParam string) string {
-	projectParam = strings.ToLower(projectParam)
-	if len(projectParam) > 0 {
-		return projectParam
-	}
-	return strings.ToLower(serverProject)
 }
 
 /** Looks in commit message for the following strings

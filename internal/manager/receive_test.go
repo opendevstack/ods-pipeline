@@ -111,7 +111,7 @@ func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server 
 		BitbucketClient:    bc,
 		Logger:             &logging.LeveledLogger{Level: logging.LevelNull},
 	}
-	return httptest.NewServer(http.HandlerFunc(r.Handle))
+	return httptest.NewServer(http.HandlerFunc(r.HandleParseBitbucketWebhookEvent))
 }
 
 func TestWebhookHandling(t *testing.T) {
