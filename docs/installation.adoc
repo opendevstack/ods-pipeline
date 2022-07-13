@@ -128,7 +128,7 @@ If you do not have access to the OpenShift API from your local machine, you can 
 ----
 mkdir -p /home/user/.config/sops/age
 echo "AGE-SECRET-KEY-<YOUR-KEY>" > /home/user/.config/sops/age/keys.txt
-curl -LO https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
+curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
 ----
 
 This will install all prerequisites automatically before it will stop and let you clone the repository and run `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml` in the terminal.
@@ -190,7 +190,7 @@ If you do not have access to the OpenShift API from your local machine, you can 
 ----
 mkdir -p /home/user/.config/sops/age
 echo "AGE-SECRET-KEY-<YOUR-KEY>" > /home/user/.config/sops/age/keys.txt
-curl -LO https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
+curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
 ----
 
 This will install all prerequisites automatically and update your ODS Pipeline installation to the latest state of your Git repository.
