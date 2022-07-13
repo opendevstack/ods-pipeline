@@ -56,6 +56,8 @@ if oc -n "${NAMESPACE}" get secrets/ods-bitbucket-auth &> /dev/null; then
   if [ -z "${REPOSITORY}" ]; then
     REPOSITORY="${repoBase}/${NAMESPACE%-cd}/${NAMESPACE}.git"
   fi
+  repoName="${REPOSITORY##*/}"
+  rm -rf "${repoName%.git}" || true
   git clone -c http.extraHeader="Authorization: Bearer ${authToken}" "${REPOSITORY}"
 else
   echo 'No secret ods-bitbucket-auth found.'
