@@ -100,11 +100,11 @@ func main() {
 	// read ods.y(a)ml
 	odsConfig, err := config.ReadFromDir(checkoutDir)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("err during ods config reading: %s", err))
+		log.Fatalf("err during ods config reading: %s", err)
 	}
 	targetConfig, err := odsConfig.Environment(ctxt.Environment)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
+		log.Fatalf("err during namespace extraction: %s", err)
 	}
 
 	releaseNamespace := targetConfig.Namespace
