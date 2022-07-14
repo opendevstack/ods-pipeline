@@ -117,12 +117,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
 		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
 		gitFullRef = req.PullRequest.FromRef.ID
-
 		projectParam = req.PullRequest.FromRef.Repository.Project.Key
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 		if req.Comment != nil {
 			commentText = req.Comment.Text
 		}
