@@ -32,7 +32,7 @@ Run a task that prints a hello world message and define a test in Go using Use [
 As part of the preconditions to run the tests, we shall:
 
 - Create a KinD cluster with a registry. (needed to push images for buildah)
-- Pull the images from DockerHub into the KinD registry (Tasks by default will use localhost:5000, make it easy later to override).
+- Pull the images from DockerHub into the KinD registry (Tasks by default will use localhost:5001, make it easy later to override).
 - Install Tekton Core components
 - Apply the custom Tekton tasks under /deploy.
 - Verify we can run Tekton tests.

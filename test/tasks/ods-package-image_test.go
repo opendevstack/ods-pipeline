@@ -207,5 +207,5 @@ func getDockerImageTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir str
 	if err != nil {
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
-	return fmt.Sprintf("localhost:5000/%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, sha)
+	return fmt.Sprintf("localhost:5001/%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, sha)
 }

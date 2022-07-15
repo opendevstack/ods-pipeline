@@ -100,11 +100,11 @@ func TestTaskODSDeployHelmExternal(t *testing.T) {
 
 					imageStream = random.PseudoString()
 					tag := "latest"
-					fullTag := fmt.Sprintf("localhost:5000/%s/%s:%s", ctxt.Namespace, imageStream, tag)
+					fullTag := fmt.Sprintf("localhost:5001/%s/%s:%s", ctxt.Namespace, imageStream, tag)
 					buildAndPushImageWithLabel(t, ctxt, fullTag, wsDir)
 					ia := artifact.Image{
-						Image:      fmt.Sprintf("kind-registry.kind:5000/%s/%s:%s", ctxt.Namespace, imageStream, tag),
-						Registry:   "kind-registry.kind:5000",
+						Image:      fmt.Sprintf("kind-registry.kind:5001/%s/%s:%s", ctxt.Namespace, imageStream, tag),
+						Registry:   "kind-registry.kind:5001",
 						Repository: ctxt.Namespace,
 						Name:       imageStream,
 						Tag:        tag,
