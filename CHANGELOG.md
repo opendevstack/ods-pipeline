@@ -9,6 +9,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.6.0] - 2022-07-20
+
 ### Added
 
 - Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.
