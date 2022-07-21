@@ -203,7 +203,8 @@ func serve() error {
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", http.HandlerFunc(health))
-	mux.Handle("/bitbucket", http.HandlerFunc(r.Handle))
+	mux.Handle("/bitbucket", http.HandlerFunc(r.HandleParseBitbucketWebhookEvent))
+	mux.Handle("/personal", http.HandlerFunc(r.HandleParsePersonalBuildEvent))
 	logger.Infof("Ready to accept requests!")
 	return http.ListenAndServe(":8080", mux)
 }
