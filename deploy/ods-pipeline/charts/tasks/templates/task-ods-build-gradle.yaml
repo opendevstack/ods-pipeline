@@ -101,6 +101,14 @@ spec:
       ** `quality-gate.json`
     * `xunit-reports/`
       ** `report.xml`
+
+    Instead of the built-in script, one can also specify a build script located
+    in the Git repository using the `build-script` task parameter. This allows
+    full control of building and testing, including any generation of artifacts.
+    Note that some other task parameters have no effect when a custom build
+    script is used, unless they are handled properly in the script. At a
+    minimum, the custom script should place its outputs in the directory
+    identified by `output-dir`.
   params:
     - name: working-dir
       description: |
@@ -134,6 +142,13 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
+    - name: cache-build
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
+        a build can be skipped if the `working-dir` contents did not change.
+        For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
+      type: string
+      default: "false"
     - name: build-script
       description: >-
         Build script to execute. The
@@ -151,6 +166,9 @@ spec:
       description: Whether to skip SonarQube analysis or not.
       type: string
       default: "false"
+  results:
+    - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
+      name: build-reused-from-location
   {{- with ((.Values.gradle).sidecars) }}
   sidecars:
     {{- toYaml . | nindent 4 }}
@@ -189,12 +207,39 @@ spec:
       resources:
         {{- (.Values.gradle).resources | default dict | toYaml | nindent 8 }}
       script: |
+        supply-sonar-project-properties-default
+        echo -n "" > $(results.build-reused-from-location.path)
+        cache_build_key=gradle
+        if copy-build-if-cached \
+          --cache-build=$(params.cache-build) \
+          --cache-build-key="$cache_build_key" \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG} ; then
+          exit 0
+        fi
         # Default build script is build/package/scripts/build-gradle.sh.
+        set +e
         $(params.build-script) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
           --gradle-additional-tasks="$(params.gradle-additional-tasks)" \
           --gradle-options="$(params.gradle-options)"
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
+        if [ "$(params.cache-build)" == "true" ]; then
+          cache-build \
+            --cache-build-key="$cache_build_key" \
+            --cache-location-used-path=$(results.build-reused-from-location.path) \
+            --working-dir=$(params.working-dir) \
+            --output-dir=$(params.output-dir) \
+            --debug=${DEBUG}
+        fi
       workingDir: $(workspaces.source.path)
     {{- include "sonar-step" . | indent 4}}
   workspaces:

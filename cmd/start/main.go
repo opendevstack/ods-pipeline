@@ -215,7 +215,7 @@ func main() {
 	if ctxt.Environment != "" {
 		env, err := odsConfig.Environment(ctxt.Environment)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("err during namespace extraction: %s", err))
+			log.Fatalf("err during namespace extraction: %s", err)
 		}
 		err = applyVersionTags(logger, bitbucketClient, ctxt, subrepoContexts, env)
 		if err != nil {

@@ -4,9 +4,9 @@ set -eu
 KUBE_CONTEXT="--context kind-kind"
 KUBECTL_BIN="kubectl $KUBE_CONTEXT"
 
-# Tekton version is aligned with Red Hat OpenShift Pipelines General Availability 1.5.
-# See https://docs.openshift.com/container-platform/4.8/cicd/pipelines/op-release-notes.html.
-TKN_VERSION="v0.24.0"
+# Tekton version is aligned with Red Hat OpenShift Pipelines General Availability 1.6.
+# See https://docs.openshift.com/container-platform/4.9/cicd/pipelines/op-release-notes.html.
+TKN_VERSION="v0.28.3"
 TKN_DASHBOARD_VERSION="v0.17.0"
 
 INSTALL_TKN_DASHBOARD="false"

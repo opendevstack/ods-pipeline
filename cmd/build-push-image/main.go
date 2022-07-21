@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -22,8 +23,10 @@ import (
 )
 
 const (
-	aquasecBin                  = "aquasec"
-	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
+	aquasecBin                    = "aquasec"
+	kubernetesServiceaccountDir   = "/var/run/secrets/kubernetes.io/serviceaccount"
+	scanComplianceFailureExitCode = 4
+	// scanLicenseValidationFailureExitCode = 5
 )
 
 type options struct {
@@ -147,16 +150,20 @@ func main() {
 			scanSuccessful := false
 
 			stdout, stderr, err = aquaScan(opts, aquaImage, htmlReportFile, jsonReportFile)
-			if err != nil {
-				log.Println(string(stderr))
-				log.Println(err)
-				if opts.aquasecGate {
-					log.Fatalln("Stopping build as successful Aqua scan is required")
-				}
-			} else {
+			if err == nil {
 				scanSuccessful = true
+			} else {
+				var ee *exec.ExitError
+				if errors.As(err, &ee) && ee.ExitCode() != scanComplianceFailureExitCode {
+					log.Fatalf("%s\n%s", err, string(ee.Stderr))
+				}
+				fmt.Println(string(stderr))
 			}
+			// STDOUT typically contains the scan summary ASCII table
 			fmt.Println(string(stdout))
+			if !scanSuccessful && opts.aquasecGate {
+				log.Fatalln("Stopping build as successful Aqua scan is required")
+			}
 
 			asu, err := aquaScanURL(opts, aquaImage)
 			if err != nil {

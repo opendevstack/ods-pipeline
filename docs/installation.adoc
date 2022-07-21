@@ -1,27 +1,33 @@
 = Installation Guide
 :toc:
 
-This guide will show how to install `ods-pipeline` in an existing ODS project. It is possible to use the new Tekton pipelines approach and the classic Jenkins approach side by side.
+This guide will show how to install ODS Pipeline in an existing ODS project. It is possible to useODS Pipeline the classic Jenkins CI/CD setup side by side.
 
-Note that at the moment, `ods-pipeline` is somewhat compatible with an existing ODS 3.x/4.x installation, but it is not integrated (yet). If `ods-pipeline` gets integrated into OpenDevStack in the future, then the installation guide as presented below may not be needed anymore as the setup process might be automated then. However, the executed steps will likely be similar.
+NOTE: ODS Pipeline is basically compatible with an existing ODS 4.x installation, but it is not integrated (yet). If ODS Pipeline gets integrated into OpenDevStack in the future, then the installation guide as presented below may not be needed anymore as the setup process might be automated then. However, the executed steps will likely be similar.
 
-The guide will install the following required resources:
+An ODS Pipeline installation basically consists of the following resources:
 
-* Basic `BuildConfig`, `ImageStream` and `Task` resources
+* `BuildConfig`, `ImageStream` and `Task` resources
 * `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
-* ODS pipeline manager, which is managing and triggering pipelines in response to Bitbucket webhook requests
+* An ODS pipeline manager, which is managing and triggering pipelines in response to Bitbucket webhook requests
 
 == Prerequisites
 
-You'll need:
+For both installation and update, you'll need:
 
 * A namespace in an OpenShift cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`)
-* `git`, `oc` and `helm` (with plugins link:https://github.com/databus23/helm-diff[`helm-diff`] and link:https://github.com/jkroepke/helm-secrets[`helm-secrets`]) installed locally
-* to be logged into OpenShift on the command line
+* `git`, link:https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html[`oc`], link:https://helm.sh[`helm`] (with plugins link:https://github.com/databus23/helm-diff[`helm-diff`] and link:https://github.com/jkroepke/helm-secrets[`helm-secrets`]), link:https://github.com/mozilla/sops[`sops`] and link:https://github.com/FiloSottile/age[`age`] installed locally
 
-== Instructions
+== Installation Instructions
 
-First, create a repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
+The installation procedure consists of two steps:
+
+1. Creating the Git repository defining the configuration of the ODS Pipeline installation
+2. Using Helm to install from the Git repository
+
+===  Creating the Git repository
+
+Create a new repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the resources in namespace `foo-cd` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
 
 IMPORTANT: The following commands will fail in an empty Git repository, so make sure you have made at least one commit in the repository.
 
@@ -29,7 +35,7 @@ Then, use `git subtree` to get the required sources. The following commands may 
 
 [source]
 ----
-pipelineGitRef=v0.5.1 # Pick the version you want to install
+pipelineGitRef=v0.6.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -48,8 +54,6 @@ cp ods-pipeline/values.yaml values.yaml
 ----
 
 Regarding the secrets, it is recommended to encrypt them at rest, therefore the following describes how to first encrypt them, but also how to edit them using the `helm-secrets` plugin.
-
-For this, you'll need to install `link:https://github.com/mozilla/sops[sops]` and `link:https://github.com/FiloSottile/age[age]` for en-/decryption of the `secrets.yaml` file.
 
 As described in the `sops` link:https://github.com/mozilla/sops#22encrypting-using-age[documentation], when decrypting
 using `age`, `sops` will look for a text file name `keys.txt` located in a `sops` subdirectory of your user
@@ -81,7 +85,7 @@ Take the public key and use it to create an encrypted version of your `secrets.y
 sops --encrypt --age <your_age_public_key> ods-pipeline/secrets.yaml > secrets.yaml
 ----
 
-NOTE: you can add multiple recipients (e.g.: each team member has its own age key) comma-separated:
+NOTE: You can add multiple recipients (e.g.: each team member has its own age key) comma-separated:
 
 [source]
 ----
@@ -97,25 +101,62 @@ helm secrets edit secrets.yaml
 
 CAUTION: If you configure an Aqua scanner download URL, make sure that username/password are URL-encoded and that the `scannercli` version matches your Aqua server version.
 
-IMPORTANT: In ODS 4.0.0, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in your Nexus instance yet, you will need to create them manually. The repositories are of type "raw" and should not allow re-deployment of artifacts. It is recommended to use blob stores for both. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
+IMPORTANT: In ODS 4.x, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in the central Nexus instance yet, you will need to create them. The repositories need to be of type "raw" and should not allow re-deployment of artifacts. It is recommended to use separate blob stores for both. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
 
-Now fill in the variables as described in the comments in both (values.yaml and secrets.yaml) files. Then you can install the resources via `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml` (make sure to replace the namespace). You may also use `--dry-run` to see the changes first.
+Now fill in the variables as described in the comments in both (`values.yaml` and `secrets.yaml`) files. Once this is done, the Git repository is fully prepared. Commit and push before proceeding to the next step.
 
-NOTE: After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
+=== Using Helm to install from the Git repository
 
-Finally, run `oc -n <your_cd_namespace> expose svc ods-pipeline` to expose the service listener. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket (together with the webhook secret that is stored in the `Secret/ods-bitbucket-webhook` resource).
+==== With external API access
+
+If you have access to the OpenShift API from your local machine, you can simply login to the OpenShift cluster, then install ODS Pipeline by running:
+
+[source]
+----
+./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml
+----
+
+CAUTION: Replace the namespace before running the command
+
+You may also use `--dry-run` to see the changes first. After you ran the script, continue with the <<finishing-the-installation,Finishing the installation>> section.
+
+==== Without external API access
+
+If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[`quay.io/wto/web-terminal-tooling:next`] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
+
+[source]
+----
+mkdir -p /home/user/.config/sops/age
+echo "AGE-SECRET-KEY-<YOUR-KEY>" > /home/user/.config/sops/age/keys.txt
+curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
+----
+
+This will install all prerequisites automatically before it will stop and let you clone the repository and run `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml` in the terminal.
+
+==== Finishing the installation
+
+After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
+
+Finally, create an HTTPS route to expose the `ods-pipeline` service. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket (together with the webhook secret that is stored in the `Secret/ods-bitbucket-webhook` resource).
 
 IMPORTANT: The `pipeline` serviceaccount needs at least `edit` or even `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
 
 Now you are ready to link:convert-quickstarter-component.adoc[use ODS pipeline for your repositories]!
 
-== Updating
+== Update Instructions
+
+The update procedure consists of two steps:
+
+1. Updating the Git repository defining the configuration of the ODS Pipeline installation
+2. Using Helm to install from the Git repository
+
+=== Updating the Git repository
 
 You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 
 [source]
 ----
-pipelineGitRef=v0.5.1 # Pick the version you want to install
+pipelineGitRef=v0.6.0 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -124,10 +165,38 @@ git checkout - && \
 git subtree merge --prefix=deploy subtree-split-branch-$pipelineGitRef --squash
 ----
 
-Now, compare if any new values have been introduced and update the values and secrets file accordingly.
+Now, compare if any new values have been introduced and update the `values.yaml` and `secrets.yaml` file accordingly. Afterwards, commit and push the result.
 
-Afterwards you can update the resources via `./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml`. You may also use `--dry-run` to see the changes first.
+=== Using Helm to install from the Git repository
 
-NOTE: After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
+==== With external API access
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-4-0` to `ods-build-go-v0-5-1`.
+If you have access to the OpenShift API from your local machine, you can simply login to the OpenShift cluster, then update the ODS Pipeline installation by running:
+
+[source]
+----
+./install.sh -n <your_cd_namespace> -f values.yaml,secrets.yaml
+----
+
+CAUTION: Replace the namespace before running the command
+
+You may also use `--dry-run` to see the changes first. After you ran the script, continue with the <<finishing-the-update,Finishing the update>> section.
+
+==== Without external API access
+
+If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] (with the https://github.com/redhat-developer/web-terminal-tooling/pull/43[`quay.io/wto/web-terminal-tooling:next`] image) to install ODS Pipeline. Open a terminal in your `*-cd` namespace, then run the following steps:
+
+[source]
+----
+mkdir -p /home/user/.config/sops/age
+echo "AGE-SECRET-KEY-<YOUR-KEY>" > /home/user/.config/sops/age/keys.txt
+curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
+----
+
+This will install all prerequisites automatically and update your ODS Pipeline installation to the latest state of your Git repository.
+
+==== Finishing the update
+
+After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
+
+Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-5-1` to `ods-build-go-v0-6-0`.

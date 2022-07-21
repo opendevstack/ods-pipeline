@@ -94,5 +94,3 @@ else
   echo "Build failed: no unit test coverage report was found in ${COVERAGE_RESULT_DIR}"
   exit 1
 fi
-
-supply-sonar-project-properties-default

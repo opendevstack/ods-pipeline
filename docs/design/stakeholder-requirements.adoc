@@ -98,7 +98,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS pipeline shall function in Kubernetes (Tekton v0.24+) and OpenShift (OpenShift Pipelines v1.5+) clusters.
 
 | SHR-14
-| ODS Pipeline shall function in a corporate context (supporting HTTP proxies and private certificates) when installed in an OpenShift cluster.
+| ODS Pipeline shall function in a corporate context (supporting HTTP proxies, private certificates and installation without external API access) when installed in an OpenShift cluster.
 |===
 
 == Appendix

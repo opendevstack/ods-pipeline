@@ -9,12 +9,25 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.6.0] - 2022-07-20
+
+### Added
+
+- Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.
+- Add script to install from inside an OpenShift Web Terminal ([#581](https://github.com/opendevstack/ods-pipeline/issues/581))
+
 ### Changed
 
 - Add timestamp and tag to log messages in pipeline manager deployment ([#554](https://github.com/opendevstack/ods-pipeline/issues/554))
+- Perform 3-way merge in `install.sh` script ([#569](https://github.com/opendevstack/ods-pipeline/issues/569))
+- Repurpose `diff-flags` parameter of `deploy-helm` task and use 3-way merge in diff by default ([#574](https://github.com/opendevstack/ods-pipeline/issues/574) and [#569](https://github.com/opendevstack/ods-pipeline/issues/569))
 
 ### Fixed
 - Trailing slash in service URLs is not handled properly ([#526](https://github.com/opendevstack/ods-pipeline/issues/526))
+- Helm diff result log filtering does not work anymore ([#563](https://github.com/opendevstack/ods-pipeline/issues/563))
+- Handle Helm diff error and diff detection separately ([#584](https://github.com/opendevstack/ods-pipeline/issues/584))
+- Handle Aqua error and compliance problems separately ([#586](https://github.com/opendevstack/ods-pipeline/issues/586))
 
 ## [0.5.1] - 2022-06-10
 

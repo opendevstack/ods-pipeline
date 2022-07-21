@@ -70,11 +70,8 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						filepath.Join(pipelinectxt.DeploymentsPath, "diff-dev.txt"),
 						"Release was not present in Helm.  Diff will show entire contents as new.",
 						"Deployment (apps) has been added",
-						"# Source: helm-sample-app/templates/deployment.yaml",
 						"Secret (v1) has been added",
-						"# Source: helm-sample-app/templates/secret.yaml",
 						"Service (v1) has been added",
-						"# Source: helm-sample-app/templates/service.yaml",
 					)
 					checkFileContentContains(
 						t, wsDir,
@@ -95,7 +92,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					}
 
 					// Verify log output massaging
-					doNotWantLogMsg := "/usr/local/helm/plugins/helm-secrets/scripts/commands/helm.sh: line 34: xargs: command not found"
+					doNotWantLogMsg := "plugin \"diff\" exited with error"
 					if strings.Contains(string(ctxt.CollectedLogs), doNotWantLogMsg) {
 						t.Fatalf("Do not want:\n%s\n\nGot:\n%s", doNotWantLogMsg, string(ctxt.CollectedLogs))
 					}
@@ -145,6 +142,19 @@ func TestTaskODSDeployHelm(t *testing.T) {
 						t.Fatalf("Want ENV username = %s, got: %s", wantEnvValue, gotEnvValue)
 					}
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+					PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						wantLogMsg := "No diff detected, skipping helm upgrade"
+						if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+							t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+						}
+					},
+				}},
 			},
 		},
 	)
