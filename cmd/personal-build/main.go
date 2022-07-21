@@ -111,7 +111,7 @@ func postPersonalBuild(logger logging.LeveledLoggerInterface, url string, person
 	client := &http.Client{Timeout: time.Minute}
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatalf("Http request failed: %w", err)
+		log.Fatalf("Http request failed: %v", err)
 	}
 	logger.Infof("%s response status=%d", url, res.StatusCode)
 	gotBodyBytes, err := ioutil.ReadAll(res.Body)
