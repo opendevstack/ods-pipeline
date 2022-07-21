@@ -208,6 +208,7 @@ func main() {
 			// requests error out with "server gave HTTP response to HTTPS client".
 			if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
 				srcRegistryTLSVerify = false
+				destRegistryTLSVerify = false
 			}
 			if len(targetConfig.RegistryHost) > 0 {
 				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
