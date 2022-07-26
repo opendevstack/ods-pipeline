@@ -1,14 +1,12 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,10 +21,7 @@ import (
 )
 
 const (
-	aquasecBin                    = "aquasec"
-	kubernetesServiceaccountDir   = "/var/run/secrets/kubernetes.io/serviceaccount"
-	scanComplianceFailureExitCode = 4
-	// scanLicenseValidationFailureExitCode = 5
+	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
 )
 
 type options struct {
@@ -149,18 +144,15 @@ func main() {
 			jsonReportFile := filepath.Join(workingDir, "report.json")
 			scanSuccessful := false
 
-			stdout, stderr, err = aquaScan(opts, aquaImage, htmlReportFile, jsonReportFile)
-			if err == nil {
-				scanSuccessful = true
-			} else {
-				var ee *exec.ExitError
-				if errors.As(err, &ee) && ee.ExitCode() != scanComplianceFailureExitCode {
-					log.Fatalf("%s\n%s", err, string(ee.Stderr))
-				}
-				fmt.Println(string(stderr))
+			scanSuccessful, out, err := aquaScan(
+				aquaScanRunnerFunc(aquaScanRun),
+				opts, aquaImage, htmlReportFile, jsonReportFile,
+			)
+			fmt.Println(out)
+			if err != nil {
+				log.Fatal(err)
 			}
-			// STDOUT typically contains the scan summary ASCII table
-			fmt.Println(string(stdout))
+
 			if !scanSuccessful && opts.aquasecGate {
 				log.Fatalln("Stopping build as successful Aqua scan is required")
 			}
@@ -307,22 +299,6 @@ func buildahPush(opts options, workingDir, imageRef string) ([]byte, []byte, err
 	return command.Run("buildah", append(args, imageRef, fmt.Sprintf("docker://%s", imageRef)))
 }
 
-// aquaScan runs an Aqua scan on given image.
-func aquaScan(opts options, image, htmlReportFile, jsonReportFile string) ([]byte, []byte, error) {
-	return command.Run(aquasecBin, []string{
-		"scan",
-		"--dockerless", "--register", "--text",
-		fmt.Sprintf("--htmlfile=%s", htmlReportFile),
-		fmt.Sprintf("--jsonfile=%s", jsonReportFile),
-		"-w", "/tmp",
-		fmt.Sprintf("--user=%s", opts.aquaUsername),
-		fmt.Sprintf("--password=%s", opts.aquaPassword),
-		fmt.Sprintf("--host=%s", opts.aquaURL),
-		image,
-		fmt.Sprintf("--registry=%s", opts.aquaRegistry),
-	})
-}
-
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
 func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {
 	if _, err := os.Stat(htmlReportFile); err == nil {
@@ -419,27 +395,4 @@ func writeImageDigestToResults(imageDigest string) error {
 		return err
 	}
 	return ioutil.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
-}
-
-// aquasecInstalled checks whether the Aqua binary is in the $PATH.
-func aquasecInstalled() bool {
-	_, err := exec.LookPath(aquasecBin)
-	return err == nil
-}
-
-// aquaScanURL returns an URL to the given aquaImage.
-func aquaScanURL(opts options, aquaImage string) (string, error) {
-	aquaURL, err := url.Parse(opts.aquaURL)
-	if err != nil {
-		return "", fmt.Errorf("parse base URL: %w", err)
-	}
-	aquaPath := fmt.Sprintf(
-		"/#/images/%s/%s/vulns",
-		url.QueryEscape(opts.aquaRegistry), url.QueryEscape(aquaImage),
-	)
-	fullURL, err := aquaURL.Parse(aquaPath)
-	if err != nil {
-		return "", fmt.Errorf("parse URL path: %w", err)
-	}
-	return fullURL.String(), nil
 }
