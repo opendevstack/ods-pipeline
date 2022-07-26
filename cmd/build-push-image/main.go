@@ -1,19 +1,16 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/pkg/artifact"
@@ -23,10 +20,7 @@ import (
 )
 
 const (
-	aquasecBin                    = "aquasec"
-	kubernetesServiceaccountDir   = "/var/run/secrets/kubernetes.io/serviceaccount"
-	scanComplianceFailureExitCode = 4
-	// scanLicenseValidationFailureExitCode = 5
+	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
 )
 
 type options struct {
@@ -121,20 +115,16 @@ func main() {
 	} else {
 
 		fmt.Printf("Building image %s ...\n", imageName)
-		stdout, stderr, err := buildahBuild(opts, imageRef)
+		err := buildahBuild(opts, imageRef, os.Stdout, os.Stderr)
 		if err != nil {
-			log.Println(string(stderr))
-			log.Fatal(err)
+			log.Fatal("buildah bud: ", err)
 		}
-		fmt.Println(string(stdout))
 
 		fmt.Printf("Pushing image %s ...\n", imageRef)
-		stdout, stderr, err = buildahPush(opts, workingDir, imageRef)
+		err = buildahPush(opts, workingDir, imageRef, os.Stdout, os.Stderr)
 		if err != nil {
-			log.Println(string(stderr))
-			log.Fatal(err)
+			log.Fatal("buildah push: ", err)
 		}
-		fmt.Println(string(stdout))
 
 		d, err := getImageDigestFromFile(workingDir)
 		if err != nil {
@@ -147,20 +137,12 @@ func main() {
 			aquaImage := fmt.Sprintf("%s/%s", imageNamespace, imageName)
 			htmlReportFile := filepath.Join(workingDir, "report.html")
 			jsonReportFile := filepath.Join(workingDir, "report.json")
-			scanSuccessful := false
-
-			stdout, stderr, err = aquaScan(opts, aquaImage, htmlReportFile, jsonReportFile)
-			if err == nil {
-				scanSuccessful = true
-			} else {
-				var ee *exec.ExitError
-				if errors.As(err, &ee) && ee.ExitCode() != scanComplianceFailureExitCode {
-					log.Fatalf("%s\n%s", err, string(ee.Stderr))
-				}
-				fmt.Println(string(stderr))
+			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
+			scanSuccessful, err := aquaScan(aquasecBin, scanArgs, os.Stdout, os.Stderr)
+			if err != nil {
+				log.Fatal("aqua scan: ", err)
 			}
-			// STDOUT typically contains the scan summary ASCII table
-			fmt.Println(string(stdout))
+
 			if !scanSuccessful && opts.aquasecGate {
 				log.Fatalln("Stopping build as successful Aqua scan is required")
 			}
@@ -253,74 +235,6 @@ func nexusBuildArgs(opts options) ([]string, error) {
 		}
 	}
 	return args, nil
-}
-
-// buildahBuild builds a local image using the Dockerfile and context directory
-// given in opts, tagging the resulting image with given tag.
-func buildahBuild(opts options, tag string) ([]byte, []byte, error) {
-	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not parse extra args (%s): %w", opts.buildahBuildExtraArgs, err)
-	}
-
-	args := []string{
-		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
-		"bud",
-		fmt.Sprintf("--format=%s", opts.format),
-		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
-		fmt.Sprintf("--cert-dir=%s", opts.certDir),
-		"--no-cache",
-		fmt.Sprintf("--file=%s", opts.dockerfile),
-		fmt.Sprintf("--tag=%s", tag),
-	}
-	args = append(args, extraArgs...)
-	nexusArgs, err := nexusBuildArgs(opts)
-	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"could not add nexus build args: %w", err)
-	}
-	args = append(args, nexusArgs...)
-
-	if opts.debug {
-		args = append(args, "--log-level=debug")
-	}
-	return command.Run("buildah", append(args, opts.contextDir))
-}
-
-// buildahPush pushes a local image to the given imageRef.
-func buildahPush(opts options, workingDir, imageRef string) ([]byte, []byte, error) {
-	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
-	if err != nil {
-		log.Printf("could not parse extra args (%s): %s", opts.buildahPushExtraArgs, err)
-	}
-	args := []string{
-		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
-		"push",
-		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
-		fmt.Sprintf("--cert-dir=%s", opts.certDir),
-		fmt.Sprintf("--digestfile=%s", filepath.Join(workingDir, "image-digest")),
-	}
-	args = append(args, extraArgs...)
-	if opts.debug {
-		args = append(args, "--log-level=debug")
-	}
-	return command.Run("buildah", append(args, imageRef, fmt.Sprintf("docker://%s", imageRef)))
-}
-
-// aquaScan runs an Aqua scan on given image.
-func aquaScan(opts options, image, htmlReportFile, jsonReportFile string) ([]byte, []byte, error) {
-	return command.Run(aquasecBin, []string{
-		"scan",
-		"--dockerless", "--register", "--text",
-		fmt.Sprintf("--htmlfile=%s", htmlReportFile),
-		fmt.Sprintf("--jsonfile=%s", jsonReportFile),
-		"-w", "/tmp",
-		fmt.Sprintf("--user=%s", opts.aquaUsername),
-		fmt.Sprintf("--password=%s", opts.aquaPassword),
-		fmt.Sprintf("--host=%s", opts.aquaURL),
-		image,
-		fmt.Sprintf("--registry=%s", opts.aquaRegistry),
-	})
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
@@ -419,27 +333,4 @@ func writeImageDigestToResults(imageDigest string) error {
 		return err
 	}
 	return ioutil.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
-}
-
-// aquasecInstalled checks whether the Aqua binary is in the $PATH.
-func aquasecInstalled() bool {
-	_, err := exec.LookPath(aquasecBin)
-	return err == nil
-}
-
-// aquaScanURL returns an URL to the given aquaImage.
-func aquaScanURL(opts options, aquaImage string) (string, error) {
-	aquaURL, err := url.Parse(opts.aquaURL)
-	if err != nil {
-		return "", fmt.Errorf("parse base URL: %w", err)
-	}
-	aquaPath := fmt.Sprintf(
-		"/#/images/%s/%s/vulns",
-		url.QueryEscape(opts.aquaRegistry), url.QueryEscape(aquaImage),
-	)
-	fullURL, err := aquaURL.Parse(aquaPath)
-	if err != nil {
-		return "", fmt.Errorf("parse URL path: %w", err)
-	}
-	return fullURL.String(), nil
 }

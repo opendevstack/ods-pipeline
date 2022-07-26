@@ -1,16 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -356,47 +355,55 @@ func main() {
 	fmt.Printf("Diffing Helm release against %s...\n", helmArchive)
 	helmDiffArgs, err := assembleHelmDiffArgs(
 		releaseNamespace, releaseName, helmArchive,
-		opts, valuesFiles, cliValues,
+		opts,
+		valuesFiles, cliValues,
+		targetConfig,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("assemble helm diff args: ", err)
 	}
-	stdout, stderr, err = runHelmCmd(helmDiffArgs, targetConfig, opts.debug)
-	if err == nil { // exit code 0 returned
+	printlnSafeHelmCmd(helmDiffArgs, os.Stdout)
+	// helm-dff stderr contains confusing text about "errors" when drift is
+	// detected, therefore we want to collect and polish it before we print it.
+	// helm-diff stdout needs to be written into a buffer so that we can both
+	// print it and store it later as a deployment artifact.
+	var diffStdout, diffStderr bytes.Buffer
+	inSync, err := helmDiff(helmBin, helmDiffArgs, &diffStdout, &diffStderr)
+	fmt.Print(diffStdout.String())
+	fmt.Print(cleanHelmDiffOutput(diffStderr.String()))
+	if err != nil {
+		log.Fatal("helm diff: ", err)
+	}
+	if inSync {
 		fmt.Println("No diff detected, skipping helm upgrade.")
 		os.Exit(0)
 	}
-	var ee *exec.ExitError
-	if errors.As(err, &ee) && ee.ExitCode() != diffExitCode { // exit code 1 returned
-		log.Fatalf("%s\n%s", err, string(ee.Stderr))
-	}
-	// Replace confusing stderr messages while still printing stderr in general
-	// to surface any other issues that might be logged there.
-	diffStderr := cleanHelmDiffOutput(stderr)
-	fmt.Println(string(stdout))
-	fmt.Println(string(diffStderr))
-	err = writeDeploymentArtifact(stdout, "diff", opts.chartDir, targetConfig.Name)
+
+	err = writeDeploymentArtifact(diffStdout.Bytes(), "diff", opts.chartDir, targetConfig.Name)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("write diff artifact: ", err)
 	}
 
 	fmt.Printf("Upgrading Helm release to %s...\n", helmArchive)
 	helmUpgradeArgs, err := assembleHelmUpgradeArgs(
 		releaseNamespace, releaseName, helmArchive,
-		opts, valuesFiles, cliValues,
+		opts,
+		valuesFiles, cliValues,
+		targetConfig,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("assemble helm upgrade args: ", err)
 	}
-	stdout, stderr, err = runHelmCmd(helmUpgradeArgs, targetConfig, opts.debug)
+	printlnSafeHelmCmd(helmUpgradeArgs, os.Stdout)
+	stdout, stderr, err = helmUpgrade(helmUpgradeArgs)
 	if err != nil {
 		fmt.Println(string(stderr))
-		log.Fatal(err)
+		log.Fatal("helm upgrade: ", err)
 	}
 	fmt.Println(string(stdout))
 	err = writeDeploymentArtifact(stdout, "release", opts.chartDir, targetConfig.Name)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("write release artifact: ", err)
 	}
 }
 
