@@ -69,21 +69,19 @@ func TestPrune(t *testing.T) {
 	tclient := &tektonClient.TestClient{
 		PipelineRuns: []*tekton.PipelineRun{
 			// not pruned
-			pipelineRun("pr-a", "p-one", config.DevStage, time.Now().Add(time.Minute*-1)),
+			pipelineRun("pr-a", config.DevStage, time.Now().Add(time.Minute*-1)),
 			// would be pruned by maxKeepRuns, but is protected by minKeepHours
-			pipelineRun("pr-b", "p-one", config.DevStage, time.Now().Add(time.Minute*-3)),
+			pipelineRun("pr-b", config.DevStage, time.Now().Add(time.Minute*-3)),
 			// pruned
-			pipelineRun("pr-c", "p-one", config.DevStage, time.Now().Add(time.Hour*-4)),
-			// pruned through pipeline p-two
-			pipelineRun("pr-d", "p-two", config.DevStage, time.Now().Add(time.Hour*-5)),
-			// pruned through pipeline p-two
-			pipelineRun("pr-e", "p-two", config.DevStage, time.Now().Add(time.Hour*-6)),
+			pipelineRun("pr-c", config.DevStage, time.Now().Add(time.Hour*-4)),
+			// pruned
+			pipelineRun("pr-d", config.DevStage, time.Now().Add(time.Hour*-5)),
 			// not pruned because different stage (QA)
-			pipelineRun("pr-e", "p-three", config.QAStage, time.Now()),
+			pipelineRun("pr-e", config.QAStage, time.Now()),
 			// not pruned because different stage (PROD)
-			pipelineRun("pr-f", "p-four", config.ProdStage, time.Now().Add(time.Hour*-7)),
+			pipelineRun("pr-f", config.ProdStage, time.Now().Add(time.Hour*-7)),
 			// pruned
-			pipelineRun("pr-g", "p-four", config.ProdStage, time.Now().Add(time.Hour*-8)),
+			pipelineRun("pr-g", config.ProdStage, time.Now().Add(time.Hour*-8)),
 		},
 	}
 	minKeepHours := 2
@@ -104,22 +102,18 @@ func TestPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	sort.Strings(tclient.DeletedPipelineRuns)
-	if diff := cmp.Diff([]string{"pr-c", "pr-g"}, tclient.DeletedPipelineRuns); diff != "" {
+	if diff := cmp.Diff([]string{"pr-c", "pr-d", "pr-g"}, tclient.DeletedPipelineRuns); diff != "" {
 		t.Fatalf("pipeline run prune mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff([]string{"p-two"}, tclient.DeletedPipelines); diff != "" {
-		t.Fatalf("pipeline prune mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func pipelineRun(name, pipeline string, stage config.Stage, creationTime time.Time) *tekton.PipelineRun {
+func pipelineRun(name string, stage config.Stage, creationTime time.Time) *tekton.PipelineRun {
 	return &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
 			CreationTimestamp: metav1.Time{Time: creationTime},
 			Labels: map[string]string{
-				stageLabel:          string(stage),
-				tektonPipelineLabel: pipeline,
+				stageLabel: string(stage),
 			},
 		},
 	}

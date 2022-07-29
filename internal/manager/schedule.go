@@ -10,7 +10,6 @@ import (
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type StorageConfig struct {
@@ -62,26 +61,8 @@ func (s *Scheduler) schedule(ctx context.Context, pData PipelineConfig) bool {
 	ctxt, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	newPipeline := assemblePipeline(pData, s.TaskKind, s.TaskSuffix)
-
-	existingPipeline, err := s.TektonClient.GetPipeline(ctxt, pData.Name, metav1.GetOptions{})
-	if err != nil {
-		_, err := s.TektonClient.CreatePipeline(ctxt, newPipeline, metav1.CreateOptions{})
-		if err != nil {
-			s.Logger.Errorf(err.Error())
-			return false
-		}
-	} else {
-		newPipeline.ResourceVersion = existingPipeline.ResourceVersion
-		_, err := s.TektonClient.UpdatePipeline(ctxt, newPipeline, metav1.UpdateOptions{})
-		if err != nil {
-			s.Logger.Errorf(err.Error())
-			return false
-		}
-	}
-
 	// Create PVC if it does not exist yet
-	err = s.createPVCIfRequired(ctxt, pData)
+	err := s.createPVCIfRequired(ctxt, pData)
 	if err != nil {
 		s.Logger.Errorf(err.Error())
 		return false
@@ -94,8 +75,8 @@ func (s *Scheduler) schedule(ctx context.Context, pData PipelineConfig) bool {
 	}
 	s.Logger.Debugf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), pData.Repository)
 	needQueueing := needsQueueing(pipelineRuns)
-	s.Logger.Debugf("Creating run for pipeline %s (queued=%v) ...", pData.Name, needQueueing)
-	_, err = createPipelineRun(s.TektonClient, ctxt, pData, needQueueing)
+	s.Logger.Debugf("Creating run for pipeline %s (queued=%v) ...", pData.Component, needQueueing)
+	_, err = createPipelineRun(s.TektonClient, ctxt, pData, s.TaskKind, s.TaskSuffix, needQueueing)
 	if err != nil {
 		s.Logger.Errorf(err.Error())
 		return false

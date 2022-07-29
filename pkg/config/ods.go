@@ -93,10 +93,13 @@ type Environment struct {
 	APIToken string `json:"-"`
 }
 
-// Pipeline represents a Tekton pipeline.
+// Pipeline represents a Tekton pipeline run.
 type Pipeline struct {
-	Tasks   []tekton.PipelineTask `json:"tasks,omitempty"`
-	Finally []tekton.PipelineTask `json:"finally,omitempty"`
+	Tasks        []tekton.PipelineTask        `json:"tasks,omitempty"`
+	Finally      []tekton.PipelineTask        `json:"finally,omitempty"`
+	Timeouts     *tekton.TimeoutFields        `json:"timeouts,omitempty"`
+	PodTemplate  *tekton.PodTemplate          `json:"podTemplate,omitempty"`
+	TaskRunSpecs []tekton.PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
 }
 
 func (o *ODS) Validate() error {

@@ -19,18 +19,47 @@ The pipeline field allows to define the pipeline tasks. Normal tasks may be spec
 ----
 pipeline:
   tasks:
-  - name: backend-build-go
+  - name: build
     taskRef:
       kind: Task
       name: ods-build-go-v0-6-0
     workspaces:
     - name: source
       workspace: shared-workspace
+  - name: package
+    taskRef:
+      kind: Task
+      name: ods-package-image-v0-6-0
+    runAfter:
+    - build
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
-Each task reference is just the plain Tekton definition. See the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-tasks-to-the-pipeline[Adding Tasks to the Pipeline] for more information.
+Each task reference is just the plain Tekton definition. See the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.24.3/pipelines/#adding-tasks-to-the-pipeline[Adding Tasks to the Pipeline] for more information.
 
 A typical `ods-pipeline` installation offers its task as `Task` resources, therefore the `taskRef.kind` needs to be `Task`. The value of the `taskRef.name` field depends on the version of `ods-pipeline` that is installed in your project. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Tasks".
+
+Alternatively to referencing tasks, ad-hoc task definitionss can also be specified directly inside `ods.yaml`:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  tasks:
+  - name: build
+    taskSpec:
+      steps:
+        - name: message
+          image: ubuntu
+          script: |
+            #!/usr/bin/env bash
+            echo "hello world"
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
 
 The pipeline created based on the configuration will have a workspace named `shared-workspace` available, which is backed by a PVC (named `ods-pipeline`) in your namespace.
 
@@ -55,7 +84,9 @@ pipeline:
       workspace: shared-workspace
 ----
 
-Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/docs/pipelines/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
+Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.24.3/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
+
+Aside from `tasks` and `finally`, you may also specify link:https://tekton.dev/docs/pipelines/pipelineruns/#configuring-a-failure-timeout[`timeouts`], link:https://tekton.dev/vault/pipelines-v0.24.3/pipelineruns/#specifying-a-pod-template[`podTemplate`] and link:https://tekton.dev/docs/pipelines/pipelineruns/#specifying-taskrunspecs[`taskRunSpecs`] for more advanced configuration (like overriding compute resources).
 
 == `environments`
 

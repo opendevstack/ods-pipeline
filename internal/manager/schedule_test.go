@@ -17,53 +17,30 @@ func TestSchedule(t *testing.T) {
 
 	cfg := PipelineConfig{
 		PipelineInfo: PipelineInfo{
-			Name:       "pipeline",
 			Repository: "repo",
 		},
 		PVC: "pvc",
 	}
 
 	tests := map[string]struct {
-		requestBodyFixture  string
-		kubernetesClient    *kubernetesClient.TestClient
-		tektonClient        *tektonClient.TestClient
-		wantCreatedPipeline bool
-		wantUpdatedPipeline bool
-		wantQueuedRun       bool
-		check               func(t *testing.T, kc *kubernetesClient.TestClient, tc *tektonClient.TestClient)
+		requestBodyFixture string
+		kubernetesClient   *kubernetesClient.TestClient
+		tektonClient       *tektonClient.TestClient
+		wantQueuedRun      bool
+		check              func(t *testing.T, kc *kubernetesClient.TestClient, tc *tektonClient.TestClient)
 	}{
-		"creates a new pipeline and starts run": {
-			kubernetesClient:    &kubernetesClient.TestClient{},
-			tektonClient:        &tektonClient.TestClient{},
-			wantCreatedPipeline: true,
-			wantUpdatedPipeline: false,
-			wantQueuedRun:       false,
+		"creates pipeline run and starts it": {
+			kubernetesClient: &kubernetesClient.TestClient{},
+			tektonClient:     &tektonClient.TestClient{},
+			wantQueuedRun:    false,
 		},
-		"updates an existing pipeline and starts run": {
+		"creates pipeline run and queues if necessary": {
 			kubernetesClient: &kubernetesClient.TestClient{
 				PVCs: []*corev1.PersistentVolumeClaim{
 					{ObjectMeta: metav1.ObjectMeta{Name: "pvc"}},
 				},
 			},
 			tektonClient: &tektonClient.TestClient{
-				Pipelines: []*tekton.Pipeline{
-					{ObjectMeta: metav1.ObjectMeta{Name: "pipeline"}},
-				},
-			},
-			wantCreatedPipeline: false,
-			wantUpdatedPipeline: true,
-			wantQueuedRun:       false,
-		},
-		"updates an existing pipeline and queues run if required": {
-			kubernetesClient: &kubernetesClient.TestClient{
-				PVCs: []*corev1.PersistentVolumeClaim{
-					{ObjectMeta: metav1.ObjectMeta{Name: "pvc"}},
-				},
-			},
-			tektonClient: &tektonClient.TestClient{
-				Pipelines: []*tekton.Pipeline{
-					{ObjectMeta: metav1.ObjectMeta{Name: "pipeline"}},
-				},
 				PipelineRuns: []*tekton.PipelineRun{
 					{
 						ObjectMeta: metav1.ObjectMeta{
@@ -73,9 +50,7 @@ func TestSchedule(t *testing.T) {
 					},
 				},
 			},
-			wantCreatedPipeline: false,
-			wantUpdatedPipeline: true,
-			wantQueuedRun:       true,
+			wantQueuedRun: true,
 		},
 	}
 	for name, tc := range tests {
@@ -96,14 +71,6 @@ func TestSchedule(t *testing.T) {
 
 			gotQueued := s.schedule(ctx, cfg)
 
-			if (tc.wantCreatedPipeline && len(tc.tektonClient.CreatedPipelines) != 1) ||
-				(!tc.wantCreatedPipeline && len(tc.tektonClient.CreatedPipelines) != 0) {
-				t.Fatal("one pipeline should have been created")
-			}
-			if (tc.wantUpdatedPipeline && len(tc.tektonClient.UpdatedPipelines) != 1) ||
-				(!tc.wantUpdatedPipeline && len(tc.tektonClient.UpdatedPipelines) != 0) {
-				t.Fatal("one pipeline should have been updated")
-			}
 			if len(tc.tektonClient.CreatedPipelineRuns) != 1 {
 				t.Fatal("one pipeline run should have been created")
 			}

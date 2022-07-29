@@ -1,5 +1,4 @@
 {
-    "name": "bar-master",
     "project": "foo",
     "component": "bar",
     "repository": "foo-bar",

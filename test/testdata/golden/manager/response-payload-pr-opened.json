@@ -1,5 +1,4 @@
 {
-    "name": "bar-feature-foo",
     "project": "foo",
     "component": "bar",
     "repository": "foo-bar",
