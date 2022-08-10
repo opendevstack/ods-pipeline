@@ -12,6 +12,14 @@ listed in the changelog.
 
 ## [0.6.0] - 2022-07-20
 
+### Changed
+
+- Stream Buildah and Aqua log output ([#596](https://github.com/opendevstack/ods-pipeline/issues/596))
+
+### Fixed
+
+- Aqua and helm-diff log output is incomplete ([#593](https://github.com/opendevstack/ods-pipeline/issues/593))
+
 ### Added
 
 - Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.

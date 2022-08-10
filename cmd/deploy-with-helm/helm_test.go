@@ -1,10 +1,57 @@
 package main
 
 import (
+	"bytes"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/pkg/config"
 )
+
+func TestHelmDiff(t *testing.T) {
+	tests := map[string]struct {
+		cmdExitCode int
+		wantInSync  bool
+		wantErr     bool
+	}{
+		"diff exits with generic exit code": {
+			cmdExitCode: diffGenericExitCode,
+			wantInSync:  false,
+			wantErr:     true,
+		},
+		"diff exits with drift exit code": {
+			cmdExitCode: diffDriftExitCode,
+			wantInSync:  false,
+			wantErr:     false,
+		},
+		"diff passes (no drift)": {
+			cmdExitCode: 0,
+			wantInSync:  true,
+			wantErr:     false,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			driftDetected, err := helmDiff(
+				"../../test/scripts/exit-with-code.sh",
+				[]string{"", "", strconv.Itoa(tc.cmdExitCode)},
+				&stdout, &stderr,
+			)
+			if tc.wantErr && err == nil {
+				t.Fatal("want err, got none")
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("want no err, got %s", err)
+			}
+			if tc.wantInSync != driftDetected {
+				t.Fatalf("want success=%v, got success=%v", tc.wantInSync, driftDetected)
+			}
+		})
+	}
+}
 
 func TestCleanHelmDiffOutput(t *testing.T) {
 	tests := map[string]struct {
@@ -35,7 +82,7 @@ helm.go:81: [debug] plugin "secrets" exited with error`,
 [helm-secrets] Removed: ./chart/secrets.dev.yaml.dec
 `,
 		},
-		"diff encounters an error": {
+		"diff encounters another error": {
 			example: `Error: This command needs 2 arguments: release name, chart path
 
 Use "diff [command] --help" for more information about a command.
@@ -51,8 +98,8 @@ Error: plugin "diff" exited with error`,
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := cleanHelmDiffOutput([]byte(tc.example))
-			if diff := cmp.Diff(tc.want, string(got)); diff != "" {
+			got := cleanHelmDiffOutput(tc.example)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf("output mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -73,9 +120,9 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			releaseNamespace: "a",
 			releaseName:      "b",
 			helmArchive:      "c",
-			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install"},
+			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install", debug: true},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color", "--three-way-merge", "--install",
+				"--detailed-exitcode", "--no-color", "--three-way-merge", "--debug", "--install",
 				"b", "c"},
 		},
 		"with no diff flags": {
@@ -131,7 +178,9 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			got, err := assembleHelmDiffArgs(
 				tc.releaseNamespace, tc.releaseName, tc.helmArchive,
 				tc.opts,
-				tc.valuesFiles, tc.cliValues)
+				tc.valuesFiles, tc.cliValues,
+				&config.Environment{},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -156,8 +205,10 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			releaseNamespace: "a",
 			releaseName:      "b",
 			helmArchive:      "c",
-			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install --wait"},
+			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install --wait", debug: true},
 			want: []string{"--namespace=a", "secrets", "upgrade",
+				"--kube-apiserver=https://example.com", "--kube-token=s3cr3t",
+				"--debug",
 				"--install", "--wait",
 				"b", "c"},
 		},
@@ -167,7 +218,7 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			helmArchive:      "c",
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: ""},
 			want: []string{"--namespace=a", "secrets", "upgrade",
-
+				"--kube-apiserver=https://example.com", "--kube-token=s3cr3t",
 				"b", "c"},
 		},
 		"with values file": {
@@ -177,6 +228,7 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install --wait"},
 			valuesFiles:      []string{"values.dev.yaml"},
 			want: []string{"--namespace=a", "secrets", "upgrade",
+				"--kube-apiserver=https://example.com", "--kube-token=s3cr3t",
 				"--install", "--wait",
 				"--values=values.dev.yaml",
 				"b", "c"},
@@ -188,6 +240,7 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install --wait"},
 			cliValues:        []string{"--set=image.tag=abcdef"},
 			want: []string{"--namespace=a", "secrets", "upgrade",
+				"--kube-apiserver=https://example.com", "--kube-token=s3cr3t",
 				"--install", "--wait",
 				"--set=image.tag=abcdef",
 				"b", "c"},
@@ -200,6 +253,7 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			valuesFiles:      []string{"secrets.yaml", "values.dev.yaml", "secrets.dev.yaml"},
 			cliValues:        []string{"--set=image.tag=abcdef", "--set=x=y"},
 			want: []string{"--namespace=a", "secrets", "upgrade",
+				"--kube-apiserver=https://example.com", "--kube-token=s3cr3t",
 				"--install", "--atomic",
 				"--values=secrets.yaml", "--values=values.dev.yaml", "--values=secrets.dev.yaml",
 				"--set=image.tag=abcdef", "--set=x=y",
@@ -211,7 +265,9 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 			got, err := assembleHelmUpgradeArgs(
 				tc.releaseNamespace, tc.releaseName, tc.helmArchive,
 				tc.opts,
-				tc.valuesFiles, tc.cliValues)
+				tc.valuesFiles, tc.cliValues,
+				&config.Environment{APIServer: "https://example.com", APIToken: "s3cr3t"},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -219,5 +275,15 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 				t.Fatalf("args mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestPrintlnSafeHelmCmd(t *testing.T) {
+	var stdout bytes.Buffer
+	printlnSafeHelmCmd([]string{"diff", "upgrade", "--kube-apiserver=https://example.com", "--kube-token=s3cr3t", "--debug"}, &stdout)
+	want := "helm diff upgrade --kube-apiserver=https://example.com --kube-token=*** --debug"
+	got := strings.TrimSpace(stdout.String())
+	if got != want {
+		t.Fatalf("want: '%s', got: '%s'", want, got)
 	}
 }

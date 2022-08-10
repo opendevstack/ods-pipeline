@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -23,11 +23,28 @@ const helmDiffDetectedMarker = `Error: identified at least one change, exiting w
 const desiredDiffMessage = `plugin "diff" identified at least one change`
 
 // exit code returned from helm-diff when diff is detected.
-const diffExitCode = 2
+const diffDriftExitCode = 2
+
+// exit code returned from helm-diff when there is an error (e.g. invalid resource manifests).
+const diffGenericExitCode = 1
 
 type helmChart struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+}
+
+// helmDiff runs the diff and returns whether the Helm release is in sync.
+// An error is returned when the diff cannot be started or encounters failures
+// unrelated to drift (such as invalid resource manifests).
+func helmDiff(exe string, args []string, outWriter, errWriter io.Writer) (bool, error) {
+	// STDOUT contains the diff view.
+	// STDERR contains the summary statement.
+	return command.RunWithStreamingOutput(
+		exe, args, []string{
+			fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath),
+			"HELM_DIFF_IGNORE_UNKNOWN_FLAGS=true", // https://github.com/databus23/helm-diff/issues/278
+		}, outWriter, errWriter, diffDriftExitCode,
+	)
 }
 
 // getHelmChart reads given filename into a helmChart struct.
@@ -56,17 +73,17 @@ func getChartVersion(contextVersion string, hc *helmChart) string {
 // cleanHelmDiffOutput removes error messages from the given Helm output.
 // Those error messages are confusing, because they do not come from  an actual
 // error, but from detecting drift between desired and current Helm state.
-func cleanHelmDiffOutput(out []byte) []byte {
-	if !bytes.Contains(out, []byte(helmDiffDetectedMarker)) {
+func cleanHelmDiffOutput(out string) string {
+	if !strings.Contains(out, helmDiffDetectedMarker) {
 		return out
 	}
-	cleanedOut := bytes.Replace(
-		out, []byte(helmDiffDetectedMarker), []byte(desiredDiffMessage), -1,
+	cleanedOut := strings.Replace(
+		out, helmDiffDetectedMarker, desiredDiffMessage, -1,
 	)
 	r := regexp.MustCompile(`Error: plugin "(diff|secrets)" exited with error[\n]?`)
-	cleanedOut = r.ReplaceAll(cleanedOut, []byte{})
+	cleanedOut = r.ReplaceAllString(cleanedOut, "")
 	r = regexp.MustCompile(`helm.go:81: \[debug\] plugin "(diff|secrets)" exited with error[\n]?`)
-	cleanedOut = r.ReplaceAll(cleanedOut, []byte{})
+	cleanedOut = r.ReplaceAllString(cleanedOut, "")
 	return cleanedOut
 }
 
@@ -74,7 +91,8 @@ func cleanHelmDiffOutput(out []byte) []byte {
 func assembleHelmDiffArgs(
 	releaseNamespace, releaseName, helmArchive string,
 	opts options,
-	valuesFiles, cliValues []string) ([]string, error) {
+	valuesFiles, cliValues []string,
+	targetConfig *config.Environment) ([]string, error) {
 	helmDiffArgs := []string{
 		"--namespace=" + releaseNamespace,
 		"secrets",
@@ -88,7 +106,7 @@ func assembleHelmDiffArgs(
 		return []string{}, fmt.Errorf("parse diff flags (%s): %s", opts.diffFlags, err)
 	}
 	helmDiffArgs = append(helmDiffArgs, helmDiffFlags...)
-	commonArgs, err := commonHelmUpgradeArgs(releaseName, helmArchive, opts, valuesFiles, cliValues)
+	commonArgs, err := commonHelmUpgradeArgs(releaseName, helmArchive, opts, valuesFiles, cliValues, targetConfig)
 	if err != nil {
 		return []string{}, fmt.Errorf("upgrade args: %w", err)
 	}
@@ -100,13 +118,14 @@ func assembleHelmUpgradeArgs(
 	releaseNamespace, releaseName, helmArchive string,
 	opts options,
 	valuesFiles, cliValues []string,
+	targetConfig *config.Environment,
 ) ([]string, error) {
 	helmUpgradeArgs := []string{
 		"--namespace=" + releaseNamespace,
 		"secrets",
 		"upgrade",
 	}
-	commonArgs, err := commonHelmUpgradeArgs(releaseName, helmArchive, opts, valuesFiles, cliValues)
+	commonArgs, err := commonHelmUpgradeArgs(releaseName, helmArchive, opts, valuesFiles, cliValues, targetConfig)
 	if err != nil {
 		return []string{}, fmt.Errorf("upgrade args: %w", err)
 	}
@@ -118,10 +137,23 @@ func commonHelmUpgradeArgs(
 	releaseName, helmArchive string,
 	opts options,
 	valuesFiles, cliValues []string,
+	targetConfig *config.Environment,
 ) ([]string, error) {
 	args, err := shlex.Split(opts.upgradeFlags)
 	if err != nil {
 		return []string{}, fmt.Errorf("parse upgrade flags (%s): %s", opts.upgradeFlags, err)
+	}
+	if opts.debug {
+		args = append([]string{"--debug"}, args...)
+	}
+	if targetConfig.APIServer != "" {
+		args = append(
+			[]string{
+				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
+				fmt.Sprintf("--kube-token=%s", targetConfig.APIToken),
+			},
+			args...,
+		)
 	}
 	for _, vf := range valuesFiles {
 		args = append(args, fmt.Sprintf("--values=%s", vf))
@@ -131,35 +163,22 @@ func commonHelmUpgradeArgs(
 	return args, nil
 }
 
-// runHelmCmd runs given Helm command.
-func runHelmCmd(args []string, targetConfig *config.Environment, debug bool) (outBytes, errBytes []byte, err error) {
-	if debug {
-		args = append([]string{"--debug"}, args...)
-	}
-	printableArgs := args
-	if targetConfig.APIServer != "" {
-		printableArgs = append(
-			[]string{
-				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
-				"--kube-token=***",
-			},
-			args...,
-		)
-		args = append(
-			[]string{
-				fmt.Sprintf("--kube-apiserver=%s", targetConfig.APIServer),
-				fmt.Sprintf("--kube-token=%s", targetConfig.APIToken),
-			},
-			args...,
-		)
-	}
-	fmt.Println(helmBin, strings.Join(printableArgs, " "))
+// helmUpgrade runs given Helm command.
+func helmUpgrade(args []string) (outBytes, errBytes []byte, err error) {
+	return command.RunWithExtraEnvs(helmBin, args, []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)})
+}
 
-	var extraEnvs = []string{
-		fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath),
-		"HELM_DIFF_IGNORE_UNKNOWN_FLAGS=true", // https://github.com/databus23/helm-diff/issues/278
+// printlnSafeHelmCmd prints all args that do not contain sensitive information.
+func printlnSafeHelmCmd(args []string, outWriter io.Writer) {
+	safeArgs := []string{}
+	for _, a := range args {
+		if strings.HasPrefix(a, "--kube-token=") {
+			safeArgs = append(safeArgs, "--kube-token=***")
+		} else {
+			safeArgs = append(safeArgs, a)
+		}
 	}
-	return command.RunWithExtraEnvs(helmBin, args, extraEnvs)
+	fmt.Fprintln(outWriter, helmBin, strings.Join(safeArgs, " "))
 }
 
 // packageHelmChart creates a Helm package for given chart.
