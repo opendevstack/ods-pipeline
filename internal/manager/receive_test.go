@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -210,7 +210,7 @@ func TestWebhookHandling(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			body, err := ioutil.ReadAll(f)
+			body, err := io.ReadAll(f)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -234,7 +234,7 @@ func TestWebhookHandling(t *testing.T) {
 			if tc.wantStatus != gotStatus {
 				t.Fatalf("Got status: %v, want: %v", gotStatus, tc.wantStatus)
 			}
-			gotBodyBytes, err := ioutil.ReadAll(res.Body)
+			gotBodyBytes, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -267,7 +267,7 @@ func removeSpace(str string) string {
 }
 
 func readTestdataFile(t *testing.T, filename string) []byte {
-	b, err := ioutil.ReadFile(filepath.Join(projectpath.Root, "test/testdata", filename))
+	b, err := os.ReadFile(filepath.Join(projectpath.Root, "test/testdata", filename))
 	if err != nil {
 		t.Fatal(err)
 	}

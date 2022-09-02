@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -228,7 +227,7 @@ func TestRun(t *testing.T) {
 	}
 
 	// Temporary output directory.
-	artifactsDir, err := ioutil.TempDir(".", "test-artifacts-")
+	artifactsDir, err := os.MkdirTemp(".", "test-artifacts-")
 	if err != nil {
 		t.Fatal(err)
 	}

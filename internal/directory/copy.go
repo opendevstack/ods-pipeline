@@ -3,14 +3,13 @@ package directory
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
 )
 
 func CopyToTempDir(sourceDir, destinationBaseDir, pattern string) (string, error) {
-	tempDir, err := ioutil.TempDir(destinationBaseDir, pattern)
+	tempDir, err := os.MkdirTemp(destinationBaseDir, pattern)
 	if err != nil {
 		return "", fmt.Errorf("could not create temporary directory: %w", err)
 	}
@@ -22,7 +21,7 @@ func CopyToTempDir(sourceDir, destinationBaseDir, pattern string) (string, error
 }
 
 func Copy(scrDir, dest string) error {
-	entries, err := ioutil.ReadDir(scrDir)
+	entries, err := os.ReadDir(scrDir)
 	if err != nil {
 		return err
 	}
@@ -62,9 +61,13 @@ func Copy(scrDir, dest string) error {
 			return err
 		}
 
-		isSymlink := entry.Mode()&os.ModeSymlink != 0
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		isSymlink := info.Mode()&os.ModeSymlink != 0
 		if !isSymlink {
-			if err := os.Chmod(destPath, entry.Mode()); err != nil {
+			if err := os.Chmod(destPath, info.Mode()); err != nil {
 				return err
 			}
 		}

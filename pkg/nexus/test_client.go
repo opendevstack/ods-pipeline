@@ -2,7 +2,7 @@ package nexus
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -13,7 +13,7 @@ type TestClient struct {
 
 // Download writes a dummy string into outfile.
 func (c *TestClient) Download(url, outfile string) (int64, error) {
-	return 0, ioutil.WriteFile(outfile, []byte("test"), 0644)
+	return 0, os.WriteFile(outfile, []byte("test"), 0644)
 }
 
 // Search responds with pre-registered URLs for repository.

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -49,7 +49,7 @@ func helmDiff(exe string, args []string, outWriter, errWriter io.Writer) (bool, 
 
 // getHelmChart reads given filename into a helmChart struct.
 func getHelmChart(filename string) (*helmChart, error) {
-	y, err := ioutil.ReadFile(filename)
+	y, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("could not read chart: %w", err)
 	}

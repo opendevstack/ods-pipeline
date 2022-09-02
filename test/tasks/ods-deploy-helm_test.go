@@ -3,7 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -200,7 +200,7 @@ func createReleaseNamespace(clientset *k8s.Clientset, ctxtNamespace string) (str
 }
 
 func writeContextFile(t *testing.T, wsDir, file, content string) {
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		filepath.Join(wsDir, pipelinectxt.BaseDir, file), []byte(content), 0644,
 	)
 	if err != nil {
@@ -234,7 +234,7 @@ func checkService(clientset *k8s.Clientset, namespace, name string) (*corev1.Ser
 }
 
 func readPrivateKeySecret() (*corev1.Secret, error) {
-	bytes, err := ioutil.ReadFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/tasks/secret.yaml"))
+	bytes, err := os.ReadFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/tasks/secret.yaml"))
 	if err != nil {
 		return nil, err
 	}

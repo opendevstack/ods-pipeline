@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -123,7 +123,7 @@ pipeline:
         - name: source
           workspace: shared-workspace`
 
-	err = ioutil.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
+	err = os.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {
 		t.Fatalf("could not write file=%s: %s", filename, err)
 	}

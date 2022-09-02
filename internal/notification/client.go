@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -84,7 +84,7 @@ func (c Client) CallWebhook(ctxt context.Context, summary PipelineRunResult) err
 	c.logger().Infof("notification webhook response was: %s", response.Status)
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		body, err := ioutil.ReadAll(response.Body)
+		body, err := io.ReadAll(response.Body)
 		if err != nil {
 			body = []byte("<could not read body>")
 		}

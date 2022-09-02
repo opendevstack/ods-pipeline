@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -319,7 +318,7 @@ func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
 
 // getImageDigestFromFile reads the image digest from the file written to by buildah.
 func getImageDigestFromFile(workingDir string) (string, error) {
-	content, err := ioutil.ReadFile(filepath.Join(workingDir, "image-digest"))
+	content, err := os.ReadFile(filepath.Join(workingDir, "image-digest"))
 	if err != nil {
 		return "", err
 	}
@@ -332,5 +331,5 @@ func writeImageDigestToResults(imageDigest string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
+	return os.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
 }
