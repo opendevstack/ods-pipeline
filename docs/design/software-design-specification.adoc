@@ -569,13 +569,13 @@ a| The script is supposed to be downloaded and piped into bash. The script insta
 
 | SDS-EXT-17
 | Skopeo
-| 1.6
+| 1.8
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
 | SDS-EXT-18
 | Buildah
-| 1.24
+| 1.26
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 

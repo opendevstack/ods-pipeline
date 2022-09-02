@@ -12,6 +12,7 @@ listed in the changelog.
 ### Changed
 
 - Stream Buildah and Aqua log output ([#596](https://github.com/opendevstack/ods-pipeline/issues/596))
+- Update skopeo (1.6 to 1.8) and buildah (1.24 to 1.26) ([#598](https://github.com/opendevstack/ods-pipeline/issues/598))
 
 ### Fixed
 
