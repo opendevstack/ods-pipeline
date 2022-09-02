@@ -10,9 +10,7 @@ https://www.openshift.com/learn/topics/pipelines[OpenShift Pipelines] is a Kuber
 
 https://tekton.dev[Tekton] provides a framework to create cloud-native CI/CD pipelines. The building blocks for those pipelines are defined using Kubernetes Custom Resources.
 
-A Tekton pipeline (a Kubernetes resource named `Pipeline`) references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artifacts, deploying, etc. Tekton distinguishes between the definition (`Pipeline` and `Task` resources) and the actual execution (also modelled as resources, namely `PipelineRun` and `TaskRun`). The `PipelineRun` provides a workspace to the pipeline, which is a Kubernetes volume mounted in the task pods. If the volume is a PVC, it can be shared between tasks, allowing the tasks to work e.g. on the same repository checkout. The following illustrates the basic Tekton architecture:
-
-image::https://raw.githubusercontent.com/openshift/pipelines-tutorial/master/docs/images/tekton-architecture.svg[Tekton Architecture]
+A Tekton pipeline references a series of tasks (a Kubernetes resource named `Task`). When the pipeline runs, Kubernetes will schedule one pod per task. Each task is made up of a series of steps. Each step corresponds to one container in the task pod. At a minimum, a step defines the container image to use, and which command / script to run. Therefore, a step can achieve a huge variety of things such as building artifacts, deploying, etc. The pipeline run is provided a workspace (a Kubernetes PVC volume mounted in the task pods), allowing all tasks to work on the same repository checkout.
 
 At this stage you know just enough about Tekton to continue with this introduction, but if you want to know more about it, you can read the https://tekton.dev/docs/[Tekton docs] and/or follow the https://github.com/openshift/pipelines-tutorial[OpenShift Pipelines tutorial].
 
@@ -61,15 +59,9 @@ The behaviour of each task can be customized by setting parameters. For example,
 
 == How do I use the tasks provided by ODS?
 
-As you have learned earlier, tasks are referenced by pipelines. Therefore, all you would need to do to use the ODS tasks is to create a pipeline in OpenShift, and reference the tasks you want to execute. Then you'd need to start the pipeline (which creates a `PipelineRun`).
+As you have learned earlier, tasks are referenced by pipelines. Therefore, all you would need to do to use the ODS tasks is to create a `PipelineRun` in OpenShift, and reference the tasks you want to execute. However, this is cumbersome as you would need to create a pipeline run manually in the OpenShift console after each commit, parameterizing it correctly to pick up the right repository and source code revision.
 
-While using this approach is possible, it has a few drawbacks:
-
-* You would need to create a pipeline for each repository (if they use different tasks or parameters)
-* You would need to manage the pipelines in the UI
-* You would need to start the pipeline manually after each commit
-
-To solve these problems (and a few more ...), ODS ships with another component alluded to earlier, the ODS pipeline manager. This service allows to automate the creation, modification and execution of pipelines based on task definitions stored in the Git repository to which the pipeline corresponds.
+To automate this process, ODS ships with another component alluded to earlier, the ODS pipeline manager. This service automatically starts pipeline runs in response to Bitbucket webhook requests, based on task definitions stored in the Git repository to which the pipeline corresponds.
 
 To understand how this works, it is best to trace the flow starting from the repository. Assume you have a repository containing a Go application, and you want to run a pipeline building a container image for it every time you push to Bitbucket. To achieve this in a project created by ODS, all you need is to have an `ods.yaml` file in the root of your repository. The `ods.yaml` file defines the tasks you want to run in the pipeline. Let's look at an example `ods.yaml` file for our Go repository:
 
@@ -104,12 +96,12 @@ pipeline:
       workspace: shared-workspace
 ----
 
-You can see that it defines three tasks, `ods-build-go`, `ods-package-image` and `ods-deploy-helm`, which run sequentially due to the usage of `runAfter`.
+You can see that it defines three tasks, `build-go`, `package-image` and `deploy-helm`, which run sequentially due to the usage of `runAfter`.
 
-In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline. The name of this new pipelines is a concatenation of the repository name and the Git ref (e.g. `myapp-master`). In the next step, the ODS pipeline manager checks if a pipeline with that name already exists, and either creates a new pipeline or updates the existing pipeline. That way, you get one pipeline per branch which makes it easier to navigate in the OpenShift UI and allows seeing pipeline duration trends easily. Finally, the ODS pipeline manager triggers the pipeline, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
+In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline run. Finally, the ODS pipeline manager starts the pipeline run, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
 
 image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/trigger_architecture.puml[Trigger Architecture]
 
-With the above in place, you do not need to manage pipelines manually. Every repository with an `ods.yaml` file and a webhook configuration automatically manages and triggers pipelines based on the defined tasks.
+With the above in place, you do not need to manage pipeline runs manually. Every repository with an `ods.yaml` file and a webhook configuration automatically manages and triggers pipeline runs based on the defined tasks.
 
 At this stage you know enough to get started using and modifying CI/CD pipelines with ODS.

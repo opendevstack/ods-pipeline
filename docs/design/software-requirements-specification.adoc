@@ -78,13 +78,13 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 | The pipeline manager shall not trigger pipelines for Git commits which message instructs to skip CI.
 
 | SRS-PIPELINE-MANAGER-3
-| The pipeline manager shall create or update a pipeline corresponding to the Git branch received in the webhook request. The tasks (including finally tasks) of the pipline shall be read from the ODS config file in the repository.
+| The pipeline manager shall create a pipeline run corresponding to the definition in the ODS config file in the Git repository.
 
 | SRS-PIPELINE-MANAGER-4
-| The pipeline manager shall create a PVC for use as a pipeline workspace per repository.
+| The pipeline manager shall create a PVC for use as a pipeline run workspace per repository.
 
 | SRS-PIPELINE-MANAGER-5
-| The pipeline manager shall prune pipelines and pipeline runs per repository and stage.
+| The pipeline manager shall prune pipeline runs per repository and stage.
 
 | SRS-PIPELINE-MANAGER-6
 | The pipeline manager shall prevent concurrent pipeline runs for one repository.

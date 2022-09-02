@@ -14,9 +14,7 @@ System_Boundary(c1, "OpenShift"){
 
     Container(ods_service, "ODS Pipeline Manager", "Service", "Manage and trigger pipelines")
 
-    Container(pipeline, "Pipeline", "Tekton-provided resource", "Referencing tasks, name based on Git repo and ref")
-
-    Container(pipeline_run, "PipelineRun", "Tekton-provided resource", "Run references pipeline with parameters and workspace")
+    Container(pipeline_run, "PipelineRun", "Tekton-provided resource", "References tasks defined in Git repo")
 }
 
 System_Ext(bitbucket_repo, "Bitbucket Repository")
@@ -28,11 +26,8 @@ Rel(bitbucket_repo, route, "Send webhook request")
 Rel(route, ods_service, "Forward", "event")
 
 Rel(ods_service, bitbucket_repo, "Download ods.y(a)ml")
-Rel(ods_service, pipeline, "Create or update")
 
 Rel(ods_service, pipeline_run, "Create")
-
-Rel(pipeline_run, pipeline, "Reference")
 
 Lay_D(developer, bitbucket_repo)
 

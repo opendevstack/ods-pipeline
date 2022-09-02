@@ -20,6 +20,11 @@ listed in the changelog.
 
 ## [0.6.0] - 2022-07-20
 
+### Changed
+
+- Use `PipelineRun` resources with inlined spec instead of managing and referencing a `Pipeline` resource ([#573](https://github.com/opendevstack/ods-pipeline/issues/573))
+
+
 ### Added
 
 - Enable build caching for gradle builds according to `docs/adr/20220314-caching-build-tasks.md`.

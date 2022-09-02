@@ -38,7 +38,6 @@ type BitbucketWebhookReceiver struct {
 
 // PipelineInfo holds information about a triggered pipeline.
 type PipelineInfo struct {
-	Name            string `json:"name"`
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
@@ -132,7 +131,6 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	project = determineProject(s.Project, projectParam)
 	component = strings.TrimPrefix(repo, project+"-")
 	pInfo := PipelineInfo{
-		Name:       makePipelineName(component, gitRef),
 		Project:    project,
 		Component:  component,
 		Repository: repo,
@@ -211,8 +209,11 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	cfg := PipelineConfig{
 		PipelineInfo: pInfo,
 		PVC:          makePVCName(component),
+		// Move this to "spec" subfield?
 		Tasks:        odsConfig.Pipeline.Tasks,
 		Finally:      odsConfig.Pipeline.Finally,
+		PodTemplate:  odsConfig.Pipeline.PodTemplate,
+		TaskRunSpecs: odsConfig.Pipeline.TaskRunSpecs,
 	}
 	s.TriggeredPipelines <- cfg
 

@@ -49,7 +49,6 @@ func TestCreatePVCIfRequired(t *testing.T) {
 			defer cancel()
 			pData := PipelineConfig{
 				PipelineInfo: PipelineInfo{
-					Name:       "foo",
 					Repository: "repo",
 					GitRef:     "branch",
 					Stage:      config.DevStage,

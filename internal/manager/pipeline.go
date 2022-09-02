@@ -34,30 +34,36 @@ const (
 // PipelineConfig holds configuration for a triggered pipeline.
 type PipelineConfig struct {
 	PipelineInfo
-	PVC     string `json:"pvc"`
-	Tasks   []tekton.PipelineTask
-	Finally []tekton.PipelineTask
+	PVC          string `json:"pvc"`
+	Tasks        []tekton.PipelineTask
+	Finally      []tekton.PipelineTask
+	Timeouts     *tekton.TimeoutFields
+	PodTemplate  *tekton.PodTemplate
+	TaskRunSpecs []tekton.PipelineTaskRunSpec
 }
 
 // createPipelineRun creates a PipelineRun resource
-func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, pData PipelineConfig, needQueueing bool) (*tekton.PipelineRun, error) {
+func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string, needQueueing bool) (*tekton.PipelineRun, error) {
 	pr := &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-", pData.Name),
-			Labels:       pipelineLabels(pData),
+			GenerateName: fmt.Sprintf("%s-", cfg.Component),
+			Labels:       pipelineLabels(cfg),
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: tektonAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		Spec: tekton.PipelineRunSpec{
-			PipelineRef:        &tekton.PipelineRef{Name: pData.Name},
+			PipelineSpec:       assemblePipelineSpec(cfg, taskKind, taskSuffix),
 			ServiceAccountName: "pipeline", // TODO
+			PodTemplate:        cfg.PodTemplate,
+			TaskRunSpecs:       cfg.TaskRunSpecs,
+			Timeouts:           cfg.Timeouts,
 			Workspaces: []tekton.WorkspaceBinding{
 				{
 					Name: sharedWorkspaceName,
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: pData.PVC,
+						ClaimName: cfg.PVC,
 					},
 				},
 			},
@@ -75,18 +81,6 @@ func listPipelineRuns(ctxt context.Context, tektonClient tektonClient.ClientPipe
 	return tektonClient.ListPipelineRuns(
 		ctxt, metav1.ListOptions{LabelSelector: labels.Set(labelMap).String()},
 	)
-}
-
-// makePipelineName generates the name of the pipeline.
-// According to the Kubernetes label rules, a maximum of 63 characters is
-// allowed, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set.
-// Therefore, the name might be truncated. As this could cause potential clashes
-// between similar named branches, we put a short part of the branch hash value
-// into the name name to make this very unlikely.
-// We cut the pipeline name at 55 chars to allow e.g. pipeline runs to add suffixes.
-func makePipelineName(component string, branch string) string {
-	// 55 is derived from K8s label max length minus room for generateName suffix.
-	return makeValidLabelValue(component+"-", branch, 55)
 }
 
 func makeValidLabelValue(prefix, branch string, maxLength int) string {
@@ -129,11 +123,11 @@ func pipelineLabels(data PipelineConfig) map[string]string {
 	}
 }
 
-// assemblePipeline returns a Tekton pipeline based on given PipelineConfig.
-func assemblePipeline(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string) *tekton.Pipeline {
+// assemblePipelineSpec returns a Tekton pipeline based on given PipelineConfig.
+func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string) *tekton.PipelineSpec {
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
-		Name:       "ods-start",
+		Name:       "start",
 		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
 		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params: []tekton.Param{
@@ -148,7 +142,7 @@ func assemblePipeline(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix s
 		},
 	})
 	if len(cfg.Tasks) > 0 {
-		cfg.Tasks[0].RunAfter = append(cfg.Tasks[0].RunAfter, "ods-start")
+		cfg.Tasks[0].RunAfter = append(cfg.Tasks[0].RunAfter, "start")
 		tasks = append(tasks, cfg.Tasks...)
 	}
 
@@ -156,7 +150,7 @@ func assemblePipeline(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix s
 	finallyTasks = append(finallyTasks, cfg.Finally...)
 
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
-		Name:       "ods-finish",
+		Name:       "finish",
 		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
 		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params: []tekton.Param{
@@ -165,36 +159,24 @@ func assemblePipeline(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix s
 		},
 	})
 
-	p := &tekton.Pipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   cfg.Name,
-			Labels: pipelineLabels(cfg),
+	return &tekton.PipelineSpec{
+		Params: []tekton.ParamSpec{
+			tektonStringParamSpec("repository", cfg.Repository),
+			tektonStringParamSpec("project", cfg.Project),
+			tektonStringParamSpec("component", cfg.Component),
+			tektonStringParamSpec("git-repo-url", cfg.GitURI),
+			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
+			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
+			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
+			tektonStringParamSpec("environment", cfg.Environment),
+			tektonStringParamSpec("version", cfg.Version),
 		},
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: tektonAPIVersion,
-			Kind:       "Pipeline",
+		Tasks: tasks,
+		Workspaces: []tekton.PipelineWorkspaceDeclaration{
+			{Name: sharedWorkspaceName},
 		},
-		Spec: tekton.PipelineSpec{
-			Description: "ODS",
-			Params: []tekton.ParamSpec{
-				tektonStringParamSpec("repository", cfg.Repository),
-				tektonStringParamSpec("project", cfg.Project),
-				tektonStringParamSpec("component", cfg.Component),
-				tektonStringParamSpec("git-repo-url", cfg.GitURI),
-				tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
-				tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
-				tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-				tektonStringParamSpec("environment", cfg.Environment),
-				tektonStringParamSpec("version", cfg.Version),
-			},
-			Tasks: tasks,
-			Workspaces: []tekton.PipelineWorkspaceDeclaration{
-				{Name: sharedWorkspaceName},
-			},
-			Finally: finallyTasks,
-		},
+		Finally: finallyTasks,
 	}
-	return p
 }
 
 // sortPipelineRunsDescending sorts pipeline runs by time (descending)

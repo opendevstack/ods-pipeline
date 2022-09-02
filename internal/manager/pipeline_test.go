@@ -9,7 +9,6 @@ import (
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestShortenString(t *testing.T) {
@@ -56,66 +55,24 @@ func TestShortenString(t *testing.T) {
 	}
 }
 
-func TestMakePipelineName(t *testing.T) {
-	tests := map[string]struct {
-		component string
-		branch    string
-		expected  string
-	}{
-		"branch contains non-alphanumeric characters": {
-			component: "comp",
-			branch:    "bugfix/prj-529-bar-6-baz",
-			expected:  "comp-bugfix-prj-529-bar-6-baz",
-		},
-		"branch contains uppercase characters": {
-			component: "comp",
-			branch:    "PRJ-529-bar-6-baz",
-			expected:  "comp-prj-529-bar-6-baz",
-		},
-		"branch name is too long": {
-			component: "comp",
-			branch:    "bugfix/some-arbitarily-long-branch-name-that-should-be-way-shorter",
-			expected:  "comp-bugfix-some-arbitarily-long-branch-name-th-87136df",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := makePipelineName(tc.component, tc.branch)
-			if tc.expected != got {
-				t.Fatalf(
-					"Want '%s', got '%s' for (component='%s', branch='%s')",
-					tc.expected,
-					got,
-					tc.component,
-					tc.branch,
-				)
-			}
-		})
-	}
-}
-
 func TestCreatePipelineRun(t *testing.T) {
 	tc := &tektonClient.TestClient{}
 	ctxt := context.TODO()
 	pData := PipelineConfig{
 		PipelineInfo: PipelineInfo{
-			Name:       "foo",
-			Repository: "repo",
+			Component:  "component",
+			Repository: "project-component",
 			GitRef:     "branch",
 			Stage:      config.DevStage,
 		},
 		PVC: "pvc",
 	}
-	pr, err := createPipelineRun(tc, ctxt, pData, false)
+	pr, err := createPipelineRun(tc, ctxt, pData, tekton.ClusterTaskKind, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pr.GenerateName != "foo-" {
-		t.Fatalf("Expected generated name to be foo-, got: %s", pr.GenerateName)
-	}
-	if pr.Spec.PipelineRef.Name != "foo" {
-		t.Fatalf("Expected pipeline ref to be foo, got: %s", pr.Spec.PipelineRef.Name)
+	if pr.GenerateName != "component-" {
+		t.Fatalf("Expected generated name to be component-, got: %s", pr.GenerateName)
 	}
 	if pr.Spec.Status != "" {
 		t.Fatalf("Expected status to be empty, got: %s", pr.Spec.Status)
@@ -139,7 +96,7 @@ func TestCreatePipelineRun(t *testing.T) {
 	if len(tc.CreatedPipelineRuns) != 1 {
 		t.Fatal("No pipeline run created")
 	}
-	pr, err = createPipelineRun(tc, ctxt, pData, true)
+	pr, err = createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +113,6 @@ func TestAssemblePipeline(t *testing.T) {
 	taskSuffix := "-latest"
 	cfg := PipelineConfig{
 		PipelineInfo: PipelineInfo{
-			Name:            "pipeline",
 			Project:         "project",
 			Component:       "component",
 			Repository:      "repo",
@@ -191,76 +147,62 @@ func TestAssemblePipeline(t *testing.T) {
 			},
 		},
 	}
-	got := assemblePipeline(cfg, taskKind, taskSuffix)
-	want := &tekton.Pipeline{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Pipeline",
-			APIVersion: "tekton.dev/v1beta1",
+	got := assemblePipelineSpec(cfg, taskKind, taskSuffix)
+	want := &tekton.PipelineSpec{
+		Description: "",
+		Params: []tekton.ParamSpec{
+			tektonStringParamSpec("repository", cfg.Repository),
+			tektonStringParamSpec("project", cfg.Project),
+			tektonStringParamSpec("component", cfg.Component),
+			tektonStringParamSpec("git-repo-url", cfg.GitURI),
+			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
+			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
+			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
+			tektonStringParamSpec("environment", cfg.Environment),
+			tektonStringParamSpec("version", cfg.Version),
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pipeline",
-			Labels: map[string]string{
-				gitRefLabel:     "branch",
-				repositoryLabel: "repo",
-				stageLabel:      "dev",
+		Tasks: []tekton.PipelineTask{
+			{
+				Name:    "start",
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-latest"},
+				Params: []tekton.Param{
+					tektonStringParam("url", "$(params.git-repo-url)"),
+					tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
+					tektonStringParam("project", "$(params.project)"),
+					tektonStringParam("pr-key", "$(params.pr-key)"),
+					tektonStringParam("pr-base", "$(params.pr-base)"),
+					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+					tektonStringParam("environment", "$(params.environment)"),
+					tektonStringParam("version", "$(params.version)"),
+				},
+				Workspaces: tektonDefaultWorkspaceBindings(),
+			},
+			{
+				Name:       "build",
+				RunAfter:   []string{"start"},
+				TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go-latest"},
+				Params:     nil,
+				Workspaces: tektonDefaultWorkspaceBindings(),
 			},
 		},
-		Spec: tekton.PipelineSpec{
-			Description: "ODS",
-			Params: []tekton.ParamSpec{
-				tektonStringParamSpec("repository", cfg.Repository),
-				tektonStringParamSpec("project", cfg.Project),
-				tektonStringParamSpec("component", cfg.Component),
-				tektonStringParamSpec("git-repo-url", cfg.GitURI),
-				tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
-				tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
-				tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-				tektonStringParamSpec("environment", cfg.Environment),
-				tektonStringParamSpec("version", cfg.Version),
+		Finally: []tekton.PipelineTask{
+			{
+				Name:    "final",
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final-latest"},
+				Params:  nil,
 			},
-			Tasks: []tekton.PipelineTask{
-				{
-					Name:    "ods-start",
-					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-latest"},
-					Params: []tekton.Param{
-						tektonStringParam("url", "$(params.git-repo-url)"),
-						tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
-						tektonStringParam("project", "$(params.project)"),
-						tektonStringParam("pr-key", "$(params.pr-key)"),
-						tektonStringParam("pr-base", "$(params.pr-base)"),
-						tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-						tektonStringParam("environment", "$(params.environment)"),
-						tektonStringParam("version", "$(params.version)"),
-					},
-					Workspaces: tektonDefaultWorkspaceBindings(),
+			{
+				Name:    "finish",
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-latest"},
+				Params: []tekton.Param{
+					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+					tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
 				},
-				{
-					Name:       "build",
-					RunAfter:   []string{"ods-start"},
-					TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go-latest"},
-					Params:     nil,
-					Workspaces: tektonDefaultWorkspaceBindings(),
-				},
+				Workspaces: tektonDefaultWorkspaceBindings(),
 			},
-			Finally: []tekton.PipelineTask{
-				{
-					Name:    "final",
-					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final-latest"},
-					Params:  nil,
-				},
-				{
-					Name:    "ods-finish",
-					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-latest"},
-					Params: []tekton.Param{
-						tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-						tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
-					},
-					Workspaces: tektonDefaultWorkspaceBindings(),
-				},
-			},
-			Workspaces: []tekton.PipelineWorkspaceDeclaration{
-				{Name: sharedWorkspaceName},
-			},
+		},
+		Workspaces: []tekton.PipelineWorkspaceDeclaration{
+			{Name: sharedWorkspaceName},
 		},
 	}
 	if diff := cmp.Diff(want, got); diff != "" {

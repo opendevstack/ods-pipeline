@@ -26,7 +26,6 @@ type ClientConfig struct {
 }
 
 type ClientInterface interface {
-	ClientPipelineInterface
 	ClientPipelineRunInterface
 }
 
@@ -75,10 +74,6 @@ func (c *Client) namespace() string {
 
 func (c *Client) tektonV1beta1Client() v1beta1.TektonV1beta1Interface {
 	return c.clientConfig.TektonClient.TektonV1beta1()
-}
-
-func (c *Client) pipelinesClient() v1beta1.PipelineInterface {
-	return c.tektonV1beta1Client().Pipelines(c.namespace())
 }
 
 func (c *Client) pipelineRunsClient() v1beta1.PipelineRunInterface {
