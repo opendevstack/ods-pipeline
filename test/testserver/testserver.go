@@ -3,9 +3,10 @@ package testserver
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -32,8 +33,8 @@ func cloneRequest(r *http.Request) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Body = ioutil.NopCloser(&b)
-	r2.Body = ioutil.NopCloser(bytes.NewReader(b.Bytes()))
+	r.Body = io.NopCloser(&b)
+	r2.Body = io.NopCloser(bytes.NewReader(b.Bytes()))
 	return &r2, nil
 }
 
@@ -68,7 +69,7 @@ func (ts *TestServer) EnqueueResponse(t *testing.T, path string, statusCode int,
 	body := []byte{}
 	if len(fixture) > 0 {
 		filename := filepath.Join(projectpath.Root, "test/testdata/fixtures", fixture)
-		b, err := ioutil.ReadFile(filename)
+		b, err := os.ReadFile(filename)
 		if err != nil {
 			t.Fatal(err)
 		}

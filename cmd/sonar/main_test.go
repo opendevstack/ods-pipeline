@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -127,7 +126,7 @@ func TestSonarScan(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			tempDir, err := ioutil.TempDir(".", "test-cmd-sonar-")
+			tempDir, err := os.MkdirTemp(".", "test-cmd-sonar-")
 			if err != nil {
 				t.Fatal(err)
 			}

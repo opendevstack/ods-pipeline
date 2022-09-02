@@ -3,7 +3,6 @@ package pipelinectxt
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -55,7 +54,7 @@ type ArtifactInfo struct {
 
 // ReadArtifactsManifestFromFile reads an artifact manifest from given filename or errors.
 func ReadArtifactsManifestFromFile(filename string) (*ArtifactsManifest, error) {
-	body, err := ioutil.ReadFile(filename)
+	body, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %w", filename, err)
 	}
@@ -93,7 +92,7 @@ func WriteJsonArtifact(in interface{}, artifactsPath, filename string) error {
 	if err != nil {
 		return fmt.Errorf("could not create %s: %w", artifactsPath, err)
 	}
-	return ioutil.WriteFile(filepath.Join(artifactsPath, filename), out, 0644)
+	return os.WriteFile(filepath.Join(artifactsPath, filename), out, 0644)
 }
 
 // CopyArtifact copies given "sourceFile" into "artifactsPath".
@@ -114,7 +113,7 @@ func CopyArtifact(sourceFile, artifactsPath string) error {
 func ReadArtifactsDir(artifactsDir string) (map[string][]string, error) {
 	artifactsMap := map[string][]string{}
 
-	items, err := ioutil.ReadDir(artifactsDir)
+	items, err := os.ReadDir(artifactsDir)
 	if err != nil {
 		return artifactsMap, fmt.Errorf("%w", err)
 	}
@@ -122,7 +121,7 @@ func ReadArtifactsDir(artifactsDir string) (map[string][]string, error) {
 	for _, item := range items {
 		if item.IsDir() {
 			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := ioutil.ReadDir(filepath.Join(artifactsDir, item.Name()))
+			subitems, err := os.ReadDir(filepath.Join(artifactsDir, item.Name()))
 			if err != nil {
 				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
 			}

@@ -3,7 +3,7 @@ package sonar
 import (
 	b64 "encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -99,7 +99,7 @@ func (c *Client) get(urlPath string) (int, []byte, error) {
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	return res.StatusCode, body, err
 }
 

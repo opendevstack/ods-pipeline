@@ -2,7 +2,6 @@ package pipelinectxt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +12,7 @@ import (
 )
 
 func TestReadArtifactsDir(t *testing.T) {
-	artifactsDir, err := ioutil.TempDir(".", "test-artifacts-")
+	artifactsDir, err := os.MkdirTemp(".", "test-artifacts-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +23,7 @@ func TestReadArtifactsDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	artifactsFile := filepath.Join(artifactsSubDir, "foo.txt")
-	err = ioutil.WriteFile(artifactsFile, []byte("test"), 0644)
+	err = os.WriteFile(artifactsFile, []byte("test"), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +47,7 @@ func TestDownloadGroup(t *testing.T) {
 	nexusURL := "https://nexus.example.com"
 	permanentBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.PermanentRepositoryDefault, group, artifactType)
 	temporaryBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.PermanentRepositoryDefault, group, artifactType)
-	artifactsDir, err := ioutil.TempDir(".", "test-artifacts-")
+	artifactsDir, err := os.MkdirTemp(".", "test-artifacts-")
 	if err != nil {
 		t.Fatal(err)
 	}

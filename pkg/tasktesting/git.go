@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"os"
@@ -321,5 +320,5 @@ func trackLfsJpgFileToBitbucketOrFatal(t *testing.T, wsDir, filename string) {
 }
 
 func writeFile(filename, content string) error {
-	return ioutil.WriteFile(filename, []byte(content), 0644)
+	return os.WriteFile(filename, []byte(content), 0644)
 }

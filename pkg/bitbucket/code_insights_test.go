@@ -2,7 +2,7 @@ package bitbucket
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -83,7 +83,7 @@ func checkLastRequest(t *testing.T, srv *testserver.TestServer, golden string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gotBody, err := ioutil.ReadAll(req.Body)
+	gotBody, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

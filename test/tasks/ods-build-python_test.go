@@ -2,7 +2,7 @@ package tasks
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -43,7 +43,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
+					wantContainsBytes, err := os.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -87,7 +87,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					wantContainsBytes, err := ioutil.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
+					wantContainsBytes, err := os.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
 						t.Fatal(err)
 					}

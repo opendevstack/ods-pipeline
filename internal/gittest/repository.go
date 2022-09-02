@@ -1,7 +1,6 @@
 package gittest
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -11,7 +10,7 @@ import (
 // The returned function should be deferred to clean up the temp dir.
 func CreateFakeGitRepoDir(url, branch, sha string) (string, func(), error) {
 	cleanupFunc := func() {}
-	dir, err := ioutil.TempDir(".", "test-git-repo-")
+	dir, err := os.MkdirTemp(".", "test-git-repo-")
 	if err != nil {
 		return "", cleanupFunc, err
 	}
@@ -23,7 +22,7 @@ func CreateFakeGitRepoDir(url, branch, sha string) (string, func(), error) {
 	if err != nil {
 		return "", cleanupFunc, err
 	}
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		filepath.Join(gitDir, "HEAD"),
 		[]byte("ref: refs/heads/"+branch),
 		0644,
@@ -31,7 +30,7 @@ func CreateFakeGitRepoDir(url, branch, sha string) (string, func(), error) {
 	if err != nil {
 		return "", cleanupFunc, err
 	}
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		filepath.Join(gitDir, "config"),
 		[]byte(`[remote "origin"]
 	url = `+url+`
@@ -46,7 +45,7 @@ func CreateFakeGitRepoDir(url, branch, sha string) (string, func(), error) {
 	if err != nil {
 		return "", cleanupFunc, err
 	}
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		filepath.Join(gitHeadsDir, branch),
 		[]byte(sha),
 		0644,

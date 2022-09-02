@@ -1,7 +1,7 @@
 package testfile
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -19,7 +19,7 @@ func ReadGolden(t *testing.T, filename string) []byte {
 }
 
 func ReadFileOrFatal(t *testing.T, filename string) []byte {
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}

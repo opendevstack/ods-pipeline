@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -217,7 +216,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 }
 
 func getFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}

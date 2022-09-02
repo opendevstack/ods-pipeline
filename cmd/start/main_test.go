@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -194,7 +194,7 @@ func lastTagPayload(t *testing.T, srv *testserver.TestServer) bitbucket.TagCreat
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

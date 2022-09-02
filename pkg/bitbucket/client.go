@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -102,7 +101,7 @@ func (c *Client) doRequest(req *http.Request) (int, []byte, error) {
 	}
 	defer res.Body.Close()
 
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	return res.StatusCode, responseBody, err
 }
 

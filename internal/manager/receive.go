@@ -3,7 +3,7 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -60,7 +60,7 @@ type PipelineInfo struct {
 // Handle handles Bitbucket requests. It extracts pipeline data from the request
 // body and sends the gained data to the scheduler.
 func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		msg := "could not read body"
 		s.Logger.Errorf("%s: %s", msg, err)

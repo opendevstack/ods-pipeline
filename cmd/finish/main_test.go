@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -96,7 +95,7 @@ func TestHandleArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ioutil.WriteFile(filepath.Join(tempWorkingDir, "ods.yaml"), out, 0644)
+	err = os.WriteFile(filepath.Join(tempWorkingDir, "ods.yaml"), out, 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +153,7 @@ func nexusRepoContains(haystack []string, needle string) bool {
 // artifacts manifest file. The returned function should be used for cleanup.
 func prepareTempWorkingDir(nexusRepo string) (string, func(), error) {
 	cleanup := func() {}
-	tempWorkingDir, err := ioutil.TempDir(".", "test-upload-")
+	tempWorkingDir, err := os.MkdirTemp(".", "test-upload-")
 	if err != nil {
 		return tempWorkingDir, cleanup, err
 	}
@@ -192,7 +191,7 @@ func writeArtifactFile(artifactsDir, subdir, filename string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(artifactsSubDir, filename), []byte("test"), 0644)
+	return os.WriteFile(filepath.Join(artifactsSubDir, filename), []byte("test"), 0644)
 }
 
 // writeArtifactsManifest writes an artigact manifest JSON file into artifactsDir.

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -435,7 +434,7 @@ func checkoutAndAssembleContext(
 }
 
 func getCommitSHA(dir string) (string, error) {
-	content, err := ioutil.ReadFile(filepath.Join(dir, ".git/HEAD"))
+	content, err := os.ReadFile(filepath.Join(dir, ".git/HEAD"))
 	if err != nil {
 		return "", err
 	}

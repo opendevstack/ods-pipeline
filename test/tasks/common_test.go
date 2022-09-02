@@ -3,7 +3,6 @@ package tasks
 import (
 	"crypto/sha256"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,7 +66,7 @@ func checkFilesExist(t *testing.T, wsDir string, wantFiles ...string) {
 
 func checkFileHash(t *testing.T, wsDir string, filename string, hash [32]byte) {
 	filepath := filepath.Join(wsDir, filename)
-	filecontent, err := ioutil.ReadFile(filepath)
+	filecontent, err := os.ReadFile(filepath)
 	if err != nil {
 		t.Fatalf("Want %s, but got nothing", filename)
 	}
@@ -78,7 +77,7 @@ func checkFileHash(t *testing.T, wsDir string, filename string, hash [32]byte) {
 }
 
 func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
@@ -94,7 +93,7 @@ func trimmedFileContentOrFatal(t *testing.T, filename string) string {
 }
 
 func checkFileContentContains(t *testing.T, wsDir, filename string, wantContains ...string) {
-	content, err := ioutil.ReadFile(filepath.Join(wsDir, filename))
+	content, err := os.ReadFile(filepath.Join(wsDir, filename))
 	got := string(content)
 	if err != nil {
 		t.Fatalf("could not read %s: %s", filename, err)
@@ -117,7 +116,7 @@ func checkFileContentLeanContains(t *testing.T, wsDir, filename string, wantCont
 }
 
 func getFileContentLean(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
@@ -202,7 +201,7 @@ func createODSYML(wsDir string, o *config.ODS) error {
 		return err
 	}
 	filename := filepath.Join(wsDir, "ods.yaml")
-	return ioutil.WriteFile(filename, y, 0644)
+	return os.WriteFile(filename, y, 0644)
 }
 
 func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {

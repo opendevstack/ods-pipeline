@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -113,9 +112,9 @@ func main() {
 	fmt.Printf("releaseNamespace=%s\n", releaseNamespace)
 
 	// Find subrepos
-	var subrepos []fs.FileInfo
+	var subrepos []fs.DirEntry
 	if _, err := os.Stat(pipelinectxt.SubreposPath); err == nil {
-		f, err := ioutil.ReadDir(pipelinectxt.SubreposPath)
+		f, err := os.ReadDir(pipelinectxt.SubreposPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -168,7 +167,7 @@ func main() {
 		fmt.Println("Copying images into release namespace ...")
 		for _, artifactFile := range files {
 			var imageArtifact artifact.Image
-			artifactContent, err := ioutil.ReadFile(artifactFile)
+			artifactContent, err := os.ReadFile(artifactFile)
 			if err != nil {
 				log.Fatalf("could not read image artifact file %s: %s", artifactFile, err)
 			}
@@ -293,7 +292,7 @@ func main() {
 		}
 	}
 
-	subcharts, err := ioutil.ReadDir(chartsDir)
+	subcharts, err := os.ReadDir(chartsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -421,7 +420,7 @@ func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv strin
 		return err
 	}
 	f := artifactFilename(filename, chartDir, targetEnv) + ".txt"
-	return ioutil.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
+	return os.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
 }
 
 func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []byte, err error) {
@@ -446,7 +445,7 @@ func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (s
 }
 
 func getTrimmedFileContent(filename string) (string, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
@@ -456,7 +455,7 @@ func getTrimmedFileContent(filename string) (string, error) {
 func collectImageDigests(imageDigestsDir string) ([]string, error) {
 	var files []string
 	if _, err := os.Stat(imageDigestsDir); err == nil {
-		f, err := ioutil.ReadDir(imageDigestsDir)
+		f, err := os.ReadDir(imageDigestsDir)
 		if err != nil {
 			return files, fmt.Errorf("could not read image digests dir: %w", err)
 		}

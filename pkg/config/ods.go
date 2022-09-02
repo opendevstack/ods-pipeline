@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -162,7 +161,7 @@ func Read(body []byte) (*ODS, error) {
 
 // ReadFromFile reads an ods config from given filename or errors.
 func ReadFromFile(filename string) (*ODS, error) {
-	body, err := ioutil.ReadFile(filename)
+	body, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %w", filename, err)
 	}
