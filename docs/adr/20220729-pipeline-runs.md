@@ -21,9 +21,7 @@ Stop creating and updating a `Pipeline` resource per branch, and instead create 
 
 ## Design
 
-Since `Pipeline#spec` and `PipelineRun#pipelineSpec` are the same `PipelineSpec` type, the configuration of `tasks` and `finally` does not need to change. However, to stay close to Tekton, we may want to move them under the `pipelineSpec` key. Next to this, we could add new keys `timeouts`, `podTemplate` and `taskRunSpecs`.
-
-Backwards-compatible, less verbose version:
+Since `Pipeline#spec` and `PipelineRun#pipelineSpec` are the same `PipelineSpec` type, the configuration of `tasks` and `finally` does not need to change. The new `pipeline` definition looks like this:
 
 ```
 pipeline:
@@ -34,7 +32,7 @@ pipeline:
   taskRunSpecs: []PipelineTaskRunSpec
 ```
 
-Version closer to native Tekton:
+As an alternative, the following `pipeline` definition was considered:
 
 ```
 pipeline:
@@ -46,10 +44,12 @@ pipeline:
   taskRunSpecs: []PipelineTaskRunSpec
 ```
 
-As a first iteration, we will start with the backwards-compatible version.
+This would be closer to native Tekton but it is more verbose and not backwards-compatible. Therefore, this alternative was rejected.
 
 ## Consequences
 
 The OpenShift console UI allows to navigate from `Pipeline` to `PipelineRun`. If we do not have `Pipeline` resources any longer, this grouping mechanism is gone. This drawback is acceptable because we assume most users navigate directly from Bitbucket builds to pipeline runs. Further, the OpenShift UI allows to filter pipeline runs by label, which can be used to see all runs belonging to a branch.
 
 The change should simplify quite a bit of the internal logic, as management of pipelines (creating, updating, pruning) can be removed.
+
+Most importantly, the new design provides access to Tekton features available only via `PipelineRun` like inline task specs, compute resource overrides and control over timeouts and pod templates.

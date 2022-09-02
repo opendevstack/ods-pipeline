@@ -41,7 +41,7 @@ Each task reference is just the plain Tekton definition. See the Tekton document
 
 A typical `ods-pipeline` installation offers its task as `Task` resources, therefore the `taskRef.kind` needs to be `Task`. The value of the `taskRef.name` field depends on the version of `ods-pipeline` that is installed in your project. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Tasks".
 
-Alternatively to referencing tasks, ad-hoc task definitionss can also be specified directly inside `ods.yaml`:
+Alternatively to referencing tasks, ad-hoc task definitions can also be specified directly inside `ods.yaml`:
 
 .ods.yaml
 [source,yaml]

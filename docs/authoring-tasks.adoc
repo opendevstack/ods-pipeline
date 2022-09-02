@@ -8,15 +8,38 @@ Prior to creating your own task, it is important to understand in general how Te
 
 == Why and when to create custom tasks?
 
-ODS provides tasks out-of-the-box that can be used e.g. to build and deploy Go applications. However, these tasks are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization though. This is by design: when the official tasks are used, the ODS installation provider is able to make certain assumptions, such as which artifacts have been produced, etc.
+ODS provides tasks out-of-the-box that can be used to build and deploy applications. However, these tasks are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization.
 
-If you need more control than the official tasks offer, then creating a custom Tekton task is the way to go. You may also use a Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
+If you need more control than the official tasks offer, creating a custom Tekton task is the way to go. You may also use an already existing Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
+
+== Anatomy of a task
+
+A task consists of one or more steps, and each step is a container that runs in a pod. Therefore, when you create your own task, you will need to define at least one step, which will need to define the container it will execute. For example, if you want to use the `curl` program in your custom task, then you will need to launch a container which has `curl` installed. This means that you either need to find a container image that has the binaries installed that you want to execute, or you need to build a container image first that suits your needs, before using it in your task definition.
+
+== Defining an ad-hoc task in the pipeline spec
+
+Normally, a Tekton task is a Kubernetes resource in your OpenShift project. However, pipelines also allow for a lightweight inline task spec. This approach is helpful during experimentation or if you do not plan to reuse the task elsewhere. Below is an example of such an inline definition in the `ods.yaml` file:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  tasks:
+  - name: hello-world
+    taskSpec:
+      steps:
+        - name: say-hello
+          image: busybox
+          script: |
+            echo hello world
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
 
 == Creating your own task
 
-A Tekton task is a Kubernetes resource in your OpenShift project. To create a task, simply provide the YAML definition of the task in the OpenShit console. Then you are able to reference this task from your pipeline definition (`ods.yaml`) just like official ODS tasks.
-
-A task consists of one or more steps, and each step is a container that runs in a pod. Therefore, when you create your task, you will need to define at least one step, which will need to define the container it will execute. For example, if you want to use the `curl` program in your custom task, then you will need to launch a container which has `curl` installed. This means that you either need to find a container image that has the binaries installed that you want to execute, or you need to build a container image first that suits your needs, before using it in your task definition.
+If you want to reuse your task in other repositories, it is better to create a proper `Task` resource in your OpenShift project. Simply provide the YAML definition of the task in the OpenShift console interface. Then you are able to reference this task from your pipeline definition (`ods.yaml`) just like official ODS tasks.
 
 The simplest YAML definition of a task looks like this:
 
@@ -35,9 +58,22 @@ spec:
         echo hello world
 ----
 
-Of course this doesn't do anything useful in the CI pipeline. Typically, you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.
+We define one step using the `busybox` image, which executes what is defined in `script` in a shell (`sh`). Since `echo` is available in `sh`, we can print the words `hello world`.
 
-In the example above, we are using the `busybox` image, which executes what is defined in `script` in a shell (`sh`). Since `echo` is available in `sh`, we can print the words `hello world` to the log output.
+Your `ods.yaml` file would reference this task like this:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  tasks:
+  - name: hello-world
+    taskRef:
+      kind: Task
+      name: hello-world
+----
+
+Of course this doesn't do anything useful in the CI pipeline. Typically, you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.
 
 === Using pipeline context
 
