@@ -9,9 +9,6 @@ listed in the changelog.
 
 ## [Unreleased]
 
-
-## [0.6.0] - 2022-07-20
-
 ### Changed
 
 - Stream Buildah and Aqua log output ([#596](https://github.com/opendevstack/ods-pipeline/issues/596))
@@ -19,6 +16,8 @@ listed in the changelog.
 ### Fixed
 
 - Aqua and helm-diff log output is incomplete ([#593](https://github.com/opendevstack/ods-pipeline/issues/593))
+
+## [0.6.0] - 2022-07-20
 
 ### Added
 
