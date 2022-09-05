@@ -1,0 +1,18 @@
+{
+    "project": "foo",
+    "component": "bar",
+    "repository": "foo-bar",
+    "stage": "dev",
+    "environment": "",
+    "version": "",
+    "gitRef": "feature/other",
+    "gitFullRef": "refs/heads/feature/other",
+    "gitSha": "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
+    "repoBase": "https://domain.com",
+    "gitURI": "https://domain.com/foo/foo-bar.git",
+    "namespace": "bar-cd",
+    "trigger-event": "pr:comment:added",
+    "comment": "/other",
+    "prKey": 1,
+    "prBase": "refs/heads/master"
+}

@@ -1,5 +1,5 @@
 pipeline:
-  tasks:
+  - tasks:
     - name: go-helm-build
       taskRef:
         kind: Task
@@ -34,11 +34,11 @@ pipeline:
       workspaces:
         - name: source
           workspace: shared-workspace
-  finally:
-    - name: go-helm-finalize
-      taskRef:
-        kind: Task
-        name: ods-finalize-docgen-v0-1-0
-      workspaces:
-        - name: source
-          workspace: shared-workspace
+    finally:
+      - name: go-helm-finalize
+        taskRef:
+          kind: Task
+          name: ods-finalize-docgen-v0-1-0
+        workspaces:
+          - name: source
+            workspace: shared-workspace

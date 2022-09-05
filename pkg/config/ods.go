@@ -40,7 +40,7 @@ type ODS struct {
 	// BranchToEnvironmentMapping configures which branch should be deployed to which environment.
 	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping,omitempty"`
 	// Pipeline allows to define the Tekton pipeline tasks.
-	Pipeline Pipeline `json:"pipeline,omitempty"`
+	Pipeline []Pipeline `json:"pipeline,omitempty"`
 	// Version is the application version and must follow SemVer.
 	Version string `json:"version,omitempty"`
 }
@@ -95,11 +95,18 @@ type Environment struct {
 
 // Pipeline represents a Tekton pipeline run.
 type Pipeline struct {
+	Trigger      *Trigger                     `json:"trigger,omitempty"`
 	Tasks        []tekton.PipelineTask        `json:"tasks,omitempty"`
 	Finally      []tekton.PipelineTask        `json:"finally,omitempty"`
 	Timeouts     *tekton.TimeoutFields        `json:"timeouts,omitempty"`
 	PodTemplate  *tekton.PodTemplate          `json:"podTemplate,omitempty"`
 	TaskRunSpecs []tekton.PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
+}
+
+type Trigger struct {
+	Event    []string `json:"event"`
+	Branches []string `json:"branches,omitempty"`
+	PrComent *string  `json:"prComment,omitempty"`
 }
 
 func (o *ODS) Validate() error {

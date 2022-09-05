@@ -1,0 +1,104 @@
+pipeline:
+  - trigger:
+      event: ["pr:comment:added"]
+      branches: ["feature/other"]
+      prComment: "/select"
+    tasks:
+      - name: go-helm-build-comment-added-select-foo
+        taskRef:
+          kind: Task
+          name: ods-build-go-v0-1-0
+        params:
+          - name: DOCKER_CONTEXT
+            value: docker
+          - name: TLSVERIFY
+            value: 'false'
+          - name: IMAGE_STREAM
+            value: go-helm
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+    finally:
+      - name: go-helm-finalize
+        taskRef:
+          kind: Task
+          name: ods-finalize-docgen-v0-1-0
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+  - trigger:
+      event: ["pr:opened"]
+      branches: ["feature/foo"]
+    tasks:
+      - name: go-helm-build-opened-pr-foo
+        taskRef:
+          kind: Task
+          name: ods-build-go-v0-1-0
+        params:
+          - name: DOCKER_CONTEXT
+            value: docker
+          - name: TLSVERIFY
+            value: 'false'
+          - name: IMAGE_STREAM
+            value: go-helm
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+    finally:
+      - name: go-helm-finalize
+        taskRef:
+          kind: Task
+          name: ods-finalize-docgen-v0-1-0
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+  - trigger:
+      event: ["pr:opened"]
+    tasks:
+      - name: go-helm-build-opened-pr
+        taskRef:
+          kind: Task
+          name: ods-build-go-v0-1-0
+        params:
+          - name: DOCKER_CONTEXT
+            value: docker
+          - name: TLSVERIFY
+            value: 'false'
+          - name: IMAGE_STREAM
+            value: go-helm
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+    finally:
+      - name: go-helm-finalize
+        taskRef:
+          kind: Task
+          name: ods-finalize-docgen-v0-1-0
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+  - trigger:
+      event: ["*"]
+    tasks:
+      - name: go-helm-build-catch-all
+        taskRef:
+          kind: Task
+          name: ods-build-go-v0-1-0
+        params:
+          - name: DOCKER_CONTEXT
+            value: docker
+          - name: TLSVERIFY
+            value: 'false'
+          - name: IMAGE_STREAM
+            value: go-helm
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+    finally:
+      - name: go-helm-finalize
+        taskRef:
+          kind: Task
+          name: ods-finalize-docgen-v0-1-0
+        workspaces:
+          - name: source
+            workspace: shared-workspace

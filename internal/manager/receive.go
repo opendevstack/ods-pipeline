@@ -2,9 +2,11 @@ package manager
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -206,14 +208,12 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	s.Logger.Infof("%+v", pInfo)
 
-	cfg := PipelineConfig{
-		PipelineInfo: pInfo,
-		PVC:          makePVCName(component),
-		// Move this to "spec" subfield?
-		Tasks:        odsConfig.Pipeline.Tasks,
-		Finally:      odsConfig.Pipeline.Finally,
-		PodTemplate:  odsConfig.Pipeline.PodTemplate,
-		TaskRunSpecs: odsConfig.Pipeline.TaskRunSpecs,
+	cfg, err := identifyPipelineConfig(pInfo, odsConfig, component)
+	if err != nil {
+		msg := "Couldn't identify pipeline to run"
+		s.Logger.Infof("%s: %s", msg, err)
+		http.Error(w, msg, http.StatusTeapot)
+		return
 	}
 	s.TriggeredPipelines <- cfg
 
@@ -222,6 +222,61 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		s.Logger.Errorf("cannot write body: %s", err)
 		return
 	}
+}
+
+// identifyPipelineConfig finds the first configuration matching the triggering event
+func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component string) (PipelineConfig, error) {
+	for _, pipeline := range odsConfig.Pipeline {
+		if pipelineMatches(pInfo, pipeline) {
+			return PipelineConfig{
+				PipelineInfo: pInfo,
+				PVC:          makePVCName(component),
+				// Move this to "spec" subfield?
+				Tasks:        pipeline.Tasks,
+				Finally:      pipeline.Finally,
+				PodTemplate:  pipeline.PodTemplate,
+				TaskRunSpecs: pipeline.TaskRunSpecs,
+			}, nil
+		}
+	}
+	return PipelineConfig{}, errors.New("No pipeline definition matched webhook event")
+}
+
+func pipelineMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+	if pipeline.Trigger == nil {
+		return true
+	}
+	return pipelineEventsMatches(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
+}
+
+func anyPatternMatches(s string, patterns []string) bool {
+	if len(patterns) == 0 {
+		return true
+	}
+
+	for _, pattern := range patterns {
+		if matched, err := filepath.Match(pattern, s); matched && err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func pipelineEventsMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+	return anyPatternMatches(pInfo.TriggerEvent, pipeline.Trigger.Event)
+}
+
+func pipelineBranchesMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches)
+}
+
+func pipelineCommentMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+	prefix := pipeline.Trigger.PrComent
+	if prefix == nil || *prefix == "" {
+		return true
+	}
+
+	return strings.HasPrefix(pInfo.Comment, *prefix)
 }
 
 // determineProject returns the project from given serverProject/projectParam.
