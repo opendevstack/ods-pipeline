@@ -1,0 +1,20 @@
+environments:
+- name: foo
+  stage: prod
+
+pipeline:
+  tasks:
+    - name: go-helm-build
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-1-0
+      params:
+        - name: DOCKER_CONTEXT
+          value: docker
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE_STREAM
+          value: go-helm
+      workspaces:
+        - name: source
+          workspace: shared-workspace

@@ -30,6 +30,22 @@ const (
 
 var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
 
+// legacyODS represents the legacy ODS pipeline configuration for one repository.
+// This is used to still support repositories that haven't migrated new format yet.
+type legacyODS struct {
+	// Repositories specifies the subrepositores, making the current repository
+	// an "umbrella" repository.
+	Repositories []Repository `json:"repositories,omitempty"`
+	// Environments allows you to specify target environments to deploy to.
+	Environments []Environment `json:"environments"`
+	// BranchToEnvironmentMapping configures which branch should be deployed to which environment.
+	BranchToEnvironmentMapping []BranchToEnvironmentMapping `json:"branchToEnvironmentMapping,omitempty"`
+	// Pipeline allows to define the Tekton pipeline tasks.
+	Pipeline Pipeline `json:"pipeline,omitempty"`
+	// Version is the application version and must follow SemVer.
+	Version string `json:"version,omitempty"`
+}
+
 // ODS represents the ODS pipeline configuration for one repository.
 type ODS struct {
 	// Repositories specifies the subrepositores, making the current repository
@@ -149,6 +165,36 @@ func (o *ODS) Environment(environment string) (*Environment, error) {
 	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
 }
 
+func readLegacy(body []byte) (*ODS, error) {
+	if len(body) == 0 {
+		return nil, errors.New("config is empty")
+	}
+	var legacyConfig *legacyODS
+	err := yaml.UnmarshalStrict(body, &legacyConfig, func(dec *json.Decoder) *json.Decoder {
+		dec.DisallowUnknownFields()
+		return dec
+	})
+	if err != nil {
+		return nil, err
+	}
+	odsConfig := convertLegacy(legacyConfig)
+
+	if err = odsConfig.Validate(); err != nil {
+		return nil, err
+	}
+	return odsConfig, nil
+}
+
+func convertLegacy(ods *legacyODS) *ODS {
+	return &ODS{
+		Repositories:               ods.Repositories,
+		Environments:               ods.Environments,
+		BranchToEnvironmentMapping: ods.BranchToEnvironmentMapping,
+		Pipeline:                   []Pipeline{ods.Pipeline},
+		Version:                    ods.Version,
+	}
+}
+
 // Read reads an ods config from given byte slice or errors.
 func Read(body []byte) (*ODS, error) {
 	if len(body) == 0 {
@@ -160,7 +206,10 @@ func Read(body []byte) (*ODS, error) {
 		return dec
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal config: %w", err)
+		odsConfig, err = readLegacy(body)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal config: %w", err)
+		}
 	}
 
 	if err = odsConfig.Validate(); err != nil {
