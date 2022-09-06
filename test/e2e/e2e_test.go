@@ -114,14 +114,14 @@ environments:
   - name: dev
     stage: dev
 pipeline:
-  tasks:
-    - name: package-image
-      taskRef:
-        kind: Task
-        name: ods-package-image
-      workspaces:
-        - name: source
-          workspace: shared-workspace`
+  - tasks:
+      - name: package-image
+        taskRef:
+          kind: Task
+          name: ods-package-image
+        workspaces:
+          - name: source
+            workspace: shared-workspace`
 
 	err = os.WriteFile(filepath.Join(wsDir, filename), []byte(fileContent), 0644)
 	if err != nil {
