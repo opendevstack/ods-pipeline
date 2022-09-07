@@ -21,6 +21,7 @@ pipeline:
   - trigger:
       event: ["repo:refs_changed", "pr:*"]
       branches: ["feature/*"]
+      exceptBranches: ["feature/foo"]
       prComment: "/build"
     tasks:
     - name: build
@@ -71,7 +72,14 @@ Next to the tasks you specify, `ods-pipeline` will automatically inject two task
 
 The `ods-finish` task is added as a final task to the pipeline. Final tasks run at the end, regardless whether all previous tasks succeeded. The `ods-finish` sets the Bitbucket build status and deals with Nexus artifacts, etc.
 
-Using the `trigger` section, different pipelines may be configured and will be run based on the Bitbucket webhook event received. To further narrow down pipeline selection, specific branches or pull request comments may be specified via the `branches` and `prComment` properties of the trigger specification. Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported. Only the first pipeline matching all conditions in the trigger section will be executed.
+Using the `trigger` section, different pipelines may be configured and will be run based on the Bitbucket webhook event received. To further narrow down pipeline selection, the following criteria may be specified:
+
+`event`:: List of events that trigger the pipeline. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match events.
+`branches`:: List of branches to which the triggering event shall refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match branches.
+`exceptBranches`:: List of branches to which the triggering event may not refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match the excluded branches.
+`prComment`:: Define a prefix a comment has to start with. Might be used to implement functionality like slash commands.
+
+Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported (for a full list of events, please refer to the link:https://confluence.atlassian.com/bitbucketserver/event-payload-938025882.html[Atlassian Bitbucket Documentation]). Only the first pipeline matching all conditions in the trigger section will be executed.
 
 You can also specify further final tasks to be added to the pipeline by specifying them under `finally`. Example:
 
