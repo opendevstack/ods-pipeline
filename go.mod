@@ -8,10 +8,10 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
 	github.com/tektoncd/pipeline v0.28.3
-	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f
-	k8s.io/api v0.21.6
-	k8s.io/apimachinery v0.21.6
-	k8s.io/client-go v0.21.6
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	k8s.io/api v0.21.14
+	k8s.io/apimachinery v0.21.14
+	k8s.io/client-go v0.21.14
 	knative.dev/pkg v0.0.0-20210827184538-2bd91f75571c
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -65,7 +65,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.0 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
@@ -84,7 +84,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.9.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
-	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
+	k8s.io/kube-openapi v0.0.0-20211110012726-3cc51fd1e909 // indirect
+	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
