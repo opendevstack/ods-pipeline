@@ -1,7 +1,8 @@
 pipeline:
   - trigger:
       event: ["pr:comment:added"]
-      branches: ["feature/other"]
+      branches: ["feature/*"]
+      exceptBranches: ["feature/foo"]
       prComment: "/select"
     tasks:
       - name: go-helm-build-comment-added-select-foo
@@ -27,7 +28,7 @@ pipeline:
           - name: source
             workspace: shared-workspace
   - trigger:
-      event: ["pr:opened"]
+      event: ["pr:opened", "pr:comment:added"]
       branches: ["feature/foo"]
     tasks:
       - name: go-helm-build-opened-pr-foo

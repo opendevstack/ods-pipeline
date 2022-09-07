@@ -30,9 +30,9 @@ const (
 
 var ODSFileCandidates = []string{ODSYAMLFile, ODSYMLFile}
 
-// legacyODS represents the legacy ODS pipeline configuration for one repository.
+// simplifiedODS represents the legacy ODS pipeline configuration for one repository.
 // This is used to still support repositories that haven't migrated new format yet.
-type legacyODS struct {
+type simplifiedODS struct {
 	// Repositories specifies the subrepositores, making the current repository
 	// an "umbrella" repository.
 	Repositories []Repository `json:"repositories,omitempty"`
@@ -166,11 +166,11 @@ func (o *ODS) Environment(environment string) (*Environment, error) {
 	return nil, fmt.Errorf("no environment matched '%s', have: %s", environment, strings.Join(envs, ", "))
 }
 
-func readLegacy(body []byte) (*ODS, error) {
+func readSimplified(body []byte) (*ODS, error) {
 	if len(body) == 0 {
 		return nil, errors.New("config is empty")
 	}
-	var legacyConfig *legacyODS
+	var legacyConfig *simplifiedODS
 	err := yaml.UnmarshalStrict(body, &legacyConfig, func(dec *json.Decoder) *json.Decoder {
 		dec.DisallowUnknownFields()
 		return dec
@@ -178,7 +178,7 @@ func readLegacy(body []byte) (*ODS, error) {
 	if err != nil {
 		return nil, err
 	}
-	odsConfig := convertLegacy(legacyConfig)
+	odsConfig := convertSimplified(legacyConfig)
 
 	if err = odsConfig.Validate(); err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func readLegacy(body []byte) (*ODS, error) {
 	return odsConfig, nil
 }
 
-func convertLegacy(ods *legacyODS) *ODS {
+func convertSimplified(ods *simplifiedODS) *ODS {
 	return &ODS{
 		Repositories:               ods.Repositories,
 		Environments:               ods.Environments,
@@ -207,7 +207,7 @@ func Read(body []byte) (*ODS, error) {
 		return dec
 	})
 	if err != nil {
-		odsConfig, err = readLegacy(body)
+		odsConfig, err = readSimplified(body)
 		if err != nil {
 			return nil, fmt.Errorf("could not unmarshal config: %w", err)
 		}

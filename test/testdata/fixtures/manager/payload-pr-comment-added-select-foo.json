@@ -1,0 +1,114 @@
+{
+  "eventKey":"pr:comment:added",
+  "date":"2017-09-19T11:21:06+1000",
+  "actor":{
+    "name":"max.mustermann@acme.org",
+    "emailAddress":"max.mustermann@acme.org",
+    "id":1,
+    "displayName":"Mustermann,Max ACME",
+    "active":true,
+    "slug":"max.mustermann_acme.org",
+    "type":"NORMAL"
+  },
+  "pullRequest":{
+    "id":1,
+    "version":0,
+    "title":"a new file added",
+    "state":"OPEN",
+    "open":true,
+    "closed":false,
+    "createdDate":1505783860548,
+    "updatedDate":1505783878981,
+    "fromRef":{
+      "id":"refs/heads/feature/foo",
+      "displayId":"feature/foo",
+      "latestCommit":"ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
+      "repository":{
+        "slug":"foo-bar",
+        "id":84,
+        "name":"foo-bar",
+        "scmId":"git",
+        "state":"AVAILABLE",
+        "statusMessage":"Available",
+        "forkable":true,
+        "project":{
+          "key":"FOO",
+          "id":84,
+          "name":"Max Mustermann Playground",
+          "public":false,
+          "type":"NORMAL"
+        },
+        "public":false
+      }
+    },
+    "toRef":{
+      "id":"refs/heads/master",
+      "displayId":"master",
+      "latestCommit":"178864a7d521b6f5e720b386b2c2b0ef8563e0dc",
+      "repository":{
+        "slug":"foo-bar",
+        "id":84,
+        "name":"foo-bar",
+        "scmId":"git",
+        "state":"AVAILABLE",
+        "statusMessage":"Available",
+        "forkable":true,
+        "project":{
+          "key":"FOO",
+          "id":84,
+          "name":"Max Mustermann Playground",
+          "public":false,
+          "type":"NORMAL"
+        },
+        "public":false
+      }
+    },
+    "locked":false,
+    "author":{
+      "user":{
+        "name":"max.mustermann@acme.org",
+        "emailAddress":"max.mustermann@acme.org",
+        "id":1,
+        "displayName":"Mustermann,Max ACME",
+        "active":true,
+        "slug":"max.mustermann_acme.org",
+        "type":"NORMAL"
+      },
+      "role":"AUTHOR",
+      "approved":false,
+      "status":"UNAPPROVED"
+    },
+    "reviewers":[
+
+    ],
+    "participants":[
+
+    ]
+  },
+  "comment":{
+    "properties":{
+      "repositoryId":84
+    },
+    "id":62,
+    "version":0,
+    "text":"/select",
+    "author":{
+      "name":"max.mustermann@acme.org",
+      "emailAddress":"max.mustermann@acme.org",
+      "id":1,
+      "displayName":"Mustermann,Max ACME",
+      "active":true,
+      "slug":"max.mustermann_acme.org",
+      "type":"NORMAL"
+    },
+    "createdDate":1505784066751,
+    "updatedDate":1505784066751,
+    "comments":[
+
+    ],
+    "tasks":[
+
+    ]
+  },
+  "commentParentId":43
+}

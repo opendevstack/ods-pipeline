@@ -29,8 +29,8 @@ func TestReadFromFile(t *testing.T) {
 	}
 }
 
-func TestReadFromLegacyFormatFile(t *testing.T) {
-	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods-legacy.yaml"))
+func TestReadFromSimplifiedFormatFile(t *testing.T) {
+	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods-simplified.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

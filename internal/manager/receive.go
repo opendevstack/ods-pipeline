@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path/filepath"
+	"path"
 	"regexp"
 	"strings"
 
@@ -246,7 +246,8 @@ func pipelineMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
 	if pipeline.Trigger == nil {
 		return true
 	}
-	return pipelineEventsMatch(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
+	return pipelineEventsMatch(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) &&
+		pipelineExcludedBranchesDoNotMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
 }
 
 func anyPatternMatches(s string, patterns []string) bool {
@@ -255,7 +256,7 @@ func anyPatternMatches(s string, patterns []string) bool {
 	}
 
 	for _, pattern := range patterns {
-		if matched, err := filepath.Match(pattern, s); matched && err == nil {
+		if matched, err := path.Match(pattern, s); matched && err == nil {
 			return true
 		}
 	}
@@ -267,7 +268,14 @@ func pipelineEventsMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
 }
 
 func pipelineBranchesMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches) && !anyPatternMatches(pInfo.GitRef, pipeline.Trigger.ExceptBranches)
+	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches)
+}
+
+func pipelineExcludedBranchesDoNotMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+	if len(pipeline.Trigger.ExceptBranches) == 0 {
+		return true
+	}
+	return !anyPatternMatches(pInfo.GitRef, pipeline.Trigger.ExceptBranches)
 }
 
 func pipelineCommentMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {

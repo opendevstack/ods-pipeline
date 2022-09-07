@@ -217,6 +217,27 @@ func TestWebhookHandling(t *testing.T) {
 			wantPipelineConfig:    true,
 			wantPipelineTaskNames: []string{"go-helm-build-comment-added-select-foo"},
 		},
+		"pr:comment:added request on excluded branch triggers branch-specific pipeline": {
+			requestBodyFixture: "manager/payload-pr-comment-added-select-foo.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-comment-added-select-foo.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-opened-pr-foo"},
+		},
 		"pr:comment:added request triggers catch-all pipeline": {
 			requestBodyFixture: "manager/payload-pr-comment-added-other.json",
 			bitbucketClient: &bitbucket.TestClient{
