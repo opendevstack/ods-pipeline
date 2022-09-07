@@ -246,7 +246,7 @@ func pipelineMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
 	if pipeline.Trigger == nil {
 		return true
 	}
-	return pipelineEventsMatches(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
+	return pipelineEventsMatch(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
 }
 
 func anyPatternMatches(s string, patterns []string) bool {
@@ -262,7 +262,7 @@ func anyPatternMatches(s string, patterns []string) bool {
 	return false
 }
 
-func pipelineEventsMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
+func pipelineEventsMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
 	return anyPatternMatches(pInfo.TriggerEvent, pipeline.Trigger.Event)
 }
 
