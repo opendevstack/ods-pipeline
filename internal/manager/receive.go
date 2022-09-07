@@ -267,7 +267,7 @@ func pipelineEventsMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
 }
 
 func pipelineBranchesMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches)
+	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches) && !anyPatternMatches(pInfo.GitRef, pipeline.Trigger.ExceptBranches)
 }
 
 func pipelineCommentMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
