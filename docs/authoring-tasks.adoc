@@ -24,17 +24,17 @@ Normally, a Tekton task is a Kubernetes resource in your OpenShift project. Howe
 [source,yaml]
 ----
 pipeline:
-  tasks:
-  - name: hello-world
-    taskSpec:
-      steps:
-        - name: say-hello
-          image: busybox
-          script: |
-            echo hello world
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: hello-world
+      taskSpec:
+        steps:
+          - name: say-hello
+            image: busybox
+            script: |
+              echo hello world
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 == Creating your own task
@@ -66,11 +66,11 @@ Your `ods.yaml` file would reference this task like this:
 [source,yaml]
 ----
 pipeline:
-  tasks:
-  - name: hello-world
-    taskRef:
-      kind: Task
-      name: hello-world
+  - tasks:
+    - name: hello-world
+      taskRef:
+        kind: Task
+        name: hello-world
 ----
 
 Of course this doesn't do anything useful in the CI pipeline. Typically, you'd need to mount a workspace (containing the Git repository you are working in) and maybe offer some parameters to the user of this task. Have a look at the official ODS tasks for more sophisticated examples of existing tasks. Later on in this document we'll look at some example tasks you could create.

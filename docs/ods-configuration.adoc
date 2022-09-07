@@ -12,29 +12,33 @@ This guide will explain how to configure pipelines for your repositories in an `
 
 == `pipeline`
 
-The pipeline field allows to define the pipeline tasks. Normal tasks may be specified under `tasks`. Example:
+The pipeline field allows to define the pipelines' tasks. Normal tasks may be specified under `tasks`. Example:
 
 .ods.yaml
 [source,yaml]
 ----
 pipeline:
-  tasks:
-  - name: build
-    taskRef:
-      kind: Task
-      name: ods-build-go-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: package
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - build
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - trigger:
+      event: ["repo:refs_changed", "pr:*"]
+      branches: ["feature/*"]
+      prComment: "/build"
+    tasks:
+    - name: build
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: package
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - build
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 Each task reference is just the plain Tekton definition. See the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.24.3/pipelines/#adding-tasks-to-the-pipeline[Adding Tasks to the Pipeline] for more information.
@@ -47,25 +51,27 @@ Alternatively to referencing tasks, ad-hoc task definitions can also be specifie
 [source,yaml]
 ----
 pipeline:
-  tasks:
-  - name: build
-    taskSpec:
-      steps:
-        - name: message
-          image: ubuntu
-          script: |
-            #!/usr/bin/env bash
-            echo "hello world"
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: build
+      taskSpec:
+        steps:
+          - name: message
+            image: ubuntu
+            script: |
+              #!/usr/bin/env bash
+              echo "hello world"
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
-The pipeline created based on the configuration will have a workspace named `shared-workspace` available, which is backed by a PVC (named `ods-pipeline`) in your namespace.
+The pipelines created based on the configuration will have a workspace named `shared-workspace` available, which is backed by a PVC (named `ods-pipeline`) in your namespace.
 
 Next to the tasks you specify, `ods-pipeline` will automatically inject two tasks into the pipeline, `ods-start` and `ods-finish`. `ods-start` is inserted as the very first task, checking out the repository given in the webhook, setting the Bitbucket build status and dealing with Nexus artifacts, etc.
 
 The `ods-finish` task is added as a final task to the pipeline. Final tasks run at the end, regardless whether all previous tasks succeeded. The `ods-finish` sets the Bitbucket build status and deals with Nexus artifacts, etc.
+
+Using the `trigger` section, different pipelines may be configured and will be run based on the Bitbucket webhook event received. To further narrow down pipeline selection, specific branches or pull request comments may be specified via the `branches` and `prComment` properties of the trigger specification. Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported. Only the first pipeline matching all conditions in the trigger section will be executed.
 
 You can also specify further final tasks to be added to the pipeline by specifying them under `finally`. Example:
 
@@ -73,20 +79,22 @@ You can also specify further final tasks to be added to the pipeline by specifyi
 [source,yaml]
 ----
 pipeline:
-  tasks: [ ... ]
-  finally:
-  - name: foo
-    taskRef:
-      kind: Task
-      name: foo
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks: [ ... ]
+    finally:
+    - name: foo
+      taskRef:
+        kind: Task
+        name: foo
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.24.3/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
 
 Aside from `tasks` and `finally`, you may also specify link:https://tekton.dev/docs/pipelines/pipelineruns/#configuring-a-failure-timeout[`timeouts`], link:https://tekton.dev/vault/pipelines-v0.24.3/pipelineruns/#specifying-a-pod-template[`podTemplate`] and link:https://tekton.dev/docs/pipelines/pipelineruns/#specifying-taskrunspecs[`taskRunSpecs`] for more advanced configuration (like overriding compute resources).
+
+
 
 == `environments`
 

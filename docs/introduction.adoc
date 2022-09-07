@@ -68,32 +68,32 @@ To understand how this works, it is best to trace the flow starting from the rep
 [source,yml]
 ----
 pipeline:
-  tasks:
-  - name: build-go
-    taskRef:
-      kind: Task
-      name: ods-build-go-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: package-image
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - build-go
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: deploy-helm
-    taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-6-0
-    runAfter:
-    - package-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: build-go
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: package-image
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - build-go
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: deploy-helm
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm-v0-6-0
+      runAfter:
+      - package-image
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 You can see that it defines three tasks, `build-go`, `package-image` and `deploy-helm`, which run sequentially due to the usage of `runAfter`.

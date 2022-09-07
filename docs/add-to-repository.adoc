@@ -27,32 +27,32 @@ environments:
   stage: dev
 
 pipeline:
-  tasks:
-  - name: backend-build-go
-    taskRef:
-      kind: Task
-      name: ods-build-go-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-package-image
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - backend-build-go
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-deploy
-    taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-6-0
-    runAfter:
-    - backend-package-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: backend-build-go
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: backend-package-image
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - backend-build-go
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: backend-deploy
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm-v0-6-0
+      runAfter:
+      - backend-package-image
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 The only Go specific task is `ods-build-go-v0-6-0`, if you use another technology, exchange the task for another one such as `ods-build-gradle-v0-5-1`.
