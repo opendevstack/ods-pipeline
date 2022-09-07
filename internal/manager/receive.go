@@ -212,7 +212,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		msg := "Couldn't identify pipeline to run"
 		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	s.TriggeredPipelines <- cfg
