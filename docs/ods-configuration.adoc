@@ -79,7 +79,7 @@ Using the `trigger` section, different pipelines may be configured and will be r
 `exceptBranches`:: List of branches to which the triggering event may not refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match the excluded branches.
 `prComment`:: Define a prefix a comment has to start with. Might be used to implement functionality like slash commands.
 
-Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported (for a full list of events, please refer to the link:https://confluence.atlassian.com/bitbucketserver/event-payload-938025882.html[Atlassian Bitbucket Documentation]). Only the first pipeline matching all conditions in the trigger section will be executed.
+Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported (for a full list of events, please refer to the link:https://confluence.atlassian.com/bitbucketserver/event-payload-938025882.html[Atlassian Bitbucket Documentation]). Only the first pipeline matching all conditions in the trigger section will be executed. If no trigger section is specified, the pipeline will always match.
 
 You can also specify further final tasks to be added to the pipeline by specifying them under `finally`. Example:
 
