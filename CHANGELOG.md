@@ -13,7 +13,7 @@ listed in the changelog.
 
 - Stream Buildah and Aqua log output ([#596](https://github.com/opendevstack/ods-pipeline/issues/596))
 - Update skopeo (1.6 to 1.8) and buildah (1.24 to 1.26) ([#598](https://github.com/opendevstack/ods-pipeline/issues/598))
-- Support running different pipelines on different webhook events (current `ods.yaml` format still supported) ([#562](https://github.com/opendevstack/ods-pipeline/issues/562))
+- Support running different pipelines on different webhook events (current `ods.yaml` format still supported for the moment, but will be deprecated and removed in upcoming releases) ([#562](https://github.com/opendevstack/ods-pipeline/issues/562))
 
 ### Fixed
 
