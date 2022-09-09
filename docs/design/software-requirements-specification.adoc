@@ -88,6 +88,9 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 
 | SRS-PIPELINE-MANAGER-6
 | The pipeline manager shall prevent concurrent pipeline runs for one repository.
+
+| SRS-PIPELINE-MANAGER-7
+| The pipeline manager shall be able trigger different pipelines dependent on the configured events.
 |===
 
 === Tasks Requirements

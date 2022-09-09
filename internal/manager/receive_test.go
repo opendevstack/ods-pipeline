@@ -117,12 +117,13 @@ func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server 
 func TestWebhookHandling(t *testing.T) {
 
 	tests := map[string]struct {
-		requestBodyFixture string
-		bitbucketClient    *bitbucket.TestClient
-		wrongSignature     bool
-		wantStatus         int
-		wantBody           string
-		wantPipelineConfig bool
+		requestBodyFixture    string
+		bitbucketClient       *bitbucket.TestClient
+		wrongSignature        bool
+		wantStatus            int
+		wantBody              string
+		wantPipelineConfig    bool
+		wantPipelineTaskNames []string
 	}{
 		"wrong signature is not processed": {
 			requestBodyFixture: "manager/payload.json", // valid payload
@@ -195,6 +196,111 @@ func TestWebhookHandling(t *testing.T) {
 			wantStatus:         http.StatusOK,
 			wantPipelineConfig: true,
 		},
+		"pr:comment:added request triggers pipeline with matching comment": {
+			requestBodyFixture: "manager/payload-pr-comment-added-select.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-comment-added-select.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-comment-added-select-foo"},
+		},
+		"pr:comment:added request on excluded branch triggers branch-specific pipeline": {
+			requestBodyFixture: "manager/payload-pr-comment-added-select-foo.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-comment-added-select-foo.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-opened-pr-foo"},
+		},
+		"pr:comment:added request triggers catch-all pipeline": {
+			requestBodyFixture: "manager/payload-pr-comment-added-other.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-comment-added-other.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-catch-all"},
+		},
+		"pr:opened on feature/foo request triggers matching pipeline": {
+			requestBodyFixture: "manager/payload-pr-opened.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-opened-feature-foo.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-opened-pr-foo"},
+		},
+		"pr:opened on feature/other request triggers matching pipeline": {
+			requestBodyFixture: "manager/payload-pr-opened-feature-other.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/multi-pipeline-ods.yaml"),
+				},
+				PullRequests: []bitbucket.PullRequest{
+					{
+						Open: true,
+						ID:   1,
+						ToRef: bitbucket.Ref{
+							ID: "refs/heads/master",
+						},
+					},
+				},
+			},
+			wantBody:              string(readTestdataFile(t, "golden/manager/response-payload-pr-opened-feature-other.json")),
+			wantStatus:            http.StatusOK,
+			wantPipelineConfig:    true,
+			wantPipelineTaskNames: []string{"go-helm-build-opened-pr"},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -244,9 +350,15 @@ func TestWebhookHandling(t *testing.T) {
 			}
 			// Check if request sent a pipeline config to ch.
 			select {
-			case <-ch:
+			case pConfig := <-ch:
 				if !tc.wantPipelineConfig {
 					t.Fatal("want no pipeline config, got one")
+				}
+				if tc.wantPipelineTaskNames != nil {
+					gotNames := extractTaskNames(pConfig)
+					if diff := cmp.Diff(tc.wantPipelineTaskNames, gotNames); diff != "" {
+						t.Fatalf("pipeline config mismatch (-want, +got):\n%s", diff)
+					}
 				}
 			default:
 				if tc.wantPipelineConfig {
@@ -255,6 +367,14 @@ func TestWebhookHandling(t *testing.T) {
 			}
 		})
 	}
+}
+
+func extractTaskNames(pConfig PipelineConfig) []string {
+	gotNames := make([]string, 0, len(pConfig.Tasks))
+	for _, task := range pConfig.Tasks {
+		gotNames = append(gotNames, task.Name)
+	}
+	return gotNames
 }
 
 func removeSpace(str string) string {

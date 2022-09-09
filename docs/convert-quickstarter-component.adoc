@@ -97,32 +97,32 @@ environments:
   stage: dev
 
 pipeline:
-  tasks:
-  - name: backend-build-go
-    taskRef:
-      kind: Task
-      name: ods-build-go-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-package-image
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - backend-build-go
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: backend-deploy
-    taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-6-0
-    runAfter:
-    - backend-package-image
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: backend-build-go
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: backend-package-image
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - backend-build-go
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: backend-deploy
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm-v0-6-0
+      runAfter:
+      - backend-package-image
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-6-0` task. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.

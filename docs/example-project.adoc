@@ -29,32 +29,32 @@ environments:
   stage: dev
 
 pipeline:
-  tasks:
-  - name: build
-    taskRef:
-      kind: Task
-      name: ods-build-go-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: package
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - build
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: deploy
-    taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-6-0
-    runAfter:
-    - package
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: build
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: package
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - build
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: deploy
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm-v0-6-0
+      runAfter:
+      - package
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 todo-frontend/.ods.yaml
@@ -70,32 +70,32 @@ environments:
   stage: dev
 
 pipeline:
-  tasks:
-  - name: build
-    taskRef:
-      kind: Task
-      name: ods-build-npm-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: package
-    taskRef:
-      kind: Task
-      name: ods-package-image-v0-6-0
-    runAfter:
-    - build
-    workspaces:
-    - name: source
-      workspace: shared-workspace
-  - name: deploy
-    taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-6-0
-    runAfter:
-    - package
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: build
+      taskRef:
+        kind: Task
+        name: ods-build-npm-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: package
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-6-0
+      runAfter:
+      - build
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: deploy
+      taskRef:
+        kind: Task
+        name: ods-deploy-helm-v0-6-0
+      runAfter:
+      - package
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 Both pipelines are almost identical, only the build task differs. Both repositories have a webhook configured, pointing to the event listener in the `todo-cd` namespace.
@@ -130,14 +130,14 @@ environments:
   stage: qa
 
 pipeline:
-  tasks:
-  - name: deploy
-    taskRef:
-      kind: ClusterTask
-      name: ods-deploy-helm-v0-6-0
-    workspaces:
-    - name: source
-      workspace: shared-workspace
+  - tasks:
+    - name: deploy
+      taskRef:
+        kind: ClusterTask
+        name: ods-deploy-helm-v0-6-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
 ----
 
 When a commit is pushed into the `release/1.0.0` branch, a deploy is triggerd into the `todo-qa` project. The deployment uses the chart defined in the `chart` directory of the `todo-app` repository. That chart does not contain any resource templates itself, as all Kubernetes resources are defined in the charts in the components `todo-backend` and `todo-frontend`. However, the umbrella chart has to supply values which are specific to the "qa" environment. This can be done via a `values.qa.yaml` file. Values in that file can set values for dependencies (like the `backend` component) by nesting the values under the respective key, as shown in the following example. Assume we have the following `values.yaml` file in the `todo-backend` application:

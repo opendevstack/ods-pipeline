@@ -426,7 +426,7 @@ Upgrades (or installs) a Helm chart.
 
 | SDS-PIPELINE-MANAGER-4
 | `pipeline-manager` binary
-a| The pipeline manager parses the JSON payload and handles `repo:refs_changed` and `pr:opened` events. Other events are dropped.
+a| The pipeline manager parses the JSON payload and triggers a pipeline run dependent on the events received.
 
 For Git commits of which the commit message instructs skipping CI, no pipelines are triggered. Instructions may be anywhere in the commit message and may be one of (case-insensitive):
 

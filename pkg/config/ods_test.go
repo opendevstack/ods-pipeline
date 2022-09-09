@@ -29,6 +29,21 @@ func TestReadFromFile(t *testing.T) {
 	}
 }
 
+func TestReadFromSimplifiedFormatFile(t *testing.T) {
+	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods-simplified.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotStage := ods.Environments[0].Stage
+	if gotStage != ProdStage {
+		t.Fatalf("Got %s, want prod", gotStage)
+	}
+	gotNumPipelines := len(ods.Pipeline)
+	if gotNumPipelines != 1 {
+		t.Fatalf("Got %d pipeline definitions, want 1", gotNumPipelines)
+	}
+}
+
 func TestRead(t *testing.T) {
 	tests := map[string]struct {
 		Fixture   []byte
