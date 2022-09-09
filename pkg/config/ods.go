@@ -123,7 +123,7 @@ type Trigger struct {
 	Event          []string `json:"event"`
 	Branches       []string `json:"branches,omitempty"`
 	ExceptBranches []string `json:"exceptBranches,omitempty"`
-	PrComent       *string  `json:"prComment,omitempty"`
+	PrComment      *string  `json:"prComment,omitempty"`
 }
 
 func (o *ODS) Validate() error {

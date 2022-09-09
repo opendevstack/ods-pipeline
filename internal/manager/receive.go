@@ -279,7 +279,7 @@ func pipelineExcludedBranchesDoNotMatch(pInfo PipelineInfo, pipeline config.Pipe
 }
 
 func pipelineCommentMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	prefix := pipeline.Trigger.PrComent
+	prefix := pipeline.Trigger.PrComment
 	if prefix == nil || *prefix == "" {
 		return true
 	}
