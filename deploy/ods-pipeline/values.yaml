@@ -16,6 +16,7 @@ global:
     buildGradle: true
     buildPython: true
     buildNPM: true
+    buildSbt: true
     packageImage: true
     deployHelm: true
 

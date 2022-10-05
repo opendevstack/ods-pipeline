@@ -1,0 +1,122 @@
+{{if .Values.global.enabledTasks.buildSbt }}
+apiVersion: tekton.dev/v1beta1
+kind: '{{default "Task" .Values.global.taskKind}}'
+metadata:
+  name: '{{default "ods" .Values.taskPrefix}}-build-sbt{{- include "taskSuffix" .}}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  description: |
+    sbt build - TBD
+  params:
+    - name: working-dir
+      description: |
+        Working directory. The path must be relative to the root of the repository,
+        without leading `./` and trailing `/`.
+      type: string
+      default: "."
+    - name: output-dir
+      description: >-
+        Path to the directory into which the resulting build artifact should be copied, relative to `working-dir`.
+        This directory may then later be used as Docker context for example.
+      type: string
+      default: docker
+    - name: cache-build
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
+        a build can be skipped if the `working-dir` contents did not change.
+        For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
+      type: string
+      default: "false"
+    - name: build-script
+      description: >-
+        Build script to execute. The
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-sbt.sh[default script]
+        is located in the container image. If you specify a relative path
+        instead, it will be resolved from the workspace. See the task definition
+        for details how the build script is invoked.
+      type: string
+      default: "/usr/local/bin/build-sbt"
+    - name: sonar-quality-gate
+      description: Whether the SonarQube quality gate needs to pass for the task to succeed.
+      type: string
+      default: "false"
+    - name: sonar-skip
+      description: Whether to skip SonarQube analysis or not.
+      type: string
+      default: "false"
+  results:
+    - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
+      name: build-reused-from-location
+  {{- with ((.Values.sbt).sidecars) }}
+  sidecars:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  steps:
+    - name: build-sbt-binary
+      # Image is built from build/package/Dockerfile.sbt-toolset.
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-sbt-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+        - name: HOME
+          value: '/tekton/home'
+        - name: CI
+          value: "true"
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
+      resources:
+        {{- (.Values.sbt).resources | default dict | toYaml | nindent 8 }}
+      script: |
+        supply-sonar-project-properties-default
+        echo -n "" > $(results.build-reused-from-location.path)
+        cache_build_key=sbt
+        if copy-build-if-cached \
+          --cache-build=$(params.cache-build) \
+          --cache-build-key="$cache_build_key" \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir) \
+          --debug=${DEBUG} ; then
+          exit 0
+        fi
+        # Default build script is build/package/scripts/build-sbt.sh.
+        set +e
+        $(params.build-script) \
+          --working-dir=$(params.working-dir) \
+          --output-dir=$(params.output-dir)
+        build_exit=$?
+        set -e
+        copy-artifacts --debug=${DEBUG}
+        if [ $build_exit -ne 0 ]; then
+          exit $build_exit
+        fi
+        if [ "$(params.cache-build)" == "true" ]; then
+          cache-build \
+            --cache-build-key="$cache_build_key" \
+            --cache-location-used-path=$(results.build-reused-from-location.path) \
+            --working-dir=$(params.working-dir) \
+            --output-dir=$(params.output-dir) \
+            --debug=${DEBUG}
+        fi
+      workingDir: $(workspaces.source.path)
+    {{- include "sonar-step" . | indent 4}}
+  workspaces:
+    - name: source
+{{end}}
