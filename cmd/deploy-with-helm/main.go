@@ -181,7 +181,6 @@ func main() {
 			imageStream := imageArtifact.Name
 			fmt.Printf("Copying image %s ...\n", imageStream)
 			srcImageURL := imageArtifact.Image
-			var destImageURL string
 			// If the source registry should be TLS verified, the destination
 			// should be verified by default as well.
 			destRegistryTLSVerify := opts.srcRegistryTLSVerify
@@ -191,14 +190,10 @@ func main() {
 			if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
 				srcRegistryTLSVerify = false
 			}
-			if len(targetConfig.RegistryHost) > 0 {
-				destImageURL = fmt.Sprintf("%s/%s/%s", targetConfig.RegistryHost, releaseNamespace, imageStream)
-				if targetConfig.RegistryTLSVerify != nil {
-					destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
-				}
-			} else {
-				destImageURL = strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
+			if len(targetConfig.RegistryHost) > 0 && targetConfig.RegistryTLSVerify != nil {
+				destRegistryTLSVerify = *targetConfig.RegistryTLSVerify
 			}
+			destImageURL := getImageDestURL(targetConfig.RegistryHost, releaseNamespace, imageArtifact)
 			fmt.Printf("src=%s\n", srcImageURL)
 			fmt.Printf("dest=%s\n", destImageURL)
 			// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
@@ -464,4 +459,12 @@ func collectImageDigests(imageDigestsDir string) ([]string, error) {
 		}
 	}
 	return files, nil
+}
+
+func getImageDestURL(registryHost, releaseNamespace string, imageArtifact artifact.Image) string {
+	if registryHost != "" {
+		return fmt.Sprintf("%s/%s/%s:%s", registryHost, releaseNamespace, imageArtifact.Name, imageArtifact.Tag)
+	} else {
+		return strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
+	}
 }
