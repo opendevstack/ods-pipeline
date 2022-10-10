@@ -18,6 +18,7 @@ listed in the changelog.
 ### Fixed
 
 - Aqua and helm-diff log output is incomplete ([#593](https://github.com/opendevstack/ods-pipeline/issues/593))
+- Image is tagged with `latest` instead of correct tag when pushed to external registry ([#606](https://github.com/opendevstack/ods-pipeline/issues/606))
 
 ## [0.6.0] - 2022-07-20
 

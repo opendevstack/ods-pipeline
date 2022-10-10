@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/opendevstack/pipeline/pkg/artifact"
 )
 
 func TestArtifactFilename(t *testing.T) {
@@ -46,6 +49,50 @@ func TestArtifactFilename(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := artifactFilename(tc.filename, tc.chartDir, tc.targetEnv)
+			if got != tc.want {
+				t.Fatalf("want: %s, got: %s", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestGetImageURLs(t *testing.T) {
+	srcHost := "image-registry.openshift-image-registry.svc:5000"
+	destHost := "default-route-openshift-image-registry.apps.example.com"
+	imgArtifact := artifact.Image{
+		Image:      fmt.Sprintf("%s/foo/bar:baz", srcHost),
+		Repository: "foo", Name: "bar", Tag: "baz",
+	}
+	tests := map[string]struct {
+		registryHost     string
+		releaseNamespace string
+		want             string
+	}{
+		"same cluster, same namespace": {
+			registryHost:     "",
+			releaseNamespace: "foo",
+			want:             fmt.Sprintf("%s/foo/bar:baz", srcHost),
+		},
+		"same cluster, different namespace": {
+			registryHost:     "",
+			releaseNamespace: "other",
+			want:             fmt.Sprintf("%s/other/bar:baz", srcHost),
+		},
+		"different cluster, same namespace": {
+			registryHost:     destHost,
+			releaseNamespace: "foo",
+			want:             fmt.Sprintf("%s/foo/bar:baz", destHost),
+		},
+		"different cluster, different namespace": {
+			registryHost:     destHost,
+			releaseNamespace: "other",
+			want:             fmt.Sprintf("%s/other/bar:baz", destHost),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := getImageDestURL(tc.registryHost, tc.releaseNamespace, imgArtifact)
 			if got != tc.want {
 				t.Fatalf("want: %s, got: %s", tc.want, got)
 			}
