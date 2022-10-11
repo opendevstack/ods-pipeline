@@ -9,6 +9,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-10-11
+
 ### Changed
 
 - Stream Buildah and Aqua log output ([#596](https://github.com/opendevstack/ods-pipeline/issues/596))
