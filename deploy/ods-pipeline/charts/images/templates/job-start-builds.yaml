@@ -13,7 +13,8 @@ spec:
     spec:
       containers:
       - args:
-        - set -e; oc get bc -l=app.kubernetes.io/name=ods-pipeline -o=name | xargs -I % sh -c 'oc start-build %'
+        - set -e; oc get bc -l=app.kubernetes.io/name=ods-pipeline -o=name | xargs
+          -I % sh -c 'oc start-build %'
         command:
         - /bin/sh
         - -c
