@@ -10,6 +10,8 @@ Prior to creating your own task, it is important to understand in general how Te
 
 ODS provides tasks out-of-the-box that can be used to build and deploy applications. However, these tasks are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization.
 
+TIP: There is a notable exception to this in the build tasks such as `ods-build-go`, `ods-build-gradle`, and so on. These allow for a great deal of customization by providing the `build-script` param to exchange the build script used to build your application. For example, if your application build doesn't pass linting as defined in the build script supplied by default, you can point the `build-script` param to a custom script in the repository of your application instead.
+
 If you need more control than the official tasks offer, creating a custom Tekton task is the way to go. You may also use an already existing Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
 
 == Anatomy of a task
