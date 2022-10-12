@@ -3,18 +3,21 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    'helm.sh/hook': post-install,post-upgrade
-    'helm.sh/hook-delete-policy': hook-succeeded,hook-failed
-    'helm.sh/hook-weight': "1"
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,hook-failed
+    helm.sh/hook-weight: "1"
   name: ods-start-builds
   namespace: {{.Release.Namespace}}
 spec:
   template:
     spec:
       containers:
-      - args: ["set -e; oc get bc -l=app.kubernetes.io/name=ods-pipeline -o=name | xargs -I % sh -c 'oc start-build %'"]
-        command: ["/bin/sh","-c"]
-        image: '{{.Values.autoBuildImage | default "quay.io/openshift/origin-cli:4.10"}}'
+      - args:
+        - set -e; oc get bc -l=app.kubernetes.io/name=ods-pipeline -o=name | xargs -I % sh -c 'oc start-build %'
+        command:
+        - /bin/sh
+        - -c
+        image: {{.Values.autoBuildImage | default "quay.io/openshift/origin-cli:4.10"}}
         name: post-upgrade-job
       restartPolicy: Never
       serviceAccountName: pipeline
