@@ -77,7 +77,7 @@ fi
 echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
     if helm -n "${NAMESPACE}" \
-            "${DIFF_UPGRADE_ARGS[@]}" --install --detailed-exitcode --three-way-merge \
+            "${DIFF_UPGRADE_ARGS[@]}" --install --detailed-exitcode --three-way-merge --normalize-manifests \
             "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}; then
         echo "Helm release already up-to-date."

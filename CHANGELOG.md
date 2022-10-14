@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Normalize K8s manifests to exclude style differences from Helm diff output. The change is applied to both the helm execution in the `ods-deploy-helm` task and in the install script. See [#591](https://github.com/opendevstack/ods-pipeline/issues/591).
+
 ## [0.7.0] - 2022-10-11
 
 ### Changed
