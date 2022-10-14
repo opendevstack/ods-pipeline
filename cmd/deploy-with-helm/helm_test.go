@@ -122,7 +122,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			helmArchive:      "c",
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install", debug: true},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color", "--three-way-merge", "--debug", "--install",
+				"--detailed-exitcode", "--no-color", "--normalize-manifests", "--three-way-merge", "--debug", "--install",
 				"b", "c"},
 		},
 		"with no diff flags": {
@@ -131,7 +131,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			helmArchive:      "c",
 			opts:             options{diffFlags: "", upgradeFlags: "--install"},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color", "--install",
+				"--detailed-exitcode", "--no-color", "--normalize-manifests", "--install",
 				"b", "c"},
 		},
 		"with values file": {
@@ -141,7 +141,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install"},
 			valuesFiles:      []string{"values.dev.yaml"},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color", "--three-way-merge", "--install", "--values=values.dev.yaml",
+				"--detailed-exitcode", "--no-color", "--normalize-manifests", "--three-way-merge", "--install", "--values=values.dev.yaml",
 				"b", "c"},
 		},
 		"with CLI values": {
@@ -151,7 +151,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			opts:             options{diffFlags: "--three-way-merge", upgradeFlags: "--install"},
 			cliValues:        []string{"--set=image.tag=abcdef"},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color", "--three-way-merge", "--install", "--set=image.tag=abcdef",
+				"--detailed-exitcode", "--no-color", "--normalize-manifests", "--three-way-merge", "--install", "--set=image.tag=abcdef",
 				"b", "c"},
 		},
 		"with multiple args": {
@@ -165,7 +165,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 			valuesFiles: []string{"secrets.yaml", "values.dev.yaml", "secrets.dev.yaml"},
 			cliValues:   []string{"--set=image.tag=abcdef", "--set=x=y"},
 			want: []string{"--namespace=a", "secrets", "diff", "upgrade",
-				"--detailed-exitcode", "--no-color",
+				"--detailed-exitcode", "--no-color", "--normalize-manifests",
 				"--three-way-merge", "--no-hooks", "--include-tests",
 				"--install", "--wait",
 				"--values=secrets.yaml", "--values=values.dev.yaml", "--values=secrets.dev.yaml",

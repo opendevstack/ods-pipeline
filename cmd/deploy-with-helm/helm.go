@@ -100,6 +100,7 @@ func assembleHelmDiffArgs(
 		"upgrade",
 		"--detailed-exitcode",
 		"--no-color",
+		"--normalize-manifests",
 	}
 	helmDiffFlags, err := shlex.Split(opts.diffFlags)
 	if err != nil {
