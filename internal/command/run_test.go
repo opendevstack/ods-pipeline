@@ -74,3 +74,21 @@ func TestRunWithStreamingOutputError(t *testing.T) {
 		t.Fatal("cmd should not be successful")
 	}
 }
+
+func TestInterleavedStdoutAndStderr(t *testing.T) {
+	var out bytes.Buffer
+	success, err := RunWithStreamingOutput(
+		"../../test/scripts/interleaved-output.sh", []string{}, []string{}, &out, &out, -1,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantOut := "some stdout\nsome stderr\nmore stdout\nmore stderr\nstderr after sleep\nstdout after sleep"
+	if diff := cmp.Diff(wantOut+"\n", out.String()); diff != "" {
+		t.Fatalf("stdout mismatch (-want +got):\n%s", diff)
+	}
+	if !success {
+		t.Fatal("cmd should be successful")
+	}
+
+}

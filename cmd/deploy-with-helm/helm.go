@@ -165,8 +165,12 @@ func commonHelmUpgradeArgs(
 }
 
 // helmUpgrade runs given Helm command.
-func helmUpgrade(args []string) (outBytes, errBytes []byte, err error) {
-	return command.RunWithExtraEnvs(helmBin, args, []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)})
+func helmUpgrade(args []string, stdout, stderr io.Writer) error {
+	_, err := command.RunWithStreamingOutput(
+		helmBin, args, []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)},
+		stdout, stderr, -1,
+	)
+	return err
 }
 
 // printlnSafeHelmCmd prints all args that do not contain sensitive information.
