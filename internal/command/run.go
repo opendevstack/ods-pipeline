@@ -82,11 +82,23 @@ func runWithStreamingOutput(exe string, args []string, env []string, outWriter, 
 	}
 
 	if stderrFirst {
-		collectOutput(cmdStderr, errWriter)
-		collectOutput(cmdStdout, outWriter)
+		err = collectOutput(cmdStderr, errWriter)
+		if err != nil {
+			return false, fmt.Errorf("collect stderr: %w", err)
+		}
+		err = collectOutput(cmdStdout, outWriter)
+		if err != nil {
+			return false, fmt.Errorf("collect stdout: %w", err)
+		}
 	} else {
-		collectOutput(cmdStdout, outWriter)
-		collectOutput(cmdStderr, errWriter)
+		err = collectOutput(cmdStdout, outWriter)
+		if err != nil {
+			return false, fmt.Errorf("collect stdout: %w", err)
+		}
+		err = collectOutput(cmdStderr, errWriter)
+		if err != nil {
+			return false, fmt.Errorf("collect stderr: %w", err)
+		}
 	}
 
 	err = cmd.Wait()
@@ -100,9 +112,10 @@ func runWithStreamingOutput(exe string, args []string, env []string, outWriter, 
 	return true, nil
 }
 
-func collectOutput(rc io.ReadCloser, w io.Writer) {
+func collectOutput(rc io.ReadCloser, w io.Writer) error {
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		fmt.Fprintln(w, scanner.Text())
 	}
+	return scanner.Err()
 }
