@@ -103,7 +103,11 @@ CAUTION: If you configure an Aqua scanner download URL, make sure that username/
 
 IMPORTANT: In ODS 4.x, the central Nexus instance does not have the repositories `ods-temporary-artifacts` and `ods-permanent-artifacts` after the default ODS installation. If those repositories are not present in the central Nexus instance yet, you will need to create them. The repositories need to be of type "raw" and should not allow re-deployment of artifacts. It is recommended to use separate blob stores for both. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
 
-Now fill in the variables as described in the comments in both (`values.yaml` and `secrets.yaml`) files. Once this is done, the Git repository is fully prepared. Commit and push before proceeding to the next step.
+Now fill in the variables as described in the comments in both (`values.yaml` and `secrets.yaml`) files.
+
+TIP: Pay attention to the value of `taskSuffix`. If you want tasks to match precisely one version, you do not need to fill it. However, if you want to e.g. apply patch updates to tasks without requiring an update to the pipeline definition in `ods.yaml`, you can pick a suffix that matches this intent, such as `taskSuffix: -v0-7-x`. In the same way, you could pick a stable task suffix for a major version (e.g. `-v0-x`) or even one that is never changed (like `-latest`).
+
+Once this is done, the Git repository is fully prepared. Commit and push before proceeding to the next step.
 
 === Using Helm to install from the Git repository
 
@@ -199,4 +203,4 @@ This will install all prerequisites automatically and update your ODS Pipeline i
 
 After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
 
-Once the resources in your namespace are updated, you can update the `ods.yaml` files in your repository and point to the new tasks, e.g. changing `ods-build-go-v0-6-0` to `ods-build-go-v0-7-0`.
+Once the resources in your namespace are updated, you may have to update the `ods.yaml` files in your repository to point to the new tasks, e.g. changing `ods-build-go-v0-6-0` to `ods-build-go-v0-7-0`. Whether or not you have to update the `ods.yaml` file depends whether the task suffix (controlled by the value `taskSuffix`) has changed due to the update.
