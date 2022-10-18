@@ -35,7 +35,7 @@ func TestTaskODSBuildSbt(t *testing.T) {
 					checkFilesExist(t, wsDir,
 						"docker/Dockerfile",
 						"docker/dist",
-						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-controllers.HomeControllerSpec.xml"),
+						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-example.HelloSpec.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "scoverage.xml"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
 						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
