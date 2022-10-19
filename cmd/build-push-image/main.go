@@ -288,7 +288,7 @@ func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
 	if opts.debug {
 		args = append(args, "--debug")
 	}
-	stdout, _, err := command.Run("skopeo", append(args, "docker://"+imageRef))
+	stdout, _, err := command.RunBuffered("skopeo", append(args, "docker://"+imageRef))
 	return string(stdout), err
 }
 

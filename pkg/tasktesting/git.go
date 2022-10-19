@@ -103,38 +103,38 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 	if err := pipelinectxt.WriteGitIgnore(filepath.Join(wsDir, ".gitignore")); err != nil {
 		t.Fatalf("could not write .gitignore: %s", err)
 	}
-	stdout, stderr, err := command.RunInDir("git", []string{"init"}, wsDir)
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"init"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git init: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"config", "user.email", "testing@opendevstack.org"}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"config", "user.email", "testing@opendevstack.org"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git config.user.email: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"config", "user.name", "testing"}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"config", "user.name", "testing"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git config.user.name: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"add", "."}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"add", "."}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git add: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "initial commit"}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"commit", "-m", "initial commit"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
 }
 
 func PushFileToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, branch, filename string) {
-	stdout, stderr, err := command.RunInDir("git", []string{"add", filename}, wsDir)
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"add", filename}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to add file=%s: %s, stdout: %s, stderr: %s", filename, err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "update " + filename}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"commit", "-m", "update " + filename}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"push", "origin", branch}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"push", "origin", branch}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to push to remote: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
@@ -169,11 +169,11 @@ func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, proje
 		fmt.Sprintf("http://%s:%s@", "admin", bbToken),
 		-1,
 	)
-	_, stderr, err := command.RunInDir("git", []string{"remote", "add", "origin", originURLWithCredentials}, wsDir)
+	_, stderr, err := command.RunBufferedInDir("git", []string{"remote", "add", "origin", originURLWithCredentials}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to add remote origin=%s: %s, stderr: %s", originURL, err, stderr)
 	}
-	_, stderr, err = command.RunInDir("git", []string{"push", "-u", "origin", "master"}, wsDir)
+	_, stderr, err = command.RunBufferedInDir("git", []string{"push", "-u", "origin", "master"}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to push to remote: %s, stderr: %s", err, stderr)
 	}
@@ -301,19 +301,19 @@ func createJpgRandomFileOrFatal(t *testing.T, wsDir, filename string) [32]byte {
 }
 
 func trackLfsJpgFileToBitbucketOrFatal(t *testing.T, wsDir, filename string) {
-	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "track", "*.jpg"}, wsDir)
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "track", "*.jpg"}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to track %s as LFS file: %s, stdout: %s, stderr: %s", filename, err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"add", ".gitattributes", filename}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"add", ".gitattributes", filename}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git add: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"commit", "-m", "track as LFS file " + filename}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"commit", "-m", "track as LFS file " + filename}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git commit: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
-	stdout, stderr, err = command.RunInDir("git", []string{"push", "origin", "master"}, wsDir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"push", "origin", "master"}, wsDir)
 	if err != nil {
 		t.Fatalf("failed to push to remote: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}

@@ -78,7 +78,7 @@ func RenderTasks(sourceDir, targetDir string) error {
 	if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
 		return err
 	}
-	stdout, stderr, err := command.RunInDir(
+	stdout, stderr, err := command.RunBufferedInDir(
 		"helm",
 		[]string{"template", "--values=values.docs.yaml", "."},
 		sourceDir,

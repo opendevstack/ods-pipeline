@@ -39,7 +39,7 @@ type helmChart struct {
 func helmDiff(exe string, args []string, outWriter, errWriter io.Writer) (bool, error) {
 	// STDOUT contains the diff view.
 	// STDERR contains the summary statement.
-	return command.RunWithStreamingOutput(
+	return command.RunWithSpecialFailureCode(
 		exe, args, []string{
 			fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath),
 			"HELM_DIFF_IGNORE_UNKNOWN_FLAGS=true", // https://github.com/databus23/helm-diff/issues/278
@@ -166,11 +166,10 @@ func commonHelmUpgradeArgs(
 
 // helmUpgrade runs given Helm command.
 func helmUpgrade(args []string, stdout, stderr io.Writer) error {
-	_, err := command.RunWithStreamingOutput(
+	return command.Run(
 		helmBin, args, []string{fmt.Sprintf("SOPS_AGE_KEY_FILE=%s", ageKeyFilePath)},
-		stdout, stderr, -1,
+		stdout, stderr,
 	)
-	return err
 }
 
 // printlnSafeHelmCmd prints all args that do not contain sensitive information.
@@ -202,7 +201,7 @@ func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string, debug bool) (s
 	if debug {
 		helmPackageArgs = append(helmPackageArgs, "--debug")
 	}
-	stdout, stderr, err := command.Run(helmBin, append(helmPackageArgs, chartDir))
+	stdout, stderr, err := command.RunBuffered(helmBin, append(helmPackageArgs, chartDir))
 	if err != nil {
 		return "", fmt.Errorf(
 			"could not package chart %s. stderr: %s, err: %s", chartDir, string(stderr), err,

@@ -380,7 +380,7 @@ func checkoutAndAssembleContext(
 		log.Fatal(err)
 	}
 	logger.Infof("Checking out %s@%s into %s ...", url, gitFullRef, absCheckoutDir)
-	stdout, stderr, err := command.Run("/ko-app/git-init", []string{
+	stdout, stderr, err := command.RunBuffered("/ko-app/git-init", []string{
 		"-url", url,
 		"-revision", gitFullRef,
 		"-refspec", gitRefSpec,
@@ -442,7 +442,7 @@ func getCommitSHA(dir string) (string, error) {
 }
 
 func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, err error) {
-	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
 	if err != nil {
 		return false, fmt.Errorf("cannot list git lfs files: %s (%w)", stderr, err)
 	}
@@ -450,12 +450,12 @@ func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, e
 }
 
 func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
-	stdout, stderr, err := command.RunInDir("git", []string{"lfs", "install"}, dir)
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "install"}, dir)
 	if err != nil {
 		return fmt.Errorf("cannot enable git lfs: %s (%w)", stderr, err)
 	}
 	logger.Infof(string(stdout))
-	stdout, stderr, err = command.RunInDir("git", []string{"lfs", "pull"}, dir)
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"lfs", "pull"}, dir)
 	if err != nil {
 		return fmt.Errorf("cannot git pull lfs files: %s (%w)", stderr, err)
 	}

@@ -1,7 +1,9 @@
 package tasks
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -55,7 +57,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
 
-					b, _, err := command.Run(wsDir+"/docker/app", []string{})
+					b, _, err := command.RunBuffered(wsDir+"/docker/app", []string{})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -106,7 +108,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					// 	t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					// }
 
-					b, _, err := command.Run(wsDir+"/docker/app", []string{})
+					b, _, err := command.RunBuffered(wsDir+"/docker/app", []string{})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -158,7 +160,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
 					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
 
-					b, _, err := command.Run(filepath.Join(wsDir, binary), []string{})
+					b, _, err := command.RunBuffered(filepath.Join(wsDir, binary), []string{})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -246,12 +248,16 @@ func TestTaskODSBuildGo(t *testing.T) {
 }
 
 func cleanModcache(t *testing.T, workspace string) {
-	_, stderr, err := command.RunWithExtraEnvs(
-		"go", []string{"clean", "-modcache"}, []string{
+	var stderr bytes.Buffer
+	err := command.Run(
+		"go", []string{"clean", "-modcache"},
+		[]string{
 			fmt.Sprintf("GOMODCACHE=%s/%s", workspace, ".ods-cache/deps/gomod"),
 		},
+		io.Discard,
+		&stderr,
 	)
 	if err != nil {
-		t.Fatalf("could not clean up modcache: %s, stderr: %s", err, string(stderr))
+		t.Fatalf("could not clean up modcache: %s, stderr: %s", err, stderr.String())
 	}
 }

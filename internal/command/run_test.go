@@ -34,7 +34,7 @@ func TestRunWithStreamingOutput(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			driftDetected, err := RunWithStreamingOutput(
+			driftDetected, err := RunWithSpecialFailureCode(
 				"../../test/scripts/exit-with-code.sh",
 				[]string{"value of FOO=${FOO}", "log msg", strconv.Itoa(tc.cmdExitCode)},
 				[]string{"FOO=bar"},
@@ -64,7 +64,7 @@ func TestRunWithStreamingOutput(t *testing.T) {
 
 // TestRunWithStreamingOutputError covers the case when the aqua scanner cannot be invoked at all.
 func TestRunWithStreamingOutputError(t *testing.T) {
-	success, err := RunWithStreamingOutput(
+	success, err := RunWithSpecialFailureCode(
 		"./bogus.sh", []string{}, []string{}, &bytes.Buffer{}, &bytes.Buffer{}, -1,
 	)
 	if err == nil || err.Error() != "start cmd: fork/exec ./bogus.sh: no such file or directory" {
@@ -77,7 +77,7 @@ func TestRunWithStreamingOutputError(t *testing.T) {
 
 func TestInterleavedStdoutAndStderr(t *testing.T) {
 	var out bytes.Buffer
-	success, err := RunWithStreamingOutput(
+	success, err := RunWithSpecialFailureCode(
 		"../../test/scripts/interleaved-output.sh", []string{}, []string{}, &out, &out, -1,
 	)
 	if err != nil {

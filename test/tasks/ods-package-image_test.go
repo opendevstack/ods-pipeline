@@ -89,13 +89,13 @@ func TestTaskODSPackageImage(t *testing.T) {
 // verify that the image has not been rebuild in the task.
 func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, tag, wsDir string) {
 	t.Logf("Build image %s ahead of taskrun", tag)
-	_, stderr, err := command.Run("docker", []string{
+	_, stderr, err := command.RunBuffered("docker", []string{
 		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),
 	})
 	if err != nil {
 		t.Fatalf("could not build image: %s, stderr: %s", err, string(stderr))
 	}
-	_, stderr, err = command.Run("docker", []string{
+	_, stderr, err = command.RunBuffered("docker", []string{
 		"push", tag,
 	})
 	if err != nil {
@@ -115,7 +115,7 @@ func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir s
 }
 
 func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wantLabelKey, wantLabelValue string) {
-	stdout, stderr, err := command.Run("docker", []string{
+	stdout, stderr, err := command.RunBuffered("docker", []string{
 		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
 		getDockerImageTag(t, ctxt, wsDir),
 	})
@@ -129,7 +129,7 @@ func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wa
 }
 
 func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
-	stdout, stderr, err := command.Run("docker", []string{
+	stdout, stderr, err := command.RunBuffered("docker", []string{
 		"run", "--rm",
 		getDockerImageTag(t, ctxt, wsDir),
 	})

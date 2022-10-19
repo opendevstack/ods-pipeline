@@ -216,7 +216,7 @@ func main() {
 			if opts.debug {
 				skopeoCopyArgs = append(skopeoCopyArgs, "--debug")
 			}
-			stdout, stderr, err := command.Run(
+			stdout, stderr, err := command.RunBuffered(
 				"skopeo", append(
 					skopeoCopyArgs,
 					fmt.Sprintf("docker://%s", srcImageURL),
@@ -236,7 +236,7 @@ func main() {
 	if opts.debug {
 		helmPluginArgs = append(helmPluginArgs, "--debug")
 	}
-	stdout, stderr, err := command.Run(helmBin, helmPluginArgs)
+	stdout, stderr, err := command.RunBuffered(helmBin, helmPluginArgs)
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)

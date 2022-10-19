@@ -26,7 +26,7 @@ var serviceMapping = map[Service]string{
 // Safeguard against running outside KinD
 func CheckCluster(t *testing.T, outsideKindAllowed bool) {
 	if !outsideKindAllowed {
-		stdout, stderr, err := command.Run("kubectl", []string{"config", "current-context"})
+		stdout, stderr, err := command.RunBuffered("kubectl", []string{"config", "current-context"})
 		if err != nil {
 			t.Fatalf("could not check current Kube context: %s, err: %s", string(stderr), err)
 		}
