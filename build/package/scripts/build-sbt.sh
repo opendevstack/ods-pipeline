@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eu
 
+function timestamped() {
+	echo "$(date "+%Y/%m/%d %H:%M:%S") $1"
+}
+
 OUTPUT_DIR="docker"
 WORKING_DIR="."
 ROOT_DIR=$(pwd)
@@ -49,10 +53,11 @@ echo "Building (Compile and Test) ..."
 # will end up instrumented in production... This is due to the fact that scoverage has no way for on-the-fly instrumentation which only happens in memory
 
 # check format of sbt and source files, activate coverage and test with coverage report
+timestamped "run tests and coverage"
 sbt -no-colors -v clean scalafmtSbtCheck scalafmtCheckAll coverage test coverageReport
 
 # copy reports
-echo "Verifying unit test report was generated ..."
+timestamped "Verifying unit test report was generated ..."
 BUILD_DIR="target"
 UNIT_TEST_RESULT_DIR="${BUILD_DIR}/test-reports"
 if [ -d "${UNIT_TEST_RESULT_DIR}" ]; then
@@ -64,7 +69,7 @@ else
   exit 1
 fi
 
-echo "Verifying unit test coverage report was generated  ..."
+timestamped "Verifying unit test coverage report was generated  ..."
 COVERAGE_RESULT_DIR="${BUILD_DIR}/scala-2.13"
 if [ -d "${COVERAGE_RESULT_DIR}" ]; then
     CODE_COVERAGE_ARTIFACTS_DIR="${ARTIFACTS_DIR}/code-coverage"
@@ -76,10 +81,11 @@ else
 fi
 
 # create a clean binary as the previous compiled sources where instrumented for the coverage report
+timestamped "creating build artefacts"
 sbt -no-colors -v clean stage
 
 STAGING_DIR="${BUILD_DIR}/universal/stage"
-echo "Copying contents of ${STAGING_DIR} to ${OUTPUT_DIR}/dist ..."
+timestamped "Copying contents of ${STAGING_DIR} to ${OUTPUT_DIR}/dist ..."
 cp -r "${STAGING_DIR}/." "${OUTPUT_DIR}/dist"
 
 # TODO oder alles in einem command:
