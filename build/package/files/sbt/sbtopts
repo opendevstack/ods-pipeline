@@ -46,3 +46,4 @@
 # java version (default: java from PATH, currently $(java -version |& grep version))
 #
 #-java-home <path>
+-Duser.home=/home/jboss

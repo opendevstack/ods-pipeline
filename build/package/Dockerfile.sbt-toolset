@@ -12,6 +12,8 @@ ENV LANG=en_US.UTF-8 \
 
 USER root
 
+ADD build/package/files/sbt/test /tmp/sbttest
+
 RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* git-${GIT_VERSION}* vim && microdnf clean all
 
 RUN SBT_INSTALL_DIR=/tmp/sbt-install && \
@@ -23,10 +25,12 @@ RUN SBT_INSTALL_DIR=/tmp/sbt-install && \
     ln -s /opt/sbt/bin/sbt /usr/local/bin/sbt && \
     rm -rf $SBT_INSTALL_DIR
 
-COPY build/package/files/sbtopts /opt/sbt/conf/sbtopts
+COPY build/package/files/sbt/sbtopts /opt/sbt/conf/sbtopts
 
-RUN sbt -v sbtVersion && \
-    rm -rf project target
+RUN cd /tmp/sbttest && \
+    sbt 'set scalaVersion := "2.12.16"' compile && \
+    sbt 'set scalaVersion := "2.13.10"' compile && \
+    rm -rf /tmp/sbttest
 
 # Add scripts
 COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
