@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11:1.13
+FROM registry.access.redhat.com/ubi8/openjdk-11:1.14
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -12,9 +12,9 @@ ENV LANG=en_US.UTF-8 \
 
 USER root
 
-ADD build/package/files/sbt/test /tmp/sbttest
+COPY build/package/files/sbt/test /tmp/sbttest
 
-RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* git-${GIT_VERSION}* vim && microdnf clean all
+RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* git-${GIT_VERSION}* vim unzip && microdnf clean all
 
 RUN SBT_INSTALL_DIR=/tmp/sbt-install && \
     mkdir -p $SBT_INSTALL_DIR && \
@@ -26,20 +26,22 @@ RUN SBT_INSTALL_DIR=/tmp/sbt-install && \
     rm -rf $SBT_INSTALL_DIR
 
 COPY build/package/files/sbt/sbtopts /opt/sbt/conf/sbtopts
-
-RUN cd /tmp/sbttest && \
-    sbt 'set scalaVersion := "2.12.16"' compile && \
-    sbt 'set scalaVersion := "2.13.10"' compile && \
-    rm -rf /tmp/sbttest
-
 # Add scripts
 COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
 COPY build/package/scripts/copy-build-if-cached.sh /usr/local/bin/copy-build-if-cached
 COPY build/package/scripts/copy-artifacts.sh /usr/local/bin/copy-artifacts
 COPY build/package/scripts/build-sbt.sh /usr/local/bin/build-sbt
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
+
+# Add sonar-project.properties
+COPY build/package/sonar-project.properties.d/sbt.properties /usr/local/default-sonar-project.properties
+
 # TODO set sbt http proxy COPY build/package/scripts/set-sbt-proxy.sh /usr/local/bin/set-sbt-proxy
-RUN chmod +x /usr/local/bin/build-sbt && \
+RUN cd /tmp/sbttest && \
+    sbt 'set scalaVersion := "2.12.16"' compile && \
+    sbt 'set scalaVersion := "2.13.10"' compile && \
+    rm -rf /tmp/sbttest && \
+    chmod +x /usr/local/bin/build-sbt && \
     chmod +x /usr/local/bin/cache-build && \
     chmod +x /usr/local/bin/copy-build-if-cached && \
     chmod +x /usr/local/bin/copy-artifacts && \
@@ -47,8 +49,5 @@ RUN chmod +x /usr/local/bin/build-sbt && \
     chown -R 1001:0 /home/jboss && \
     chown -R 1001:0 /tmp/.sbt
 # TODO set sbt http proxy    chmod +x /usr/local/bin/set-sbt-proxy # TODO set sbt http proxy
-
-# Add sonar-project.properties
-COPY build/package/sonar-project.properties.d/sbt.properties /usr/local/default-sonar-project.properties
 
 USER 1001
