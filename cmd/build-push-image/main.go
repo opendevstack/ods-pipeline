@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,30 +46,55 @@ type options struct {
 	debug                 bool
 }
 
+var defaultOptions = options{
+	bitbucketAccessToken:  os.Getenv("BITBUCKET_ACCESS_TOKEN"),
+	bitbucketURL:          os.Getenv("BITBUCKET_URL"),
+	aquaUsername:          os.Getenv("AQUA_USERNAME"),
+	aquaPassword:          os.Getenv("AQUA_PASSWORD"),
+	aquaURL:               os.Getenv("AQUA_URL"),
+	aquaRegistry:          os.Getenv("AQUA_REGISTRY"),
+	imageStream:           "",
+	registry:              "image-registry.openshift-image-registry.svc:5000",
+	certDir:               "/etc/containers/certs.d",
+	imageNamespace:        "",
+	tlsVerify:             true,
+	storageDriver:         "vfs",
+	format:                "oci",
+	dockerfile:            "./Dockerfile",
+	contextDir:            "docker",
+	nexusURL:              os.Getenv("NEXUS_URL"),
+	nexusUsername:         os.Getenv("NEXUS_USERNAME"),
+	nexusPassword:         os.Getenv("NEXUS_PASSWORD"),
+	buildahBuildExtraArgs: "",
+	buildahPushExtraArgs:  "",
+	aquasecGate:           false,
+	debug:                 (os.Getenv("DEBUG") == "true"),
+}
+
 func main() {
 	opts := options{}
-	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
-	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
-	flag.StringVar(&opts.aquaUsername, "aqua-username", os.Getenv("AQUA_USERNAME"), "aqua-username")
-	flag.StringVar(&opts.aquaPassword, "aqua-password", os.Getenv("AQUA_PASSWORD"), "aqua-password")
-	flag.StringVar(&opts.aquaURL, "aqua-url", os.Getenv("AQUA_URL"), "aqua-url")
-	flag.StringVar(&opts.aquaRegistry, "aqua-registry", os.Getenv("AQUA_REGISTRY"), "aqua-registry")
-	flag.StringVar(&opts.imageStream, "image-stream", "", "Image stream")
-	flag.StringVar(&opts.registry, "registry", "image-registry.openshift-image-registry.svc:5000", "Registry")
-	flag.StringVar(&opts.certDir, "cert-dir", "/etc/containers/certs.d", "Use certificates at the specified path to access the registry")
-	flag.StringVar(&opts.imageNamespace, "image-namespace", "", "image namespace")
-	flag.BoolVar(&opts.tlsVerify, "tls-verify", true, "TLS verify")
-	flag.StringVar(&opts.storageDriver, "storage-driver", "vfs", "storage driver")
-	flag.StringVar(&opts.format, "format", "oci", "format of the built container, oci or docker")
-	flag.StringVar(&opts.dockerfile, "dockerfile", "./Dockerfile", "dockerfile")
-	flag.StringVar(&opts.contextDir, "context-dir", "docker", "contextDir")
-	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
-	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
-	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", "docker", "extra parameters passed for the build command when building images")
-	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", "docker", "extra parameters passed for the push command when pushing images")
-	flag.BoolVar(&opts.aquasecGate, "aqua-gate", false, "whether the Aqua security scan needs to pass for the task to succeed")
-	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
+	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", defaultOptions.bitbucketAccessToken, "bitbucket-access-token")
+	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", defaultOptions.bitbucketURL, "bitbucket-url")
+	flag.StringVar(&opts.aquaUsername, "aqua-username", defaultOptions.aquaUsername, "aqua-username")
+	flag.StringVar(&opts.aquaPassword, "aqua-password", defaultOptions.aquaPassword, "aqua-password")
+	flag.StringVar(&opts.aquaURL, "aqua-url", defaultOptions.aquaURL, "aqua-url")
+	flag.StringVar(&opts.aquaRegistry, "aqua-registry", defaultOptions.aquaRegistry, "aqua-registry")
+	flag.StringVar(&opts.imageStream, "image-stream", defaultOptions.imageStream, "Image stream")
+	flag.StringVar(&opts.registry, "registry", defaultOptions.registry, "Registry")
+	flag.StringVar(&opts.certDir, "cert-dir", defaultOptions.certDir, "Use certificates at the specified path to access the registry")
+	flag.StringVar(&opts.imageNamespace, "image-namespace", defaultOptions.imageNamespace, "image namespace")
+	flag.BoolVar(&opts.tlsVerify, "tls-verify", defaultOptions.tlsVerify, "TLS verify")
+	flag.StringVar(&opts.storageDriver, "storage-driver", defaultOptions.storageDriver, "storage driver")
+	flag.StringVar(&opts.format, "format", defaultOptions.format, "format of the built container, oci or docker")
+	flag.StringVar(&opts.dockerfile, "dockerfile", defaultOptions.dockerfile, "dockerfile")
+	flag.StringVar(&opts.contextDir, "context-dir", defaultOptions.contextDir, "contextDir")
+	flag.StringVar(&opts.nexusURL, "nexus-url", defaultOptions.nexusURL, "Nexus URL")
+	flag.StringVar(&opts.nexusUsername, "nexus-username", defaultOptions.nexusUsername, "Nexus username")
+	flag.StringVar(&opts.nexusPassword, "nexus-password", defaultOptions.nexusPassword, "Nexus password")
+	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", defaultOptions.buildahBuildExtraArgs, "extra parameters passed for the build command when building images")
+	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", defaultOptions.buildahPushExtraArgs, "extra parameters passed for the push command when pushing images")
+	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
+	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
 
 	workingDir := "."
@@ -186,54 +210,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-// nexusBuildArgs computes --build-arg parameters so that the Dockerfile
-// can access nexus as determined by the options nexus related
-// parameters.
-func nexusBuildArgs(opts options) ([]string, error) {
-	args := []string{}
-	if strings.TrimSpace(opts.nexusURL) != "" {
-		nexusUrl, err := url.Parse(opts.nexusURL)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse nexus url (%s): %w", opts.nexusURL, err)
-		}
-		if nexusUrl.Host == "" {
-			return nil, fmt.Errorf("could not get host in nexus url (%s)", opts.nexusURL)
-		}
-		if opts.nexusUsername != "" {
-			if opts.nexusPassword == "" {
-				nexusUrl.User = url.User(opts.nexusUsername)
-			} else {
-				nexusUrl.User = url.UserPassword(opts.nexusUsername, opts.nexusPassword)
-			}
-		}
-		nexusAuth := nexusUrl.User.String() // this is encoded as needed.
-		a := strings.SplitN(nexusAuth, ":", 2)
-		unEscaped := ""
-		pwEscaped := ""
-		if len(a) > 0 {
-			unEscaped = a[0]
-		}
-		if len(a) > 1 {
-			pwEscaped = a[1]
-		}
-		args = []string{
-			fmt.Sprintf("--build-arg=nexusUrl=%s", opts.nexusURL),
-			fmt.Sprintf("--build-arg=nexusUsername=%s", unEscaped),
-			fmt.Sprintf("--build-arg=nexusPassword=%s", pwEscaped),
-			fmt.Sprintf("--build-arg=nexusHost=%s", nexusUrl.Host),
-		}
-		args = append(args, fmt.Sprintf("--build-arg=nexusAuth=%s", nexusAuth))
-		if nexusAuth != "" {
-			args = append(args,
-				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s://%s@%s", nexusUrl.Scheme, nexusAuth, nexusUrl.Host))
-		} else {
-			args = append(args,
-				fmt.Sprintf("--build-arg=nexusUrlWithAuth=%s", opts.nexusURL))
-		}
-	}
-	return args, nil
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
