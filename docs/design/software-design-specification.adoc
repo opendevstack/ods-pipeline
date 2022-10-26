@@ -569,7 +569,7 @@ a| The script is supposed to be downloaded and piped into bash. The script insta
 
 | SDS-EXT-17
 | Skopeo
-| 1.8
+| 1.9
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
