@@ -237,7 +237,7 @@ func waitForPipelineRunToBeDone(clientset *tekton.Clientset, ns, pr string, time
 }
 
 func kindControlPlaneIP() (string, error) {
-	stdout, stderr, err := command.Run(
+	stdout, stderr, err := command.RunBuffered(
 		"docker",
 		[]string{"inspect", "-f", "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}", "kind-control-plane"},
 	)
@@ -251,7 +251,7 @@ func pipelineRunLogs(namespace, name string) (string, error) {
 	if !tknInstalled() {
 		return "", errors.New("tkn is not installed, cannot show logs")
 	}
-	stdout, stderr, err := command.Run(
+	stdout, stderr, err := command.RunBuffered(
 		"tkn",
 		[]string{"pr", "logs", "-n", namespace, name},
 	)

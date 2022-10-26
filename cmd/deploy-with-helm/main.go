@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -215,7 +216,7 @@ func main() {
 			if opts.debug {
 				skopeoCopyArgs = append(skopeoCopyArgs, "--debug")
 			}
-			stdout, stderr, err := command.Run(
+			stdout, stderr, err := command.RunBuffered(
 				"skopeo", append(
 					skopeoCopyArgs,
 					fmt.Sprintf("docker://%s", srcImageURL),
@@ -235,7 +236,7 @@ func main() {
 	if opts.debug {
 		helmPluginArgs = append(helmPluginArgs, "--debug")
 	}
-	stdout, stderr, err := command.Run(helmBin, helmPluginArgs)
+	stdout, stderr, err := command.RunBuffered(helmBin, helmPluginArgs)
 	if err != nil {
 		fmt.Println(string(stderr))
 		log.Fatal(err)
@@ -389,13 +390,14 @@ func main() {
 		log.Fatal("assemble helm upgrade args: ", err)
 	}
 	printlnSafeHelmCmd(helmUpgradeArgs, os.Stdout)
-	stdout, stderr, err = helmUpgrade(helmUpgradeArgs)
+
+	var upgradeStdoutBuf bytes.Buffer
+	upgradeStdoutWriter := io.MultiWriter(os.Stdout, &upgradeStdoutBuf)
+	err = helmUpgrade(helmUpgradeArgs, upgradeStdoutWriter, os.Stderr)
 	if err != nil {
-		fmt.Println(string(stderr))
 		log.Fatal("helm upgrade: ", err)
 	}
-	fmt.Println(string(stdout))
-	err = writeDeploymentArtifact(stdout, "release", opts.chartDir, targetConfig.Name)
+	err = writeDeploymentArtifact(upgradeStdoutBuf.Bytes(), "release", opts.chartDir, targetConfig.Name)
 	if err != nil {
 		log.Fatal("write release artifact: ", err)
 	}

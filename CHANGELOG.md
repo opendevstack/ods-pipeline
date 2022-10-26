@@ -13,6 +13,11 @@ listed in the changelog.
 
 - Normalize K8s manifests to exclude style differences from Helm diff output. The change is applied to both the helm execution in the `ods-deploy-helm` task and in the install script. See [#591](https://github.com/opendevstack/ods-pipeline/issues/591).
 - Update skopeo (1.8 to 1.9) ([#616](https://github.com/opendevstack/ods-pipeline/issues/616))
+- Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
+
+### Fixed
+- Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
+- STDOUT and STDERR is not interleaved as expected ([#613](https://github.com/opendevstack/ods-pipeline/issues/613))
 
 ## [0.7.0] - 2022-10-11
 

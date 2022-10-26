@@ -60,7 +60,7 @@ func installCDNamespaceResources(t *testing.T, ns, serviceaccount string) {
 		scriptArgs = append(scriptArgs, "-v")
 	}
 
-	stdout, stderr, err := command.Run(
+	stdout, stderr, err := command.RunBuffered(
 		filepath.Join(projectpath.Root, "scripts/install-inside-kind.sh"),
 		scriptArgs,
 	)

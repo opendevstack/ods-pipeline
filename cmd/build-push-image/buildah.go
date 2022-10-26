@@ -13,6 +13,10 @@ import (
 	"github.com/opendevstack/pipeline/internal/command"
 )
 
+const (
+	buildahBin = "buildah"
+)
+
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func buildahBuild(opts options, tag string, outWriter, errWriter io.Writer) error {
@@ -20,11 +24,7 @@ func buildahBuild(opts options, tag string, outWriter, errWriter io.Writer) erro
 	if err != nil {
 		return fmt.Errorf("assemble build args: %w", err)
 	}
-	_, err = command.RunWithStreamingOutput(
-		"buildah", args, []string{}, outWriter, errWriter,
-		-1, // no special exit code handling
-	)
-	return err
+	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 
 // buildahPush pushes a local image to the given imageRef.
@@ -44,14 +44,8 @@ func buildahPush(opts options, workingDir, imageRef string, outWriter, errWriter
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	_, err = command.RunWithStreamingOutput(
-		"buildah",
-		append(args, imageRef, fmt.Sprintf("docker://%s", imageRef)),
-		[]string{},
-		outWriter, errWriter,
-		-1, // no special exit code handling
-	)
-	return err
+	args = append(args, imageRef, fmt.Sprintf("docker://%s", imageRef))
+	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 
 // buildahBuildArgs assembles the args to be passed to buildah based on

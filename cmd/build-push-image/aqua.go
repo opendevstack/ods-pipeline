@@ -44,7 +44,7 @@ func aquaScanURL(opts options, aquaImage string) (string, error) {
 func aquaScan(exe string, args []string, outWriter, errWriter io.Writer) (bool, error) {
 	// STDERR contains the scan log output, hence we read it before STDOUT.
 	// STDOUT contains the scan summary (incl. ASCII table).
-	return command.RunWithStreamingOutputReversed(
+	return command.RunWithSpecialFailureCode(
 		exe, args, []string{}, outWriter, errWriter, scanComplianceFailureExitCode,
 	)
 }

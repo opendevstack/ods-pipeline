@@ -21,7 +21,7 @@ func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifac
 		"-a", author,
 		branch,
 	}
-	stdout, stderr, err := command.Run("java", reportParams)
+	stdout, stderr, err := command.RunBuffered("java", reportParams)
 	if err != nil {
 		return fmt.Errorf(
 			"report generation failed: %w, stderr: %s, stdout: %s",
