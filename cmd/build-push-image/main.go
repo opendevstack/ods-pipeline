@@ -108,7 +108,10 @@ func main() {
 		opts.certDir = kubernetesServiceaccountDir
 	}
 	if opts.debug {
-		directory.ListFiles(opts.certDir)
+		err := directory.ListFiles(opts.certDir, os.Stdout)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// TLS verification of the KinD registry is not possible at the moment as
