@@ -1,32 +1,19 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"flag"
-	"fmt"
 	"io/fs"
-	"log"
 	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	tokenFile                   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	helmBin                     = "helm"
 	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
-	// file path where to internally store the age-key-secret openshift secret content,
-	// required by helm secrets plugin.
-	ageKeyFilePath = "./key.txt"
 )
 
 type options struct {
@@ -52,64 +39,32 @@ type options struct {
 	debug bool
 }
 
-type releaseTarget struct {
-	name      string
-	namespace string
-	config    *config.Environment
-}
-
 type deployHelm struct {
-	logger        logging.LeveledLoggerInterface
-	helmBin       string
-	opts          options
-	releaseTarget *releaseTarget
-	imageDigests  []string
-	cliValues     []string
-	helmArchive   string
-	valuesFiles   []string
-	clientset     *kubernetes.Clientset
-	subrepos      []fs.DirEntry
-	ctxt          *pipelinectxt.ODSContext
-}
-
-type skipFollowingSteps struct {
-	msg string
-}
-
-func (e *skipFollowingSteps) Error() string {
-	return e.msg
-}
-
-func (d *deployHelm) RunSteps(steps ...DeployStep) error {
-	var skip *skipFollowingSteps
-	var err error
-	for _, step := range steps {
-		d, err = step(d)
-		if err != nil {
-			if errors.As(err, &skip) {
-				d.logger.Infof(err.Error())
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
+	logger logging.LeveledLoggerInterface
+	// Name of helm binary.
+	helmBin          string
+	opts             options
+	releaseName      string
+	releaseNamespace string
+	targetConfig     *config.Environment
+	imageDigests     []string
+	cliValues        []string
+	helmArchive      string
+	valuesFiles      []string
+	clientset        *kubernetes.Clientset
+	subrepos         []fs.DirEntry
+	ctxt             *pipelinectxt.ODSContext
 }
 
 var defaultOptions = options{
-	checkoutDir:       ".",
-	chartDir:          "./chart",
-	releaseName:       "",
-	diffFlags:         "",
-	upgradeFlags:      "",
-	ageKeySecret:      "",
-	ageKeySecretField: "key.txt",
-	certDir: func() string {
-		if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
-			return kubernetesServiceaccountDir
-		}
-		return "/etc/containers/certs.d"
-	}(),
+	checkoutDir:          ".",
+	chartDir:             "./chart",
+	releaseName:          "",
+	diffFlags:            "",
+	upgradeFlags:         "",
+	ageKeySecret:         "",
+	ageKeySecretField:    "key.txt",
+	certDir:              defaultCertDir(),
 	srcRegistryTLSVerify: true,
 	debug:                (os.Getenv("DEBUG") == "true"),
 }
@@ -135,12 +90,12 @@ func main() {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	err := (&deployHelm{helmBin: helmBin, logger: logger, opts: opts}).RunSteps(
+	err := (&deployHelm{helmBin: helmBin, logger: logger, opts: opts}).runSteps(
 		setupContext(),
 		skipOnEmptyEnv(),
-		determineReleaseTarget(),
-		determineSubrepos(),
-		determineImageDigests(),
+		setReleaseTarget(),
+		detectSubrepos(),
+		detectImageDigests(),
 		copyImagesIntoReleaseNamespace(),
 		listHelmPlugins(),
 		packageHelmChartWithSubcharts(),
@@ -150,74 +105,14 @@ func main() {
 		upgradeHelmRelease(),
 	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Errorf(err.Error())
+		os.Exit(1)
 	}
 }
 
-func artifactFilename(filename, chartDir, targetEnv string) string {
-	trimmedChartDir := strings.TrimPrefix(chartDir, "./")
-	if trimmedChartDir != "chart" {
-		filename = fmt.Sprintf("%s-%s", strings.Replace(trimmedChartDir, "/", "-", -1), filename)
+func defaultCertDir() string {
+	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
+		return kubernetesServiceaccountDir
 	}
-	return fmt.Sprintf("%s-%s", filename, targetEnv)
-}
-
-func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv string) error {
-	err := os.MkdirAll(pipelinectxt.DeploymentsPath, 0755)
-	if err != nil {
-		return err
-	}
-	f := artifactFilename(filename, chartDir, targetEnv) + ".txt"
-	return os.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
-}
-
-func storeAgeKey(secret *corev1.Secret, ageKeySecretField string) (errBytes []byte, err error) {
-	file, err := os.Create(ageKeyFilePath)
-	if err != nil {
-		return errBytes, err
-	}
-	defer file.Close()
-	_, err = file.Write(secret.Data[ageKeySecretField])
-	if err != nil {
-		return errBytes, err
-	}
-	return errBytes, err
-}
-
-func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
-	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	return string(secret.Data["token"]), nil
-}
-
-func getTrimmedFileContent(filename string) (string, error) {
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
-}
-
-func collectImageDigests(imageDigestsDir string) ([]string, error) {
-	var files []string
-	if _, err := os.Stat(imageDigestsDir); err == nil {
-		f, err := os.ReadDir(imageDigestsDir)
-		if err != nil {
-			return files, fmt.Errorf("could not read image digests dir: %w", err)
-		}
-		for _, fi := range f {
-			files = append(files, filepath.Join(imageDigestsDir, fi.Name()))
-		}
-	}
-	return files, nil
-}
-
-func getImageDestURL(registryHost, releaseNamespace string, imageArtifact artifact.Image) string {
-	if registryHost != "" {
-		return fmt.Sprintf("%s/%s/%s:%s", registryHost, releaseNamespace, imageArtifact.Name, imageArtifact.Tag)
-	} else {
-		return strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
-	}
+	return "/etc/containers/certs.d"
 }

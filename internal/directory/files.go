@@ -2,17 +2,18 @@ package directory
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 )
 
-func ListFiles(dir string) {
+func ListFiles(dir string, out io.Writer) error {
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	log.Printf("Files in %s:\n", dir)
+	fmt.Fprintf(out, "Files in %s:\n", dir)
 	for _, file := range files {
-		fmt.Println(file.Name())
+		fmt.Fprintln(out, file.Name())
 	}
+	return nil
 }

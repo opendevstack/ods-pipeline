@@ -385,7 +385,7 @@ If the Aqua scanner is installed in the base image, the  pushed image shall be s
 | Container image to promote images and deploy Helm charts. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-15, SDS-EXT-17, SDS-EXT-19, SDS-EXT-20, SDS-EXT-21, SDS-EXT-23, SDS-EXT-24, SDS-EXT-30 and SDS-TASK-24.
 
 | SDS-TASK-24
-| `deploy-with-helm` binary
+| `deploy-helm` binary
 a| Skips when no `environment` is given.
 
 Pushes images into the target namespace.

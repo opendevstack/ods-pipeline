@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -20,201 +21,176 @@ import (
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-type DeployStep func(x *deployHelm) (*deployHelm, error)
+const (
+	tokenFile    = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	subchartsDir = "charts"
+)
+
+type DeployStep func(d *deployHelm) (*deployHelm, error)
+
+func (d *deployHelm) runSteps(steps ...DeployStep) error {
+	var skip *skipRemainingSteps
+	var err error
+	for _, step := range steps {
+		d, err = step(d)
+		if err != nil {
+			if errors.As(err, &skip) {
+				d.logger.Infof(err.Error())
+				return nil
+			}
+			return err
+		}
+	}
+	return nil
+}
 
 func setupContext() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
 		ctxt := &pipelinectxt.ODSContext{}
 		err := ctxt.ReadCache(d.opts.checkoutDir)
 		if err != nil {
-			return d, err
+			return d, fmt.Errorf("read cache: %w", err)
 		}
 		d.ctxt = ctxt
 
 		clientset, err := k.NewInClusterClientset()
 		if err != nil {
-			return d, fmt.Errorf("could not create Kubernetes client: %w", err)
+			return d, fmt.Errorf("create Kubernetes clientset: %w", err)
 		}
 		d.clientset = clientset
 
-		d.logger.Debugf("Certificates:\n%s")
 		if d.opts.debug {
-			// TODO: make this take a writer
-			directory.ListFiles(d.opts.certDir)
+			if err := directory.ListFiles(d.opts.certDir, os.Stdout); err != nil {
+				log.Fatal(err)
+			}
 		}
 		return d, nil
 	}
 }
 
 func skipOnEmptyEnv() DeployStep {
-	return func(l *deployHelm) (*deployHelm, error) {
-		if len(l.ctxt.Environment) == 0 {
-			return l, &skipFollowingSteps{"No environment to deploy to selected. Skipping deployment ..."}
-		}
-		return l, nil
-	}
-}
-
-func determineReleaseTarget() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-		rt := &releaseTarget{}
-		if len(d.opts.releaseName) > 0 {
-			rt.name = d.opts.releaseName
-		} else {
-			rt.name = d.ctxt.Component
+		if d.ctxt.Environment == "" {
+			return d, &skipRemainingSteps{"No environment to deploy to selected. Skipping deployment ..."}
 		}
-		d.logger.Infof("releaseName=%s", rt.name)
-
-		// read ods.y(a)ml
-		odsConfig, err := config.ReadFromDir(d.opts.checkoutDir)
-		if err != nil {
-			return d, fmt.Errorf("err during ods config reading: %w", err)
-
-		}
-		targetConfig, err := odsConfig.Environment(d.ctxt.Environment)
-		if err != nil {
-			return d, fmt.Errorf("err during namespace extraction: %w", err)
-		}
-
-		if targetConfig.APIServer != "" {
-			token, err := tokenFromSecret(d.clientset, d.ctxt.Namespace, targetConfig.APICredentialsSecret)
-			if err != nil {
-				return d, fmt.Errorf("could not get token from secret %s: %w", targetConfig.APICredentialsSecret, err)
-			}
-			targetConfig.APIToken = token
-		}
-
-		rt.config = targetConfig
-
-		rt.namespace = targetConfig.Namespace
-		if len(rt.namespace) == 0 {
-			rt.namespace = fmt.Sprintf("%s-%s", d.ctxt.Project, targetConfig.Name)
-		}
-		d.logger.Infof("releaseNamespace=%s", rt.namespace)
-
-		d.releaseTarget = rt
 		return d, nil
 	}
 }
 
-func determineSubrepos() DeployStep {
-	return func(x *deployHelm) (*deployHelm, error) {
-		x.subrepos = []fs.DirEntry{}
-		if _, err := os.Stat(pipelinectxt.SubreposPath); err == nil {
-			f, err := os.ReadDir(pipelinectxt.SubreposPath)
-			if err != nil {
-				return x, fmt.Errorf("cannot read %s: %w", pipelinectxt.SubreposPath, err)
-			}
-			x.subrepos = f
+func setReleaseTarget() DeployStep {
+	return func(d *deployHelm) (*deployHelm, error) {
+		// Release name
+		if d.opts.releaseName != "" {
+			d.releaseName = d.opts.releaseName
+		} else {
+			d.releaseName = d.ctxt.Component
 		}
-		return x, nil
+		d.logger.Infof("Release name: %s", d.releaseName)
+
+		// ODS configuration
+		odsConfig, err := config.ReadFromDir(d.opts.checkoutDir)
+		if err != nil {
+			return d, fmt.Errorf("read ODS config: %w", err)
+		}
+
+		// Target environment configuration
+		targetConfig, err := odsConfig.Environment(d.ctxt.Environment)
+		if err != nil {
+			return d, fmt.Errorf("select environment from ODS config: %w", err)
+		}
+		if targetConfig.APIServer != "" {
+			token, err := tokenFromSecret(d.clientset, d.ctxt.Namespace, targetConfig.APICredentialsSecret)
+			if err != nil {
+				return d, fmt.Errorf("get API token from secret %s: %w", targetConfig.APICredentialsSecret, err)
+			}
+			targetConfig.APIToken = token
+		}
+		d.targetConfig = targetConfig
+
+		// Release namespace
+		d.releaseNamespace = targetConfig.Namespace
+		if d.releaseNamespace == "" {
+			d.releaseNamespace = fmt.Sprintf("%s-%s", d.ctxt.Project, targetConfig.Name)
+		}
+		d.logger.Infof("Release namespace: %s", d.releaseNamespace)
+
+		return d, nil
 	}
 }
 
-func determineImageDigests() DeployStep {
-	return func(x *deployHelm) (*deployHelm, error) {
-		var files []string
-		id, err := collectImageDigests(pipelinectxt.ImageDigestsPath)
-		if err != nil {
-			return x, err
-		}
-		files = append(files, id...)
-		for _, s := range x.subrepos {
-			subrepoImageDigestsPath := filepath.Join(pipelinectxt.SubreposPath, s.Name(), pipelinectxt.ImageDigestsPath)
-			id, err := collectImageDigests(subrepoImageDigestsPath)
+func detectSubrepos() DeployStep {
+	return func(d *deployHelm) (*deployHelm, error) {
+		d.subrepos = []fs.DirEntry{}
+		if _, err := os.Stat(pipelinectxt.SubreposPath); err == nil {
+			f, err := os.ReadDir(pipelinectxt.SubreposPath)
 			if err != nil {
-				return x, err
+				return d, fmt.Errorf("read %s: %w", pipelinectxt.SubreposPath, err)
 			}
-			files = append(files, id...)
+			d.subrepos = f
 		}
-		x.imageDigests = files
-		return x, nil
+		return d, nil
+	}
+}
+
+func detectImageDigests() DeployStep {
+	return func(d *deployHelm) (*deployHelm, error) {
+		digests, err := collectImageDigests(pipelinectxt.ImageDigestsPath)
+		if err != nil {
+			return d, fmt.Errorf("collect image digests: %w", err)
+		}
+		for _, s := range d.subrepos {
+			subrepoImageDigestsPath := filepath.Join(pipelinectxt.SubreposPath, s.Name(), pipelinectxt.ImageDigestsPath)
+			subDigests, err := collectImageDigests(subrepoImageDigestsPath)
+			if err != nil {
+				return d, fmt.Errorf("collect image digests for %s: %w", subrepoImageDigestsPath, err)
+			}
+			digests = append(digests, subDigests...)
+		}
+		d.imageDigests = digests
+		return d, nil
 	}
 }
 
 func copyImagesIntoReleaseNamespace() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-
-		// Copy images into release namespace if there are any image artifacts.
-		if len(d.imageDigests) > 0 {
-			// Get destination registry token from secret or file in pod.
-			var destRegistryToken string
-			if d.targetConfig().APIToken != "" {
-				destRegistryToken = d.targetConfig().APIToken
-			} else {
-				token, err := getTrimmedFileContent(tokenFile)
-				if err != nil {
-					return d, fmt.Errorf("could not get token from file %s: %w", tokenFile, err)
-				}
-				destRegistryToken = token
+		if len(d.imageDigests) == 0 {
+			return d, nil
+		}
+		// Get destination registry token from secret or file in pod.
+		var destRegistryToken string
+		if d.targetConfig.APIToken != "" {
+			destRegistryToken = d.targetConfig.APIToken
+		} else {
+			token, err := getTrimmedFileContent(tokenFile)
+			if err != nil {
+				return d, fmt.Errorf("get token from file %s: %w", tokenFile, err)
 			}
+			destRegistryToken = token
+		}
 
-			d.logger.Infof("Copying images into release namespace ...")
-			for _, artifactFile := range d.imageDigests {
-				var imageArtifact artifact.Image
-				artifactContent, err := os.ReadFile(artifactFile)
-				if err != nil {
-					return d, fmt.Errorf("could not read image artifact file %s: %w", artifactFile, err)
-				}
-				err = json.Unmarshal(artifactContent, &imageArtifact)
-				if err != nil {
-					return d, fmt.Errorf(
-						"could not unmarshal image artifact file %s: %w.\nFile content:\n%s",
-						artifactFile, err, string(artifactContent),
-					)
-				}
-				imageStream := imageArtifact.Name
-				d.logger.Infof("Copying image %s ...", imageStream)
-				srcImageURL := imageArtifact.Image
-				// If the source registry should be TLS verified, the destination
-				// should be verified by default as well.
-				destRegistryTLSVerify := d.opts.srcRegistryTLSVerify
-				srcRegistryTLSVerify := d.opts.srcRegistryTLSVerify
-				// TLS verification of the KinD registry is not possible at the moment as
-				// requests error out with "server gave HTTP response to HTTPS client".
-				if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
-					srcRegistryTLSVerify = false
-				}
-				if len(d.targetConfig().RegistryHost) > 0 && d.targetConfig().RegistryTLSVerify != nil {
-					destRegistryTLSVerify = *d.targetConfig().RegistryTLSVerify
-				}
-				destImageURL := getImageDestURL(d.targetConfig().RegistryHost, d.releaseNamespace(), imageArtifact)
-				fmt.Printf("src=%s\n", srcImageURL)
-				fmt.Printf("dest=%s\n", destImageURL)
-				// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
-				// matches the SHA referenced by the Git commit tag.
-				skopeoCopyArgs := []string{
-					"copy",
-					fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
-					fmt.Sprintf("--dest-tls-verify=%v", destRegistryTLSVerify),
-				}
-				if srcRegistryTLSVerify {
-					skopeoCopyArgs = append(skopeoCopyArgs, fmt.Sprintf("--src-cert-dir=%v", d.opts.certDir))
-				}
-				if destRegistryTLSVerify {
-					skopeoCopyArgs = append(skopeoCopyArgs, fmt.Sprintf("--dest-cert-dir=%v", d.opts.certDir))
-				}
-				if len(destRegistryToken) > 0 {
-					skopeoCopyArgs = append(skopeoCopyArgs, "--dest-registry-token", destRegistryToken)
-				}
-				if d.opts.debug {
-					skopeoCopyArgs = append(skopeoCopyArgs, "--debug")
-				}
-				stdout, stderr, err := command.RunBuffered(
-					"skopeo", append(
-						skopeoCopyArgs,
-						fmt.Sprintf("docker://%s", srcImageURL),
-						fmt.Sprintf("docker://%s", destImageURL),
-					),
+		d.logger.Infof("Copying images into release namespace ...")
+		for _, artifactFile := range d.imageDigests {
+			var imageArtifact artifact.Image
+			artifactContent, err := os.ReadFile(artifactFile)
+			if err != nil {
+				return d, fmt.Errorf("read image artifact file %s: %w", artifactFile, err)
+			}
+			err = json.Unmarshal(artifactContent, &imageArtifact)
+			if err != nil {
+				return d, fmt.Errorf(
+					"unmarshal image artifact file %s: %w.\nFile content:\n%s",
+					artifactFile, err, string(artifactContent),
 				)
-				if err != nil {
-					return d, fmt.Errorf("copying failed: %w, stderr = %s", err, string(stderr))
-				}
-				fmt.Println(string(stdout))
+			}
+			err = d.copyImage(imageArtifact, destRegistryToken, os.Stdout, os.Stderr)
+			if err != nil {
+				return d, fmt.Errorf("copy image %s: %w", imageArtifact.Name, err)
 			}
 		}
+
 		return d, nil
 	}
 }
@@ -226,12 +202,10 @@ func listHelmPlugins() DeployStep {
 		if d.opts.debug {
 			helmPluginArgs = append(helmPluginArgs, "--debug")
 		}
-		stdout, stderr, err := command.RunBuffered(d.helmBin, helmPluginArgs)
+		err := command.Run(d.helmBin, helmPluginArgs, []string{}, os.Stdout, os.Stderr)
 		if err != nil {
-			fmt.Println(string(stderr))
-			log.Fatal(err)
+			return d, fmt.Errorf("list Helm plugins: %w", err)
 		}
-		fmt.Println(string(stdout))
 		return d, nil
 	}
 }
@@ -239,68 +213,67 @@ func listHelmPlugins() DeployStep {
 func packageHelmChartWithSubcharts() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
 		// Collect values to be set via the CLI.
-		cliValues := []string{
+		d.cliValues = []string{
 			fmt.Sprintf("--set=image.tag=%s", d.ctxt.GitCommitSHA),
 		}
 
-		d.logger.Infof("Adding dependencies from subrepos into the charts/ directory ...")
+		d.logger.Infof("Adding dependencies from subrepos into the %s/ directory ...", subchartsDir)
 		// Find subcharts
-		chartsDir := filepath.Join(d.opts.chartDir, "charts")
+		chartsDir := filepath.Join(d.opts.chartDir, subchartsDir)
 		if _, err := os.Stat(chartsDir); os.IsNotExist(err) {
 			err = os.Mkdir(chartsDir, 0755)
 			if err != nil {
-				log.Fatalf("could not create %s: %s", chartsDir, err)
+				return d, fmt.Errorf("create %s: %s", chartsDir, err)
 			}
 		}
 		for _, r := range d.subrepos {
 			subrepo := filepath.Join(pipelinectxt.SubreposPath, r.Name())
 			subchart := filepath.Join(subrepo, d.opts.chartDir)
 			if _, err := os.Stat(subchart); os.IsNotExist(err) {
-				fmt.Printf("no chart in %s\n", r.Name())
+				d.logger.Infof("no chart in %s", r.Name())
 				continue
 			}
 			gitCommitSHA, err := getTrimmedFileContent(filepath.Join(subrepo, ".ods", "git-commit-sha"))
 			if err != nil {
-				log.Fatal(err)
+				return d, fmt.Errorf("get commit SHA of %s: %w", subrepo, err)
 			}
 			hc, err := getHelmChart(filepath.Join(subchart, "Chart.yaml"))
 			if err != nil {
-				log.Fatal(err)
+				return d, fmt.Errorf("get Helm chart of %s: %w", subrepo, err)
 			}
-			cliValues = append(cliValues, fmt.Sprintf("--set=%s.image.tag=%s", hc.Name, gitCommitSHA))
-			if d.releaseName() == d.ctxt.Component {
-				cliValues = append(cliValues, fmt.Sprintf("--set=%s.fullnameOverride=%s", hc.Name, hc.Name))
+			d.cliValues = append(d.cliValues, fmt.Sprintf("--set=%s.image.tag=%s", hc.Name, gitCommitSHA))
+			if d.releaseName == d.ctxt.Component {
+				d.cliValues = append(d.cliValues, fmt.Sprintf("--set=%s.fullnameOverride=%s", hc.Name, hc.Name))
 			}
 			helmArchive, err := packageHelmChart(subchart, d.ctxt.Version, gitCommitSHA, d.opts.debug)
 			if err != nil {
-				log.Fatal(err)
+				return d, fmt.Errorf("package Helm chart of %s: %w", subrepo, err)
 			}
 			helmArchiveName := filepath.Base(helmArchive)
-			fmt.Printf("copying %s into %s\n", helmArchiveName, chartsDir)
+			d.logger.Infof("copying %s into %s", helmArchiveName, chartsDir)
 			err = file.Copy(helmArchive, filepath.Join(chartsDir, helmArchiveName))
 			if err != nil {
-				log.Fatal(err)
+				return d, fmt.Errorf("copy Helm archive of %s: %w", subrepo, err)
 			}
 		}
 
 		subcharts, err := os.ReadDir(chartsDir)
 		if err != nil {
-			log.Fatal(err)
+			return d, fmt.Errorf("read %s: %w", chartsDir, err)
 		}
 		if len(subcharts) > 0 {
-			fmt.Printf("Contents of %s:\n", chartsDir)
+			d.logger.Infof("Subcharts in %s:", chartsDir)
 			for _, sc := range subcharts {
-				fmt.Println(sc.Name())
+				d.logger.Infof(sc.Name())
 			}
 		}
 
 		d.logger.Infof("Packaging Helm chart ...")
 		helmArchive, err := packageHelmChart(d.opts.chartDir, d.ctxt.Version, d.ctxt.GitCommitSHA, d.opts.debug)
 		if err != nil {
-			log.Fatal(err)
+			return d, fmt.Errorf("package Helm chart: %w", err)
 		}
 		d.helmArchive = helmArchive
-		d.cliValues = cliValues
 		return d, nil
 	}
 }
@@ -308,28 +281,27 @@ func packageHelmChartWithSubcharts() DeployStep {
 func collectValuesFiles() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
 		d.logger.Infof("Collecting Helm values files ...")
-		valuesFiles := []string{}
+		d.valuesFiles = []string{}
 		valuesFilesCandidates := []string{
 			fmt.Sprintf("%s/secrets.yaml", d.opts.chartDir), // equivalent values.yaml is added automatically by Helm
-			fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig().Stage),
-			fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig().Stage),
+			fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig.Stage),
+			fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig.Stage),
 		}
-		if string(d.targetConfig().Stage) != d.targetConfig().Name {
+		if string(d.targetConfig.Stage) != d.targetConfig.Name {
 			valuesFilesCandidates = append(
 				valuesFilesCandidates,
-				fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig().Name),
-				fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig().Name),
+				fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig.Name),
+				fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig.Name),
 			)
 		}
 		for _, vfc := range valuesFilesCandidates {
 			if _, err := os.Stat(vfc); os.IsNotExist(err) {
-				fmt.Printf("%s is not present, skipping.\n", vfc)
+				d.logger.Infof("%s is not present, skipping.", vfc)
 			} else {
-				fmt.Printf("%s is present, adding.\n", vfc)
-				valuesFiles = append(valuesFiles, vfc)
+				d.logger.Infof("%s is present, adding.", vfc)
+				d.valuesFiles = append(d.valuesFiles, vfc)
 			}
 		}
-		d.valuesFiles = valuesFiles
 		return d, nil
 	}
 }
@@ -338,53 +310,51 @@ func importAgeKey() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
 		if len(d.opts.ageKeySecret) == 0 {
 			d.logger.Infof("Skipping import of age key for helm-secrets as parameter is not set ...")
-		} else {
-			d.logger.Infof("Storing age key for helm-secrets ...")
-			secret, err := d.clientset.CoreV1().Secrets(d.ctxt.Namespace).Get(
-				context.TODO(), d.opts.ageKeySecret, metav1.GetOptions{},
-			)
-			if err != nil {
-				d.logger.Infof("No secret %s found, skipping.", d.opts.ageKeySecret)
-			} else {
-				stderr, err := storeAgeKey(secret, d.opts.ageKeySecretField)
-				if err != nil {
-					fmt.Println(string(stderr))
-					log.Fatal(err)
-				}
-				d.logger.Infof("Age key secret %s stored.", d.opts.ageKeySecret)
-			}
+			return d, nil
 		}
+		d.logger.Infof("Storing age key for helm-secrets ...")
+		secret, err := d.clientset.CoreV1().Secrets(d.ctxt.Namespace).Get(
+			context.TODO(), d.opts.ageKeySecret, metav1.GetOptions{},
+		)
+		if err != nil {
+			d.logger.Infof("No secret %s found, skipping.", d.opts.ageKeySecret)
+			return d, nil
+		}
+		err = storeAgeKey(secret.Data[d.opts.ageKeySecretField])
+		if err != nil {
+			return d, fmt.Errorf("store age key: %w", err)
+		}
+		d.logger.Infof("Age key secret %s stored.", d.opts.ageKeySecret)
 		return d, nil
 	}
 }
 
 func diffHelmRelease() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-		fmt.Printf("Diffing Helm release against %s...\n", d.helmArchive)
+		d.logger.Infof("Diffing Helm release against %s...", d.helmArchive)
 		helmDiffArgs, err := d.assembleHelmDiffArgs()
 		if err != nil {
-			log.Fatal("assemble helm diff args: ", err)
+			return d, fmt.Errorf("assemble helm diff args: %w", err)
 		}
 		printlnSafeHelmCmd(helmDiffArgs, os.Stdout)
 		// helm-dff stderr contains confusing text about "errors" when drift is
 		// detected, therefore we want to collect and polish it before we print it.
 		// helm-diff stdout needs to be written into a buffer so that we can both
 		// print it and store it later as a deployment artifact.
-		var diffStdout, diffStderr bytes.Buffer
-		inSync, err := helmDiff(d.helmBin, helmDiffArgs, &diffStdout, &diffStderr)
-		fmt.Print(diffStdout.String())
-		fmt.Print(cleanHelmDiffOutput(diffStderr.String()))
+		var diffStdoutBuf, diffStderrBuf bytes.Buffer
+		diffStdoutWriter := io.MultiWriter(os.Stdout, &diffStdoutBuf)
+		inSync, err := d.helmDiff(helmDiffArgs, diffStdoutWriter, &diffStderrBuf)
+		fmt.Print(cleanHelmDiffOutput(diffStderrBuf.String()))
 		if err != nil {
-			log.Fatal("helm diff: ", err)
+			return d, fmt.Errorf("helm diff: %w", err)
 		}
 		if inSync {
-			fmt.Println("No diff detected, skipping helm upgrade.")
-			os.Exit(0)
+			return d, &skipRemainingSteps{"No diff detected, skipping helm upgrade."}
 		}
 
-		err = writeDeploymentArtifact(diffStdout.Bytes(), "diff", d.opts.chartDir, d.targetConfig().Name)
+		err = writeDeploymentArtifact(diffStdoutBuf.Bytes(), "diff", d.opts.chartDir, d.targetConfig.Name)
 		if err != nil {
-			log.Fatal("write diff artifact: ", err)
+			return d, fmt.Errorf("write diff artifact: %w", err)
 		}
 		return d, nil
 	}
@@ -404,10 +374,57 @@ func upgradeHelmRelease() DeployStep {
 		if err != nil {
 			return d, fmt.Errorf("helm upgrade: %w", err)
 		}
-		err = writeDeploymentArtifact(upgradeStdoutBuf.Bytes(), "release", d.opts.chartDir, d.targetConfig().Name)
+		err = writeDeploymentArtifact(upgradeStdoutBuf.Bytes(), "release", d.opts.chartDir, d.targetConfig.Name)
 		if err != nil {
 			return d, fmt.Errorf("write release artifact: %w", err)
 		}
 		return d, nil
 	}
+}
+
+func collectImageDigests(imageDigestsDir string) ([]string, error) {
+	var files []string
+	if _, err := os.Stat(imageDigestsDir); err == nil {
+		f, err := os.ReadDir(imageDigestsDir)
+		if err != nil {
+			return files, fmt.Errorf("could not read image digests dir: %w", err)
+		}
+		for _, fi := range f {
+			files = append(files, filepath.Join(imageDigestsDir, fi.Name()))
+		}
+	}
+	return files, nil
+}
+
+func getTrimmedFileContent(filename string) (string, error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(content)), nil
+}
+
+func tokenFromSecret(clientset *kubernetes.Clientset, namespace, name string) (string, error) {
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return string(secret.Data["token"]), nil
+}
+
+func writeDeploymentArtifact(content []byte, filename, chartDir, targetEnv string) error {
+	err := os.MkdirAll(pipelinectxt.DeploymentsPath, 0755)
+	if err != nil {
+		return err
+	}
+	f := artifactFilename(filename, chartDir, targetEnv) + ".txt"
+	return os.WriteFile(filepath.Join(pipelinectxt.DeploymentsPath, f), content, 0644)
+}
+
+func artifactFilename(filename, chartDir, targetEnv string) string {
+	trimmedChartDir := strings.TrimPrefix(chartDir, "./")
+	if trimmedChartDir != "chart" {
+		filename = fmt.Sprintf("%s-%s", strings.Replace(trimmedChartDir, "/", "-", -1), filename)
+	}
+	return fmt.Sprintf("%s-%s", filename, targetEnv)
 }
