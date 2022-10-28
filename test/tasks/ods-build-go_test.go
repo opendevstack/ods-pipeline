@@ -58,9 +58,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					}
 
 					b, _, err := command.RunBuffered(wsDir+"/docker/app", []string{})
-					if err != nil {
-						t.Fatal(err)
-					}
+					fatalIfErr(t, err)
 					if string(b) != goProverb {
 						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}
@@ -109,9 +107,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					// }
 
 					b, _, err := command.RunBuffered(wsDir+"/docker/app", []string{})
-					if err != nil {
-						t.Fatal(err)
-					}
+					fatalIfErr(t, err)
 					if string(b) != goProverb {
 						t.Fatalf("Got: %+v, want: %+v.", string(b), goProverb)
 					}

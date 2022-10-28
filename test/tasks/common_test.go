@@ -86,9 +86,7 @@ func getTrimmedFileContent(filename string) (string, error) {
 
 func trimmedFileContentOrFatal(t *testing.T, filename string) string {
 	c, err := getTrimmedFileContent(filename)
-	if err != nil {
-		t.Fatal(err)
-	}
+	fatalIfErr(t, err)
 	return c
 }
 
@@ -183,9 +181,7 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarP
 		qualityGateResult, err := sonarClient.QualityGateGet(
 			sonar.QualityGateGetParams{Project: sonarProject},
 		)
-		if err != nil {
-			t.Fatal(err)
-		}
+		fatalIfErr(t, err)
 		actualStatus := qualityGateResult.ProjectStatus.Status
 		if actualStatus != wantQualityGateStatus {
 			t.Fatalf("Got: %s, want: %s", actualStatus, wantQualityGateStatus)
@@ -207,9 +203,7 @@ func createODSYML(wsDir string, o *config.ODS) error {
 func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
 	buildStatusPage, err := c.BuildStatusList(gitCommit)
 	buildStatus := buildStatusPage.Values[0]
-	if err != nil {
-		t.Fatal(err)
-	}
+	fatalIfErr(t, err)
 	if buildStatus.State != wantBuildStatus {
 		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
 	}
@@ -217,13 +211,15 @@ func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildSta
 
 func createAppInSubDirectory(t *testing.T, wsDir string, subdir string, sampleApp string) {
 	err := os.MkdirAll(filepath.Join(wsDir, subdir), 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
+	fatalIfErr(t, err)
 	err = directory.Copy(
 		filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, sampleApp),
 		filepath.Join(wsDir, subdir),
 	)
+	fatalIfErr(t, err)
+}
+
+func fatalIfErr(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
