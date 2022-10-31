@@ -143,7 +143,7 @@ After successful installation in OpenShift, builds for the container images used
 
 Finally, create an HTTPS route to expose the `ods-pipeline` service. Make a note of the exposed URL as you'll need it to create webhooks in Bitbucket (together with the webhook secret that is stored in the `Secret/ods-bitbucket-webhook` resource).
 
-IMPORTANT: The `pipeline` serviceaccount needs at least `edit` or even `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
+IMPORTANT: The `pipeline` serviceaccount needs `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
 
 Now you are ready to link:convert-quickstarter-component.adoc[use ODS pipeline for your repositories]!
 
