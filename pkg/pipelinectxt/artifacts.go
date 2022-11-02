@@ -27,6 +27,10 @@ const (
 	SonarAnalysisPath         = ArtifactsPath + "/" + SonarAnalysisDir
 	AquaScansDir              = "aquasec-scans"
 	AquaScansPath             = ArtifactsPath + "/" + AquaScansDir
+	TrivyScansDir             = "trivy-scans"
+	TrivyScansPath            = ArtifactsPath + "/" + TrivyScansDir
+	SbomsDir                  = "sboms"
+	SbomsPath                 = ArtifactsPath + "/" + SbomsDir
 	CodeCoveragesDir          = "code-coverage"
 	CodeCoveragesPath         = ArtifactsPath + "/" + CodeCoveragesDir
 	XUnitReportsDir           = "xunit-reports"

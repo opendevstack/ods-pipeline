@@ -3,14 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -22,6 +20,7 @@ const (
 )
 
 type options struct {
+	checkoutDir           string
 	bitbucketAccessToken  string
 	bitbucketURL          string
 	aquaUsername          string
@@ -44,9 +43,21 @@ type options struct {
 	buildahPushExtraArgs  string
 	aquasecGate           bool
 	debug                 bool
+	sbomFormat            string
+}
+
+type packageImage struct {
+	logger logging.LeveledLoggerInterface
+	opts   options
+	ctxt   *pipelinectxt.ODSContext
+	// Name of buildah binary.
+	buildahBin string
+	trivyBin   string
+	image      artifact.Image
 }
 
 var defaultOptions = options{
+	checkoutDir:           ".",
 	bitbucketAccessToken:  os.Getenv("BITBUCKET_ACCESS_TOKEN"),
 	bitbucketURL:          os.Getenv("BITBUCKET_URL"),
 	aquaUsername:          os.Getenv("AQUA_USERNAME"),
@@ -55,7 +66,7 @@ var defaultOptions = options{
 	aquaRegistry:          os.Getenv("AQUA_REGISTRY"),
 	imageStream:           "",
 	registry:              "image-registry.openshift-image-registry.svc:5000",
-	certDir:               "/etc/containers/certs.d",
+	certDir:               defaultCertDir(),
 	imageNamespace:        "",
 	tlsVerify:             true,
 	storageDriver:         "vfs",
@@ -69,10 +80,12 @@ var defaultOptions = options{
 	buildahPushExtraArgs:  "",
 	aquasecGate:           false,
 	debug:                 (os.Getenv("DEBUG") == "true"),
+	sbomFormat:            "spdx",
 }
 
 func main() {
 	opts := options{}
+	flag.StringVar(&opts.checkoutDir, "checkout-dir", defaultOptions.checkoutDir, "Checkout dir")
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", defaultOptions.bitbucketAccessToken, "bitbucket-access-token")
 	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", defaultOptions.bitbucketURL, "bitbucket-url")
 	flag.StringVar(&opts.aquaUsername, "aqua-username", defaultOptions.aquaUsername, "aqua-username")
@@ -97,122 +110,35 @@ func main() {
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
 
-	workingDir := "."
-	ctxt := &pipelinectxt.ODSContext{}
-	err := ctxt.ReadCache(workingDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
-		opts.certDir = kubernetesServiceaccountDir
-	}
+	var logger logging.LeveledLoggerInterface
 	if opts.debug {
-		err := directory.ListFiles(opts.certDir, os.Stdout)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// TLS verification of the KinD registry is not possible at the moment as
-	// requests error out with "server gave HTTP response to HTTPS client".
-	if strings.HasPrefix(opts.registry, "kind-registry.kind") {
-		opts.tlsVerify = false
-	}
-
-	imageNamespace := opts.imageNamespace
-	if len(imageNamespace) == 0 {
-		imageNamespace = ctxt.Namespace
-	}
-	imageStream := opts.imageStream
-	if len(imageStream) == 0 {
-		imageStream = ctxt.Component
-	}
-	imageName := fmt.Sprintf("%s:%s", imageStream, ctxt.GitCommitSHA)
-	imageRef := fmt.Sprintf(
-		"%s/%s/%s",
-		opts.registry, imageNamespace, imageName,
-	)
-
-	fmt.Printf("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := getImageDigestFromRegistry(imageRef, opts)
-	if err == nil {
-		fmt.Println("Image exists already.")
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	} else {
-
-		fmt.Printf("Building image %s ...\n", imageName)
-		err := buildahBuild(opts, imageRef, os.Stdout, os.Stderr)
-		if err != nil {
-			log.Fatal("buildah bud: ", err)
-		}
-
-		fmt.Printf("Pushing image %s ...\n", imageRef)
-		err = buildahPush(opts, workingDir, imageRef, os.Stdout, os.Stderr)
-		if err != nil {
-			log.Fatal("buildah push: ", err)
-		}
-
-		d, err := getImageDigestFromFile(workingDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		imageDigest = d
-
-		if aquasecInstalled() {
-			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", imageNamespace, imageName)
-			htmlReportFile := filepath.Join(workingDir, "report.html")
-			jsonReportFile := filepath.Join(workingDir, "report.json")
-			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
-			scanSuccessful, err := aquaScan(aquasecBin, scanArgs, os.Stdout, os.Stderr)
-			if err != nil {
-				log.Fatal("aqua scan: ", err)
-			}
-
-			if !scanSuccessful && opts.aquasecGate {
-				log.Fatalln("Stopping build as successful Aqua scan is required")
-			}
-
-			asu, err := aquaScanURL(opts, aquaImage)
-			if err != nil {
-				log.Fatal("aqua scan URL:", err)
-			}
-			fmt.Printf("Aqua vulnerability report is at %s ...\n", asu)
-
-			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			fmt.Println("Creating Bitbucket code insight report ...")
-			err = createBitbucketInsightReport(opts, asu, scanSuccessful, ctxt)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			fmt.Println("Aqua is not configured, image will not be scanned for vulnerabilities.")
-		}
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	err = writeImageDigestToResults(imageDigest)
+	err := (&packageImage{buildahBin: buildahBin, logger: logger, opts: opts}).runSteps(
+		setupContext(),
+		setImageName(),
+		skipIfImageExists(),
+		buildImage(),
+		// scanImageWithTrivy(),
+		generateSBOM(),
+		pushImage(),
+		scanImageWithAqua(),
+		storeArtifact(),
+	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Errorf(err.Error())
+		os.Exit(1)
 	}
+}
 
-	fmt.Println("Writing image artifact ...")
-	ia := artifact.Image{
-		Ref:        imageRef,
-		Registry:   opts.registry,
-		Repository: imageNamespace,
-		Name:       imageStream,
-		Tag:        ctxt.GitCommitSHA,
-		Digest:     imageDigest,
+func defaultCertDir() string {
+	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
+		return kubernetesServiceaccountDir
 	}
-	imageArtifactFilename := fmt.Sprintf("%s.json", imageStream)
-	err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return "/etc/containers/certs.d"
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.

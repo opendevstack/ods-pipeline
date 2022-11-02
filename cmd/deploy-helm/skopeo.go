@@ -12,7 +12,7 @@ import (
 func (d *deployHelm) copyImage(imageArtifact artifact.Image, destRegistryToken string, outWriter, errWriter io.Writer) error {
 	imageStream := imageArtifact.Name
 	d.logger.Infof("Copying image %s ...", imageStream)
-	srcImageURL := imageArtifact.Image
+	srcImageURL := imageArtifact.Ref
 	// If the source registry should be TLS verified, the destination
 	// should be verified by default as well.
 	destRegistryTLSVerify := d.opts.srcRegistryTLSVerify
@@ -61,6 +61,6 @@ func getImageDestURL(registryHost, releaseNamespace string, imageArtifact artifa
 	if registryHost != "" {
 		return fmt.Sprintf("%s/%s/%s:%s", registryHost, releaseNamespace, imageArtifact.Name, imageArtifact.Tag)
 	} else {
-		return strings.Replace(imageArtifact.Image, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
+		return strings.Replace(imageArtifact.Ref, "/"+imageArtifact.Repository+"/", "/"+releaseNamespace+"/", -1)
 	}
 }
