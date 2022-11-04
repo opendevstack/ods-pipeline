@@ -103,8 +103,8 @@ spec:
           value: '/tekton/home'
       resources: {}
       script: |
-        # deploy-with-helm is built from /cmd/deploy-with-helm/main.go.
-        deploy-with-helm \
+        # deploy-helm is built from /cmd/deploy-helm/main.go.
+        deploy-helm \
           -chart-dir=$(params.chart-dir) \
           -release-name=$(params.release-name) \
           -diff-flags="$(params.diff-flags)" \

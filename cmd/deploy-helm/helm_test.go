@@ -35,8 +35,8 @@ func TestHelmDiff(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			driftDetected, err := helmDiff(
-				"../../test/scripts/exit-with-code.sh",
+			d := &deployHelm{helmBin: "../../test/scripts/exit-with-code.sh"}
+			driftDetected, err := d.helmDiff(
 				[]string{"", "", strconv.Itoa(tc.cmdExitCode)},
 				&stdout, &stderr,
 			)
@@ -175,12 +175,16 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := assembleHelmDiffArgs(
-				tc.releaseNamespace, tc.releaseName, tc.helmArchive,
-				tc.opts,
-				tc.valuesFiles, tc.cliValues,
-				&config.Environment{},
-			)
+			d := &deployHelm{
+				releaseNamespace: tc.releaseNamespace,
+				releaseName:      tc.releaseName,
+				helmArchive:      tc.helmArchive,
+				opts:             tc.opts,
+				valuesFiles:      tc.valuesFiles,
+				cliValues:        tc.cliValues,
+				targetConfig:     &config.Environment{},
+			}
+			got, err := d.assembleHelmDiffArgs()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -262,12 +266,16 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := assembleHelmUpgradeArgs(
-				tc.releaseNamespace, tc.releaseName, tc.helmArchive,
-				tc.opts,
-				tc.valuesFiles, tc.cliValues,
-				&config.Environment{APIServer: "https://example.com", APIToken: "s3cr3t"},
-			)
+			d := &deployHelm{
+				releaseNamespace: tc.releaseNamespace,
+				releaseName:      tc.releaseName,
+				helmArchive:      tc.helmArchive,
+				opts:             tc.opts,
+				valuesFiles:      tc.valuesFiles,
+				cliValues:        tc.cliValues,
+				targetConfig:     &config.Environment{APIServer: "https://example.com", APIToken: "s3cr3t"},
+			}
+			got, err := d.assembleHelmUpgradeArgs()
 			if err != nil {
 				t.Fatal(err)
 			}
