@@ -617,7 +617,7 @@ a| The script is supposed to be downloaded and piped into bash. The script insta
 
 | SDS-EXT-25
 | Go Toolset for UBI 8
-| 1.17.7
+| 1.18
 | go-toolset available as a container is a base platform for building and running various Go applications and frameworks. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/go-toolset/5ce8713aac3db925c03774d1
 

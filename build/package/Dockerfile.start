@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/go-toolset:1.17.7 AS builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.18 AS builder
 
 ARG TARGETARCH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
