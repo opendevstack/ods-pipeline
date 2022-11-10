@@ -15,6 +15,7 @@ listed in the changelog.
 - Update skopeo (1.8 to 1.9) ([#616](https://github.com/opendevstack/ods-pipeline/issues/616))
 - Update buildah (1.26 to 1.27) ([#626](https://github.com/opendevstack/ods-pipeline/issues/626))
 - Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
+- Update Go to 1.18 ([#623](https://github.com/opendevstack/ods-pipeline/issues/623))
 
 ### Fixed
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
