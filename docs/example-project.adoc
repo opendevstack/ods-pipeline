@@ -133,7 +133,7 @@ pipeline:
   - tasks:
     - name: deploy
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: ods-deploy-helm-v0-7-0
       workspaces:
       - name: source
