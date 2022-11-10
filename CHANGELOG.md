@@ -13,6 +13,7 @@ listed in the changelog.
 
 - Normalize K8s manifests to exclude style differences from Helm diff output. The change is applied to both the helm execution in the `ods-deploy-helm` task and in the install script. See [#591](https://github.com/opendevstack/ods-pipeline/issues/591).
 - Update skopeo (1.8 to 1.9) ([#616](https://github.com/opendevstack/ods-pipeline/issues/616))
+- Update buildah (1.26 to 1.27) ([#626](https://github.com/opendevstack/ods-pipeline/issues/626))
 - Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
 
 ### Fixed

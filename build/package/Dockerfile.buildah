@@ -17,7 +17,7 @@ RUN cd cmd/build-push-image && CGO_ENABLED=0 go build -o /usr/local/bin/ods-buil
 # and https://github.com/containers/buildah/blob/main/contrib/buildahimage/stable/Dockerfile.
 FROM registry.access.redhat.com/ubi8:8.4
 
-ENV BUILDAH_VERSION=1.26 \
+ENV BUILDAH_VERSION=1.27 \
     SKOPEO_VERSION=1.9
 
 COPY --from=builder /usr/local/bin/ods-build-push-image /usr/local/bin/ods-build-push-image
