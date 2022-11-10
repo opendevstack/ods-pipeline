@@ -575,7 +575,7 @@ a| The script is supposed to be downloaded and piped into bash. The script insta
 
 | SDS-EXT-18
 | Buildah
-| 1.26
+| 1.27
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 
