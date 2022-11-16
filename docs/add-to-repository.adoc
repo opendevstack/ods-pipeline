@@ -1,18 +1,84 @@
-= Adding ODS Pipeline to a repository
+= Enable an existing repository to use ODS Pipeline
 
 This guide explains how you can start to use ODS pipeline for your repository. It is assumed you have read the link:introduction.adoc[introduction] and have aleady link:installation.adoc[installed] ODS pipeline in an OpenShift project.
 
-The following uses an Go application for demonstration purposes, however the general steps apply for any other technology as well:
+There are only two required steps:
 
 1. Add `ods.yaml`
-2. Create Helm Chart
-3. Configure Webhook
+2. Configure Bitbucket webhook
 
-TIP: If your repository was provisioned by an ODS quickstarter, you might want to follow the link:convert-quickstarter-component.adoc[convert an ODS quickstarter based component] instructions instead.
+TIP: If your repository was originally provisioned by an ODS quickstarter, you might want to follow the link:convert-quickstarter-component.adoc[convert an ODS quickstarter based component] instructions instead.
+
+TIP: If you want to create an ODS Pipeline-enabled repository from scratch, check out the link:https://cookiecutter.readthedocs.io[Cookiecutter] based templates in link:https://github.com/BIX-Digital/ods-pipeline-examples[github.com/bix-digital/ods-pipeline-examples].
 
 == Add `ods.yaml`
 
-Add an `ods.yaml` file like the following to the root of the repository:
+The following uses an Go application for demonstration purposes, however the general steps apply for any other technology as well. Add an `ods.yaml` file like the following to the root of the repository:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  - tasks:
+    - name: build
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-7-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+----
+
+`ods-build-go-v0-7-0` runs tests and produces a Go binary. If you use another technology, e.g. a Java project using Gradle, exchange the task with `ods-build-gradle-v0-7-0`. See the link:tasks/[tasks reference] for available tasks.
+
+=== (Optionally) Create `Dockerfile`
+
+If you want to create a container image with the produced Go binary, you can add the `ods-package-image-v0-7-0` task to the `tasks` list, like this:
+
+.ods.yaml
+[source,yaml]
+----
+pipeline:
+  - tasks:
+    - name: build
+      taskRef:
+        kind: Task
+        name: ods-build-go-v0-7-0
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+    - name: package
+      taskRef:
+        kind: Task
+        name: ods-package-image-v0-7-0
+      runAfter:
+      - build
+      workspaces:
+      - name: source
+        workspace: shared-workspace
+----
+
+This task assumes the Docker context in the `docker` directory, and the `Dockerfile` located inside that folder. Therefore, create a directory `docker` and place a `Dockerfile` inside like this one:
+
+.Dockerfile
+[source]
+----
+FROM alpine
+
+COPY app app
+
+EXPOSE 8080
+
+CMD ["./app"]
+----
+
+NOTE: `ods-build-go-v0-7-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-7-0` task.
+
+NOTE: Pay attention to the `runAfter` configuration in the task list: it ensures that the tasks run sequentially and can use the outputs from the previous task(s).
+
+=== (Optionally) Create Helm Chart
+
+If you want to deploy the created image, you can add the `ods-deploy-helm-v0-7-0` task to the `tasks` list and configure which branches should be deployed to which Kubernetes namespaces, like this:
 
 .ods.yaml
 [source,yaml]
@@ -28,54 +94,34 @@ environments:
 
 pipeline:
   - tasks:
-    - name: backend-build-go
+    - name: build
       taskRef:
         kind: Task
         name: ods-build-go-v0-7-0
       workspaces:
       - name: source
         workspace: shared-workspace
-    - name: backend-package-image
+    - name: package
       taskRef:
         kind: Task
         name: ods-package-image-v0-7-0
       runAfter:
-      - backend-build-go
+      - build
       workspaces:
       - name: source
         workspace: shared-workspace
-    - name: backend-deploy
+    - name: deploy
       taskRef:
         kind: Task
         name: ods-deploy-helm-v0-7-0
       runAfter:
-      - backend-package-image
+      - package
       workspaces:
       - name: source
         workspace: shared-workspace
 ----
 
-The only Go specific task is `ods-build-go-v0-7-0`, if you use another technology, exchange the task for another one such as `ods-build-gradle-v0-7-0`.
-
-The `ods-package-image-v0-7-0` task assumes the Docker context in the `docker` directory, and the `Dockerfile` located inside that folder. Therefore, create a directory `docker` and create a `Dockerfile` inside like this one:
-
-.Dockerfile
-[source]
-----
-FROM alpine
-
-COPY app app
-
-EXPOSE 8080
-
-CMD ["./app"]
-----
-
-NOTE: `ods-build-go-v0-7-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-5-1` task.
-
-== Create Helm Chart
-
-The `ods-deploy-helm-v0-7-0` requires a Helm chart to be present to deploy the Kubernetes resources for the application. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository].
+This task requires a Helm chart to be present at `/chart`. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository].
 
 == Configure Webhook
 
