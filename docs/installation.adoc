@@ -145,7 +145,7 @@ Finally, create an HTTPS route to expose the `ods-pipeline` service. Make a note
 
 IMPORTANT: The `pipeline` serviceaccount needs `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`).
 
-Now you are ready to link:convert-quickstarter-component.adoc[use ODS pipeline for your repositories]!
+Now you are ready to link:add-to-repository.adoc[enable your repositories to use ODS pipeline]!
 
 == Update Instructions
 
