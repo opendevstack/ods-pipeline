@@ -18,7 +18,6 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 * [Installation & Updating](/docs/installation.adoc)
 * [Add ODS Pipeline to a repository](/docs/add-to-repository.adoc)
 * [Convert an ODS quickstarter based component](/docs/convert-quickstarter-component.adoc)
-* [Example Project](/docs/example-project.adoc)
 
 ### Technical Reference
 * [Repository configuration (ods.yaml)](/docs/ods-configuration.adoc)
@@ -33,6 +32,10 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 * [Debugging](/docs/debugging.adoc)
 * [Authoring your own tasks](/docs/authoring-tasks.adoc)
 * [FAQ](https://github.com/opendevstack/ods-pipeline/wiki/FAQ)
+
+### Examples
+* [Example Project](/docs/example-project.adoc)
+* [BIX-Digital Repository Templates](https://github.com/BIX-Digital/ods-pipeline-examples)
 
 ### Background Information
 * [Stakeholder Requirements](/docs/design/stakeholder-requirements.adoc)
