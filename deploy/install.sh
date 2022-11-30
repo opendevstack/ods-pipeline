@@ -12,6 +12,22 @@ SERVICEACCOUNT="pipeline"
 VALUES_FILE="values.custom.yaml"
 CHART_DIR="./ods-pipeline"
 
+# Check prerequisites.
+KUBECTL_BIN=""
+if command -v oc &> /dev/null; then
+    KUBECTL_BIN="oc"
+elif command -v kubectl &> /dev/null; then
+    KUBECTL_BIN="kubectl"
+else
+    echo "ERROR: Neither oc nor kubectl in \$PATH"; exit 1
+fi
+HELM_BIN=""
+if command -v helm &> /dev/null; then
+    HELM_BIN="helm"
+else
+    echo "ERROR: helm is not in \$PATH"; exit 1
+fi
+
 while [[ "$#" -gt 0 ]]; do
     # shellcheck disable=SC2034
     case $1 in
@@ -51,16 +67,16 @@ if [ -z "${NAMESPACE}" ]; then
     exit 1
 fi
 
-if kubectl -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
+if "${KUBECTL_BIN}" -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
     echo "Serviceaccount exists already ..."
 else
     echo "Creating serviceaccount ..."
     if [ "${DRY_RUN}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        kubectl -n "${NAMESPACE}" create serviceaccount "${SERVICEACCOUNT}"
+        "${KUBECTL_BIN}" -n "${NAMESPACE}" create serviceaccount "${SERVICEACCOUNT}"
 
-        kubectl -n "${NAMESPACE}" \
+        "${KUBECTL_BIN}" -n "${NAMESPACE}" \
             create rolebinding "${SERVICEACCOUNT}-edit" \
             --clusterrole edit \
             --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
@@ -69,14 +85,14 @@ fi
 
 DIFF_UPGRADE_ARGS=(diff upgrade)
 UPGRADE_ARGS=(upgrade)
-if helm plugin list | grep secrets &> /dev/null; then
+if "${HELM_BIN}" plugin list | grep secrets &> /dev/null; then
     DIFF_UPGRADE_ARGS=(secrets diff upgrade)
     UPGRADE_ARGS=(secrets upgrade)
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."
 if [ "${DIFF}" == "true" ]; then
-    if helm -n "${NAMESPACE}" \
+    if "${HELM_BIN}" -n "${NAMESPACE}" \
             "${DIFF_UPGRADE_ARGS[@]}" --install --detailed-exitcode --three-way-merge --normalize-manifests \
             "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}; then
@@ -85,7 +101,7 @@ if [ "${DIFF}" == "true" ]; then
         if [ "${DRY_RUN}" == "true" ]; then
             echo "(skipping in dry-run)"
         else
-            helm -n "${NAMESPACE}" \
+            "${HELM_BIN}" -n "${NAMESPACE}" \
                 "${UPGRADE_ARGS[@]}" --install \
                 "${VALUES_ARGS[@]}" \
                 ${RELEASE_NAME} ${CHART_DIR}
@@ -95,7 +111,7 @@ else
     if [ "${DRY_RUN}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        helm -n "${NAMESPACE}" \
+        "${HELM_BIN}" -n "${NAMESPACE}" \
             "${UPGRADE_ARGS[@]}" --install \
             "${VALUES_ARGS[@]}" \
             ${RELEASE_NAME} ${CHART_DIR}
@@ -106,7 +122,7 @@ echo "Adding ods-bitbucket-auth secret to serviceaccount ..."
 if [ "${DRY_RUN}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
-    kubectl -n "${NAMESPACE}" \
+    "${KUBECTL_BIN}" -n "${NAMESPACE}" \
         patch sa "${SERVICEACCOUNT}" \
         --type json \
         -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
