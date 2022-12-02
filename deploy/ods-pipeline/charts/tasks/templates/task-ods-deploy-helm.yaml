@@ -73,8 +73,7 @@ spec:
       default: ./chart
     - name: release-name
       description: |
-        The Helm release name. 
-        If empty, the release name is simply the name of the chart.
+        The Helm release name. If empty, the release name is simply the name of the chart.
         
         When this task is used in a repository which defines subcharts, and the parameter is not set,
         then the task sets `<subcomponent>.fullnameOverride` equal to the respective 
