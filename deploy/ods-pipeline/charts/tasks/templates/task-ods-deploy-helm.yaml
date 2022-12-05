@@ -72,7 +72,16 @@ spec:
       type: string
       default: ./chart
     - name: release-name
-      description: The Helm release name. If empty, the release name is simply the name of the chart.
+      description: |
+        The Helm release name. If empty, the release name is simply the name of the chart.
+        
+        When this task is used in a repository which defines subcharts, and the parameter is not set,
+        then the task sets `<subcomponent>.fullnameOverride` equal to the respective 
+        subcomponent to avoid resources being prefixed with the umbrella repository
+        component name (assuming your resources are named using the `chart.fullname`
+        helper). However, if the parameter is specified, `<subcomponent>.fullnameOverride` is not set.
+        As a result the `chart.fullname` helper prefixes resources with the specfied 
+        `release-name` unless the chart's name contains the `release-name`. 
       type: string
       default: ''
     - name: diff-flags
