@@ -23,21 +23,7 @@ const (
 	TestdataWorkspacesPath = "testdata/workspaces"
 )
 
-func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, parameters map[string]string, workspaces map[string]string, namespace string) (*tekton.TaskRun, error) {
-
-	var tektonParams []tekton.Param
-
-	for key, value := range parameters {
-
-		tektonParams = append(tektonParams, tekton.Param{
-			Name: key,
-			Value: tekton.ArrayOrString{
-				Type:      "string", // we only provide support to string params for now
-				StringVal: value,
-			},
-		})
-
-	}
+func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind string, taskName string, tektonParams []tekton.Param, workspaces map[string]string, namespace string) (*tekton.TaskRun, error) {
 
 	var tk tekton.TaskKind
 	switch taskRefKind {

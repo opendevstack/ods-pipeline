@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/pkg/artifact"
@@ -29,6 +30,7 @@ type options struct {
 	aquaURL               string
 	aquaRegistry          string
 	imageStream           string
+	extraTags             string
 	registry              string
 	certDir               string
 	imageNamespace        string
@@ -54,6 +56,7 @@ var defaultOptions = options{
 	aquaURL:               os.Getenv("AQUA_URL"),
 	aquaRegistry:          os.Getenv("AQUA_REGISTRY"),
 	imageStream:           "",
+	extraTags:             "",
 	registry:              "image-registry.openshift-image-registry.svc:5000",
 	certDir:               "/etc/containers/certs.d",
 	imageNamespace:        "",
@@ -71,6 +74,85 @@ var defaultOptions = options{
 	debug:                 (os.Getenv("DEBUG") == "true"),
 }
 
+type packageImage struct {
+	logger logging.LeveledLoggerInterface
+	opts   options
+}
+
+// registry/imageNamespace/imageStream:<tag>
+type imageIdentity struct {
+	ImageNamespace string
+	ImageStream    string
+	GitCommitSHA   string // our Digest not docker digest.
+}
+
+func (iid *imageIdentity) streamSha() string {
+	return fmt.Sprintf("%s:%s", iid.ImageStream, iid.GitCommitSHA)
+}
+
+func (iid *imageIdentity) nsStreamSha() string {
+	return fmt.Sprintf("%s:%s", iid.nsStream(), iid.GitCommitSHA)
+}
+
+func (iid *imageIdentity) nsStream() string {
+	return fmt.Sprintf("%s/%s", iid.ImageNamespace, iid.ImageStream)
+}
+
+func (iid *imageIdentity) imageRefWithSha(registry string) string {
+	return fmt.Sprintf("%s/%s", registry, iid.nsStreamSha())
+}
+
+func createImageIdentity(ctxt *pipelinectxt.ODSContext, opts *options) imageIdentity {
+	imageNamespace := opts.imageNamespace
+	if len(imageNamespace) == 0 {
+		imageNamespace = ctxt.Namespace
+	}
+	imageStream := opts.imageStream
+	if len(imageStream) == 0 {
+		imageStream = ctxt.Component
+	}
+	return imageIdentity{
+		ImageNamespace: imageNamespace,
+		ImageStream:    imageStream,
+		GitCommitSHA:   ctxt.GitCommitSHA,
+	}
+}
+
+type imageIdentityWithTag struct {
+	ImageIdentity *imageIdentity
+	Tag           string
+}
+
+func (idt *imageIdentityWithTag) nsStreamTag() string {
+	return fmt.Sprintf("%s:%s", idt.ImageIdentity.nsStream(), idt.Tag)
+}
+
+func (idt *imageIdentityWithTag) nsStreamDigest() string {
+	return idt.ImageIdentity.nsStreamSha()
+}
+
+func (iid *imageIdentity) tag(tag string) imageIdentityWithTag {
+	return imageIdentityWithTag{
+		ImageIdentity: iid,
+		Tag:           tag,
+	}
+}
+
+func (iid *imageIdentity) shaTag() imageIdentityWithTag {
+	return imageIdentityWithTag{
+		ImageIdentity: iid,
+		Tag:           iid.GitCommitSHA,
+	}
+}
+
+func (idt *imageIdentityWithTag) imageRef(registry string) string {
+	return fmt.Sprintf("%s/%s", registry, idt.nsStreamTag())
+}
+
+func (idt *imageIdentityWithTag) imageRefWithSha(registry string) string {
+	return fmt.Sprintf("%s/%s", registry, idt.nsStreamDigest())
+}
+
 func main() {
 	opts := options{}
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", defaultOptions.bitbucketAccessToken, "bitbucket-access-token")
@@ -80,6 +162,7 @@ func main() {
 	flag.StringVar(&opts.aquaURL, "aqua-url", defaultOptions.aquaURL, "aqua-url")
 	flag.StringVar(&opts.aquaRegistry, "aqua-registry", defaultOptions.aquaRegistry, "aqua-registry")
 	flag.StringVar(&opts.imageStream, "image-stream", defaultOptions.imageStream, "Image stream")
+	flag.StringVar(&opts.extraTags, "extra-tags", defaultOptions.extraTags, "Extra tags")
 	flag.StringVar(&opts.registry, "registry", defaultOptions.registry, "Registry")
 	flag.StringVar(&opts.certDir, "cert-dir", defaultOptions.certDir, "Use certificates at the specified path to access the registry")
 	flag.StringVar(&opts.imageNamespace, "image-namespace", defaultOptions.imageNamespace, "image namespace")
@@ -96,6 +179,15 @@ func main() {
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
+
+	var logger logging.LeveledLoggerInterface
+	if opts.debug {
+		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+	} else {
+		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+	}
+
+	packageImageContext := &packageImage{logger: logger, opts: opts}
 
 	workingDir := "."
 	ctxt := &pipelinectxt.ODSContext{}
@@ -120,34 +212,26 @@ func main() {
 		opts.tlsVerify = false
 	}
 
-	imageNamespace := opts.imageNamespace
-	if len(imageNamespace) == 0 {
-		imageNamespace = ctxt.Namespace
+	id := createImageIdentity(ctxt, &opts)
+	// have parse errors surface early
+	parsedExtraTags, err := parseExtraTags(opts)
+	if err != nil {
+		log.Fatal(err)
 	}
-	imageStream := opts.imageStream
-	if len(imageStream) == 0 {
-		imageStream = ctxt.Component
-	}
-	imageName := fmt.Sprintf("%s:%s", imageStream, ctxt.GitCommitSHA)
-	imageRef := fmt.Sprintf(
-		"%s/%s/%s",
-		opts.registry, imageNamespace, imageName,
-	)
-
+	idd := id.shaTag()
+	imageName := idd.ImageIdentity.streamSha()
 	fmt.Printf("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := getImageDigestFromRegistry(imageRef, opts)
+	imageDigest, err := getImageDigestFromRegistry(&idd, opts)
 	if err == nil {
 		fmt.Println("Image exists already.")
 	} else {
-
 		fmt.Printf("Building image %s ...\n", imageName)
-		err := buildahBuild(opts, imageRef, os.Stdout, os.Stderr)
+		err = buildahBuild(opts, idd.imageRef(opts.registry), os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah bud: ", err)
 		}
-
-		fmt.Printf("Pushing image %s ...\n", imageRef)
-		err = buildahPush(opts, workingDir, imageRef, os.Stdout, os.Stderr)
+		fmt.Printf("Pushing image %s ...\n", idd.imageRef(opts.registry))
+		err = buildahPush(opts, workingDir, &idd, os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah push: ", err)
 		}
@@ -160,7 +244,7 @@ func main() {
 
 		if aquasecInstalled() {
 			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", imageNamespace, imageName)
+			aquaImage := fmt.Sprintf("%s/%s", idd.ImageIdentity.ImageNamespace, imageName)
 			htmlReportFile := filepath.Join(workingDir, "report.html")
 			jsonReportFile := filepath.Join(workingDir, "report.json")
 			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -188,12 +272,11 @@ func main() {
 			err = createBitbucketInsightReport(opts, asu, scanSuccessful, ctxt)
 			if err != nil {
 				log.Fatal(err)
+			} else {
+				fmt.Println("Aqua is not configured, image will not be scanned for vulnerabilities.")
 			}
-		} else {
-			fmt.Println("Aqua is not configured, image will not be scanned for vulnerabilities.")
 		}
 	}
-
 	err = writeImageDigestToResults(imageDigest)
 	if err != nil {
 		log.Fatal(err)
@@ -201,18 +284,52 @@ func main() {
 
 	fmt.Println("Writing image artifact ...")
 	ia := artifact.Image{
-		Image:      imageRef,
+		Image:      idd.imageRef(opts.registry),
 		Registry:   opts.registry,
-		Repository: imageNamespace,
-		Name:       imageStream,
-		Tag:        ctxt.GitCommitSHA,
+		Repository: idd.ImageIdentity.ImageNamespace,
+		Name:       idd.ImageIdentity.ImageStream,
+		Tag:        idd.ImageIdentity.GitCommitSHA,
 		Digest:     imageDigest,
 	}
-	imageArtifactFilename := fmt.Sprintf("%s.json", imageStream)
+	imageArtifactFilename := fmt.Sprintf("%s.json", idd.ImageIdentity.ImageStream)
 	err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if len(parsedExtraTags) > 0 {
+		log.Printf("Processing extra tags missing in registry: %+q", parsedExtraTags)
+		missingTags, err := packageImageContext.skopeoMissingTags(idd.ImageIdentity, parsedExtraTags)
+		if err != nil {
+			log.Fatal("Could not determine missing tags:", err)
+		}
+		if len(missingTags) == 0 {
+			log.Print("No missing extra tags found.")
+			return
+		}
+		log.Printf("pushing missing extra tags: %+q", missingTags)
+		for _, missingTag := range missingTags {
+			idt := id.tag(missingTag)
+			err = packageImageContext.skopeoTag(&idt, os.Stdout, os.Stderr)
+			if err != nil {
+				log.Fatal("skopeo push failed: ", err)
+			}
+			fmt.Println("Writing image artifact ...")
+			ia := artifact.Image{
+				Image:      idd.imageRef(opts.registry),
+				Registry:   opts.registry,
+				Repository: idd.ImageIdentity.ImageNamespace,
+				Name:       idd.ImageIdentity.ImageStream,
+				Tag:        idd.Tag,
+				Digest:     imageDigest,
+			}
+			imageArtifactFilename := fmt.Sprintf("%s-%s.json", idd.ImageIdentity.ImageStream, idd.Tag)
+			err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
@@ -278,10 +395,18 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 	return err
 }
 
+func parseExtraTags(opts options) ([]string, error) {
+	extraTagsSpecified, err := shlex.Split(opts.extraTags)
+	if err != nil {
+		return nil, fmt.Errorf("parse extra tags (%s): %w", opts.extraTags, err)
+	}
+	return extraTagsSpecified, nil
+}
+
 // getImageDigestFromRegistry returns a SHA256 image digest if the specified
 // imageRef exists. Example return value:
 // "sha256:3b6de1c737065e9973ddb7cc60b769b866b7649ff6f2de3816934dda832de294"
-func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
+func getImageDigestFromRegistry(idt *imageIdentityWithTag, opts options) (string, error) {
 	args := []string{
 		"inspect",
 		fmt.Sprintf("--format=%s", "{{.Digest}}"),
@@ -291,7 +416,8 @@ func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
 	if opts.debug {
 		args = append(args, "--debug")
 	}
-	stdout, _, err := command.RunBuffered("skopeo", append(args, "docker://"+imageRef))
+	stdout, _, err := command.RunBuffered("skopeo",
+		append(args, "docker://"+idt.nsStreamDigest()))
 	return string(stdout), err
 }
 

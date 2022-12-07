@@ -48,6 +48,22 @@ func TestTaskODSPackageImage(t *testing.T) {
 					checkResultingImageHelloWorld(t, ctxt, wsDir)
 				},
 			},
+			"task should build image with additional tags": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"extra-tags": "'latest cool'",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkResultingFiles(t, ctxt, wsDir)
+					checkResultingImageHelloWorld(t, ctxt, wsDir)
+				},
+			},
 			"task should reuse existing image": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {

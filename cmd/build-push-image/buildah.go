@@ -28,7 +28,7 @@ func buildahBuild(opts options, tag string, outWriter, errWriter io.Writer) erro
 }
 
 // buildahPush pushes a local image to the given imageRef.
-func buildahPush(opts options, workingDir, imageRef string, outWriter, errWriter io.Writer) error {
+func buildahPush(opts options, workingDir string, idt *imageIdentityWithTag, outWriter, errWriter io.Writer) error {
 	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
 	if err != nil {
 		log.Printf("could not parse extra args (%s): %s", opts.buildahPushExtraArgs, err)
@@ -44,7 +44,11 @@ func buildahPush(opts options, workingDir, imageRef string, outWriter, errWriter
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	args = append(args, imageRef, fmt.Sprintf("docker://%s", imageRef))
+
+	source := idt.imageRefWithSha(opts.registry)
+	destination := fmt.Sprintf("docker://%s", idt.imageRef(opts.registry))
+	log.Printf("buildah push %s %s", source, destination)
+	args = append(args, source, destination)
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 

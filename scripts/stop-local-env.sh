@@ -12,5 +12,5 @@ container_names_in_stop_order=( "$SQ_CONTAINER_NAME" "$NEXUS_CONTAINER_NAME" "$B
 
 for cn in "${container_names_in_stop_order[@]}"; do
     echo docker stop "$cn"
-    docker stop "$cn"
+    docker stop "$cn" || true
 done

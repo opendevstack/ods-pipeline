@@ -51,6 +51,10 @@ spec:
       description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
       type: string
       default: ''
+    - name: extra-tags
+      description: Additional image tags used (e.g. 'latest dev') when building image. The primary tag is based on the commit sha.
+      type: string # Wanted to use and array but ran into [Cannot refer array params in script #4912](https://github.com/tektoncd/pipeline/issues/4912)
+      default: ''
     - name: storage-driver
       description: Set buildah storage driver.
       type: string
@@ -145,6 +149,7 @@ spec:
         #  ods-build-push-image is built from cmd/build-push-image/main.go.
         ods-build-push-image \
           -image-stream=$(params.image-stream) \
+          -extra-tags=$(params.extra-tags) \
           -registry=$(params.registry) \
           -storage-driver=$(params.storage-driver) \
           -format=$(params.format) \
