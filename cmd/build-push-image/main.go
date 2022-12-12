@@ -75,8 +75,11 @@ var defaultOptions = options{
 }
 
 type packageImage struct {
-	logger logging.LeveledLoggerInterface
-	opts   options
+	logger          logging.LeveledLoggerInterface
+	opts            options
+	parsedExtraTags []string
+	imageShaTag     imageIdentityWithTag
+	ctxt            *pipelinectxt.ODSContext
 }
 
 // registry/imageNamespace/imageStream:<tag>
@@ -86,20 +89,23 @@ type imageIdentity struct {
 	GitCommitSHA   string // our Digest not docker digest.
 }
 
+// streamSha renders ImageStream:GitCommitSHA
 func (iid *imageIdentity) streamSha() string {
 	return fmt.Sprintf("%s:%s", iid.ImageStream, iid.GitCommitSHA)
 }
 
+// nsStreamSha renders ImageNamespace/ImageStream:GitCommitSHA
+//
+// ns is an mnemonic for namespace
 func (iid *imageIdentity) nsStreamSha() string {
 	return fmt.Sprintf("%s:%s", iid.nsStream(), iid.GitCommitSHA)
 }
 
+// nsStream renders ImageNamespace/ImageStream aka Repository in docker terms
+//
+// ns is an mnemonic for namespace
 func (iid *imageIdentity) nsStream() string {
 	return fmt.Sprintf("%s/%s", iid.ImageNamespace, iid.ImageStream)
-}
-
-func (iid *imageIdentity) imageRefWithSha(registry string) string {
-	return fmt.Sprintf("%s/%s", registry, iid.nsStreamSha())
 }
 
 func createImageIdentity(ctxt *pipelinectxt.ODSContext, opts *options) imageIdentity {
@@ -123,11 +129,17 @@ type imageIdentityWithTag struct {
 	Tag           string
 }
 
+// nsStreamTag renders ImageNamespace/ImageStream:Tag
+//
+// ns is an mnemonic for namespace
 func (idt *imageIdentityWithTag) nsStreamTag() string {
 	return fmt.Sprintf("%s:%s", idt.ImageIdentity.nsStream(), idt.Tag)
 }
 
-func (idt *imageIdentityWithTag) nsStreamDigest() string {
+// nsStreamSha renders ImageNamespace/ImageStream:GitCommitSHA
+//
+// ns is an mnemonic for namespace
+func (idt *imageIdentityWithTag) nsStreamSha() string {
 	return idt.ImageIdentity.nsStreamSha()
 }
 
@@ -145,12 +157,18 @@ func (iid *imageIdentity) shaTag() imageIdentityWithTag {
 	}
 }
 
+// imageRef renders Registry/ImageNamespace/ImageStream:Tag
+//
+// ns is an mnemonic for namespace
 func (idt *imageIdentityWithTag) imageRef(registry string) string {
 	return fmt.Sprintf("%s/%s", registry, idt.nsStreamTag())
 }
 
+// imageRef renders Registry/ImageNamespace/ImageStream:GitCommitSHA
+//
+// ns is an mnemonic for namespace
 func (idt *imageIdentityWithTag) imageRefWithSha(registry string) string {
-	return fmt.Sprintf("%s/%s", registry, idt.nsStreamDigest())
+	return fmt.Sprintf("%s/%s", registry, idt.nsStreamSha())
 }
 
 func main() {
@@ -192,15 +210,12 @@ func main() {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	packageImageContext := &packageImage{logger: logger, opts: opts}
-
 	workingDir := "."
 	ctxt := &pipelinectxt.ODSContext{}
 	err = ctxt.ReadCache(workingDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
 		opts.certDir = kubernetesServiceaccountDir
 	}
@@ -218,20 +233,21 @@ func main() {
 	}
 
 	imageIdentity := createImageIdentity(ctxt, &opts)
-	imageShaTag := imageIdentity.shaTag()
-	imageName := imageShaTag.ImageIdentity.streamSha()
-	fmt.Printf("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := getImageDigestFromRegistry(&imageShaTag, opts)
+	p := &packageImage{logger: logger, opts: opts, parsedExtraTags: parsedExtraTags, ctxt: ctxt, imageShaTag: imageIdentity.shaTag()}
+
+	imageName := p.imageShaTag.ImageIdentity.streamSha()
+	p.logger.Infof("Checking if image %s exists already ...\n", imageName)
+	imageDigest, err := p.getImageDigestFromRegistry()
 	if err == nil {
-		fmt.Println("Image exists already.")
+		p.logger.Infof("Image exists already.")
 	} else {
-		fmt.Printf("Building image %s ...\n", imageName)
-		err = buildahBuild(opts, imageShaTag.imageRef(opts.registry), os.Stdout, os.Stderr)
+		p.logger.Infof("Building image %s ...\n", imageName)
+		err = p.buildahBuild(os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah bud: ", err)
 		}
-		fmt.Printf("Pushing image %s ...\n", imageShaTag.imageRef(opts.registry))
-		err = buildahPush(opts, workingDir, &imageShaTag, os.Stdout, os.Stderr)
+		fmt.Printf("Pushing image %s ...\n", p.imageShaTag.imageRef(opts.registry))
+		err = p.buildahPush(workingDir, os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah push: ", err)
 		}
@@ -243,8 +259,8 @@ func main() {
 		imageDigest = d
 
 		if aquasecInstalled() {
-			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", imageShaTag.ImageIdentity.ImageNamespace, imageName)
+			p.logger.Infof("Scanning image with Aqua scanner ...")
+			aquaImage := fmt.Sprintf("%s/%s", p.imageShaTag.ImageIdentity.ImageNamespace, imageName)
 			htmlReportFile := filepath.Join(workingDir, "report.html")
 			jsonReportFile := filepath.Join(workingDir, "report.json")
 			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -268,12 +284,12 @@ func main() {
 				log.Fatal(err)
 			}
 
-			fmt.Println("Creating Bitbucket code insight report ...")
+			p.logger.Infof("Creating Bitbucket code insight report ...")
 			err = createBitbucketInsightReport(opts, asu, scanSuccessful, ctxt)
 			if err != nil {
 				log.Fatal(err)
 			} else {
-				fmt.Println("Aqua is not configured, image will not be scanned for vulnerabilities.")
+				p.logger.Infof("Aqua is not configured, image will not be scanned for vulnerabilities.")
 			}
 		}
 	}
@@ -282,23 +298,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Writing image artifact ...")
+	p.logger.Infof("Writing image artifact ...")
 	ia := artifact.Image{
-		Image:      imageShaTag.imageRef(opts.registry),
+		Image:      p.imageShaTag.imageRef(opts.registry),
 		Registry:   opts.registry,
-		Repository: imageShaTag.ImageIdentity.ImageNamespace,
-		Name:       imageShaTag.ImageIdentity.ImageStream,
-		Tag:        imageShaTag.ImageIdentity.GitCommitSHA,
+		Repository: p.imageShaTag.ImageIdentity.ImageNamespace,
+		Name:       p.imageShaTag.ImageIdentity.ImageStream,
+		Tag:        p.imageShaTag.ImageIdentity.GitCommitSHA,
 		Digest:     imageDigest,
 	}
-	imageArtifactFilename := fmt.Sprintf("%s.json", imageShaTag.ImageIdentity.ImageStream)
+	imageArtifactFilename := fmt.Sprintf("%s.json", p.imageShaTag.ImageIdentity.ImageStream)
 	err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(parsedExtraTags) > 0 {
 		log.Printf("Processing extra tags missing in registry: %+q", parsedExtraTags)
-		missingTags, err := packageImageContext.skopeoMissingTags(imageShaTag.ImageIdentity, parsedExtraTags)
+		missingTags, err := p.skopeoMissingTags()
 		if err != nil {
 			log.Fatal("Could not determine missing tags:", err)
 		}
@@ -309,12 +325,12 @@ func main() {
 		log.Printf("pushing missing extra tags: %+q", missingTags)
 		for _, missingTag := range missingTags {
 			imageExtraTag := imageIdentity.tag(missingTag)
-			err = packageImageContext.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
+			err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
 			if err != nil {
 				log.Fatal("skopeo push failed: ", err)
 			}
 		}
-		fmt.Println("Writing image artifacts for all extra tags ...")
+		p.logger.Infof("Writing image artifacts for all extra tags ...")
 		for _, extraTag := range parsedExtraTags {
 			imageExtraTag := imageIdentity.tag(extraTag)
 			ia := artifact.Image{
@@ -408,18 +424,18 @@ func parseExtraTags(opts options) ([]string, error) {
 // getImageDigestFromRegistry returns a SHA256 image digest if the specified
 // imageRef exists. Example return value:
 // "sha256:3b6de1c737065e9973ddb7cc60b769b866b7649ff6f2de3816934dda832de294"
-func getImageDigestFromRegistry(idt *imageIdentityWithTag, opts options) (string, error) {
+func (p *packageImage) getImageDigestFromRegistry() (string, error) {
 	args := []string{
 		"inspect",
 		fmt.Sprintf("--format=%s", "{{.Digest}}"),
-		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
-		fmt.Sprintf("--cert-dir=%s", opts.certDir),
+		fmt.Sprintf("--tls-verify=%v", p.opts.tlsVerify),
+		fmt.Sprintf("--cert-dir=%s", p.opts.certDir),
 	}
-	if opts.debug {
+	if p.opts.debug {
 		args = append(args, "--debug")
 	}
 	stdout, _, err := command.RunBuffered("skopeo",
-		append(args, "docker://"+idt.nsStreamDigest()))
+		append(args, "docker://"+p.imageShaTag.nsStreamSha()))
 	return string(stdout), err
 }
 

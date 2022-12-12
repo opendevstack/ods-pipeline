@@ -12,8 +12,8 @@ import (
 // → skopeo inspect --tls-verify=false --format="{{.Digest}} {{.RepoTags}}" docker://localhost:5000/ods/ods-buildah
 // sha256:ccf11cd07321c135d6b1949d367c80614ca49f37ade987148c24c2b704dd9426 [latest cool]
 
-func (p *packageImage) skopeoMissingTags(id *imageIdentity, extraTags []string) ([]string, error) {
-	p.logger.Infof("Inspecting image %s for tags", id.nsStreamSha())
+func (p *packageImage) skopeoMissingTags() ([]string, error) {
+	p.logger.Infof("Inspecting image %s for tags", p.imageShaTag.ImageIdentity.nsStreamSha())
 	tlsVerify := p.opts.tlsVerify
 	// TLS verification of the KinD registry is not possible at the moment as
 	// requests error out with "server gave HTTP response to HTTPS client".
@@ -31,7 +31,7 @@ func (p *packageImage) skopeoMissingTags(id *imageIdentity, extraTags []string) 
 	if p.opts.debug {
 		args = append(args, "--debug")
 	}
-	imageRef := fmt.Sprintf("docker://%s", id.imageRefWithSha(p.opts.registry))
+	imageRef := fmt.Sprintf("docker://%s", p.imageShaTag.imageRefWithSha(p.opts.registry))
 	args = append(args, imageRef)
 
 	p.logger.Infof("skopeo inspect %s", imageRef)
@@ -46,7 +46,7 @@ func (p *packageImage) skopeoMissingTags(id *imageIdentity, extraTags []string) 
 	}
 	p.logger.Infof("skopeo tags=%v", tags)
 	missingTags := []string{}
-	for _, extraTag := range extraTags {
+	for _, extraTag := range p.parsedExtraTags {
 		if !slices.Contains(tags, extraTag) {
 			missingTags = append(missingTags, extraTag)
 		}

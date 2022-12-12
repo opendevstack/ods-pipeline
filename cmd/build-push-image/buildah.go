@@ -19,8 +19,8 @@ const (
 
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
-func buildahBuild(opts options, tag string, outWriter, errWriter io.Writer) error {
-	args, err := buildahBuildArgs(opts, tag)
+func (p *packageImage) buildahBuild(outWriter, errWriter io.Writer) error {
+	args, err := buildahBuildArgs(p.opts, p.imageShaTag.imageRef(p.opts.registry))
 	if err != nil {
 		return fmt.Errorf("assemble build args: %w", err)
 	}
@@ -28,7 +28,8 @@ func buildahBuild(opts options, tag string, outWriter, errWriter io.Writer) erro
 }
 
 // buildahPush pushes a local image to the given imageRef.
-func buildahPush(opts options, workingDir string, idt *imageIdentityWithTag, outWriter, errWriter io.Writer) error {
+func (p *packageImage) buildahPush(workingDir string, outWriter, errWriter io.Writer) error {
+	opts := p.opts
 	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
 	if err != nil {
 		log.Printf("could not parse extra args (%s): %s", opts.buildahPushExtraArgs, err)
@@ -45,8 +46,8 @@ func buildahPush(opts options, workingDir string, idt *imageIdentityWithTag, out
 		args = append(args, "--log-level=debug")
 	}
 
-	source := idt.imageRefWithSha(opts.registry)
-	destination := fmt.Sprintf("docker://%s", idt.imageRef(opts.registry))
+	source := p.imageShaTag.imageRefWithSha(opts.registry)
+	destination := fmt.Sprintf("docker://%s", p.imageShaTag.imageRef(opts.registry))
 	log.Printf("buildah push %s %s", source, destination)
 	args = append(args, source, destination)
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
