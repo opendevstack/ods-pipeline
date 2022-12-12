@@ -61,7 +61,10 @@ func TestTaskODSPackageImage(t *testing.T) {
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
+					checkTagFiles(t, ctxt, wsDir, []string{"latest", "cool"})
 					checkResultingImageHelloWorld(t, ctxt, wsDir)
+					checkTaggedImageHelloWorld(t, ctxt, wsDir, "latest")
+					checkTaggedImageHelloWorld(t, ctxt, wsDir, "cool")
 				},
 			},
 			"task should reuse existing image": {
@@ -130,6 +133,18 @@ func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir s
 	}
 }
 
+func checkTagFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, tags []string) {
+	wantFiles := []string{}
+	for _, tag := range tags {
+		wantFiles = append(wantFiles, fmt.Sprintf(".ods/artifacts/image-digests/%s-%s.json", ctxt.ODS.Component, tag))
+	}
+	for _, wf := range wantFiles {
+		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
+			t.Fatalf("Want %s, but got nothing", wf)
+		}
+	}
+}
+
 func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wantLabelKey, wantLabelValue string) {
 	stdout, stderr, err := command.RunBuffered("docker", []string{
 		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
@@ -144,10 +159,10 @@ func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wa
 	}
 }
 
-func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
+func runSpecifiedImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, image string) string {
 	stdout, stderr, err := command.RunBuffered("docker", []string{
 		"run", "--rm",
-		getDockerImageTag(t, ctxt, wsDir),
+		image,
 	})
 	if err != nil {
 		t.Fatalf("could not run built image: %s, stderr: %s", err, string(stderr))
@@ -156,8 +171,22 @@ func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir str
 	return got
 }
 
+func runResultingImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) string {
+	got := runSpecifiedImage(t, ctxt, wsDir, getDockerImageTag(t, ctxt, wsDir))
+	return got
+}
+
 func checkResultingImageHelloWorld(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	got := runResultingImage(t, ctxt, wsDir)
+	want := "Hello World"
+	if got != want {
+		t.Fatalf("Want %s, but got %s", want, got)
+	}
+}
+
+func checkTaggedImageHelloWorld(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, tag string) {
+	image := fmt.Sprintf("localhost:5000/%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, tag)
+	got := runSpecifiedImage(t, ctxt, wsDir, image)
 	want := "Hello World"
 	if got != want {
 		t.Fatalf("Want %s, but got %s", want, got)

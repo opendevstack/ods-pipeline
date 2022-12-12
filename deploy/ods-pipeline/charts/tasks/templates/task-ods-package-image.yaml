@@ -42,6 +42,7 @@ spec:
       ** `report.json`
     * `image-digests/`
       ** `<image-name>.json`
+      ** `<image-name>-<tag>.json` for each extra-tag
   params:
     - name: registry
       description: Image registry to push image to.
@@ -52,7 +53,7 @@ spec:
       type: string
       default: ''
     - name: extra-tags
-      description: Additional image tags used (e.g. 'latest dev') when building image. The primary tag is based on the commit sha.
+      description: Additional image tags (e.g. 'latest dev') for pushed images. The primary tag is based on the commit sha. Only tags currently missing from the image will be added.
       type: string # Wanted to use and array but ran into [Cannot refer array params in script #4912](https://github.com/tektoncd/pipeline/issues/4912)
       default: ''
     - name: storage-driver

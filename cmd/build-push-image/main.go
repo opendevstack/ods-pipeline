@@ -179,6 +179,11 @@ func main() {
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
+	// surface parse error early
+	parsedExtraTags, err := parseExtraTags(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var logger logging.LeveledLoggerInterface
 	if opts.debug {
@@ -191,7 +196,7 @@ func main() {
 
 	workingDir := "."
 	ctxt := &pipelinectxt.ODSContext{}
-	err := ctxt.ReadCache(workingDir)
+	err = ctxt.ReadCache(workingDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -212,26 +217,21 @@ func main() {
 		opts.tlsVerify = false
 	}
 
-	id := createImageIdentity(ctxt, &opts)
-	// have parse errors surface early
-	parsedExtraTags, err := parseExtraTags(opts)
-	if err != nil {
-		log.Fatal(err)
-	}
-	idd := id.shaTag()
-	imageName := idd.ImageIdentity.streamSha()
+	imageIdentity := createImageIdentity(ctxt, &opts)
+	imageShaTag := imageIdentity.shaTag()
+	imageName := imageShaTag.ImageIdentity.streamSha()
 	fmt.Printf("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := getImageDigestFromRegistry(&idd, opts)
+	imageDigest, err := getImageDigestFromRegistry(&imageShaTag, opts)
 	if err == nil {
 		fmt.Println("Image exists already.")
 	} else {
 		fmt.Printf("Building image %s ...\n", imageName)
-		err = buildahBuild(opts, idd.imageRef(opts.registry), os.Stdout, os.Stderr)
+		err = buildahBuild(opts, imageShaTag.imageRef(opts.registry), os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah bud: ", err)
 		}
-		fmt.Printf("Pushing image %s ...\n", idd.imageRef(opts.registry))
-		err = buildahPush(opts, workingDir, &idd, os.Stdout, os.Stderr)
+		fmt.Printf("Pushing image %s ...\n", imageShaTag.imageRef(opts.registry))
+		err = buildahPush(opts, workingDir, &imageShaTag, os.Stdout, os.Stderr)
 		if err != nil {
 			log.Fatal("buildah push: ", err)
 		}
@@ -244,7 +244,7 @@ func main() {
 
 		if aquasecInstalled() {
 			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", idd.ImageIdentity.ImageNamespace, imageName)
+			aquaImage := fmt.Sprintf("%s/%s", imageShaTag.ImageIdentity.ImageNamespace, imageName)
 			htmlReportFile := filepath.Join(workingDir, "report.html")
 			jsonReportFile := filepath.Join(workingDir, "report.json")
 			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -284,21 +284,21 @@ func main() {
 
 	fmt.Println("Writing image artifact ...")
 	ia := artifact.Image{
-		Image:      idd.imageRef(opts.registry),
+		Image:      imageShaTag.imageRef(opts.registry),
 		Registry:   opts.registry,
-		Repository: idd.ImageIdentity.ImageNamespace,
-		Name:       idd.ImageIdentity.ImageStream,
-		Tag:        idd.ImageIdentity.GitCommitSHA,
+		Repository: imageShaTag.ImageIdentity.ImageNamespace,
+		Name:       imageShaTag.ImageIdentity.ImageStream,
+		Tag:        imageShaTag.ImageIdentity.GitCommitSHA,
 		Digest:     imageDigest,
 	}
-	imageArtifactFilename := fmt.Sprintf("%s.json", idd.ImageIdentity.ImageStream)
+	imageArtifactFilename := fmt.Sprintf("%s.json", imageShaTag.ImageIdentity.ImageStream)
 	err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(parsedExtraTags) > 0 {
 		log.Printf("Processing extra tags missing in registry: %+q", parsedExtraTags)
-		missingTags, err := packageImageContext.skopeoMissingTags(idd.ImageIdentity, parsedExtraTags)
+		missingTags, err := packageImageContext.skopeoMissingTags(imageShaTag.ImageIdentity, parsedExtraTags)
 		if err != nil {
 			log.Fatal("Could not determine missing tags:", err)
 		}
@@ -308,28 +308,30 @@ func main() {
 		}
 		log.Printf("pushing missing extra tags: %+q", missingTags)
 		for _, missingTag := range missingTags {
-			idt := id.tag(missingTag)
-			err = packageImageContext.skopeoTag(&idt, os.Stdout, os.Stderr)
+			imageExtraTag := imageIdentity.tag(missingTag)
+			err = packageImageContext.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
 			if err != nil {
 				log.Fatal("skopeo push failed: ", err)
 			}
-			fmt.Println("Writing image artifact ...")
+		}
+		fmt.Println("Writing image artifacts for all extra tags ...")
+		for _, extraTag := range parsedExtraTags {
+			imageExtraTag := imageIdentity.tag(extraTag)
 			ia := artifact.Image{
-				Image:      idd.imageRef(opts.registry),
+				Image:      imageExtraTag.imageRef(opts.registry),
 				Registry:   opts.registry,
-				Repository: idd.ImageIdentity.ImageNamespace,
-				Name:       idd.ImageIdentity.ImageStream,
-				Tag:        idd.Tag,
+				Repository: imageExtraTag.ImageIdentity.ImageNamespace,
+				Name:       imageExtraTag.ImageIdentity.ImageStream,
+				Tag:        imageExtraTag.Tag,
 				Digest:     imageDigest,
 			}
-			imageArtifactFilename := fmt.Sprintf("%s-%s.json", idd.ImageIdentity.ImageStream, idd.Tag)
+			imageArtifactFilename := fmt.Sprintf("%s-%s.json", imageExtraTag.ImageIdentity.ImageStream, imageExtraTag.Tag)
 			err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
-
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
