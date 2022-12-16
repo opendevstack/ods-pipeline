@@ -85,7 +85,7 @@ spec:
         a build can be skipped if the `working-dir` contents did not change.
         For single build repos enabling build caching has limited benefits. For multi build repos enabling this is recommended unless the build is dependant on files outside of the working directory. See ADR caching-build-tasks for more details and workarounds.
       type: string
-      default: "false"
+      default: "true"
     - name: build-script
       description: >-
         Build script to execute. The
