@@ -2,6 +2,8 @@
 
 Date: 2022-03-14
 
+Last Modified: 2022-12-19 - enable build task caching bu default)
+
 ## Status
 
 Accepted
@@ -22,21 +24,27 @@ Build task caching persists a build's produced files so that future builds can b
 
 The build files (output and ods artifacts) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
 
-By default build task caching is not enabled for the following reasons:
+By default build task caching is enabled for the following reasons:
 
-- Build task skipping has limited benefits for single build repos which is the main design focus of `ods-pipeline`. The build task cache could only be reused when the working dir did not change while some other change in the repo triggers a build. This might be the case when the working-dir is not at the root or when there is a merge commit without file changes.
-- Build caching requires space on the caching PVC and a (typically) small runtime overhead on initial cache population.
+- Merged PR's can be skipped unless a merge with file changes is needed.
 
-In repos with multiple build tasks you would typically want to enable build task skipping. However when enabled builds are skipped if the contents of their `working-dir` does not change. 
+- Since the initial release no fundamental issues have been reported.
 
-**NOTE: Do not enable if your build consumes files in your repo located outside of the `working-dir` and changes of them are not reflected as version controlled file changes in or below the working dir!**
-For example this could happen if you consume code maintained in your multi-repo in several build tasks. To enable build skipping in this case you will have to provide a checksum file of those other areas and check them into the working directory. This should be achievable via a git pre-commit hook.  
+- While build caching requires space on the caching PVC the runtime overhead on initial cache population is (typically) small.
 
-Tasks supporting builds skipping will support a parameter `cache-build` which by default is `'false'`. If `cache-build` is `'true'` build tasks shall copy their build outputs and ods artifacts to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
+Situations where build caching should be disabled are:
+
+- Build caching requires space on the caching PVC and a (typically) small runtime overhead on initial cache population. Teams who mostly don't benefit from caching should consider to disable build caching.
+
+- In repos with multiple build tasks you would typically want to enable build task skipping. However when enabled builds are skipped if the contents of their `working-dir` does not change. **NOTE: Disable build caching of a build task if this build consumes files located outside of the `working-dir` and changes of them are not reflected as version controlled file changes in or below the working dir!** For example this could happen if you consume code maintained in your multi-repo in several build tasks. To safely use build skipping in this case you will have to provide a checksum file of those other areas and check them into the working directory. This should be achievable via a git pre-commit hook.  
+
+Disable build caching by setting the `cache-build` parameter of a build task to `'false'`.
+
+Tasks supporting builds skipping support parameter `cache-build` which by default is `'true'`. If `cache-build` is `'true'` build tasks shall copy their build outputs and ods artifacts to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
 
 - `<technology-build-key>` is a value to allow humans to easily distinguish for what the artifacts are, while also allowing to have different keys for different versions of a build task. This might be useful for example to separate jar files with different class file versions for example. Such differentiation could be used in later versions. Initially they will likely be simple names such as `go`, `python` etc.
 
-- `<cache-build-key>` allows keeping multiple build tasks associated with the same working directory separate. Such build variants may allow to create builds for different platforms or architectures while keeping the cached files in separate locations. In most cases such a key can be derived from the existing build task's parameters. 
+- `<cache-build-key>` allows keeping multiple build tasks associated with the same working directory separate. Such build variants may allow to create builds for different platforms or architectures while keeping the cached files in separate locations. In most cases such a key can be derived from the existing build task's parameters.
 
 - `git-sha-working-dir` is the git sha of the internal tree object of the working directory
 
@@ -66,11 +74,9 @@ The build tasks support proper cleanup by touching file named `.ods-last-used-st
 
 ## Consequences
 
-* You can enable build skipping so that build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs and other produced artifacts (see artifacts.adoc).
+* With build skipping build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs and other produced artifacts (see artifacts.adoc).
 
-* For build skipping to work as expected a build task must be self contained by their working directory. In particular a build must not use any files of the repo outside the `working-dir`. See also NOTE of section Decision above for more examples and potential workarounds.
-
-* It is recommended to enable this in multi build repos unless the build is not self contained.
+* For build skipping to work as expected a build task must be self contained by their working directory. In particular a build must not use any files of the repo outside the `working-dir`. You must disable or workaround this if your build is affected by this. See also NOTE of section Decision above for more examples and potential workarounds.
 
 * The build skipping cache directories are cleaned up by `ods-start` if they have not been used for 7 days or what you configure with the `ods-start`'s  parameter `cache-build-tasks-for-days`.
 
@@ -83,4 +89,3 @@ As an alternative it was considered to use Nexus to store build outputs. The rea
 * There would be a lot of additional pressure on Nexus as the build outputs can be rather large.
 * There were doubts that the performance would be satisfactory.
 * The complexity of the proposal appeared concerning.
-

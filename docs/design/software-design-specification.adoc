@@ -49,7 +49,7 @@ If the server edition supports it, the branch parameter shall be set, unless the
 
 | SDS-SHARED-4
 | `cache-build.sh` shell script
-a| Caches a build's outputs and ods artigacts to the `build-task` cache area.
+a| Caches a build's outputs and ods artifacts to the `build-task` cache area.
 
 Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
 
