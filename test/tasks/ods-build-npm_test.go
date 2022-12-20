@@ -27,6 +27,7 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = map[string]string{
 						"sonar-quality-gate": "true",
+						"cache-build":        "false",
 					}
 				},
 				WantRunSuccess: true,
@@ -69,7 +70,7 @@ func TestTaskODSBuildNPM(t *testing.T) {
 						"sonar-skip":  "true",
 						"working-dir": subdir,
 						"output-dir":  "../docker",
-						"cache-build": "true",
+						// "cache-build": "true", expected to be default now
 					}
 				},
 				WantRunSuccess: true,
