@@ -107,6 +107,12 @@ func initAndCommitOrFatal(t *testing.T, wsDir string) {
 	if err != nil {
 		t.Fatalf("error running git init: %s, stdout: %s, stderr: %s", err, stdout, stderr)
 	}
+	// Force "master" branch for now, eventually the branch name should default to whatever git is
+	// defaulting to, but using a branch other than "master" breaks downstream right now.
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"symbolic-ref", "HEAD", "refs/heads/master"}, wsDir)
+	if err != nil {
+		t.Fatalf("error running git symbolic-ref: %s, stdout: %s, stderr: %s", err, stdout, stderr)
+	}
 	stdout, stderr, err = command.RunBufferedInDir("git", []string{"config", "user.email", "testing@opendevstack.org"}, wsDir)
 	if err != nil {
 		t.Fatalf("error running git config.user.email: %s, stdout: %s, stderr: %s", err, stdout, stderr)

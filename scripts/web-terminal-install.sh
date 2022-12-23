@@ -1,11 +1,7 @@
 #!/bin/bash
 set -eu
 
-SOPS_VERSION=3.7.1
-AGE_VERSION=1.0.0
 HELM_PLUGIN_DIFF_VERSION=3.3.2
-HELM_PLUGIN_SECRETS_VERSION=3.10.0
-
 REPOSITORY=""
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 
@@ -26,28 +22,16 @@ mkdir -p bin
 export PATH=/home/user/bin:$PATH
  
 echo "Installing Helm plugins ..."
+NO_DIFF_FLAG=""
 if [ "$(helm plugin list | grep ^diff)" != "" ]; then
   echo "Plugin helm-diff is already installed."
 else
-  helm plugin install https://github.com/databus23/helm-diff --version "v${HELM_PLUGIN_DIFF_VERSION}"
+  if command -v tar; then
+    helm plugin install https://github.com/databus23/helm-diff --version "v${HELM_PLUGIN_DIFF_VERSION}"
+  else
+    NO_DIFF_FLAG="--no-diff"
+  fi
 fi
-if [ "$(helm plugin list | grep ^secrets)" != "" ]; then
-  echo "Plugin helm-secrets is already installed."
-else
-  helm plugin install https://github.com/jkroepke/helm-secrets --version "v${HELM_PLUGIN_SECRETS_VERSION}"
-fi
-
-echo "Installing sops ..."
-curl -LO "https://github.com/mozilla/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux"
-chmod +x "sops-v${SOPS_VERSION}.linux"
-mv "sops-v${SOPS_VERSION}.linux" bin/sops
- 
-echo "Installing age ..."
-curl -LO "https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
-tar -xzvf "age-v${AGE_VERSION}-linux-amd64.tar.gz"
-chmod +x age/age
-mv age/age bin/age
-rm  "age-v${AGE_VERSION}-linux-amd64.tar.gz"
 
 echo "Cloning Git repository ..."
 if oc -n "${NAMESPACE}" get secrets/ods-bitbucket-auth &> /dev/null; then
@@ -69,4 +53,4 @@ fi
 echo "Installing ..."
 repoName="${REPOSITORY##*/}"
 cd "${repoName%.git}/deploy"
-./install.sh -n "${NAMESPACE}" -f values.yaml,secrets.yaml
+./install.sh -n "${NAMESPACE}" ${NO_DIFF_FLAG}

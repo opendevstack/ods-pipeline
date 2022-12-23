@@ -479,7 +479,16 @@ The `images` chart is only used within an OpenShift context. It contains a `post
 
 | SDS-SETUP-2
 | `web-terminal-install.sh` script
-a| The script is supposed to be downloaded and piped into bash. The script installs the prerequisites not already present in the Web Terminal image (`helm-diff`, `helm-secrets`, `sops`, `age`), clones the Git repository and then runs `./install.sh`.
+a| The script is supposed to be downloaded and piped into bash. The script installs the prerequisites not already present in the Web Terminal image (Helm plugin `helm-diff`), clones the Git repository and then runs `./install.sh`.
+
+| SDS-SETUP-3
+| `install.sh` script
+a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further, it:
+
+* creates the `pipeline` serviceaccount if it does not exist already
+* creates secrets holding relevant credentials (e.g. Bitbucket access token), either by prompting the user for values, or taking input from command line flags
+* in case of an update, modifies existing secrets when command line flags are given
+* adds the `tekton.dev/git-0` annotation to the `ods-bitbucket-auth` secret (pointing to the Bitbucket URL) and associate the secret with the `pipeline` serviceaccount to enable `git clone`` in the `ods-start` task
 |===
 
 
