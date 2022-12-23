@@ -355,11 +355,11 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
 | SDS-TASK-20
 | `ods-buildah` container image
-| Container image to build, scan and push images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18 and SDS-TASK-21. If the build argument `aquasecScannerUrl` is set, the referenced Aqua Scanner binary is installed into the image as well.
+| Container image to build, scan, push images and tag images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18 and SDS-TASK-21. If the build argument `aquasecScannerUrl` is set, the referenced Aqua Scanner binary is installed into the image as well.
 
 | SDS-TASK-21
 | `build-and-push` binary
-a| Checks if an image with the tag to built exist already in the target registry, and if so, skips the build.
+a| Checks if an image with the tag to built exist already in the target registry, and if so, skips the build and continues with processing tags.
 
 Builds a container image using SDS-EXT-18:
 
@@ -367,9 +367,16 @@ Builds a container image using SDS-EXT-18:
 * The Dockerfile defaults to `Dockerfile`, and can be overwritten by `dockerfile` parameter. The location is relative to the Docker context directory.
 * The resulting image name and SHA is placed into `.ods/artifacts`.
 
-Pushes the image to the target registry (defaulting to an image stream in the namespace of the pipeline run) using SDS-EXT-17.
+Pushes the image to the target registry (defaulting to an image stream in the namespace of the pipeline run) using SDS-EXT-18.
 
 If the Aqua scanner is installed in the base image, the  pushed image shall be scanned. The resulting report is placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
+
+Processes tags specified in the `extra-tags` parameter and adds missing to the image in the target registry:
+
+* Uses skopeo (SDS-EXT-17) to inspect image in target registry to determine whether there are tags defined in `extra-tags` which have not yet been applied.
+* For each missing tag:
+    * Uses skopeo to add missing tag to the image in the target registry.
+    * The resulting image name and tag is placed into `.ods/artifacts`.
 |===
 
 ==== `ods-deploy-helm` task
