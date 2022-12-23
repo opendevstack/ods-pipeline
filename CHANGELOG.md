@@ -16,6 +16,7 @@ listed in the changelog.
 - Update buildah (1.26 to 1.27) ([#626](https://github.com/opendevstack/ods-pipeline/issues/626))
 - Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
 - Update Go to 1.18 ([#623](https://github.com/opendevstack/ods-pipeline/issues/623))
+- Update go-junit-report to 2.0.0 ([#625](https://github.com/opendevstack/ods-pipeline/issues/625))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
 
 ### Fixed

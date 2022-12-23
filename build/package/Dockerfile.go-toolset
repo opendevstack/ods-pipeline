@@ -4,12 +4,12 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 
 ENV GOLANGCI_LINT_VERSION=v1.45.2 \
-    GO_JUNIT_REPORT_VERSION=v0.9.1 \
+    GO_JUNIT_REPORT_VERSION=v2.0.0 \
     GOBIN=/usr/local/bin
 
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$GOLANGCI_LINT_VERSION/install.sh | sh -s -- -b /usr/local/bin $GOLANGCI_LINT_VERSION
 
-RUN go install github.com/jstemmer/go-junit-report@$GO_JUNIT_REPORT_VERSION
+RUN go install github.com/jstemmer/go-junit-report/v2@$GO_JUNIT_REPORT_VERSION
 
 # Add scripts
 COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
