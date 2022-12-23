@@ -17,6 +17,7 @@ listed in the changelog.
 - Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
 - Update Go to 1.18 ([#623](https://github.com/opendevstack/ods-pipeline/issues/623))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
+- Add `extra-tags` parameter to `ods-package-image` ([#631](https://github.com/opendevstack/ods-pipeline/issues/631))
 
 ### Fixed
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
