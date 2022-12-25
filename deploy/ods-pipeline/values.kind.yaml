@@ -20,7 +20,7 @@ setup:
     storageSize: '2Gi'
     replicaCount: 1
     image:
-      registry: localhost:5000
+      registry: localhost:5001
       namespace: ods
       repository: ods-pipeline-manager
       pullPolicy: Always
@@ -65,9 +65,9 @@ tasks:
   # registry: ghcr.io
   # namespace: opendevstack/ods-pipeline
 
-  registry: localhost:5000
+  registry: localhost:5001
   namespace: ods
-  pushRegistry: kind-registry.kind:5000
+  pushRegistry: kind-registry.kind:5001
 
 ##
 # images chart

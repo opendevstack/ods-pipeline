@@ -38,7 +38,7 @@ jobs:
           context: .
           push: false
           file: build/package/Dockerfile.${{ matrix.image }}
-          tags: localhost:5000/ods/ods-${{ matrix.image }}:latest
+          tags: localhost:5001/ods/ods-${{ matrix.image }}:latest
           outputs: type=docker,dest=/tmp/image-ods-${{ matrix.image }}.tar
       -
         name: Upload artifacts
@@ -77,10 +77,10 @@ jobs:
           do
             echo "::group::Push ods-$image to local registry"
             docker load --input /tmp/buildx-image-ods-$image/image-ods-$image.tar
-            docker push localhost:5000/ods/ods-$image:latest
+            docker push localhost:5001/ods/ods-$image:latest
             if [[ "${{ github.event_name }}" == 'pull_request' ]]
             then
-              docker rmi localhost:5000/ods/ods-$image:latest
+              docker rmi localhost:5001/ods/ods-$image:latest
             fi
             echo "::endgroup::"
           done
@@ -143,7 +143,7 @@ jobs:
           for image in ${images[*]}
           do
             echo "::group::Push ods-$image to ghcr.io"
-            docker tag localhost:5000/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
+            docker tag localhost:5001/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
             docker push ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
             echo "::endgroup::"
           done

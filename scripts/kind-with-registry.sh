@@ -25,7 +25,7 @@ ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 # desired cluster name; default is "kind"
 KIND_CLUSTER_NAME="kind"
 RECREATE_KIND_CLUSTER="false"
-REGISTRY_PORT="5000"
+REGISTRY_PORT="5001"
 
 # K8S version is aligned with OpenShift GA 4.8.
 # See https://docs.openshift.com/container-platform/4.8/release_notes/ocp-4-8-release-notes.html
