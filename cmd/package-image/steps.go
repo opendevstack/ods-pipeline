@@ -88,14 +88,18 @@ func skipIfImageExists() PackageStep {
 	}
 }
 
-func buildImage() PackageStep {
+func buildImageAndGenerateTar() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		fmt.Printf("Building image %s ...\n", p.image.ImageName())
-		err := buildahBuild(p.opts, p.image.Ref, os.Stdout, os.Stderr)
+		err := p.buildahBuild(os.Stdout, os.Stderr)
 		if err != nil {
 			return p, fmt.Errorf("buildah bud: %w", err)
 		}
-
+		fmt.Printf("Creating local tar folder for image %s ...\n", p.image.ImageName())
+		err = p.buildahPushTar(os.Stdout, os.Stderr)
+		if err != nil {
+			return p, fmt.Errorf("buildah push tar: %w", err)
+		}
 		d, err := getImageDigestFromFile(p.opts.checkoutDir)
 		if err != nil {
 			return p, err
@@ -107,7 +111,6 @@ func buildImage() PackageStep {
 
 func generateSBOM() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		// $ trivy image --format spdx --output result.spdx alpine:3.15
 		err := p.generateImageSBOM()
 		if err != nil {
 			return p, fmt.Errorf("generate SBOM: %w", err)
@@ -159,7 +162,7 @@ func scanImageWithAqua() PackageStep {
 func pushImage() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		fmt.Printf("Pushing image %s ...\n", p.image.ImageName())
-		err := buildahPush(p.opts, p.opts.checkoutDir, p.image.Ref, os.Stdout, os.Stderr)
+		err := p.buildahPush(os.Stdout, os.Stderr)
 		if err != nil {
 			return p, fmt.Errorf("buildah push: %w", err)
 		}
@@ -179,6 +182,15 @@ func storeArtifact() PackageStep {
 		err = pipelinectxt.WriteJsonArtifact(p.image, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 		if err != nil {
 			return p, err
+		}
+		fmt.Println("Writing SBOM artifact ...")
+
+		sbomFile := filepath.Join(p.opts.checkoutDir, pipelinectxt.SbomsFilename)
+		if _, err := os.Stat(sbomFile); err == nil {
+			err := pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SbomsPath)
+			if err != nil {
+				return p, fmt.Errorf("copying SBOM report to artifacts failed: %w", err)
+			}
 		}
 		return p, nil
 	}

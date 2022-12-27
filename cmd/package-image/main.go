@@ -41,6 +41,7 @@ type options struct {
 	nexusPassword         string
 	buildahBuildExtraArgs string
 	buildahPushExtraArgs  string
+	trivySBOMExtraArgs    string
 	aquasecGate           bool
 	debug                 bool
 	sbomFormat            string
@@ -78,6 +79,7 @@ var defaultOptions = options{
 	nexusPassword:         os.Getenv("NEXUS_PASSWORD"),
 	buildahBuildExtraArgs: "",
 	buildahPushExtraArgs:  "",
+	trivySBOMExtraArgs:    "",
 	aquasecGate:           false,
 	debug:                 (os.Getenv("DEBUG") == "true"),
 	sbomFormat:            "spdx",
@@ -106,6 +108,7 @@ func main() {
 	flag.StringVar(&opts.nexusPassword, "nexus-password", defaultOptions.nexusPassword, "Nexus password")
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", defaultOptions.buildahBuildExtraArgs, "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", defaultOptions.buildahPushExtraArgs, "extra parameters passed for the push command when pushing images")
+	flag.StringVar(&opts.trivySBOMExtraArgs, "trivy-sbom-extra-args", defaultOptions.trivySBOMExtraArgs, "extra parameters passed for the trivy command to generate an SBOM")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
@@ -121,8 +124,7 @@ func main() {
 		setupContext(),
 		setImageName(),
 		skipIfImageExists(),
-		buildImage(),
-		// scanImageWithTrivy(),
+		buildImageAndGenerateTar(),
 		generateSBOM(),
 		pushImage(),
 		scanImageWithAqua(),
