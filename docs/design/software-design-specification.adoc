@@ -354,7 +354,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 | Builds and scans a container image, then pushes it to a registry. References SDS-TASK-20 and executes SDS-TASK-21.
 
 | SDS-TASK-20
-| `ods-buildah` container image
+| `ods-package-image` container image
 | Container image to build, scan and push images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18 and SDS-TASK-21. If the build argument `aquasecScannerUrl` is set, the referenced Aqua Scanner binary is installed into the image as well.
 
 | SDS-TASK-21

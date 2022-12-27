@@ -43,26 +43,25 @@ func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 
 // buildahPush pushes a local image to the given imageRef.
 func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
-	extraArgs, err := shlex.Split(p.opts.buildahPushExtraArgs)
+	opts := p.opts
+	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
 	if err != nil {
-		log.Printf("could not parse extra args (%s): %s", p.opts.buildahPushExtraArgs, err)
+		log.Printf("could not parse extra args (%s): %s", opts.buildahPushExtraArgs, err)
 	}
 	args := []string{
-		fmt.Sprintf("--storage-driver=%s", p.opts.storageDriver),
+		fmt.Sprintf("--storage-driver=%s", opts.storageDriver),
 		"push",
-		fmt.Sprintf("--tls-verify=%v", p.opts.tlsVerify),
-		fmt.Sprintf("--cert-dir=%s", p.opts.certDir),
-		fmt.Sprintf("--digestfile=%s", filepath.Join(p.opts.checkoutDir, "image-digest")),
+		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
+		fmt.Sprintf("--cert-dir=%s", opts.certDir),
+		fmt.Sprintf("--digestfile=%s", filepath.Join(opts.checkoutDir, "image-digest")),
 	}
 	args = append(args, extraArgs...)
-	if p.opts.debug {
+	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
 	args = append(args, p.image.Ref, fmt.Sprintf("docker://%s", p.image.Ref))
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
-
-// 	buildah	--storage-driver=vfs bud  --format=oci --tls-verify=true --cert-dir=/etc/containers/certs.d --no-cache --file=./Dockerfile --tag=hi --log-level=debug .
 
 // buildahBuildArgs assembles the args to be passed to buildah based on
 // given options and tag.

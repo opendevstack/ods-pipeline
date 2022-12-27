@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["buildah", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "pipeline-manager", "python-toolset", "node16-npm-toolset"]
+        image: ["package-image", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "pipeline-manager", "python-toolset", "node16-npm-toolset"]
     permissions:
       contents: read
       packages: write

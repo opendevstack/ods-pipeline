@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	// TODO discuss about plurals usage
 	ArtifactsDir              = "artifacts"
 	ArtifactsPath             = BaseDir + "/" + ArtifactsDir
 	PipelineRunsDir           = "pipeline-runs"
