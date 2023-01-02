@@ -76,10 +76,10 @@ func setImageName() PackageStep {
 	}
 }
 
-func skipIfImageExists() PackageStep {
+func skipIfImageDigestExists() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		fmt.Printf("Checking if image %s exists already ...\n", p.image.ImageName())
-		imageDigest, err := getImageDigestFromRegistry(p.image.Ref, p.opts)
+		fmt.Printf("Checking if image digest for %s exists already ...\n", p.image.ImageName())
+		imageDigest, err := getImageDigestFromFile(p.opts.checkoutDir)
 		if err == nil {
 			return p, &skipRemainingSteps{"image exists already"}
 		}

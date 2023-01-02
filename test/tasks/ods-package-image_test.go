@@ -59,9 +59,9 @@ func TestTaskODSPackageImage(t *testing.T) {
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
+					checkResultingFiles(t, ctxt, wsDir)
 					checkResultingImageHelloWorld(t, ctxt, wsDir)
 					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
-					checkResultingFiles(t, ctxt, wsDir)
 				},
 			},
 			"task should build image with build extra args param": {
