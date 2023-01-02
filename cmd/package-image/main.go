@@ -51,10 +51,7 @@ type packageImage struct {
 	logger logging.LeveledLoggerInterface
 	opts   options
 	ctxt   *pipelinectxt.ODSContext
-	// Name of buildah binary.
-	buildahBin string
-	trivyBin   string
-	image      artifact.Image
+	image  artifact.Image
 }
 
 var defaultOptions = options{
@@ -109,6 +106,7 @@ func main() {
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", defaultOptions.buildahBuildExtraArgs, "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", defaultOptions.buildahPushExtraArgs, "extra parameters passed for the push command when pushing images")
 	flag.StringVar(&opts.trivySBOMExtraArgs, "trivy-sbom-extra-args", defaultOptions.trivySBOMExtraArgs, "extra parameters passed for the trivy command to generate an SBOM")
+	flag.StringVar(&opts.sbomFormat, "sbom-format", defaultOptions.sbomFormat, "SBOM format")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
@@ -120,7 +118,7 @@ func main() {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
 
-	err := (&packageImage{buildahBin: buildahBin, logger: logger, opts: opts}).runSteps(
+	err := (&packageImage{logger: logger, opts: opts}).runSteps(
 		setupContext(),
 		setImageName(),
 		skipIfImageExists(),
@@ -219,7 +217,7 @@ func getImageDigestFromRegistry(imageRef string, opts options) (string, error) {
 	if opts.debug {
 		args = append(args, "--debug")
 	}
-	stdout, _, err := command.RunBuffered("skopeo", append(args, "docker://"+imageRef))
+	stdout, _, err := command.RunBuffered("skopeo", append(args, fmt.Sprintf("docker://%s", imageRef)))
 	return string(stdout), err
 }
 

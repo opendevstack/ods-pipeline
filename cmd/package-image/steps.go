@@ -81,7 +81,7 @@ func skipIfImageExists() PackageStep {
 		fmt.Printf("Checking if image %s exists already ...\n", p.image.ImageName())
 		imageDigest, err := getImageDigestFromRegistry(p.image.Ref, p.opts)
 		if err == nil {
-			return p, fmt.Errorf("image exists already: %w", err)
+			return p, &skipRemainingSteps{"image exists already"}
 		}
 		p.image.Digest = imageDigest
 		return p, nil
@@ -111,6 +111,7 @@ func buildImageAndGenerateTar() PackageStep {
 
 func generateSBOM() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
+		fmt.Println("Generating image SBOM with trivy scanner ...")
 		err := p.generateImageSBOM()
 		if err != nil {
 			return p, fmt.Errorf("generate SBOM: %w", err)

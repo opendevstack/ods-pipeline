@@ -32,12 +32,12 @@ func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 	args := []string{
 		fmt.Sprintf("--storage-driver=%s", p.opts.storageDriver),
 		"push",
-		//? fmt.Sprintf("--digestfile=%s", filepath.Join(p.opts.checkoutDir, "image-digest")),
+		fmt.Sprintf("--digestfile=%s", filepath.Join(p.opts.checkoutDir, "image-digest")),
 	}
 	if p.opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	args = append(args, p.image.Ref, fmt.Sprintf("oci:%s.tar", p.image.Name))
+	args = append(args, p.image.Ref, fmt.Sprintf("oci:%s.tar", filepath.Join(p.opts.checkoutDir, p.image.Name)))
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 

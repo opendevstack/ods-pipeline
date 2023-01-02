@@ -10,6 +10,10 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
+const (
+	trivyBin = "trivy"
+)
+
 func (p *packageImage) generateImageSBOM() error {
 	// settle for one format and name until we have use cases for multiple formats (we use spdx format).
 	// trivy support --formats:  table, json, sarif, template, cyclonedx, spdx, spdx-json, github, cosign-vuln (default "table")
@@ -21,14 +25,16 @@ func (p *packageImage) generateImageSBOM() error {
 	sbomFile := filepath.Join(p.opts.checkoutDir, pipelinectxt.SbomsFilename)
 	args := []string{
 		"image",
-		fmt.Sprintf("--input=%s.tar", p.image.Name),
 		fmt.Sprintf("--format=%s", p.opts.sbomFormat),
+		fmt.Sprintf("--input=%s.tar", filepath.Join(p.opts.checkoutDir, p.image.Name)),
 		fmt.Sprintf("--output=%s", sbomFile),
 	}
+	if p.opts.debug {
+		args = append(args, "--debug=true")
+	}
 	args = append(args, extraArgs...)
-
 	return command.Run(
-		p.trivyBin, args, []string{},
+		trivyBin, args, []string{},
 		os.Stdout, os.Stderr,
 	)
 }
