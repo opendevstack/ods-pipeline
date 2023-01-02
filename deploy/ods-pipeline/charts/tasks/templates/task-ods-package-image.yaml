@@ -43,7 +43,7 @@ spec:
     * `image-digests/`
       ** `<image-name>.json`
     * `sboms/`
-      ** `spdx.json`
+      ** `sbom.spdx`
   params:
     - name: registry
       description: Image registry to push image to.
@@ -90,8 +90,8 @@ spec:
       name: image-digest
   steps:
     - name: build-and-push-image
-      # Image is built from build/package/Dockerfile.buildah.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-buildah:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      # Image is built from build/package/Dockerfile.package-image.
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
