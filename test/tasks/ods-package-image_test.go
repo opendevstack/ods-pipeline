@@ -106,6 +106,7 @@ func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, 
 func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	wantFiles := []string{
 		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", ctxt.ODS.Component),
+		".ods/artifacts/sboms/sbom.spdx",
 	}
 	for _, wf := range wantFiles {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {

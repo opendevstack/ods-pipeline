@@ -11,7 +11,7 @@ import (
 )
 
 func (p *packageImage) generateImageSBOM() error {
-	// settle for one format and name until we have use cases for multiple formats.
+	// settle for one format and name until we have use cases for multiple formats (we use spdx format).
 	// trivy support --formats:  table, json, sarif, template, cyclonedx, spdx, spdx-json, github, cosign-vuln (default "table")
 	// more args for experimentation via extra args
 	extraArgs, err := shlex.Split(p.opts.trivySBOMExtraArgs)
@@ -22,7 +22,7 @@ func (p *packageImage) generateImageSBOM() error {
 	args := []string{
 		"image",
 		fmt.Sprintf("--input=%s.tar", p.image.Name),
-		"--format=spdx-json",
+		fmt.Sprintf("--format=%s", p.opts.sbomFormat),
 		fmt.Sprintf("--output=%s", sbomFile),
 	}
 	args = append(args, extraArgs...)

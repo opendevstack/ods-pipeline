@@ -32,7 +32,7 @@ const (
 	TrivyScansPath            = ArtifactsPath + "/" + TrivyScansDir
 	SbomsDir                  = "sboms"
 	SbomsPath                 = ArtifactsPath + "/" + SbomsDir
-	SbomsFilename             = "spdx.json"
+	SbomsFilename             = "sbom.spdx"
 	CodeCoveragesDir          = "code-coverage"
 	CodeCoveragesPath         = ArtifactsPath + "/" + CodeCoveragesDir
 	XUnitReportsDir           = "xunit-reports"
