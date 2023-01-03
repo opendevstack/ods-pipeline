@@ -9,6 +9,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Add trivy security scanner CLI for SBOM generation ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
+
 ### Changed
 
 - Normalize K8s manifests to exclude style differences from Helm diff output. The change is applied to both the helm execution in the `ods-deploy-helm` task and in the install script. See [#591](https://github.com/opendevstack/ods-pipeline/issues/591).

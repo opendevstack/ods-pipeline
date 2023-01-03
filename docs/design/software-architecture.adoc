@@ -91,6 +91,12 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | OpenShift ImageStream
 |
 
+| Task `ods-package-image`
+| Generate image SBOM
+| HTTP / JSON API
+| Trivy
+|
+
 | Task `ods-deploy-helm`
 | Copy image
 | HTTP
