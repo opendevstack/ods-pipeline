@@ -43,7 +43,6 @@ type options struct {
 	trivySBOMExtraArgs    string
 	aquasecGate           bool
 	debug                 bool
-	sbomFormat            string
 }
 
 type packageImage struct {
@@ -78,7 +77,6 @@ var defaultOptions = options{
 	trivySBOMExtraArgs:    "",
 	aquasecGate:           false,
 	debug:                 (os.Getenv("DEBUG") == "true"),
-	sbomFormat:            "spdx",
 }
 
 func main() {
@@ -105,7 +103,6 @@ func main() {
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", defaultOptions.buildahBuildExtraArgs, "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", defaultOptions.buildahPushExtraArgs, "extra parameters passed for the push command when pushing images")
 	flag.StringVar(&opts.trivySBOMExtraArgs, "trivy-sbom-extra-args", defaultOptions.trivySBOMExtraArgs, "extra parameters passed for the trivy command to generate an SBOM")
-	flag.StringVar(&opts.sbomFormat, "sbom-format", defaultOptions.sbomFormat, "SBOM format")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()

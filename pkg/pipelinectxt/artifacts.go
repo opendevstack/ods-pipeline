@@ -32,6 +32,7 @@ const (
 	TrivyScansPath            = ArtifactsPath + "/" + TrivyScansDir
 	SbomsDir                  = "sboms"
 	SbomsPath                 = ArtifactsPath + "/" + SbomsDir
+	SbomsFormat               = "spdx"
 	SbomsFilename             = "sbom.spdx"
 	CodeCoveragesDir          = "code-coverage"
 	CodeCoveragesPath         = ArtifactsPath + "/" + CodeCoveragesDir
