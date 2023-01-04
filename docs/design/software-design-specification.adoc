@@ -369,7 +369,7 @@ Builds a container image using SDS-EXT-18:
 
 Pushes the image to the target registry (defaulting to an image stream in the namespace of the pipeline run) using SDS-EXT-17.
 
-Generates the SBOM report of the image using SDS-EXT-31. The resulting report is placed in `.ods/artifacts/sboms/sbom.spdx` in link:https://spdx.dev/[SPDX] format.
+Generates the SBOM report of the image using SDS-EXT-31. The resulting report is placed in `.ods/artifacts/sboms/<image-name>.spdx` in link:https://spdx.dev/[SPDX] format.
 
 If the Aqua scanner is installed in the base image, the  pushed image shall be scanned. The resulting report is placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
 |===
