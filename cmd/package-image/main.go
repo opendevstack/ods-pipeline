@@ -117,7 +117,7 @@ func main() {
 	err := (&packageImage{logger: logger, opts: opts}).runSteps(
 		setupContext(),
 		setImageName(),
-		skipIfImageDigestExists(),
+		skipIfImageArtifactExists(),
 		buildImageAndGenerateTar(),
 		generateSBOM(),
 		pushImage(),
@@ -216,4 +216,12 @@ func writeImageDigestToResults(imageDigest string) error {
 		return err
 	}
 	return os.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
+}
+
+// imageArtifactExists checks if image artifact JSON file exists in its artifacts path
+func imageArtifactExists(p *packageImage) error {
+	imageArtifactsDir := filepath.Join(p.opts.checkoutDir, pipelinectxt.ImageDigestsPath)
+	imageArtifactFilename := fmt.Sprintf("%s.json", p.ctxt.Component)
+	_, err := os.Stat(filepath.Join(imageArtifactsDir, imageArtifactFilename))
+	return err
 }

@@ -11,7 +11,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/installation"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 )
 
@@ -54,14 +56,12 @@ func TestTaskODSPackageImage(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					tag := getDockerImageTag(t, ctxt, wsDir)
-					buildAndPushImageWithLabel(t, ctxt, tag, wsDir)
+					generateArtifacts(t, ctxt, tag, wsDir)
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
-					checkResultingImageHelloWorld(t, ctxt, wsDir)
-					checkLabelOnImage(t, ctxt, wsDir, "tasktestrun", "true")
 				},
 			},
 			"task should build image with build extra args param": {
@@ -82,27 +82,6 @@ func TestTaskODSPackageImage(t *testing.T) {
 	)
 }
 
-// buildAndPushImageWithLabel builds an image and pushes it to the registry.
-// The used image tag equals the Git SHA that is being built, so the task
-// will pick up the existing image.
-// The image is labelled with "tasktestrun=true" so that it is possible to
-// verify that the image has not been rebuild in the task.
-func buildAndPushImageWithLabel(t *testing.T, ctxt *tasktesting.TaskRunContext, tag, wsDir string) {
-	t.Logf("Build image %s ahead of taskrun", tag)
-	_, stderr, err := command.RunBuffered("docker", []string{
-		"build", "--label", "tasktestrun=true", "-t", tag, filepath.Join(wsDir, "docker"),
-	})
-	if err != nil {
-		t.Fatalf("could not build image: %s, stderr: %s", err, string(stderr))
-	}
-	_, stderr, err = command.RunBuffered("docker", []string{
-		"push", tag,
-	})
-	if err != nil {
-		t.Fatalf("could not push image: %s, stderr: %s", err, string(stderr))
-	}
-}
-
 func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	wantFiles := []string{
 		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", ctxt.ODS.Component),
@@ -112,20 +91,6 @@ func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir s
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
 			t.Fatalf("Want %s, but got nothing", wf)
 		}
-	}
-}
-
-func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wantLabelKey, wantLabelValue string) {
-	stdout, stderr, err := command.RunBuffered("docker", []string{
-		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
-		getDockerImageTag(t, ctxt, wsDir),
-	})
-	if err != nil {
-		t.Fatalf("could not run get label on image: %s, stderr: %s", err, string(stderr))
-	}
-	got := strings.TrimSpace(string(stdout))
-	if got != wantLabelValue {
-		t.Fatalf("Want label %s=%s, but got value: %s", wantLabelKey, wantLabelValue, got)
 	}
 }
 
@@ -209,4 +174,51 @@ func getDockerImageTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir str
 		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
 	return fmt.Sprintf("localhost:5000/%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, sha)
+}
+
+func generateArtifacts(t *testing.T, ctxt *tasktesting.TaskRunContext, tag string, wsDir string) {
+	t.Logf("Generating artifacts for image %s", tag)
+	t.Logf("Generating image artifact")
+	err := generateImageArtifact(ctxt, tag, wsDir)
+	if err != nil {
+		t.Fatalf("could not create image artifact: %s", err)
+	}
+	t.Logf("Generating image SBOM artifact")
+	err = generateImageSBOMArtifact(ctxt, wsDir)
+	if err != nil {
+		t.Fatalf("could not create image SBOM artifact: %s", err)
+	}
+}
+
+func generateImageArtifact(ctxt *tasktesting.TaskRunContext, tag string, wsDir string) error {
+	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit-sha"))
+	if err != nil {
+		return fmt.Errorf("could not read git-commit-sha: %s", err)
+	}
+	ia := artifact.Image{
+		Ref:        tag,
+		Registry:   "kind-registry.kind:5000",
+		Repository: ctxt.Namespace,
+		Name:       ctxt.ODS.Component,
+		Tag:        sha,
+		Digest:     "abc",
+	}
+	imageArtifactFilename := fmt.Sprintf("%s.json", ctxt.ODS.Component)
+	err = pipelinectxt.WriteJsonArtifact(ia, filepath.Join(wsDir, pipelinectxt.ImageDigestsPath), imageArtifactFilename)
+	return err
+}
+
+func generateImageSBOMArtifact(ctxt *tasktesting.TaskRunContext, wsDir string) error {
+	artifactsDir := filepath.Join(wsDir, pipelinectxt.SbomsPath)
+	// imageArtifactFilename := fmt.Sprintf("%s.json", p.ctxt.Component)
+	sbomArtifactFilename := "sbom.spdx"
+	err := os.MkdirAll(artifactsDir, 0755)
+	if err != nil {
+		return fmt.Errorf("could not create %s: %w", artifactsDir, err)
+	}
+	_, err = os.Create(filepath.Join(artifactsDir, sbomArtifactFilename))
+	if err != nil {
+		return fmt.Errorf("could not create SBOM fake file: %s", err)
+	}
+	return err
 }

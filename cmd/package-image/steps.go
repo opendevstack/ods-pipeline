@@ -76,14 +76,13 @@ func setImageName() PackageStep {
 	}
 }
 
-func skipIfImageDigestExists() PackageStep {
+func skipIfImageArtifactExists() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		fmt.Printf("Checking if image digest for %s exists already ...\n", p.image.ImageName())
-		imageDigest, err := getImageDigestFromFile(p.opts.checkoutDir)
+		err := imageArtifactExists(p)
 		if err == nil {
-			return p, &skipRemainingSteps{"image exists already"}
+			return p, &skipRemainingSteps{"image artifact exists already"}
 		}
-		p.image.Digest = imageDigest
 		return p, nil
 	}
 }
