@@ -14,6 +14,7 @@ SONAR_PASSWORD="admin"
 SONAR_EDITION="community"
 SONAR_IMAGE_TAG="${SONAR_VERSION}-${SONAR_EDITION}"
 HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
+ODS_KIND_CREDENTIALS_DIR="${ODS_PIPELINE_DIR}/deploy/.kind-credentials"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -65,11 +66,10 @@ tokenResponse=$(curl ${INSECURE} -X POST -sSf --user "${SONAR_USERNAME}:${SONAR_
 # {"login":"cd_user","name":"foo","token":"bar","createdAt":"2020-04-22T13:21:54+0000"}
 token=$(echo "${tokenResponse}" | jq -r .token)
 
+# Write values / secrets so that it can be picked up by install.sh later.
 if [ ! -e "${HELM_VALUES_FILE}" ]; then
     echo "setup:" > "${HELM_VALUES_FILE}"
 fi
-
-{
-    echo "  sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'"
-    echo "  sonarAuthToken: '${token}'"
-} >> "${HELM_VALUES_FILE}"
+echo "  sonarUrl: 'http://${CONTAINER_NAME}.kind:9000'" >> "${HELM_VALUES_FILE}"
+mkdir -p "${ODS_KIND_CREDENTIALS_DIR}"
+echo -n ":${token}" > "${ODS_KIND_CREDENTIALS_DIR}/sonar-auth"
