@@ -85,7 +85,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 func checkResultingFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
 	wantFiles := []string{
 		fmt.Sprintf(".ods/artifacts/image-digests/%s.json", ctxt.ODS.Component),
-		".ods/artifacts/sboms/sbom.spdx",
+		fmt.Sprintf(".ods/artifacts/sboms/%s.spdx", ctxt.ODS.Component),
 	}
 	for _, wf := range wantFiles {
 		if _, err := os.Stat(filepath.Join(wsDir, wf)); os.IsNotExist(err) {
@@ -209,9 +209,8 @@ func generateImageArtifact(ctxt *tasktesting.TaskRunContext, tag string, wsDir s
 }
 
 func generateImageSBOMArtifact(ctxt *tasktesting.TaskRunContext, wsDir string) error {
-	artifactsDir := filepath.Join(wsDir, pipelinectxt.SbomsPath)
-	// imageArtifactFilename := fmt.Sprintf("%s.json", p.ctxt.Component)
-	sbomArtifactFilename := "sbom.spdx"
+	artifactsDir := filepath.Join(wsDir, pipelinectxt.SBOMsPath)
+	sbomArtifactFilename := fmt.Sprintf("%s.spdx", ctxt.ODS.Component)
 	err := os.MkdirAll(artifactsDir, 0755)
 	if err != nil {
 		return fmt.Errorf("could not create %s: %w", artifactsDir, err)

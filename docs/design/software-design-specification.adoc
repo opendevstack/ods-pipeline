@@ -664,7 +664,7 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-31
 | Trivy
-| 0.34.0
+| 0.36.0
 | Security scanner CLI.
 | https://www.trivy.dev/
 

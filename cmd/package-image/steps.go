@@ -76,9 +76,11 @@ func setImageName() PackageStep {
 	}
 }
 
+// skipIfImageArtifactExists informs to skip next steps if ODS image artifact is already in place.
+// In future we might want to check all the expected artifacts, that must exist to do skip properly.
 func skipIfImageArtifactExists() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		fmt.Printf("Checking if image digest for %s exists already ...\n", p.image.ImageName())
+		fmt.Printf("Checking if image artifact for %s exists already ...\n", p.image.ImageName())
 		err := imageArtifactExists(p)
 		if err == nil {
 			return p, &skipRemainingSteps{"image artifact exists already"}
@@ -185,9 +187,10 @@ func storeArtifact() PackageStep {
 		}
 
 		fmt.Println("Writing SBOM artifact ...")
-		sbomFile := filepath.Join(p.opts.checkoutDir, pipelinectxt.SbomsFilename)
+		sbomFilename := fmt.Sprintf("%s.%s", p.image.Name, pipelinectxt.SBOMsFormat)
+		sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
 		if _, err := os.Stat(sbomFile); err == nil {
-			err := pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SbomsPath)
+			err := pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
 			if err != nil {
 				return p, fmt.Errorf("copying SBOM report to artifacts failed: %w", err)
 			}

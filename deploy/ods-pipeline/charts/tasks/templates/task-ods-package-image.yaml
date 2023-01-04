@@ -43,7 +43,7 @@ spec:
     * `image-digests/`
       ** `<image-name>.json`
     * `sboms/`
-      ** `sbom.spdx`
+      ** `<image-name>.spdx`
   params:
     - name: registry
       description: Image registry to push image to.
