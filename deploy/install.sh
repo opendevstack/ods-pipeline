@@ -160,7 +160,7 @@ installSecret () {
                 read -rs authPassword
             else
                 authUser=''
-                authPassword=$(LC_ALL=C tr -dc 'A-Za-z0-9!#%*+-<=>?^_{|}' </dev/urandom | head -c 20 ; echo)
+                authPassword=$(LC_ALL=C tr -dc 'A-Za-z0-9#%*+\-<=>_{|}' </dev/urandom | head -c 20 ; echo)
             fi
         fi
         echo "Creating secret ${secretName} ..."
