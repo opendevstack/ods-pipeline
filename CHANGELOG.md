@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -23,8 +24,11 @@ listed in the changelog.
 - Update go-junit-report to 2.0.0 ([#625](https://github.com/opendevstack/ods-pipeline/issues/625))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
 - Remove secrets from installation Helm chart. Secrets are now managed when running the `install.sh` script. See ([#629](https://github.com/opendevstack/ods-pipeline/issues/629))
+- Refactor and naming change of `buildah` task to `package-image` ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
+- Package image task skips steps if image artifact exists ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 
 ### Fixed
+
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
 - STDOUT and STDERR is not interleaved as expected ([#613](https://github.com/opendevstack/ods-pipeline/issues/613))
 
