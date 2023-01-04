@@ -27,7 +27,7 @@ func (p *packageImage) buildahBuild(outWriter, errWriter io.Writer) error {
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 
-// buildahPush pushes a local image to a tar in directory format for trivy image scans.
+// buildahPush pushes a local image to a OCI formatted directory for trivy image scans.
 func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 	args := []string{
 		fmt.Sprintf("--storage-driver=%s", p.opts.storageDriver),
@@ -37,7 +37,7 @@ func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 	if p.opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	args = append(args, p.image.Ref, fmt.Sprintf("oci:%s.tar", filepath.Join(p.opts.checkoutDir, p.image.Name)))
+	args = append(args, p.image.Ref, fmt.Sprintf("oci:%s", filepath.Join(p.opts.checkoutDir, p.image.Name)))
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 

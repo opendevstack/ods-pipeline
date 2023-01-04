@@ -26,7 +26,7 @@ func (p *packageImage) generateImageSBOM() error {
 	args := []string{
 		"image",
 		fmt.Sprintf("--format=%s", pipelinectxt.SbomsFormat),
-		fmt.Sprintf("--input=%s.tar", filepath.Join(p.opts.checkoutDir, p.image.Name)),
+		fmt.Sprintf("--input=%s", filepath.Join(p.opts.checkoutDir, p.image.Name)),
 		fmt.Sprintf("--output=%s", sbomFile),
 	}
 	if p.opts.debug {
