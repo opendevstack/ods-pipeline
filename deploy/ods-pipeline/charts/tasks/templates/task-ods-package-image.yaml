@@ -42,6 +42,8 @@ spec:
       ** `report.json`
     * `image-digests/`
       ** `<image-name>.json`
+    * `sboms/`
+      ** `<image-name>.spdx`
   params:
     - name: registry
       description: Image registry to push image to.
@@ -68,11 +70,15 @@ spec:
       type: string
       default: oci
     - name: buildah-build-extra-args
-      description: Extra parameters passed for the build command when building images.
+      description: Extra parameters passed for the build command when building images (e.g. '--build-arg=firstArg=one --build-arg=secondArg=two').
       type: string
       default: ''
     - name: buildah-push-extra-args
-      description: Extra parameters passed for the push command when pushing images (e.g. '--build-arg=firstArg=one --build-arg=secondArg=two').
+      description: Extra parameters passed for the push command when pushing images.
+      type: string
+      default: ''
+    - name: trivy-sbom-extra-args
+      description: Extra parameters passed for the trivy command to generate an SBOM.
       type: string
       default: ''
     - name: aqua-gate
@@ -84,8 +90,8 @@ spec:
       name: image-digest
   steps:
     - name: build-and-push-image
-      # Image is built from build/package/Dockerfile.buildah.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-buildah:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      # Image is built from build/package/Dockerfile.package-image.
+      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -142,8 +148,8 @@ spec:
       resources: {}
       script: |
 
-        #  ods-build-push-image is built from cmd/build-push-image/main.go.
-        ods-build-push-image \
+        #  ods-package-image is built from cmd/package-image/main.go.
+        ods-package-image \
           -image-stream=$(params.image-stream) \
           -registry=$(params.registry) \
           -storage-driver=$(params.storage-driver) \
@@ -152,6 +158,7 @@ spec:
           -context-dir=$(params.docker-dir) \
           -buildah-build-extra-args=$(params.buildah-build-extra-args) \
           -buildah-push-extra-args=$(params.buildah-push-extra-args) \
+          -trivy-sbom-extra-args=$(params.trivy-sbom-extra-args) \
           -aqua-gate=$(params.aqua-gate)
       volumeMounts:
         - mountPath: /var/lib/containers

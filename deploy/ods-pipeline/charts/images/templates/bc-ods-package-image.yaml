@@ -1,8 +1,8 @@
-{{if or .Values.global.enabledTasks.packageImage .Values.buildah}}
+{{if or .Values.global.enabledTasks.packageImage .Values.packageImage}}
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: ods-buildah
+  name: ods-package-image
   labels:
     {{- include "chart.labels" . | nindent 4}}
 spec:
@@ -10,7 +10,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: 'ods-buildah:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      name: 'ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
@@ -27,6 +27,6 @@ spec:
           value: '{{.Values.aquasecScannerUrl}}'
   source:
     dockerfile: |-
-      {{- .Files.Get "docker/Dockerfile.buildah" | nindent 6}}
+      {{- .Files.Get "docker/Dockerfile.package-image" | nindent 6}}
   runPolicy: Serial
 {{end}}

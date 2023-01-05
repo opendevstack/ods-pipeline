@@ -69,7 +69,8 @@ func TestBuildahBuildArgs(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := buildahBuildArgs(tc.opts, tc.tag)
+			p := packageImage{opts: tc.opts}
+			got, err := p.buildahBuildArgs(tc.tag)
 			if err != nil {
 				if tc.wantErr != err.Error() {
 					t.Fatalf("want err: '%s', got err: %s", tc.wantErr, err)
@@ -141,7 +142,8 @@ func TestNexusBuildArgs(t *testing.T) {
 				nexusUsername: tc.nexusUsername,
 				nexusPassword: tc.nexusPassword,
 			}
-			args, err := nexusBuildArgs(opts)
+			p := packageImage{opts: opts}
+			args, err := p.nexusBuildArgs()
 			if err != nil {
 				t.Fatal(err)
 			}

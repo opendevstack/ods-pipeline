@@ -148,7 +148,7 @@ endif
 ##@ OpenShift
 
 start-ods-builds: ## Start builds for each ODS BuildConfig
-	oc start-build ods-buildah
+	oc start-build ods-package-image
 	oc start-build ods-finish
 	oc start-build ods-go-toolset
 	oc start-build ods-gradle-toolset

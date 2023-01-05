@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -8,6 +9,10 @@ Note that changes which ONLY affect documentation or the testsuite will not be
 listed in the changelog.
 
 ## [Unreleased]
+
+### Added
+
+- Add trivy security scanner CLI for SBOM generation ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 
 ### Changed
 
@@ -19,8 +24,11 @@ listed in the changelog.
 - Update go-junit-report to 2.0.0 ([#625](https://github.com/opendevstack/ods-pipeline/issues/625))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
 - Remove secrets from installation Helm chart. Secrets are now managed when running the `install.sh` script. See ([#629](https://github.com/opendevstack/ods-pipeline/issues/629))
+- Change name of `buildah` task to `package-image` ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
+- Package image task now skips creating an image if the image artifact exists (as opposed to checking for an image in the registry) ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 
 ### Fixed
+
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
 - STDOUT and STDERR is not interleaved as expected ([#613](https://github.com/opendevstack/ods-pipeline/issues/613))
 

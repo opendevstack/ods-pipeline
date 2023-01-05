@@ -10,7 +10,7 @@ RUN go mod download
 COPY cmd cmd
 COPY internal internal
 COPY pkg pkg
-RUN cd cmd/build-push-image && CGO_ENABLED=0 go build -o /usr/local/bin/ods-build-push-image
+RUN cd cmd/package-image && CGO_ENABLED=0 go build -o /usr/local/bin/ods-package-image
 
 # Final image
 # Based on https://catalog.redhat.com/software/containers/detail/5dca3d76dd19c71643b226d5?container-tabs=dockerfile&tag=8.4
@@ -18,9 +18,10 @@ RUN cd cmd/build-push-image && CGO_ENABLED=0 go build -o /usr/local/bin/ods-buil
 FROM registry.access.redhat.com/ubi8:8.4
 
 ENV BUILDAH_VERSION=1.27 \
-    SKOPEO_VERSION=1.9
+    SKOPEO_VERSION=1.9 \
+    TRIVY_VERSION=0.36.0
 
-COPY --from=builder /usr/local/bin/ods-build-push-image /usr/local/bin/ods-build-push-image
+COPY --from=builder /usr/local/bin/ods-package-image /usr/local/bin/ods-package-image
 
 # Don't include container-selinux and remove directories used by yum that are just taking up space.
 RUN useradd -u 1001 build \
@@ -46,6 +47,9 @@ RUN echo -e "build:1:1000\nbuild:1002:64535" > /etc/subuid \
     && echo -e "build:1:1000\nbuild:1002:64535" > /etc/subgid \
     && mkdir -p /home/build/.local/share/containers \
     && chown -R build:build /home/build
+
+# Install Trivy
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
 
 VOLUME /var/lib/containers
 VOLUME /home/build/.local/share/containers
