@@ -189,11 +189,9 @@ func storeArtifact() PackageStep {
 		fmt.Println("Writing SBOM artifact ...")
 		sbomFilename := fmt.Sprintf("%s.%s", p.image.Name, pipelinectxt.SBOMsFormat)
 		sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
-		if _, err := os.Stat(sbomFile); err == nil {
-			err := pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
-			if err != nil {
-				return p, fmt.Errorf("copying SBOM report to artifacts failed: %w", err)
-			}
+		err = pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
+		if err != nil {
+			return p, fmt.Errorf("copying SBOM report to artifacts failed: %w", err)
 		}
 
 		return p, nil
