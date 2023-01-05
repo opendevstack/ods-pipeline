@@ -178,22 +178,15 @@ func getDockerImageTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir str
 
 func generateArtifacts(t *testing.T, ctxt *tasktesting.TaskRunContext, tag string, wsDir string) {
 	t.Logf("Generating artifacts for image %s", tag)
-	t.Logf("Generating image artifact")
-	err := generateImageArtifact(ctxt, tag, wsDir)
-	if err != nil {
-		t.Fatalf("could not create image artifact: %s", err)
-	}
-	t.Logf("Generating image SBOM artifact")
-	err = generateImageSBOMArtifact(ctxt, wsDir)
-	if err != nil {
-		t.Fatalf("could not create image SBOM artifact: %s", err)
-	}
+	generateImageArtifact(t, ctxt, tag, wsDir)
+	generateImageSBOMArtifact(t, ctxt, wsDir)
 }
 
-func generateImageArtifact(ctxt *tasktesting.TaskRunContext, tag string, wsDir string) error {
+func generateImageArtifact(t *testing.T, ctxt *tasktesting.TaskRunContext, tag string, wsDir string) {
+	t.Logf("Generating image artifact")
 	sha, err := getTrimmedFileContent(filepath.Join(wsDir, ".ods/git-commit-sha"))
 	if err != nil {
-		return fmt.Errorf("could not read git-commit-sha: %s", err)
+		t.Fatalf("could not read git-commit-sha: %s", err)
 	}
 	ia := artifact.Image{
 		Ref:        tag,
@@ -205,19 +198,21 @@ func generateImageArtifact(ctxt *tasktesting.TaskRunContext, tag string, wsDir s
 	}
 	imageArtifactFilename := fmt.Sprintf("%s.json", ctxt.ODS.Component)
 	err = pipelinectxt.WriteJsonArtifact(ia, filepath.Join(wsDir, pipelinectxt.ImageDigestsPath), imageArtifactFilename)
-	return err
+	if err != nil {
+		t.Fatalf("could not create image artifact: %s", err)
+	}
 }
 
-func generateImageSBOMArtifact(ctxt *tasktesting.TaskRunContext, wsDir string) error {
+func generateImageSBOMArtifact(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string) {
+	t.Logf("Generating image SBOM artifact")
 	artifactsDir := filepath.Join(wsDir, pipelinectxt.SBOMsPath)
-	sbomArtifactFilename := fmt.Sprintf("%s.spdx", ctxt.ODS.Component)
+	sbomArtifactFilename := fmt.Sprintf("%s.%s", ctxt.ODS.Component, pipelinectxt.SBOMsFormat)
 	err := os.MkdirAll(artifactsDir, 0755)
 	if err != nil {
-		return fmt.Errorf("could not create %s: %w", artifactsDir, err)
+		t.Fatalf("could not create %s: %s", artifactsDir, err)
 	}
 	_, err = os.Create(filepath.Join(artifactsDir, sbomArtifactFilename))
 	if err != nil {
-		return fmt.Errorf("could not create SBOM fake file: %s", err)
+		t.Fatalf("could not create image SBOM artifact: %s", err)
 	}
-	return err
 }
