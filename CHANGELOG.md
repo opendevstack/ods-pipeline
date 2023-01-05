@@ -23,7 +23,7 @@ listed in the changelog.
 - Update Go to 1.18 ([#623](https://github.com/opendevstack/ods-pipeline/issues/623))
 - Update go-junit-report to 2.0.0 ([#625](https://github.com/opendevstack/ods-pipeline/issues/625))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
-- Remove secrets from installation Helm chart. Secrets are now managed when running the `install.sh` script. See ([#629](https://github.com/opendevstack/ods-pipeline/issues/629))
+- Remove secrets from installation Helm chart. Secrets are now managed when running the `install.sh` script. See [#629](https://github.com/opendevstack/ods-pipeline/issues/629).
 - Change name of `buildah` task to `package-image` ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 - Package image task now skips creating an image if the image artifact exists (as opposed to checking for an image in the registry) ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 
