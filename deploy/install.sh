@@ -153,7 +153,7 @@ installSecret () {
         if [ -z "${flagValue}" ]; then
             if [ -n "${usernamePrompt}" ]; then
                 echo "${usernamePrompt}"
-                read -rs authUser
+                read -r authUser
             fi
             if [ -n "${passwordPrompt}" ]; then
                 echo "${passwordPrompt}"
@@ -193,14 +193,14 @@ else
         "basic-auth-secret.yaml.tmpl" \
         "${AQUA_AUTH}" \
         "Please enter the username of an Aqua user with scan permissions:" \
-        "Please enter the password of this Aqua user:"
+        "Please enter the password of this Aqua user (input will be hidden):"
 
     # Bitbucket username is not required as PAT alone is enough.
     installSecret "ods-bitbucket-auth" \
         "basic-auth-secret.yaml.tmpl" \
         "${BITBUCKET_AUTH}" \
         "" \
-        "Please enter a personal access token of a Bitbucket user with project admin permission:"
+        "Please enter a personal access token of a Bitbucket user with project admin permission (input will be hidden):"
 
     # Webhook secret is a special case, as we do not want the user to set it.
     # No prompts -> password will be auto-generated if not given.
@@ -213,14 +213,14 @@ else
         "basic-auth-secret.yaml.tmpl" \
         "${NEXUS_AUTH}" \
         "Please enter the username of a Nexus user with write permission:" \
-        "Please enter the password of this Nexus user:"
+        "Please enter the password of this Nexus user (input will be hidden):"
 
     # SonarQube username is not required as auth token alone is enough.
     installSecret "ods-sonar-auth" \
         "basic-auth-secret.yaml.tmpl" \
         "${SONAR_AUTH}" \
         "" \
-        "Please enter an auth token of a SonarQube user with scan permissions:"
+        "Please enter an auth token of a SonarQube user with scan permissions (input will be hidden):"
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."
