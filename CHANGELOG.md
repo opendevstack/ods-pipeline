@@ -10,6 +10,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.8.0] - 2023-01-06
+
 ### Added
 
 - Add trivy security scanner CLI for SBOM generation ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
@@ -31,6 +34,7 @@ listed in the changelog.
 
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
 - STDOUT and STDERR is not interleaved as expected ([#613](https://github.com/opendevstack/ods-pipeline/issues/613))
+
 
 ## [0.7.0] - 2022-10-11
 
