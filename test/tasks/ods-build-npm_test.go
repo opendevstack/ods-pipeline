@@ -15,20 +15,17 @@ import (
 func TestTaskODSBuildNPM(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-npm",
-		[]tasktesting.Service{
-			tasktesting.Nexus,
-			tasktesting.SonarQube,
-		},
+		requiredServices(tasktesting.Nexus, tasktesting.SonarQube),
 		map[string]tasktesting.TestCase{
 			"build typescript app with SQ scan": {
 				WorkspaceDirMapping: map[string]string{"source": "typescript-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
 						"cache-build":        "false",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -39,22 +36,28 @@ func TestTaskODSBuildNPM(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						"docker/dist/src/index.js",
 						"docker/dist/package.json",
 						"docker/dist/package-lock.json",
 					)
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+					}
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
 
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 				},
 			},
 			"build javascript app in subdirectory with build caching": {
@@ -66,12 +69,10 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					createAppInSubDirectory(t, wsDir, subdir, "javascript-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"sonar-skip":  "true",
+					ctxt.Params = buildTaskParams(map[string]string{
 						"working-dir": subdir,
 						"output-dir":  "../docker",
-						// "cache-build": "true", expected to be default now
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -133,10 +134,9 @@ func TestTaskODSBuildNPM(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"sonar-skip":        "true",
+					ctxt.Params = buildTaskParams(map[string]string{
 						"copy-node-modules": "true",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -153,10 +153,9 @@ func TestTaskODSBuildNPM(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"sonar-skip": "true",
-						"build-dir":  "build",
-					}
+					ctxt.Params = buildTaskParams(map[string]string{
+						"build-dir": "build",
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {

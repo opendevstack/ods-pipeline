@@ -15,20 +15,17 @@ import (
 func TestTaskODSBuildPython(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-python",
-		[]tasktesting.Service{
-			tasktesting.Nexus,
-			tasktesting.SonarQube,
-		},
+		requiredServices(tasktesting.Nexus, tasktesting.SonarQube),
 		map[string]tasktesting.TestCase{
 			"build python fastapi app": {
 				WorkspaceDirMapping: map[string]string{"source": "python-fastapi-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
 						"cache-build":        "false",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -39,10 +36,14 @@ func TestTaskODSBuildPython(t *testing.T) {
 						"docker/app/requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+					}
 
 					wantContainsBytes, err := os.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
@@ -56,8 +57,12 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+
+					if !*skipSonarQubeFlag {
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
+
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
@@ -69,10 +74,9 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
-						// "cache-build": "true", expected to be default now
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -83,10 +87,14 @@ func TestTaskODSBuildPython(t *testing.T) {
 						"docker/app/requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+					}
 
 					wantContainsBytes, err := os.ReadFile("../../test/testdata/golden/ods-build-python/excerpt-from-coverage.xml")
 					if err != nil {
@@ -100,8 +108,11 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wantContains = strings.ReplaceAll(wantContains, " ", "")
 
 					checkFileContentLeanContains(t, wsDir, filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"), wantContains)
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+
+					if !*skipSonarQubeFlag {
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 
 					// This is not available when build skipping as the default is
 					// supplied on the second repeat.
@@ -128,11 +139,11 @@ func TestTaskODSBuildPython(t *testing.T) {
 					createAppInSubDirectory(t, wsDir, subdir, "python-fastapi-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
 						"cache-build":        "true",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -144,13 +155,16 @@ func TestTaskODSBuildPython(t *testing.T) {
 						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.xml", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
 					)
-
-					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
+						)
+						sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 				},
 			},
 			"build python fastapi app with pre-test script": {
@@ -158,10 +172,9 @@ func TestTaskODSBuildPython(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
-						"sonar-skip":      "true",
+					ctxt.Params = buildTaskParams(map[string]string{
 						"pre-test-script": "pre-test-script.sh",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
