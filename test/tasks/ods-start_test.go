@@ -32,10 +32,10 @@ func TestTaskODSStart(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 
-					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					// Upload artifact to permanent storage.
 					_, err := nexusClient.Upload(
@@ -62,7 +62,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					checkODSContext(t, wsDir, ctxt.ODS)
 
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 					checkFilesExist(t, wsDir,
@@ -85,7 +85,7 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					subCtxt := tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					subrepoContext = subCtxt
 					err = os.RemoveAll(tempDir)
@@ -97,10 +97,10 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 
-					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 					_, err = nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
@@ -148,7 +148,7 @@ func TestTaskODSStart(t *testing.T) {
 					checkFileContent(t, destinationArtifactsBaseDir, xUnitFileSource, xUnitContent)
 					checkFilesExist(t, destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename)
 
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 				},
@@ -167,7 +167,7 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, tempDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					err = os.RemoveAll(tempDir)
 					if err != nil {
@@ -178,7 +178,7 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					ctxt.Params = map[string]string{
 						"url":               ctxt.ODS.GitURL,
@@ -209,7 +209,7 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 
 					ctxt.Params = map[string]string{
@@ -239,11 +239,11 @@ func TestTaskODSStart(t *testing.T) {
 						t.Fatal(err)
 					}
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 
 					// pretend there is already an RC tag for the current commit
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					_, err = bitbucketClient.TagCreate(
 						ctxt.ODS.Project,
 						ctxt.ODS.Repository,
@@ -282,7 +282,7 @@ func TestTaskODSStart(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					tasktesting.EnableLfsOnBitbucketRepoOrFatal(t, filepath.Base(wsDir), tasktesting.BitbucketProjectKey)
 					lfsFilename = "lfspicture.jpg"
@@ -303,7 +303,7 @@ func TestTaskODSStart(t *testing.T) {
 
 					checkODSContext(t, wsDir, ctxt.ODS)
 
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
 
 					checkFileHash(t, wsDir, lfsFilename, lfsFileHash)
@@ -314,7 +314,7 @@ func TestTaskODSStart(t *testing.T) {
 }
 
 func checkForTag(t *testing.T, ctxt *tasktesting.TaskRunContext, wantTag string) *bitbucket.Tag {
-	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 	var gotTag *bitbucket.Tag
 	tagPage, err := bitbucketClient.TagList(
 		ctxt.ODS.Project,

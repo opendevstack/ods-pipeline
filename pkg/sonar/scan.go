@@ -3,6 +3,7 @@ package sonar
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -34,7 +35,7 @@ const (
 
 // Scan scans the source code and uploads the analysis to given SonarQube project.
 // If pr is non-nil, information for pull request decoration is sent.
-func (c *Client) Scan(sonarProject, branch, commit string, pr *PullRequest) (string, error) {
+func (c *Client) Scan(sonarProject, branch, commit string, pr *PullRequest, outWriter, errWriter io.Writer) error {
 	scannerParams := []string{
 		fmt.Sprintf("-Dsonar.host.url=%s", c.clientConfig.BaseURL),
 		"-Dsonar.scm.provider=git",
@@ -67,15 +68,17 @@ func (c *Client) Scan(sonarProject, branch, commit string, pr *PullRequest) (str
 	// permission on the project is passed as "sonar.login" for authentication,
 	// see https://docs.sonarqube.org/latest/analysis/analysis-parameters/.
 	scannerParams = append(scannerParams, fmt.Sprintf("-Dsonar.login=%s", c.clientConfig.APIToken))
-	stdout, stderr, err := command.RunBuffered("sonar-scanner", scannerParams)
-	if err != nil {
-		return string(stdout), fmt.Errorf("scanning failed: %w, stderr: %s", err, string(stderr))
-	}
-	return string(stdout), nil
+
+	return command.Run(
+		"sonar-scanner", scannerParams,
+		[]string{fmt.Sprintf("SONAR_SCANNER_OPTS=%s", strings.Join(c.javaSystemProperties(), " "))},
+		outWriter, errWriter,
+	)
 }
 
 /*
 Example of the file located in .scannerwork/report-task.txt:
+
 	projectKey=XXXX-python
 	serverUrl=https://sonarqube-ods.XXXX.com
 	serverVersion=8.2.0.32929

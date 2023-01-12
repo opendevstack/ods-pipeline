@@ -14,7 +14,7 @@ import (
 )
 
 type ClientInterface interface {
-	Scan(sonarProject, branch, commit string, pr *PullRequest) (string, error)
+	Scan(sonarProject, branch, commit string, pr *PullRequest, outWriter, errWriter io.Writer) error
 	QualityGateGet(p QualityGateGetParams) (*QualityGate, error)
 	GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error
 	ExtractComputeEngineTaskID(filename string) (string, error)
@@ -29,13 +29,15 @@ type Client struct {
 }
 
 type ClientConfig struct {
-	Timeout       time.Duration
-	APIToken      string
-	HTTPClient    *http.Client
-	MaxRetries    int
-	BaseURL       string
-	ServerEdition string
-	Debug         bool
+	Timeout            time.Duration
+	APIToken           string
+	HTTPClient         *http.Client
+	MaxRetries         int
+	BaseURL            string
+	ServerEdition      string
+	TrustStore         string
+	TrustStorePassword string
+	Debug              bool
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
 }
@@ -80,6 +82,13 @@ func ProjectKey(ctxt *pipelinectxt.ODSContext, artifactPrefix string) string {
 
 func (c *Client) logger() logging.LeveledLoggerInterface {
 	return c.clientConfig.Logger
+}
+
+func (c *Client) javaSystemProperties() []string {
+	return []string{
+		fmt.Sprintf("-Djavax.net.ssl.trustStore=%s", c.clientConfig.TrustStore),
+		fmt.Sprintf("-Djavax.net.ssl.trustStorePassword=%s", c.clientConfig.TrustStorePassword),
+	}
 }
 
 func (c *Client) get(urlPath string) (int, []byte, error) {

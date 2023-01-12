@@ -43,8 +43,9 @@ echo "Using NEXUS_URL=$NEXUS_URL"
 echo "Using GRADLE_OPTS=$GRADLE_OPTS"
 echo "Using GRADLE_USER_HOME=$GRADLE_USER_HOME"
 echo "Using ARTIFACTS_DIR=$ARTIFACTS_DIR"
+mkdir -p "${GRADLE_USER_HOME}"
 
-set-gradle-proxy
+configure-gradle
 
 echo
 cd "${WORKING_DIR}"

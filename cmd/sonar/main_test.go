@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -17,9 +18,9 @@ type fakeClient struct {
 	reportGenerated      bool
 }
 
-func (c *fakeClient) Scan(sonarProject, branch, commit string, pr *sonar.PullRequest) (string, error) {
+func (c *fakeClient) Scan(sonarProject, branch, commit string, pr *sonar.PullRequest, outWriter, errWriter io.Writer) error {
 	c.scanPerformed = true
-	return "", nil
+	return nil
 }
 
 func (c *fakeClient) QualityGateGet(p sonar.QualityGateGetParams) (*sonar.QualityGate, error) {

@@ -2,6 +2,7 @@ package tasktesting
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -22,12 +23,14 @@ const (
 	StorageClassName = "standard" // if using KinD, set it to "standard"
 	StorageCapacity  = "1Gi"
 	StorageSourceDir = "/files" // this is the dir *within* the KinD container that mounts to ${ODS_PIPELINE_DIR}/test
+	PrivateCertFile  = "test/testdata/private-cert/tls.crt"
 )
 
 type SetupOpts struct {
 	SourceDir        string
 	StorageCapacity  string
 	StorageClassName string
+	PrivateCert      bool
 }
 
 func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
@@ -48,16 +51,25 @@ func Setup(t *testing.T, opts SetupOpts) (*k.Clients, string) {
 		t.Error(err)
 	}
 
-	installCDNamespaceResources(t, namespace, "pipeline")
+	installCDNamespaceResources(t, namespace, "pipeline", opts.PrivateCert)
 
 	return clients, namespace
 }
 
-func installCDNamespaceResources(t *testing.T, ns, serviceaccount string) {
+func installCDNamespaceResources(t *testing.T, ns, serviceaccount string, privateCert bool) {
 
 	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "--no-diff"}
 	if testing.Verbose() {
 		scriptArgs = append(scriptArgs, "-v")
+	}
+	if privateCert {
+		// Insert as first flag because install-inside-kind.sh won't recognize it otherwise.
+		scriptArgs = append(
+			[]string{fmt.Sprintf(
+				"--private-cert=%s",
+				filepath.Join(projectpath.Root, PrivateCertFile))},
+			scriptArgs...,
+		)
 	}
 
 	stdout, stderr, err := command.RunBuffered(

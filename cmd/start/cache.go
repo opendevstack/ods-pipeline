@@ -77,7 +77,8 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) err
 	cacheDependenciesPath := filepath.Join(".", odsCacheDependenciesDirName)
 
 	// To avoid spare files inside the dependency cache which are not supported,
-	// delete all other areas of the cache.
+	// delete all unknown folders in there.
+	// Files outside the dependency cache are left untouched.
 	dirEntryFunc := func(path string, d fs.DirEntry) WalkAndRemovalFlags {
 		if !strings.HasPrefix(path, cacheDependenciesPath) {
 			return 0 // allow files outside the dependency cache area for experimentation

@@ -16,12 +16,9 @@ setup:
       tag: "latest"
 
 tasks:
-  # To test with the latest public ods-pipeline images, set global.imageTag to 'latest' and use:
-  # registry: ghcr.io
-  # namespace: opendevstack/ods-pipeline
-  registry: localhost:5000
-  namespace: ods
-  pushRegistry: kind-registry.kind:5000
+  # Image repository to pull task images from.
+  # To test with the latest public ods-pipeline images, set
+  # global.imageTag to 'latest' and use: 'ghcr.io/opendevstack/ods-pipeline'.
+  imageRepository: localhost:5000/ods
 
-images:
-  enabled: false
+  pushRegistry: kind-registry.kind:5000

@@ -37,13 +37,8 @@ COPY build/package/scripts/copy-build-if-cached.sh /usr/local/bin/copy-build-if-
 COPY build/package/scripts/copy-artifacts.sh /usr/local/bin/copy-artifacts
 COPY build/package/scripts/build-gradle.sh /usr/local/bin/build-gradle
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
-COPY build/package/scripts/set-gradle-proxy.sh /usr/local/bin/set-gradle-proxy
-RUN chmod +x /usr/local/bin/build-gradle && \
-    chmod +x /usr/local/bin/cache-build && \
-    chmod +x /usr/local/bin/copy-build-if-cached && \
-    chmod +x /usr/local/bin/copy-artifacts && \
-    chmod +x /usr/local/bin/supply-sonar-project-properties-default && \
-    chmod +x /usr/local/bin/set-gradle-proxy
+COPY build/package/scripts/configure-gradle.sh /usr/local/bin/configure-gradle
+COPY build/package/scripts/configure-truststore.sh /usr/local/bin/configure-truststore
 
 # Add sonar-project.properties
 COPY build/package/sonar-project.properties.d/gradle.properties /usr/local/default-sonar-project.properties

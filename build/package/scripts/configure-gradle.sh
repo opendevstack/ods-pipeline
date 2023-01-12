@@ -3,8 +3,20 @@
 # This script checks for env variable HTTP_PROXY and adds them to gradle.properties.
 CONTENT=""
 
-if [[ $HTTP_PROXY != "" ]]; then
+if [ -f /etc/ssl/certs/private-cert.pem ]; then
+  echo "Configuring Gradle to trust private cert ..."
+  configure-truststore --dest-store ".ods-cache/truststore/cacerts"
+  # shellcheck disable=SC2181
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  # Configure Gradle to use the modified trust store.
+  CONTENT+="systemProp.javax.net.ssl.trustStore=.ods-cache/keystore/cacerts\n"
+  CONTENT+="systemProp.javax.net.ssl.trustStorePassword=password\n"
+fi
 
+if [ "${HTTP_PROXY}" != "" ]; then
+	echo "Configuring Gradle to honor HTTP_PROXY ..."
 	proxy=$(echo "$HTTP_PROXY" | sed -e "s|https://||g" | sed -e "s|http://||g")
 	proxy_hostp=$(echo "$proxy" | cut -d "@" -f2)
 
@@ -32,7 +44,8 @@ if [[ $HTTP_PROXY != "" ]]; then
  	fi
 fi
 
-if [[ $NO_PROXY != "" ]]; then
+if [ "${NO_PROXY}" != "" ]; then
+	echo "Configuring Gradle to honor NO_PROXY ..."
 	# shellcheck disable=SC2001
 	noproxy_host=$(echo "$NO_PROXY" | sed -e 's|\,\.|\,\*\.|g')
 	# shellcheck disable=SC2001
@@ -41,6 +54,6 @@ if [[ $NO_PROXY != "" ]]; then
 	CONTENT+="systemProp.https.nonProxyHosts=$noproxy_host\n"
 fi
 
-if [[ $CONTENT != "" ]]; then
+if [ "${CONTENT}" != "" ]; then
   echo -e "$CONTENT" > "${GRADLE_USER_HOME}/gradle.properties"
 fi

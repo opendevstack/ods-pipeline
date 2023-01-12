@@ -19,6 +19,7 @@ BITBUCKET_AUTH=""
 BITBUCKET_WEBHOOK_SECRET=""
 NEXUS_AUTH=""
 SONAR_AUTH=""
+PRIVATE_CERT=""
 
 # Check prerequisites.
 KUBECTL_BIN=""
@@ -52,6 +53,7 @@ function usage {
     printf "\t--bitbucket-webhook-secret\tSecret to protect webhook endpoint with (if not given, script will generate this).\n"
     printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
     printf "\t--sonar-auth\t\t\tAuth token of a SonarQube user (if not given, script will prompt for this).\n"
+    printf "\t--private-cert\t\t\tHost from which to download private certificate (if not given, script will skip this).\n"
     printf "\nExample:\n\n"
     printf "\t%s \ \
       \n\t\t--namespace foo \ \
@@ -102,6 +104,9 @@ while [[ "$#" -gt 0 ]]; do
 
     --sonar-auth) SONAR_AUTH="$2"; shift;;
     --sonar-auth=*) SONAR_AUTH="${1#*=}";;
+
+    --private-cert) PRIVATE_CERT="$2"; shift;;
+    --private-cert=*) PRIVATE_CERT="${1#*=}";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -173,6 +178,35 @@ installSecret () {
     fi
 }
 
+installTLSSecret () {
+    local secretName="$1"
+    local privateCert="$2"
+    local certFile=""
+    if [ -z "${privateCert}" ]; then
+        echo "No private cert given, skipping ..."
+    else
+        if [ "${privateCert:0:1}" == '/' ] || [ "${privateCert:0:2}" == './' ]; then
+            if [ ! -f "${privateCert}" ]; then
+                echo "No cert file exists at ${privateCert}"; exit 1
+            fi
+            certFile="${privateCert}"
+        else
+            certFile="private-cert.pem.tmp"
+            openssl s_client -showcerts -connect "${privateCert}" </dev/null \
+                | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${certFile}"
+        fi
+        if "${KUBECTL_BIN}" -n "${NAMESPACE}" get "secret/${secretName}" &> /dev/null; then
+            echo "Re-creating secret ${secretName} ..."
+            "${KUBECTL_BIN}" -n "${NAMESPACE}" delete secret "${secretName}"
+        else
+            echo "Creating secret ${secretName} ..."
+        fi
+        "${KUBECTL_BIN}" -n "${NAMESPACE}" create secret generic "${secretName}" \
+            --from-file=tls.crt="${certFile}"
+        rm private-cert.pem.tmp &>/dev/null || true
+    fi
+}
+
 # Manage serviceaccount ...
 if "${KUBECTL_BIN}" -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
     echo "Serviceaccount exists already ..."
@@ -233,6 +267,8 @@ else
         "${SONAR_AUTH}" \
         "" \
         "Please enter an auth token of a SonarQube user with scan permissions (input will be hidden):"
+
+    installTLSSecret "ods-private-cert" "${PRIVATE_CERT}"
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."

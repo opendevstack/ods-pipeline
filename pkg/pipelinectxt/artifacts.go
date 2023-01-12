@@ -110,8 +110,10 @@ func CopyArtifact(sourceFile, artifactsPath string) error {
 // ReadArtifactsDir reads all artifacts in checkoutDir/ArtifactsPath.
 // Only files in subdirectories are considered as artifacts.
 // Example: [
+//
 //	"xunit-reports": ["report.xml"]
 //	"sonarqube-analysis": ["analysis-report.md", "issues-report.csv"],
+//
 // ]
 func ReadArtifactsDir(artifactsDir string) (map[string][]string, error) {
 	artifactsMap := map[string][]string{}

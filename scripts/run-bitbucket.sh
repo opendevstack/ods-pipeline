@@ -7,14 +7,14 @@ set -ue
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
-BITBUCKET_SERVER_HOST_PORT="7990"
+HOST_HTTP_PORT="7990"
+HOST_HTTPS_PORT="7993"
 BITBUCKET_SERVER_CONTAINER_NAME="ods-test-bitbucket-server"
 BITBUCKET_SERVER_IMAGE_NAME="atlassian/bitbucket"
 BITBUCKET_SERVER_IMAGE_TAG="7.6.5"
 BITBUCKET_POSTGRES_CONTAINER_NAME="ods-test-bitbucket-postgres"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
-HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
-ODS_KIND_CREDENTIALS_DIR="${ODS_PIPELINE_DIR}/deploy/.kind-credentials"
+kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -58,20 +58,24 @@ docker run --name ${BITBUCKET_SERVER_CONTAINER_NAME} \
   -e JDBC_PASSWORD=jellyfish \
   -e JDBC_URL=jdbc:postgresql://${BITBUCKET_POSTGRES_CONTAINER_NAME}.kind:5432/bitbucket \
   -e ELASTICSEARCH_ENABLED=false \
-  -d --net kind -p "${BITBUCKET_SERVER_HOST_PORT}:7990" -p 7999:7999 \
+  -d --net kind -p "${HOST_HTTP_PORT}:7990" -p 7999:7999 \
   "${BITBUCKET_SERVER_IMAGE_NAME}:${BITBUCKET_SERVER_IMAGE_TAG}"
 
 if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
     docker logs ${BITBUCKET_SERVER_CONTAINER_NAME}
     exit 1
 fi 
-BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
+
+echo "Launch TLS proxy"
+TLS_CONTAINER_NAME="${BITBUCKET_SERVER_CONTAINER_NAME}-tls"
+"${SCRIPT_DIR}/run-tls-proxy.sh" \
+  --container-name "${TLS_CONTAINER_NAME}" \
+  --https-port "${HOST_HTTPS_PORT}" \
+  --nginx-conf "nginx-bitbucket.conf"
 
 # Write values / secrets so that it can be picked up by install.sh later.
-if [ ! -e "${HELM_VALUES_FILE}" ]; then
-    echo "setup:" > "${HELM_VALUES_FILE}"
-fi
-echo "  bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> "${HELM_VALUES_FILE}"
-mkdir -p "${ODS_KIND_CREDENTIALS_DIR}"
-echo -n "admin:NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP" > "${ODS_KIND_CREDENTIALS_DIR}/bitbucket-auth"
-echo -n "webhook:s3cr3t" > "${ODS_KIND_CREDENTIALS_DIR}/bitbucket-webhook-secret"
+mkdir -p "${kind_values_dir}"
+echo -n "https://${TLS_CONTAINER_NAME}.kind:${HOST_HTTPS_PORT}" > "${kind_values_dir}/bitbucket-https"
+echo -n "http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:${HOST_HTTP_PORT}" > "${kind_values_dir}/bitbucket-http"
+echo -n "admin:NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP" > "${kind_values_dir}/bitbucket-auth"
+echo -n "webhook:s3cr3t" > "${kind_values_dir}/bitbucket-webhook-secret"

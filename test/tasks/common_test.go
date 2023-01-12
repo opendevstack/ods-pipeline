@@ -25,6 +25,7 @@ import (
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
 var skipSonarQubeFlag = flag.Bool("skip-sonar", false, "Whether to skip SonarQube steps")
+var privateCertFlag = flag.Bool("private-cert", false, "Whether to run tests using a private cert")
 
 const (
 	taskKindRef = "Task"
@@ -43,7 +44,7 @@ func buildTaskParams(p map[string]string) map[string]string {
 // requiredServices takes a variable amount of services and removes
 // SonarQube from the resulting slice if the skipSonarQubeFlag is set.
 func requiredServices(s ...tasktesting.Service) []tasktesting.Service {
-	requiredServices := []tasktesting.Service{tasktesting.Nexus}
+	requiredServices := append([]tasktesting.Service{}, s...)
 	sqIndex := slices.Index(requiredServices, tasktesting.SonarQube)
 	if sqIndex != -1 && *skipSonarQubeFlag {
 		requiredServices = slices.Delete(requiredServices, sqIndex, sqIndex+1)
@@ -162,6 +163,7 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 			SourceDir:        tasktesting.StorageSourceDir,
 			StorageCapacity:  tasktesting.StorageCapacity,
 			StorageClassName: tasktesting.StorageClassName,
+			PrivateCert:      *privateCertFlag,
 		},
 	)
 

@@ -48,7 +48,7 @@ spec:
     - name: registry
       description: Image registry to push image to.
       type: string
-      default: '{{default .Values.registry .Values.pushRegistry}}'
+      default: '{{default .Values.pushRegistry}}'
     - name: image-stream
       description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
       type: string
@@ -91,7 +91,7 @@ spec:
   steps:
     - name: build-and-push-image
       # Image is built from build/package/Dockerfile.package-image.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: '{{.Values.imageRepository}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -155,7 +155,7 @@ spec:
 
         download-aqua-scanner \
           --aqua-scanner-url=${AQUA_SCANNER_URL} \
-          --debug=${DEBUG}
+          $(case ${DEBUG} in (true) printf -- '--debug'; esac)
 
         #  ods-package-image is built from cmd/package-image/main.go.
         ods-package-image \
@@ -172,10 +172,18 @@ spec:
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
       workingDir: $(workspaces.source.path)
   volumes:
     - emptyDir: {}
       name: varlibcontainers
+    - name: private-cert
+      secret:
+        secretName: ods-private-cert
+        optional: true
   workspaces:
     - name: source
 {{end}}

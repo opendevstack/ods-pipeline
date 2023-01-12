@@ -53,7 +53,6 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 
 # Add scripts
 COPY build/package/scripts/download-aqua-scanner.sh /usr/local/bin/download-aqua-scanner
-RUN chmod +x /usr/local/bin/download-aqua-scanner
 
 VOLUME /var/lib/containers
 VOLUME /home/build/.local/share/containers

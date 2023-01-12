@@ -5,10 +5,14 @@
 //
 // There are two main modes of the program:
 // (1) users supply (OpenShift) namespace, (Bitbucket) project, (Git) repository
-//     and a tag such as "v1.0.0".
+//
+//	and a tag such as "v1.0.0".
+//
 // (2) users run this program from the root of a Git repository and only supply
-//     (OpenShift) namespace and tag=WIP. In this case the latest artifacts are
-//     downloaded.
+//
+//	(OpenShift) namespace and tag=WIP. In this case the latest artifacts are
+//	downloaded.
+//
 // Mode (1) is the main use case, mode (2) is provided as a convenience feature
 // for developers.
 package main
@@ -45,6 +49,7 @@ type options struct {
 	version         bool
 	tag             string
 	outputDirectory string
+	privateCert     string
 	debug           bool
 }
 
@@ -72,6 +77,7 @@ func main() {
 	flag.StringVar(&opts.repository, "repository", "", "Bitbucket repository key")
 	flag.StringVar(&opts.tag, "tag", "", "Git tag to retrieve artifacts for, e.g. v1.0.0 (required)")
 	flag.StringVar(&opts.outputDirectory, "output", "artifacts-out", "Directory to place outputs into")
+	flag.StringVar(&opts.privateCert, "private-cert", "", "Path to private certification (in PEM format)")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "Enable debug mode")
 	flag.BoolVar(&opts.version, "version", false, "Display version of binary")
 	flag.Parse()
@@ -129,7 +135,7 @@ func main() {
 	}
 
 	// Bitbucket client
-	bcc, err := installation.NewBitbucketClientConfig(c, opts.namespace, logger)
+	bcc, err := installation.NewBitbucketClientConfig(c, opts.namespace, logger, opts.privateCert)
 	if err != nil {
 		log.Fatalf("Could not create Bitbucket client config: %s. Are you logged into the cluster?", err)
 	}

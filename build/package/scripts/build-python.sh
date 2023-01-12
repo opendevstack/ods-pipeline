@@ -55,7 +55,7 @@ if [ "${WORKING_DIR}" != "." ]; then
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
 
-echo "Configuring pip to use Nexus ..."
+echo "Configuring pip to use Nexus (${NEXUS_URL}) ..."
 # Remove the protocol segment from NEXUS_URL
 NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
