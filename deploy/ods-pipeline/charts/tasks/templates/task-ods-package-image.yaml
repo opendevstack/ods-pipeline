@@ -125,6 +125,11 @@ spec:
             secretKeyRef:
               key: password
               name: ods-aqua-auth
+        - name: AQUA_SCANNER_URL
+          valueFrom:
+            secretKeyRef:
+              key: secret
+              name: ods-aqua-scanner-url
         - name: NEXUS_URL
           valueFrom:
             configMapKeyRef:
@@ -147,6 +152,10 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
+
+        download-aqua-scanner \
+          --aqua-scanner-url=${AQUA_SCANNER_URL} \
+          --debug=${DEBUG}
 
         #  ods-package-image is built from cmd/package-image/main.go.
         ods-package-image \

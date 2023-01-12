@@ -51,6 +51,10 @@ RUN echo -e "build:1:1000\nbuild:1002:64535" > /etc/subuid \
 # Install Trivy
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
 
+# Add scripts
+COPY build/package/scripts/download-aqua-scanner.sh /usr/local/bin/download-aqua-scanner
+RUN chmod +x /usr/local/bin/download-aqua-scanner
+
 VOLUME /var/lib/containers
 VOLUME /home/build/.local/share/containers
 

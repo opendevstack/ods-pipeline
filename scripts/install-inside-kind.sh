@@ -21,6 +21,7 @@ fi
 
 "${ODS_PIPELINE_DIR}"/deploy/install.sh \
     --aqua-auth "unavailable:unavailable" \
+    --aqua-scanner-url "none" \
     --bitbucket-auth "${BITBUCKET_AUTH}" \
     --nexus-auth "${NEXUS_AUTH}" \
     --sonar-auth "${SONAR_AUTH}" \

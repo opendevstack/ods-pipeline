@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	aquasecBin                           = "aquasec"
+	aquasecBin                           = "./.ods-cache/bin/aquasec"
 	scanComplianceFailureExitCode        = 4
 	scanLicenseValidationFailureExitCode = 5
 )
