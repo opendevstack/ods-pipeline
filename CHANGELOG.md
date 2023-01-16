@@ -10,6 +10,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
 
 ## [0.8.0] - 2023-01-06
 

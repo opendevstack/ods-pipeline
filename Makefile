@@ -154,6 +154,7 @@ start-ods-builds: ## Start builds for each ODS BuildConfig
 	oc start-build ods-gradle-toolset
 	oc start-build ods-helm
 	oc start-build ods-node16-npm-toolset
+	oc start-build ods-node18-npm-toolset
 	oc start-build ods-pipeline-manager
 	oc start-build ods-python-toolset
 	oc start-build ods-sonar

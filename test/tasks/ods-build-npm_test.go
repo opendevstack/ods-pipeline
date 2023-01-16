@@ -168,5 +168,30 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					)
 				},
 			},
+			"build javascript app using node16": {
+				WorkspaceDirMapping: map[string]string{"source": "javascript-sample-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					ctxt.Params = map[string]string{
+						"sonar-skip":   "true",
+						"node-version": "16",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkFilesExist(t, wsDir,
+						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "clover.xml"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
+						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
+						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
+						"docker/dist/src/index.js",
+						"docker/dist/package.json",
+						"docker/dist/package-lock.json",
+					)
+				},
+			},
 		})
 }
