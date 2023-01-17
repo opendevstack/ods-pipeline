@@ -14,6 +14,10 @@ listed in the changelog.
 
 - Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
 
+### Fixed
+
+- npm-toolset tests fail with new release of ubi8 Node.js image ([#650](https://github.com/opendevstack/ods-pipeline/issues/650))
+
 ## [0.8.0] - 2023-01-06
 
 ### Added
