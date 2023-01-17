@@ -1,0 +1,30 @@
+{{if or .Values.global.enabledTasks.buildNPM .Values.node18NPMToolset}}
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ods-node18-npm-toolset
+  labels:
+    {{- include "chart.labels" . | nindent 4}}
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'ods-node18-npm-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  postCommit: {}
+  strategy:
+    type: Docker
+    dockerStrategy:
+      buildArgs:
+        - name: imageTag
+          value: '{{.Values.global.imageTag | default .Chart.AppVersion}}'
+        - name: privateCertServer
+          value: '{{.Values.privateCertServer}}'
+  source:
+    dockerfile: |-
+      {{- .Files.Get "docker/Dockerfile.node18-npm-toolset" | nindent 6}}
+  runPolicy: Serial
+{{end}}

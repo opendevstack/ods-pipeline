@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/nodejs-16:1
+FROM registry.access.redhat.com/ubi8/nodejs-18:1
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
