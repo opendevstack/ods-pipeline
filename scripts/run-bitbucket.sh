@@ -14,6 +14,7 @@ BITBUCKET_SERVER_IMAGE_TAG="7.6.5"
 BITBUCKET_POSTGRES_CONTAINER_NAME="ods-test-bitbucket-postgres"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
 HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
+ODS_KIND_CREDENTIALS_DIR="${ODS_PIPELINE_DIR}/deploy/.kind-credentials"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -66,13 +67,11 @@ if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
 fi 
 BITBUCKET_URL_FULL="http://${BITBUCKET_SERVER_CONTAINER_NAME}.kind:7990"
 
+# Write values / secrets so that it can be picked up by install.sh later.
 if [ ! -e "${HELM_VALUES_FILE}" ]; then
     echo "setup:" > "${HELM_VALUES_FILE}"
 fi
-
-{
-  echo "  bitbucketUrl: '${BITBUCKET_URL_FULL}'"
-  echo "  bitbucketUsername: 'admin'"
-  echo "  bitbucketAccessToken: 'NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP'"
-  echo "  bitbucketWebhookSecret: 's3cr3t'"
-} >> "${HELM_VALUES_FILE}"
+echo "  bitbucketUrl: '${BITBUCKET_URL_FULL}'" >> "${HELM_VALUES_FILE}"
+mkdir -p "${ODS_KIND_CREDENTIALS_DIR}"
+echo -n "admin:NzU0OTk1MjU0NjEzOpzj5hmFNAaawvupxPKpcJlsfNgP" > "${ODS_KIND_CREDENTIALS_DIR}/bitbucket-auth"
+echo -n "webhook:s3cr3t" > "${ODS_KIND_CREDENTIALS_DIR}/bitbucket-webhook-secret"

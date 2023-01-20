@@ -20,15 +20,29 @@ const (
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func (p *packageImage) buildahBuild(outWriter, errWriter io.Writer) error {
-	args, err := buildahBuildArgs(p.opts, p.imageShaTag.imageRef(p.opts.registry))
+	args, err := p.buildahBuildArgs(p.imageRef())
 	if err != nil {
 		return fmt.Errorf("assemble build args: %w", err)
 	}
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 
+// buildahPush pushes a local image to a OCI formatted directory for trivy image scans.
+func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
+	args := []string{
+		fmt.Sprintf("--storage-driver=%s", p.opts.storageDriver),
+		"push",
+		fmt.Sprintf("--digestfile=%s", filepath.Join(p.opts.checkoutDir, "image-digest")),
+	}
+	if p.opts.debug {
+		args = append(args, "--log-level=debug")
+	}
+	args = append(args, p.imageRef(), fmt.Sprintf("oci:%s", filepath.Join(p.opts.checkoutDir, p.imageName())))
+	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
+}
+
 // buildahPush pushes a local image to the given imageRef.
-func (p *packageImage) buildahPush(workingDir string, outWriter, errWriter io.Writer) error {
+func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
 	opts := p.opts
 	extraArgs, err := shlex.Split(opts.buildahPushExtraArgs)
 	if err != nil {
@@ -39,15 +53,15 @@ func (p *packageImage) buildahPush(workingDir string, outWriter, errWriter io.Wr
 		"push",
 		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
 		fmt.Sprintf("--cert-dir=%s", opts.certDir),
-		fmt.Sprintf("--digestfile=%s", filepath.Join(workingDir, "image-digest")),
+		fmt.Sprintf("--digestfile=%s", filepath.Join(opts.checkoutDir, "image-digest")),
 	}
 	args = append(args, extraArgs...)
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
 
-	source := p.imageShaTag.imageRefWithSha(opts.registry)
-	destination := fmt.Sprintf("docker://%s", p.imageShaTag.imageRef(opts.registry))
+	source := p.imageId.imageRefWithSha(opts.registry)
+	destination := fmt.Sprintf("docker://%s", source)
 	log.Printf("buildah push %s %s", source, destination)
 	args = append(args, source, destination)
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
@@ -55,10 +69,11 @@ func (p *packageImage) buildahPush(workingDir string, outWriter, errWriter io.Wr
 
 // buildahBuildArgs assembles the args to be passed to buildah based on
 // given options and tag.
-func buildahBuildArgs(opts options, tag string) ([]string, error) {
+func (p *packageImage) buildahBuildArgs(tag string) ([]string, error) {
 	if tag == "" {
 		return nil, errors.New("tag must not be empty")
 	}
+	opts := p.opts
 	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
 	if err != nil {
 		return nil, fmt.Errorf("parse extra args (%s): %w", opts.buildahBuildExtraArgs, err)
@@ -75,7 +90,7 @@ func buildahBuildArgs(opts options, tag string) ([]string, error) {
 		fmt.Sprintf("--tag=%s", tag),
 	}
 	args = append(args, extraArgs...)
-	nexusArgs, err := nexusBuildArgs(opts)
+	nexusArgs, err := p.nexusBuildArgs()
 	if err != nil {
 		return nil, fmt.Errorf("add nexus build args: %w", err)
 	}
@@ -90,8 +105,9 @@ func buildahBuildArgs(opts options, tag string) ([]string, error) {
 // nexusBuildArgs computes --build-arg parameters so that the Dockerfile
 // can access nexus as determined by the options nexus related
 // parameters.
-func nexusBuildArgs(opts options) ([]string, error) {
+func (p *packageImage) nexusBuildArgs() ([]string, error) {
 	args := []string{}
+	opts := p.opts
 	if strings.TrimSpace(opts.nexusURL) != "" {
 		nexusUrl, err := url.Parse(opts.nexusURL)
 		if err != nil {

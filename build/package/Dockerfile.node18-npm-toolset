@@ -1,29 +1,36 @@
-FROM registry.access.redhat.com/ubi8/go-toolset:1.18
+FROM registry.access.redhat.com/ubi8/nodejs-18:1
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV NPM_CONFIG_PREFIX=$HOME/.npm-global \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
+
+RUN echo node version: $(node --version) && \
+    echo npm version: $(npm --version) && \
+    echo npx version: $(npx --version)
+
+WORKDIR /app
+
 USER root
 
-ENV GOLANGCI_LINT_VERSION=v1.45.2 \
-    GO_JUNIT_REPORT_VERSION=v2.0.0 \
-    GOBIN=/usr/local/bin
-
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$GOLANGCI_LINT_VERSION/install.sh | sh -s -- -b /usr/local/bin $GOLANGCI_LINT_VERSION
-
-RUN go install github.com/jstemmer/go-junit-report/v2@$GO_JUNIT_REPORT_VERSION
+RUN mkdir -p /.npm $HOME/.npm-global/lib && \
+    chown -R 1001:0 /app /.npm $HOME && \
+    chmod -R g=u /app /.npm $HOME
 
 # Add scripts
+COPY build/package/scripts/build-npm.sh /usr/local/bin/build-npm
 COPY build/package/scripts/cache-build.sh /usr/local/bin/cache-build
 COPY build/package/scripts/copy-build-if-cached.sh /usr/local/bin/copy-build-if-cached
 COPY build/package/scripts/copy-artifacts.sh /usr/local/bin/copy-artifacts
-COPY build/package/scripts/build-go.sh /usr/local/bin/build-go
 COPY build/package/scripts/supply-sonar-project-properties-default.sh /usr/local/bin/supply-sonar-project-properties-default
-RUN chmod +x /usr/local/bin/build-go && \
+RUN chmod +x /usr/local/bin/build-npm && \
     chmod +x /usr/local/bin/cache-build && \
     chmod +x /usr/local/bin/copy-build-if-cached && \
     chmod +x /usr/local/bin/copy-artifacts && \
     chmod +x /usr/local/bin/supply-sonar-project-properties-default
 
 # Add sonar-project.properties
-COPY build/package/sonar-project.properties.d/go.properties /usr/local/default-sonar-project.properties
+COPY build/package/sonar-project.properties.d/npm.properties /usr/local/default-sonar-project.properties
 
 USER 1001

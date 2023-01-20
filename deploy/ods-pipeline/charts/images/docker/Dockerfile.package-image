@@ -1,6 +1,6 @@
 ARG imageTag="latest"
 
-FROM ghcr.io/opendevstack/ods-pipeline/ods-buildah:$imageTag
+FROM ghcr.io/opendevstack/ods-pipeline/ods-package-image:$imageTag
 
 ARG aquasecScannerUrl
 ARG privateCertServer

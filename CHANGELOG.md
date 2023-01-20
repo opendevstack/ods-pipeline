@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -9,6 +10,22 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+
+- Add `extra-tags` parameter to `ods-package-image` ([#631](https://github.com/opendevstack/ods-pipeline/issues/631))
+
+### Fixed
+
+- npm-toolset tests fail with new release of ubi8 Node.js image ([#650](https://github.com/opendevstack/ods-pipeline/issues/650))
+
+## [0.8.0] - 2023-01-06
+
+### Added
+
+- Add trivy security scanner CLI for SBOM generation ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
+
 ### Changed
 
 - Normalize K8s manifests to exclude style differences from Helm diff output. The change is applied to both the helm execution in the `ods-deploy-helm` task and in the install script. See [#591](https://github.com/opendevstack/ods-pipeline/issues/591).
@@ -16,12 +33,17 @@ listed in the changelog.
 - Update buildah (1.26 to 1.27) ([#626](https://github.com/opendevstack/ods-pipeline/issues/626))
 - Stream Helm upgrade log output ([#615](https://github.com/opendevstack/ods-pipeline/issues/615))
 - Update Go to 1.18 ([#623](https://github.com/opendevstack/ods-pipeline/issues/623))
+- Update go-junit-report to 2.0.0 ([#625](https://github.com/opendevstack/ods-pipeline/issues/625))
 - Enable build skipping by default ([#642](https://github.com/opendevstack/ods-pipeline/issues/642))
-- Add `extra-tags` parameter to `ods-package-image` ([#631](https://github.com/opendevstack/ods-pipeline/issues/631))
+- Remove secrets from installation Helm chart. Secrets are now managed when running the `install.sh` script. See [#629](https://github.com/opendevstack/ods-pipeline/issues/629).
+- Change name of `buildah` task to `package-image` ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
+- Package image task now skips creating an image if the image artifact exists (as opposed to checking for an image in the registry) ([#592](https://github.com/opendevstack/ods-pipeline/issues/592))
 
 ### Fixed
+
 - Errors during output collection of binaries such as `buildah`, `aqua-scanner` are not handled ([#611](https://github.com/opendevstack/ods-pipeline/issues/611))
 - STDOUT and STDERR is not interleaved as expected ([#613](https://github.com/opendevstack/ods-pipeline/issues/613))
+
 
 ## [0.7.0] - 2022-10-11
 

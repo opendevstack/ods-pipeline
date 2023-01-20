@@ -60,7 +60,7 @@ func TestGetImageURLs(t *testing.T) {
 	srcHost := "image-registry.openshift-image-registry.svc:5000"
 	destHost := "default-route-openshift-image-registry.apps.example.com"
 	imgArtifact := artifact.Image{
-		Image:      fmt.Sprintf("%s/foo/bar:baz", srcHost),
+		Ref:        fmt.Sprintf("%s/foo/bar:baz", srcHost),
 		Repository: "foo", Name: "bar", Tag: "baz",
 	}
 	tests := map[string]struct {

@@ -2,75 +2,26 @@ global:
   imageTag: latest
   taskSuffix: ''
 
-##
-# setup chart
-##
 setup:
-  enabled: true
-  # General
-  serviceAccountName: 'pipeline'
-
   # Cluster
   consoleUrl: 'http://example.com'
-
   # Pipeline Manager
   pipelineManager:
     storageProvisioner: ''
     storageClassName: 'standard'
     storageSize: '2Gi'
-    replicaCount: 1
     image:
       registry: localhost:5000
       namespace: ods
-      repository: ods-pipeline-manager
-      pullPolicy: Always
       tag: "latest"
-    resources:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
 
-  # Notification Webhook
-  notification:
-    # notifications are disabled by default, i.e. the ConfigMap won't be installed
-    enabled: false
-    # URL of the configured webhook
-    url: 'http://example.com'
-    # The HTTP method to be used
-    method: 'POST'
-    # The HTTP content type header
-    contentType: 'application/json'
-    # Specify the outcomes you want to be notified of (allowed values: c.f.
-    # https://tekton.dev/docs/pipelines/pipelines/#using-aggregate-execution-status-of-all-tasks)
-    notifyOnStatus:
-      - 'Failed'
-    # Template to be processed and accepted by the configured webhook in use
-    # Below example might work for Microsoft Teams
-    requestTemplate: ''
-
-  # Bitbucket default values (avoid empty values which lead to pod crash loops)
-  bitbucketUsername: 'bitbucket'
-  bitbucketAccessToken: 'bitbucket'
-  bitbucketWebhookSecret: 'bitbucket'
-
-##
-# tasks chart
-##
 tasks:
-  enabled: true
   # To test with the latest public ods-pipeline images, set global.imageTag to 'latest' and use:
   # registry: ghcr.io
   # namespace: opendevstack/ods-pipeline
-
   registry: localhost:5000
   namespace: ods
   pushRegistry: kind-registry.kind:5000
 
-##
-# images chart
-##
 images:
   enabled: false

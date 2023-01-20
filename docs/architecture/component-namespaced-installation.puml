@@ -28,7 +28,8 @@ Container_Boundary(c1, "Namespaced ODS Pipeline Installation"){
 
     Boundary(images, "Images") {
         Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go, golangci-lint, build script")
-        Component(image_node16_npm_toolset, "ods/node16-npm-toolset", "Container Image", "Node.js, npm, build script")
+        Component(image_node16_npm_toolset, "ods/node16-npm-toolset", "Container Image", "Node.js 16, npm, build script")
+        Component(image_node18_npm_toolset, "ods/node18-npm-toolset", "Container Image", "Node.js 18, npm, build script")
         Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python, build script")
         Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
         Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Skopeo, Aqua scanner")
@@ -45,6 +46,7 @@ Rel(task_build_go, image_go_toolset, "uses")
 Rel(task_build_go, image_sonar, "uses")
 
 Rel(task_build_npm, image_node16_npm_toolset, "uses")
+Rel(task_build_npm, image_node18_npm_toolset, "uses")
 Rel(task_build_npm, image_sonar, "uses")
 
 Rel(task_build_python, image_python_toolset, "uses")

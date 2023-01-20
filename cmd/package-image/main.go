@@ -3,16 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -23,6 +19,7 @@ const (
 )
 
 type options struct {
+	checkoutDir           string
 	bitbucketAccessToken  string
 	bitbucketURL          string
 	aquaUsername          string
@@ -44,11 +41,30 @@ type options struct {
 	nexusPassword         string
 	buildahBuildExtraArgs string
 	buildahPushExtraArgs  string
+	trivySBOMExtraArgs    string
 	aquasecGate           bool
 	debug                 bool
 }
 
+type packageImage struct {
+	logger          logging.LeveledLoggerInterface
+	opts            options
+	parsedExtraTags []string
+	ctxt            *pipelinectxt.ODSContext
+	imageId         imageIdentity
+	imageDigest     string
+}
+
+func (p *packageImage) imageName() string {
+	return p.imageId.streamSha()
+}
+
+func (p *packageImage) imageRef() string {
+	return p.imageId.nsStreamSha()
+}
+
 var defaultOptions = options{
+	checkoutDir:           ".",
 	bitbucketAccessToken:  os.Getenv("BITBUCKET_ACCESS_TOKEN"),
 	bitbucketURL:          os.Getenv("BITBUCKET_URL"),
 	aquaUsername:          os.Getenv("AQUA_USERNAME"),
@@ -58,7 +74,7 @@ var defaultOptions = options{
 	imageStream:           "",
 	extraTags:             "",
 	registry:              "image-registry.openshift-image-registry.svc:5000",
-	certDir:               "/etc/containers/certs.d",
+	certDir:               defaultCertDir(),
 	imageNamespace:        "",
 	tlsVerify:             true,
 	storageDriver:         "vfs",
@@ -70,109 +86,14 @@ var defaultOptions = options{
 	nexusPassword:         os.Getenv("NEXUS_PASSWORD"),
 	buildahBuildExtraArgs: "",
 	buildahPushExtraArgs:  "",
+	trivySBOMExtraArgs:    "",
 	aquasecGate:           false,
 	debug:                 (os.Getenv("DEBUG") == "true"),
 }
 
-type packageImage struct {
-	logger          logging.LeveledLoggerInterface
-	opts            options
-	parsedExtraTags []string
-	imageShaTag     imageIdentityWithTag
-	ctxt            *pipelinectxt.ODSContext
-}
-
-// registry/imageNamespace/imageStream:<tag>
-type imageIdentity struct {
-	ImageNamespace string
-	ImageStream    string
-	GitCommitSHA   string // our Digest not docker digest.
-}
-
-// streamSha renders ImageStream:GitCommitSHA
-func (iid *imageIdentity) streamSha() string {
-	return fmt.Sprintf("%s:%s", iid.ImageStream, iid.GitCommitSHA)
-}
-
-// nsStreamSha renders ImageNamespace/ImageStream:GitCommitSHA
-//
-// ns is an mnemonic for namespace
-func (iid *imageIdentity) nsStreamSha() string {
-	return fmt.Sprintf("%s:%s", iid.nsStream(), iid.GitCommitSHA)
-}
-
-// nsStream renders ImageNamespace/ImageStream aka Repository in docker terms
-//
-// ns is an mnemonic for namespace
-func (iid *imageIdentity) nsStream() string {
-	return fmt.Sprintf("%s/%s", iid.ImageNamespace, iid.ImageStream)
-}
-
-func createImageIdentity(ctxt *pipelinectxt.ODSContext, opts *options) imageIdentity {
-	imageNamespace := opts.imageNamespace
-	if len(imageNamespace) == 0 {
-		imageNamespace = ctxt.Namespace
-	}
-	imageStream := opts.imageStream
-	if len(imageStream) == 0 {
-		imageStream = ctxt.Component
-	}
-	return imageIdentity{
-		ImageNamespace: imageNamespace,
-		ImageStream:    imageStream,
-		GitCommitSHA:   ctxt.GitCommitSHA,
-	}
-}
-
-type imageIdentityWithTag struct {
-	ImageIdentity *imageIdentity
-	Tag           string
-}
-
-// nsStreamTag renders ImageNamespace/ImageStream:Tag
-//
-// ns is an mnemonic for namespace
-func (idt *imageIdentityWithTag) nsStreamTag() string {
-	return fmt.Sprintf("%s:%s", idt.ImageIdentity.nsStream(), idt.Tag)
-}
-
-// nsStreamSha renders ImageNamespace/ImageStream:GitCommitSHA
-//
-// ns is an mnemonic for namespace
-func (idt *imageIdentityWithTag) nsStreamSha() string {
-	return idt.ImageIdentity.nsStreamSha()
-}
-
-func (iid *imageIdentity) tag(tag string) imageIdentityWithTag {
-	return imageIdentityWithTag{
-		ImageIdentity: iid,
-		Tag:           tag,
-	}
-}
-
-func (iid *imageIdentity) shaTag() imageIdentityWithTag {
-	return imageIdentityWithTag{
-		ImageIdentity: iid,
-		Tag:           iid.GitCommitSHA,
-	}
-}
-
-// imageRef renders Registry/ImageNamespace/ImageStream:Tag
-//
-// ns is an mnemonic for namespace
-func (idt *imageIdentityWithTag) imageRef(registry string) string {
-	return fmt.Sprintf("%s/%s", registry, idt.nsStreamTag())
-}
-
-// imageRef renders Registry/ImageNamespace/ImageStream:GitCommitSHA
-//
-// ns is an mnemonic for namespace
-func (idt *imageIdentityWithTag) imageRefWithSha(registry string) string {
-	return fmt.Sprintf("%s/%s", registry, idt.nsStreamSha())
-}
-
 func main() {
 	opts := options{}
+	flag.StringVar(&opts.checkoutDir, "checkout-dir", defaultOptions.checkoutDir, "Checkout dir")
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", defaultOptions.bitbucketAccessToken, "bitbucket-access-token")
 	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", defaultOptions.bitbucketURL, "bitbucket-url")
 	flag.StringVar(&opts.aquaUsername, "aqua-username", defaultOptions.aquaUsername, "aqua-username")
@@ -194,160 +115,39 @@ func main() {
 	flag.StringVar(&opts.nexusPassword, "nexus-password", defaultOptions.nexusPassword, "Nexus password")
 	flag.StringVar(&opts.buildahBuildExtraArgs, "buildah-build-extra-args", defaultOptions.buildahBuildExtraArgs, "extra parameters passed for the build command when building images")
 	flag.StringVar(&opts.buildahPushExtraArgs, "buildah-push-extra-args", defaultOptions.buildahPushExtraArgs, "extra parameters passed for the push command when pushing images")
+	flag.StringVar(&opts.trivySBOMExtraArgs, "trivy-sbom-extra-args", defaultOptions.trivySBOMExtraArgs, "extra parameters passed for the trivy command to generate an SBOM")
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
-	// surface parse error early
-	parsedExtraTags, err := parseExtraTags(opts)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var logger logging.LeveledLoggerInterface
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	} else {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
-
-	workingDir := "."
-	ctxt := &pipelinectxt.ODSContext{}
-	err = ctxt.ReadCache(workingDir)
+	err := (&packageImage{logger: logger, opts: opts}).runSteps(
+		setExtraTags(),
+		setupContext(),
+		setImageId(),
+		skipIfImageArtifactExists(),
+		buildImageAndGenerateTar(),
+		generateSBOM(),
+		pushImage(),
+		scanImageWithAqua(),
+		storeArtifact(),
+		processExtraTags(),
+	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Errorf(err.Error())
+		os.Exit(1)
 	}
+}
+
+func defaultCertDir() string {
 	if _, err := os.Stat(kubernetesServiceaccountDir); err == nil {
-		opts.certDir = kubernetesServiceaccountDir
+		return kubernetesServiceaccountDir
 	}
-	if opts.debug {
-		err := directory.ListFiles(opts.certDir, os.Stdout)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// TLS verification of the KinD registry is not possible at the moment as
-	// requests error out with "server gave HTTP response to HTTPS client".
-	if strings.HasPrefix(opts.registry, "kind-registry.kind") {
-		opts.tlsVerify = false
-	}
-
-	imageIdentity := createImageIdentity(ctxt, &opts)
-	p := &packageImage{logger: logger, opts: opts, parsedExtraTags: parsedExtraTags, ctxt: ctxt, imageShaTag: imageIdentity.shaTag()}
-
-	imageName := p.imageShaTag.ImageIdentity.streamSha()
-	p.logger.Infof("Checking if image %s exists already ...\n", imageName)
-	imageDigest, err := p.getImageDigestFromRegistry()
-	if err == nil {
-		p.logger.Infof("Image exists already.")
-	} else {
-		p.logger.Infof("Building image %s ...\n", imageName)
-		err = p.buildahBuild(os.Stdout, os.Stderr)
-		if err != nil {
-			log.Fatal("buildah bud: ", err)
-		}
-		fmt.Printf("Pushing image %s ...\n", p.imageShaTag.imageRef(opts.registry))
-		err = p.buildahPush(workingDir, os.Stdout, os.Stderr)
-		if err != nil {
-			log.Fatal("buildah push: ", err)
-		}
-
-		d, err := getImageDigestFromFile(workingDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		imageDigest = d
-
-		if aquasecInstalled() {
-			p.logger.Infof("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", p.imageShaTag.ImageIdentity.ImageNamespace, imageName)
-			htmlReportFile := filepath.Join(workingDir, "report.html")
-			jsonReportFile := filepath.Join(workingDir, "report.json")
-			scanArgs := aquaAssembleScanArgs(opts, aquaImage, htmlReportFile, jsonReportFile)
-			scanSuccessful, err := aquaScan(aquasecBin, scanArgs, os.Stdout, os.Stderr)
-			if err != nil {
-				log.Fatal("aqua scan: ", err)
-			}
-
-			if !scanSuccessful && opts.aquasecGate {
-				log.Fatalln("Stopping build as successful Aqua scan is required")
-			}
-
-			asu, err := aquaScanURL(opts, aquaImage)
-			if err != nil {
-				log.Fatal("aqua scan URL:", err)
-			}
-			fmt.Printf("Aqua vulnerability report is at %s ...\n", asu)
-
-			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			p.logger.Infof("Creating Bitbucket code insight report ...")
-			err = createBitbucketInsightReport(opts, asu, scanSuccessful, ctxt)
-			if err != nil {
-				log.Fatal(err)
-			} else {
-				p.logger.Infof("Aqua is not configured, image will not be scanned for vulnerabilities.")
-			}
-		}
-	}
-	err = writeImageDigestToResults(imageDigest)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	p.logger.Infof("Writing image artifact ...")
-	ia := artifact.Image{
-		Image:      p.imageShaTag.imageRef(opts.registry),
-		Registry:   opts.registry,
-		Repository: p.imageShaTag.ImageIdentity.ImageNamespace,
-		Name:       p.imageShaTag.ImageIdentity.ImageStream,
-		Tag:        p.imageShaTag.ImageIdentity.GitCommitSHA,
-		Digest:     imageDigest,
-	}
-	imageArtifactFilename := fmt.Sprintf("%s.json", p.imageShaTag.ImageIdentity.ImageStream)
-	err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(parsedExtraTags) > 0 {
-		log.Printf("Processing extra tags missing in registry: %+q", parsedExtraTags)
-		missingTags, err := p.skopeoMissingTags()
-		if err != nil {
-			log.Fatal("Could not determine missing tags:", err)
-		}
-		if len(missingTags) == 0 {
-			log.Print("No missing extra tags found.")
-			return
-		}
-		log.Printf("pushing missing extra tags: %+q", missingTags)
-		for _, missingTag := range missingTags {
-			imageExtraTag := imageIdentity.tag(missingTag)
-			err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
-			if err != nil {
-				log.Fatal("skopeo push failed: ", err)
-			}
-		}
-		p.logger.Infof("Writing image artifacts for all extra tags ...")
-		for _, extraTag := range parsedExtraTags {
-			imageExtraTag := imageIdentity.tag(extraTag)
-			ia := artifact.Image{
-				Image:      imageExtraTag.imageRef(opts.registry),
-				Registry:   opts.registry,
-				Repository: imageExtraTag.ImageIdentity.ImageNamespace,
-				Name:       imageExtraTag.ImageIdentity.ImageStream,
-				Tag:        imageExtraTag.Tag,
-				Digest:     imageDigest,
-			}
-			imageArtifactFilename := fmt.Sprintf("%s-%s.json", imageExtraTag.ImageIdentity.ImageStream, imageExtraTag.Tag)
-			err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
+	return "/etc/containers/certs.d"
 }
 
 // copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
@@ -413,14 +213,6 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 	return err
 }
 
-func parseExtraTags(opts options) ([]string, error) {
-	extraTagsSpecified, err := shlex.Split(opts.extraTags)
-	if err != nil {
-		return nil, fmt.Errorf("parse extra tags (%s): %w", opts.extraTags, err)
-	}
-	return extraTagsSpecified, nil
-}
-
 // getImageDigestFromRegistry returns a SHA256 image digest if the specified
 // imageRef exists. Example return value:
 // "sha256:3b6de1c737065e9973ddb7cc60b769b866b7649ff6f2de3816934dda832de294"
@@ -435,7 +227,7 @@ func (p *packageImage) getImageDigestFromRegistry() (string, error) {
 		args = append(args, "--debug")
 	}
 	stdout, _, err := command.RunBuffered("skopeo",
-		append(args, "docker://"+p.imageShaTag.nsStreamSha()))
+		append(args, "docker://"+p.imageId.nsStreamSha()))
 	return string(stdout), err
 }
 
@@ -455,4 +247,12 @@ func writeImageDigestToResults(imageDigest string) error {
 		return err
 	}
 	return os.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
+}
+
+// imageArtifactExists checks if image artifact JSON file exists in its artifacts path
+func imageArtifactExists(p *packageImage) error {
+	imageArtifactsDir := filepath.Join(p.opts.checkoutDir, pipelinectxt.ImageDigestsPath)
+	imageArtifactFilename := fmt.Sprintf("%s.json", p.ctxt.Component)
+	_, err := os.Stat(filepath.Join(imageArtifactsDir, imageArtifactFilename))
+	return err
 }

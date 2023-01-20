@@ -105,9 +105,9 @@ spec:
       type: string
       default: "false"
     - name: node-version
-      description: "Node.js version to use - supported versions: 16"
+      description: "Node.js version to use - supported versions: 16, 18"
       type: string
-      default: "16"
+      default: "18"
     - name: build-dir
       description: >-
         Must match the directory into which `npm run build` places files.
