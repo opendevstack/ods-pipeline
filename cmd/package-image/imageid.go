@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -74,15 +75,19 @@ func (iid *imageIdentity) tag(tag string) imageIdentityWithTag {
 	}
 }
 
-func (iid *imageIdentity) shaTag() imageIdentityWithTag {
-	return imageIdentityWithTag{
-		ImageIdentity: iid,
-		Tag:           iid.GitCommitSHA,
-	}
-}
-
 func (iid *imageIdentity) imageRefWithSha(registry string) string {
 	return fmt.Sprintf("%s/%s", registry, iid.nsStreamSha())
+}
+
+func (iid *imageIdentity) artifactImage(registry string, imageDigest string) artifact.Image {
+	return artifact.Image{
+		Ref:        iid.imageRefWithSha(registry),
+		Registry:   registry,
+		Repository: iid.ImageNamespace,
+		Name:       iid.ImageStream,
+		Tag:        iid.GitCommitSHA,
+		Digest:     imageDigest,
+	}
 }
 
 // imageRef renders Registry/ImageNamespace/ImageStream:Tag
@@ -97,4 +102,15 @@ func (idt *imageIdentityWithTag) imageRef(registry string) string {
 // ns is an mnemonic for namespace
 func (idt *imageIdentityWithTag) imageRefWithSha(registry string) string {
 	return fmt.Sprintf("%s/%s", registry, idt.nsStreamSha())
+}
+
+func (idt *imageIdentityWithTag) artifactImage(registry string, imageDigest string) artifact.Image {
+	return artifact.Image{
+		Ref:        idt.imageRef(registry),
+		Registry:   registry,
+		Repository: idt.ImageIdentity.ImageNamespace,
+		Name:       idt.ImageIdentity.ImageStream,
+		Tag:        idt.Tag,
+		Digest:     imageDigest,
+	}
 }

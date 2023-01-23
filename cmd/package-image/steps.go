@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -124,7 +123,7 @@ func scanImageWithAqua() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		if aquasecInstalled() {
 			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := fmt.Sprintf("%s/%s", p.imageId.nsStreamSha())
+			aquaImage := p.imageName()
 			htmlReportFile := filepath.Join(p.opts.checkoutDir, "report.html")
 			jsonReportFile := filepath.Join(p.opts.checkoutDir, "report.json")
 			scanArgs := aquaAssembleScanArgs(p.opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -173,30 +172,20 @@ func pushImage() PackageStep {
 
 func storeArtifact() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		imageId := p.imageId
-		imageShaTag := imageId.shaTag()
-		image := artifact.Image{
-			Ref:        imageShaTag.imageRef(p.opts.registry),
-			Registry:   p.opts.registry,
-			Repository: imageId.ImageNamespace,
-			Name:       imageId.ImageStream,
-			Tag:        imageId.GitCommitSHA,
-			Digest:     p.imageDigest,
-		}
-		err := writeImageDigestToResults(image.Digest)
+		err := writeImageDigestToResults(p.imageDigest)
 		if err != nil {
 			return p, err
 		}
 
 		fmt.Println("Writing image artifact ...")
-		imageArtifactFilename := fmt.Sprintf("%s.json", image.Name)
-		err = pipelinectxt.WriteJsonArtifact(image, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+		imageArtifactFilename := fmt.Sprintf("%s.json", p.imageNameNoSha())
+		err = pipelinectxt.WriteJsonArtifact(p.artifactImage(), pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 		if err != nil {
 			return p, err
 		}
 
 		fmt.Println("Writing SBOM artifact ...")
-		sbomFilename := fmt.Sprintf("%s.%s", image.Name, pipelinectxt.SBOMsFormat)
+		sbomFilename := fmt.Sprintf("%s.%s", p.imageNameNoSha(), pipelinectxt.SBOMsFormat)
 		sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
 		err = pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
 		if err != nil {
@@ -213,7 +202,7 @@ func processExtraTags() PackageStep {
 			log.Printf("Processing extra tags missing in registry: %+q", p.parsedExtraTags)
 			missingTags, err := p.skopeoMissingTags()
 			if err != nil {
-				return p, fmt.Errorf("Could not determine missing tags:", err)
+				return p, fmt.Errorf("could not determine missing tags: %w", err)
 			}
 			if len(missingTags) == 0 {
 				log.Print("No missing extra tags found.")
@@ -224,24 +213,16 @@ func processExtraTags() PackageStep {
 				imageExtraTag := p.imageId.tag(missingTag)
 				err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
 				if err != nil {
-					log.Fatal("skopeo push failed: ", err)
+					return p, fmt.Errorf("skopeo push failed: %w", err)
 				}
 			}
 			p.logger.Infof("Writing image artifacts for all extra tags ...")
 			for _, extraTag := range p.parsedExtraTags {
-				imageExtraTag := p.imageId.tag(extraTag)
-				ia := artifact.Image{
-					Ref:        imageExtraTag.imageRef(p.opts.registry),
-					Registry:   p.opts.registry,
-					Repository: imageExtraTag.ImageIdentity.ImageNamespace,
-					Name:       imageExtraTag.ImageIdentity.ImageStream,
-					Tag:        imageExtraTag.Tag,
-					Digest:     p.imageDigest,
-				}
-				imageArtifactFilename := fmt.Sprintf("%s-%s.json", imageExtraTag.ImageIdentity.ImageStream, imageExtraTag.Tag)
-				err = pipelinectxt.WriteJsonArtifact(ia, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+				image := p.artifactImageForTag(extraTag)
+				imageArtifactFilename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, extraTag)
+				err = pipelinectxt.WriteJsonArtifact(image, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 				if err != nil {
-					log.Fatal(err)
+					return p, err
 				}
 			}
 		}

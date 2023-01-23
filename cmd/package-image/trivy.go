@@ -22,12 +22,12 @@ func (p *packageImage) generateImageSBOM() error {
 	if err != nil {
 		p.logger.Errorf("could not parse extra args (%s): %s", p.opts.trivySBOMExtraArgs, err)
 	}
-	sbomFilename := fmt.Sprintf("%s.%s", p.imageName(), pipelinectxt.SBOMsFormat)
+	sbomFilename := fmt.Sprintf("%s.%s", p.imageNameNoSha(), pipelinectxt.SBOMsFormat)
 	sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
 	args := []string{
 		"image",
 		fmt.Sprintf("--format=%s", pipelinectxt.SBOMsFormat),
-		fmt.Sprintf("--input=%s", filepath.Join(p.opts.checkoutDir, p.imageName())),
+		fmt.Sprintf("--input=%s", filepath.Join(p.opts.checkoutDir, p.imageNameNoSha())),
 		fmt.Sprintf("--output=%s", sbomFile),
 	}
 	if p.opts.debug {

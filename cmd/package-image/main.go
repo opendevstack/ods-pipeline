@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
@@ -59,8 +60,21 @@ func (p *packageImage) imageName() string {
 	return p.imageId.streamSha()
 }
 
+func (p *packageImage) imageNameNoSha() string {
+	return p.imageId.ImageStream
+}
+
 func (p *packageImage) imageRef() string {
-	return p.imageId.nsStreamSha()
+	return p.imageId.imageRefWithSha(p.opts.registry)
+}
+
+func (p *packageImage) artifactImage() artifact.Image {
+	return p.imageId.artifactImage(p.opts.registry, p.imageDigest)
+}
+
+func (p *packageImage) artifactImageForTag(tag string) artifact.Image {
+	imageExtraTag := p.imageId.tag(tag)
+	return imageExtraTag.artifactImage(p.opts.registry, p.imageDigest)
 }
 
 var defaultOptions = options{
@@ -125,7 +139,8 @@ func main() {
 	} else {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
-	err := (&packageImage{logger: logger, opts: opts}).runSteps(
+	p := packageImage{logger: logger, opts: opts}
+	err := (&p).runSteps(
 		setExtraTags(),
 		setupContext(),
 		setImageId(),
@@ -135,8 +150,12 @@ func main() {
 		pushImage(),
 		scanImageWithAqua(),
 		storeArtifact(),
-		processExtraTags(),
 	)
+	if err != nil {
+		logger.Errorf(err.Error())
+		os.Exit(1)
+	}
+	err = (&p).runSteps(processExtraTags())
 	if err != nil {
 		logger.Errorf(err.Error())
 		os.Exit(1)
