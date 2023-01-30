@@ -199,8 +199,8 @@ else
     installSecret "ods-bitbucket-auth" \
         "basic-auth-secret.yaml.tmpl" \
         "${BITBUCKET_AUTH}" \
-        "" \
-        "Please enter a personal access token of a Bitbucket user with project admin permission (input will be hidden):"
+        "Please enter the username of Bitbucket user with write permission." \
+        "Please enter a personal access token of this Bitbucket user (input will be hidden):"
 
     # Webhook secret is a special case, as we do not want the user to set it.
     # No prompts -> password will be auto-generated if not given.

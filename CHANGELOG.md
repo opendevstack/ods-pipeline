@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- Installation does not ask for Bitbucket username ([#652](https://github.com/opendevstack/ods-pipeline/issues/652))
+
 ### Added
 
 - Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
