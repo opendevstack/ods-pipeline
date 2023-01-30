@@ -10,17 +10,18 @@ listed in the changelog.
 
 ## [Unreleased]
 
-### Fixed
-
-- Installation does not ask for Bitbucket username ([#652](https://github.com/opendevstack/ods-pipeline/issues/652))
-
 ### Added
 
-- Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+- New image for `ods-build-npm` task with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+
+### Changed
+
+- Node.js 18 is now the default for `ods-build-npm` task ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
 
 ### Fixed
 
 - npm-toolset tests fail with new release of ubi8 Node.js image ([#650](https://github.com/opendevstack/ods-pipeline/issues/650))
+- Installation does not ask for Bitbucket username ([#652](https://github.com/opendevstack/ods-pipeline/issues/652))
 
 ## [0.8.0] - 2023-01-06
 
