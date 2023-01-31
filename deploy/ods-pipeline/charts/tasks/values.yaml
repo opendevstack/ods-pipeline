@@ -1,2 +1,5 @@
 # override name to be consistent with previous, separate chart naming convention(s)
 nameOverride: ods-pipeline
+
+imageRepository: ghcr.io/opendevstack/ods-pipeline
+pushRegistry: image-registry.openshift-image-registry.svc:5000

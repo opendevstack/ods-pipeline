@@ -19,21 +19,19 @@ func TestTaskODSBuildGo(t *testing.T) {
 	goProverb := "Don't communicate by sharing memory, share memory by communicating."
 	runTaskTestCases(t,
 		"ods-build-go",
-		[]tasktesting.Service{
-			tasktesting.SonarQube,
-		},
+		requiredServices(tasktesting.SonarQube),
 		map[string]tasktesting.TestCase{
 			"build go app": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
 						"cache-build":        "false",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -45,13 +43,17 @@ func TestTaskODSBuildGo(t *testing.T) {
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.out"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 
 					wantLogMsg := "No sonar-project.properties present, using default:"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
@@ -76,12 +78,11 @@ func TestTaskODSBuildGo(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-						// "cache-build":        "true", expected to be default
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -93,13 +94,18 @@ func TestTaskODSBuildGo(t *testing.T) {
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.out"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
 
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 
 					// This is not available when build skipping as the default is
 					// supplied on the second repeat.
@@ -134,12 +140,12 @@ func TestTaskODSBuildGo(t *testing.T) {
 					createAppInSubDirectory(t, wsDir, subdir, "go-sample-app")
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -154,12 +160,17 @@ func TestTaskODSBuildGo(t *testing.T) {
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.out", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)))
+					)
 
-					sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-analysis-report.md", subdir)),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-issues-report.csv", subdir)),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, fmt.Sprintf("%s-quality-gate.json", subdir)),
+						)
+						sonarProject := sonar.ProjectKey(ctxt.ODS, subdir+"-")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 
 					b, _, err := command.RunBuffered(filepath.Join(wsDir, binary), []string{})
 					if err != nil {
@@ -179,10 +190,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":   runtime.GOOS,
 						"go-arch": runtime.GOARCH,
-					}
+					})
 				},
 				WantRunSuccess: false,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -205,10 +216,10 @@ func TestTaskODSBuildGo(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-skip":      "true",
 						"pre-test-script": "pre-test-script.sh",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -229,16 +240,18 @@ func TestTaskODSBuildGo(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					writeContextFile(t, wsDir, "pr-key", "3")
 					writeContextFile(t, wsDir, "pr-key", "master")
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					sonarProject := sonar.ProjectKey(ctxt.ODS, "")
-					checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					if !*skipSonarQubeFlag {
+						sonarProject := sonar.ProjectKey(ctxt.ODS, "")
+						checkSonarQualityGate(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, sonarProject, true, "OK")
+					}
 				},
 				CleanupFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]

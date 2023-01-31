@@ -34,7 +34,7 @@ spec:
   steps:
     - name: ods-finish
       # Image is built from build/package/Dockerfile.finish.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-finish:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: '{{.Values.imageRepository}}/ods-finish:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -84,14 +84,23 @@ spec:
               key: debug
               name: ods-pipeline
       resources: {}
-      workingDir: $(workspaces.source.path)
       script: |
 
         # ods-finish is built from cmd/finish/main.go.
         ods-finish \
           -pipeline-run-name=$(params.pipeline-run-name) \
           -aggregate-tasks-status=$(params.aggregate-tasks-status)
-
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
+      workingDir: $(workspaces.source.path)
+  volumes:
+    - name: private-cert
+      secret:
+        secretName: ods-private-cert
+        optional: true
   workspaces:
     - description: The git repo will be present onto the volume backing this workspace
       name: source

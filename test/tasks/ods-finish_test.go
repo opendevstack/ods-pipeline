@@ -28,7 +28,7 @@ func TestTaskODSFinish(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					ctxt.Params = map[string]string{
 						"pipeline-run-name":      "foo",
@@ -37,7 +37,7 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
 				},
 			},
@@ -46,13 +46,13 @@ func TestTaskODSFinish(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					// Pretend there is alredy a coverage report in Nexus
 					// this assures the safeguard is working to avoid duplicate upload.
 					// TODO: assure the safeguard is actually invoked by checking the logs.
 					t.Log("Uploading coverage artifact to Nexus and writing manifest")
-					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					_, err := nexusClient.Upload(
 						nexus.TemporaryRepositoryDefault,
 						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
@@ -86,7 +86,7 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt, nexus.TemporaryRepositoryDefault)
 
@@ -101,7 +101,7 @@ func TestTaskODSFinish(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey,
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
 					err := createFinishODSYML(wsDir)
 					if err != nil {
@@ -114,7 +114,7 @@ func TestTaskODSFinish(t *testing.T) {
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt, nexus.PermanentRepositoryDefault)
 				},
@@ -154,7 +154,7 @@ func createFinishODSYML(wsDir string) error {
 
 func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, targetRepository string) {
 
-	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
+	nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 
 	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{

@@ -134,7 +134,7 @@ spec:
   steps:
     - name: build-npm
       # Image is built from build/package/Dockerfile.node<xx>-npm-toolset.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-node$(params.node-version)-npm-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: '{{.Values.imageRepository}}/ods-node$(params.node-version)-npm-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -197,8 +197,18 @@ spec:
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
         fi
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
       workingDir: $(workspaces.source.path)
     {{- include "sonar-step" . | indent 4}}
+  volumes:
+    - name: private-cert
+      secret:
+        secretName: ods-private-cert
+        optional: true
   workspaces:
     - name: source
 {{end}}

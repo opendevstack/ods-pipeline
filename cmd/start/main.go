@@ -222,7 +222,7 @@ func main() {
 		}
 	}
 
-	logger.Infof("Downloading any artifacts ...")
+	logger.Infof("Downloading any artifacts from %s ...", opts.nexusURL)
 	// If there are subrepos, then all of them need to have a successful pipeline run.
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
 		BaseURL:  opts.nexusURL,
@@ -380,15 +380,17 @@ func checkoutAndAssembleContext(
 		log.Fatal(err)
 	}
 	logger.Infof("Checking out %s@%s into %s ...", url, gitFullRef, absCheckoutDir)
-	stdout, stderr, err := command.RunBuffered("/ko-app/git-init", []string{
-		"-url", url,
-		"-revision", gitFullRef,
-		"-refspec", gitRefSpec,
-		"-path", absCheckoutDir,
-		"-sslVerify", sslVerify,
-		"-submodules", submodules,
-		"-depth", depth,
-	})
+	gitInitArgs := []string{
+		fmt.Sprintf("-url=%v", url),
+		fmt.Sprintf("-revision=%v", gitFullRef),
+		fmt.Sprintf("-refspec=%v", gitRefSpec),
+		fmt.Sprintf("-path=%v", absCheckoutDir),
+		fmt.Sprintf("-sslVerify=%v", sslVerify),
+		fmt.Sprintf("-submodules=%v", submodules),
+		fmt.Sprintf("-depth=%v", depth),
+	}
+	logger.Debugf("git-init %s", strings.Join(gitInitArgs, " "))
+	stdout, stderr, err := command.RunBuffered("/ko-app/git-init", gitInitArgs)
 	if err != nil {
 		logger.Errorf(string(stderr))
 		log.Fatal(err)

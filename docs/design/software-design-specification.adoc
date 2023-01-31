@@ -355,11 +355,11 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 |===
 | SDS-TASK-19
 | `ods-package-image` Task resource
-| Builds and scans a container image, then pushes it to a registry. References SDS-TASK-20 and executes SDS-TASK-21.
+| Builds and scans a container image, then pushes it to a registry. References SDS-TASK-20 and executes SDS-TASK-25 and SDS-TASK-21.
 
 | SDS-TASK-20
 | `ods-package-image` container image
-| Container image to build, scan, push and tag images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18, SDS-EXT-31 and SDS-TASK-21. If the build argument `aquasecScannerUrl` is set, the referenced Aqua Scanner binary is installed into the image as well.
+| Container image to build, scan, push and tag images. Based on `ubi8` (SDS-EXT-1), includes SDS-EXT-17, SDS-EXT-18, SDS-EXT-31 and SDS-TASK-21.
 
 | SDS-TASK-21
 | `build-and-push` binary
@@ -377,12 +377,16 @@ Generates the SBOM report of the image using SDS-EXT-31. The resulting report is
 
 If the Aqua scanner is installed in the base image, the  pushed image shall be scanned. The resulting report is placed in `.ods/artifacts` and attached as a code insight to Bitbucket.
 
-Processes tags specified in the `extra-tags` parameter and adds missing to the image in the target registry:
+Processes tags specified in the `extra-tags` parameter to add tags to the image in the target registry:
 
-* Uses skopeo (SDS-EXT-17) to inspect image in target registry to determine whether there are tags defined in `extra-tags` which have not yet been applied.
-* For each missing tag:
-    * Uses skopeo to add missing tag to the image in the target registry.
-    * The resulting image name and tag is placed into `.ods/artifacts`.
+* If an artifact for the tagged image exists, the tag is not further processed. 
+* If there is no artifact for the tagged image:
+    * Adds the tag using skopeo (SDS-EXT-17) to the image in the target registry.
+    * The resulting tagged image artifact is placed into `.ods/artifacts`.
+
+| SDS-TASK-25
+| `download-aqua-scanner.sh` shell script
+a| If a download URL is specified in the  `ods-aqua-scanner-url` secret, the binary is downloaded from the given URL and placed onto the workspace PVC under `.ods-cache/bin`. Subsequent task runs check if the (same version of the) scanner is already present before downloading.
 |===
 
 ==== `ods-deploy-helm` task

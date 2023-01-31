@@ -14,10 +14,12 @@ CHART_DIR="./ods-pipeline"
 # Secrets
 AUTH_SEPARATOR=":"
 AQUA_AUTH=""
+AQUA_SCANNER_URL=""
 BITBUCKET_AUTH=""
 BITBUCKET_WEBHOOK_SECRET=""
 NEXUS_AUTH=""
 SONAR_AUTH=""
+PRIVATE_CERT=""
 
 # Check prerequisites.
 KUBECTL_BIN=""
@@ -46,10 +48,12 @@ function usage {
     printf "\t--dry-run\t\t\tDo not apply any changes, instead just print what the script would do.\n"
     printf "\t--auth-separator\t\tCharacter to use as a separator for basic auth flags (defaults to '%s')\n" "$AUTH_SEPARATOR"
     printf "\t--aqua-auth\t\t\tUsername and password (separated by '%s') of an Aqua user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
+    printf "\t--aqua-scanner-url\t\t\tURL from which to download Aqua scanner (if not given, script will prompt for this).\n"
     printf "\t--bitbucket-auth\t\tAccess token of a Bitbucket user (if not given, script will prompt for this).\n"
     printf "\t--bitbucket-webhook-secret\tSecret to protect webhook endpoint with (if not given, script will generate this).\n"
     printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
     printf "\t--sonar-auth\t\t\tAuth token of a SonarQube user (if not given, script will prompt for this).\n"
+    printf "\t--private-cert\t\t\tHost from which to download private certificate (if not given, script will skip this).\n"
     printf "\nExample:\n\n"
     printf "\t%s \ \
       \n\t\t--namespace foo \ \
@@ -86,6 +90,9 @@ while [[ "$#" -gt 0 ]]; do
     --aqua-auth) AQUA_AUTH="$2"; shift;;
     --aqua-auth=*) AQUA_AUTH="${1#*=}";;
 
+    --aqua-scanner-url) AQUA_SCANNER_URL="$2"; shift;;
+    --aqua-scanner-url=*) AQUA_SCANNER_URL="${1#*=}";;
+
     --bitbucket-auth) BITBUCKET_AUTH="$2"; shift;;
     --bitbucket-auth=*) BITBUCKET_AUTH="${1#*=}";;
 
@@ -97,6 +104,9 @@ while [[ "$#" -gt 0 ]]; do
 
     --sonar-auth) SONAR_AUTH="$2"; shift;;
     --sonar-auth=*) SONAR_AUTH="${1#*=}";;
+
+    --private-cert) PRIVATE_CERT="$2"; shift;;
+    --private-cert=*) PRIVATE_CERT="${1#*=}";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -168,6 +178,35 @@ installSecret () {
     fi
 }
 
+installTLSSecret () {
+    local secretName="$1"
+    local privateCert="$2"
+    local certFile=""
+    if [ -z "${privateCert}" ]; then
+        echo "No private cert given, skipping ..."
+    else
+        if [ "${privateCert:0:1}" == '/' ] || [ "${privateCert:0:2}" == './' ]; then
+            if [ ! -f "${privateCert}" ]; then
+                echo "No cert file exists at ${privateCert}"; exit 1
+            fi
+            certFile="${privateCert}"
+        else
+            certFile="private-cert.pem.tmp"
+            openssl s_client -showcerts -connect "${privateCert}" </dev/null \
+                | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${certFile}"
+        fi
+        if "${KUBECTL_BIN}" -n "${NAMESPACE}" get "secret/${secretName}" &> /dev/null; then
+            echo "Re-creating secret ${secretName} ..."
+            "${KUBECTL_BIN}" -n "${NAMESPACE}" delete secret "${secretName}"
+        else
+            echo "Creating secret ${secretName} ..."
+        fi
+        "${KUBECTL_BIN}" -n "${NAMESPACE}" create secret generic "${secretName}" \
+            --from-file=tls.crt="${certFile}"
+        rm private-cert.pem.tmp &>/dev/null || true
+    fi
+}
+
 # Manage serviceaccount ...
 if "${KUBECTL_BIN}" -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
     echo "Serviceaccount exists already ..."
@@ -192,15 +231,22 @@ else
     installSecret "ods-aqua-auth" \
         "basic-auth-secret.yaml.tmpl" \
         "${AQUA_AUTH}" \
-        "Please enter the username of an Aqua user with scan permissions:" \
-        "Please enter the password of this Aqua user (input will be hidden):"
+        "Please enter the username of an Aqua user with scan permissions. If you do not want to use Aqua, leave this empty:" \
+        "Please enter the password of this Aqua user (input will be hidden). If you do not want to use Aqua, leave this empty:"
+
+    # Aqua scanner URL is a single value.
+    installSecret "ods-aqua-scanner-url" \
+        "opaque-secret.yaml.tmpl" \
+        "${AQUA_SCANNER_URL}" \
+        "" \
+        "Please enter the URL from which to download the Aqua scanner binary. The URL may need to contain basic authentication - if so, ensure username/password are URL-encoded. Further, ensure that the version matches your Aqua server version. If you do not want to use Aqua, leave this empty:"
 
     # Bitbucket username is not required as PAT alone is enough.
     installSecret "ods-bitbucket-auth" \
         "basic-auth-secret.yaml.tmpl" \
         "${BITBUCKET_AUTH}" \
-        "" \
-        "Please enter a personal access token of a Bitbucket user with project admin permission (input will be hidden):"
+        "Please enter the username of Bitbucket user with write permission." \
+        "Please enter a personal access token of this Bitbucket user (input will be hidden):"
 
     # Webhook secret is a special case, as we do not want the user to set it.
     # No prompts -> password will be auto-generated if not given.
@@ -221,6 +267,8 @@ else
         "${SONAR_AUTH}" \
         "" \
         "Please enter an auth token of a SonarQube user with scan permissions (input will be hidden):"
+
+    installTLSSecret "ods-private-cert" "${PRIVATE_CERT}"
 fi
 
 echo "Installing Helm release ${RELEASE_NAME} ..."

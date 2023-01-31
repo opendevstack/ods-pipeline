@@ -5,7 +5,7 @@ This guide will show how to install ODS Pipeline in an existing ODS project. It 
 
 An ODS Pipeline installation consists of the following resources:
 
-* `BuildConfig`, `ImageStream` and `Task` resources
+* `Task` resources
 * `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
 * A pipeline manager, which is creating pipeline runs in response to Bitbucket webhook requests
 
@@ -57,6 +57,8 @@ If you have access to the OpenShift API from your local machine, you can simply 
 
 The script will interactively ask for credentials (such as Bitbucket access token) and will create corresponding K8s secrets. If you prefer to pass these secrets via flags, see `./install.sh --help` for all options.
 
+IMPORTANT: If tasks need to trust a private certificate, pass `--private-cert <host>`. This will create a K8s secret containing the certificate from the specified host, which will then be mounted in pods during task runs.
+
 TIP: You may pass `--dry-run` to review what `install.sh` will do before actually running the script.
 
 After you ran the install script, continue with the <<finishing-the-installation,Finishing the installation>> section.
@@ -78,9 +80,7 @@ After you ran the install script, continue with the <<finishing-the-installation
 
 ==== Finishing the installation
 
-After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
-
-Finally, create an HTTPS route to expose the `ods-pipeline` service. You'll need the exposed URL (together with the webhook secret that is stored in the `ods-bitbucket-webhook` K8s secret) when you create webhooks in Bitbucket repositories later.
+Create an HTTPS route to expose the `ods-pipeline` service. You'll need the exposed URL (together with the webhook secret that is stored in the `ods-bitbucket-webhook` K8s secret) when you create webhooks in Bitbucket repositories later.
 
 IMPORTANT: The `pipeline` serviceaccount needs `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`). You must create rolebindings for this manually.
 
@@ -143,7 +143,5 @@ This will install all prerequisites automatically and update your ODS Pipeline i
 TIP: The credentials stored in the K8s secrets will not be updated. If you need to change those, update them manually.
 
 ==== Finishing the update
-
-After successful installation in OpenShift, builds for the container images used in the pipeline manager and Tekton tasks will be triggered automatically. It is recommended to check that all builds succeed before proceeding.
 
 Once the resources in your namespace are updated, you likely have to update the `ods.yaml` files in your repository to point to the new tasks, e.g. changing `ods-build-go-v0-6-0` to `ods-build-go-v0-8-0`. Whether or not you have to update the `ods.yaml` file depends whether the task suffix (controlled by the value `taskSuffix`) has changed due to the update.

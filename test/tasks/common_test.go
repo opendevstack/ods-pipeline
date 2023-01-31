@@ -17,16 +17,40 @@ import (
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/sonar"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"golang.org/x/exp/slices"
 	kclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
 var alwaysKeepTmpWorkspacesFlag = flag.Bool("always-keep-tmp-workspaces", false, "Whether to keep temporary workspaces from taskruns even when test is successful")
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
+var skipSonarQubeFlag = flag.Bool("skip-sonar", false, "Whether to skip SonarQube steps")
+var privateCertFlag = flag.Bool("private-cert", false, "Whether to run tests using a private cert")
 
 const (
 	taskKindRef = "Task"
 )
+
+// buildTaskParams forces all SonarQube params to be "falsy"
+// if the skipSonarQubeFlag is set.
+func buildTaskParams(p map[string]string) map[string]string {
+	if *skipSonarQubeFlag {
+		p["sonar-skip"] = "true"
+		p["sonar-quality-gate"] = "false"
+	}
+	return p
+}
+
+// requiredServices takes a variable amount of services and removes
+// SonarQube from the resulting slice if the skipSonarQubeFlag is set.
+func requiredServices(s ...tasktesting.Service) []tasktesting.Service {
+	requiredServices := append([]tasktesting.Service{}, s...)
+	sqIndex := slices.Index(requiredServices, tasktesting.SonarQube)
+	if sqIndex != -1 && *skipSonarQubeFlag {
+		requiredServices = slices.Delete(requiredServices, sqIndex, sqIndex+1)
+	}
+	return requiredServices
+}
 
 func checkODSContext(t *testing.T, repoDir string, want *pipelinectxt.ODSContext) {
 	checkODSFileContent(t, repoDir, "component", want.Component)
@@ -139,6 +163,7 @@ func runTaskTestCases(t *testing.T, taskName string, requiredServices []tasktest
 			SourceDir:        tasktesting.StorageSourceDir,
 			StorageCapacity:  tasktesting.StorageCapacity,
 			StorageClassName: tasktesting.StorageClassName,
+			PrivateCert:      *privateCertFlag,
 		},
 	)
 

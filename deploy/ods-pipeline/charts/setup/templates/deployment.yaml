@@ -17,8 +17,7 @@ spec:
       containers:
         - name: pipeline-manager
           securityContext: {}
-          image: "{{.Values.pipelineManager.image.registry}}/{{.Values.pipelineManager.image.namespace | default .Release.Namespace}}/{{.Values.pipelineManager.image.repository | default .Chart.Name}}:{{.Values.pipelineManager.image.tag | default .Chart.AppVersion}}"
-          imagePullPolicy: {{.Values.pipelineManager.image.pullPolicy}}
+          image: "{{.Values.pipelineManager.imageRepository}}/ods-pipeline-manager:{{.Values.pipelineManager.imageTag | default .Chart.AppVersion}}"
           ports:
             - name: http
               containerPort: 8080

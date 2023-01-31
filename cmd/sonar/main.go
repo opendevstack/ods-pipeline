@@ -15,13 +15,26 @@ import (
 )
 
 type options struct {
-	sonarAuthToken string
-	sonarURL       string
-	sonarEdition   string
-	workingDir     string
-	rootPath       string
-	qualityGate    bool
-	debug          bool
+	sonarAuthToken     string
+	sonarURL           string
+	sonarEdition       string
+	workingDir         string
+	rootPath           string
+	qualityGate        bool
+	trustStore         string
+	trustStorePassword string
+	debug              bool
+}
+
+var defaultOptions = options{
+	sonarAuthToken:     os.Getenv("SONAR_AUTH_TOKEN"),
+	sonarURL:           os.Getenv("SONAR_URL"),
+	sonarEdition:       os.Getenv("SONAR_EDITION"),
+	workingDir:         ".",
+	qualityGate:        false,
+	trustStore:         "${JAVA_HOME}/lib/security/cacerts",
+	trustStorePassword: "changeit",
+	debug:              (os.Getenv("DEBUG") == "true"),
 }
 
 func main() {
@@ -31,12 +44,14 @@ func main() {
 	}
 
 	opts := options{rootPath: rootPath}
-	flag.StringVar(&opts.sonarAuthToken, "sonar-auth-token", os.Getenv("SONAR_AUTH_TOKEN"), "sonar-auth-token")
-	flag.StringVar(&opts.sonarURL, "sonar-url", os.Getenv("SONAR_URL"), "sonar-url")
-	flag.StringVar(&opts.sonarEdition, "sonar-edition", os.Getenv("SONAR_EDITION"), "sonar-edition")
-	flag.StringVar(&opts.workingDir, "working-dir", ".", "working directory")
-	flag.BoolVar(&opts.qualityGate, "quality-gate", false, "require quality gate pass")
-	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
+	flag.StringVar(&opts.sonarAuthToken, "sonar-auth-token", defaultOptions.sonarAuthToken, "sonar-auth-token")
+	flag.StringVar(&opts.sonarURL, "sonar-url", defaultOptions.sonarURL, "sonar-url")
+	flag.StringVar(&opts.sonarEdition, "sonar-edition", defaultOptions.sonarEdition, "sonar-edition")
+	flag.StringVar(&opts.workingDir, "working-dir", defaultOptions.workingDir, "working directory")
+	flag.BoolVar(&opts.qualityGate, "quality-gate", defaultOptions.qualityGate, "require quality gate pass")
+	flag.StringVar(&opts.trustStore, "truststore", defaultOptions.trustStore, "JKS truststore")
+	flag.StringVar(&opts.trustStorePassword, "truststore-pass", defaultOptions.trustStorePassword, "JKS truststore password")
+	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
 
 	var logger logging.LeveledLoggerInterface
@@ -58,11 +73,13 @@ func main() {
 	}
 
 	sonarClient, err := sonar.NewClient(&sonar.ClientConfig{
-		APIToken:      opts.sonarAuthToken,
-		BaseURL:       opts.sonarURL,
-		ServerEdition: opts.sonarEdition,
-		Debug:         opts.debug,
-		Logger:        logger,
+		APIToken:           opts.sonarAuthToken,
+		BaseURL:            opts.sonarURL,
+		ServerEdition:      opts.sonarEdition,
+		TrustStore:         opts.trustStore,
+		TrustStorePassword: opts.trustStorePassword,
+		Debug:              opts.debug,
+		Logger:             logger,
 	})
 	if err != nil {
 		log.Fatal("sonar client:", err)
@@ -96,17 +113,17 @@ func sonarScan(
 			Base:   ctxt.PullRequestBase,
 		}
 	}
-	scanStdout, err := sonarClient.Scan(
+	err := sonarClient.Scan(
 		sonarProject,
 		ctxt.GitRef,
 		ctxt.GitCommitSHA,
 		prInfo,
+		os.Stdout,
+		os.Stdin,
 	)
 	if err != nil {
-		logger.Infof(scanStdout)
 		return fmt.Errorf("scan failed: %w", err)
 	}
-	logger.Infof(scanStdout)
 
 	logger.Infof("Wait until compute engine task finishes ...")
 	err = waitUntilComputeEngineTaskIsSuccessful(logger, sonarClient)

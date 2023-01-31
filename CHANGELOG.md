@@ -12,13 +12,19 @@ listed in the changelog.
 
 ### Added
 
-- Add new default npm toolset with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+- New image for `ods-build-npm` task with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+
+### Changed
+
+- Node.js 18 is now the default for `ods-build-npm` task ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+- Images used in tasks are now pulled directly from the GitHub registry. "Wrapping" the images in the OpenShift/K8s cluster is not required anymore. If tasks need to trust a private certificate, it needs to be present as a K8s secret, which will then be mounted as a file in the pods. To add the secret to an existing installation, pass `--private-cert <host>` to `./install.sh`. For more details, see [#621](https://github.com/opendevstack/ods-pipeline/issues/621).
 
 - Add `extra-tags` parameter to `ods-package-image` ([#631](https://github.com/opendevstack/ods-pipeline/issues/631))
 
 ### Fixed
 
 - npm-toolset tests fail with new release of ubi8 Node.js image ([#650](https://github.com/opendevstack/ods-pipeline/issues/650))
+- Installation does not ask for Bitbucket username ([#652](https://github.com/opendevstack/ods-pipeline/issues/652))
 
 ## [0.8.0] - 2023-01-06
 

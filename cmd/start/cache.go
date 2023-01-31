@@ -14,8 +14,7 @@
 //
 // In addition to function deleteDirectoryContentsSpareCache a function
 // is provided to clean the cache. This is done in two functions to avoid
-// making the code too complex as new cache cleaning functionality will
-// likely be added in the future, for example to implement build skipping.
+// making the code too complex.
 
 package main
 
@@ -59,15 +58,12 @@ func deleteDirectoryContentsSpareCache(fsb FileSystemBase, fnRemove RemoveFunc) 
 	}, withBaseFileRemover(fsb.base, fnRemove))
 }
 
-// Cleans the cache
-// At the moment only a cache for dependencies is supported and
-// All other content is removed to ensure that tasks don't use
-// cache areas accidentally. This effectively reserve other
+// Cleans the cache.
+// At the moment only a cache for dependencies is supported. The dependencies
+// are assumed to live in a subdirectory of odsCacheDependenciesDirName.
+// Files directly in odsCacheDependenciesDirName are removed to ensure that
+// tasks don't use cache areas accidentally. This effectively reserves other
 // areas for future use.
-// For example if in the future build skipping is supported
-// there would likely be an area where the build output is kept
-// per git-sha of the working-dir. In this case a suitable cleanup
-// might delete such areas after a certain time (see PR #423).
 func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) error {
 	_, err := fsb.filesystem.Open(odsCacheDirName)
 	if err != nil && os.IsNotExist(err) {
@@ -79,24 +75,20 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) err
 		return err
 	}
 	cacheDependenciesPath := filepath.Join(".", odsCacheDependenciesDirName)
-	// To avoid spare files inside the cache which are not supported delete
-	// all other areas of the cache
 
+	// To avoid spare files inside the dependency cache which are not supported,
+	// delete all unknown folders in there.
+	// Files outside the dependency cache are left untouched.
 	dirEntryFunc := func(path string, d fs.DirEntry) WalkAndRemovalFlags {
-
 		if !strings.HasPrefix(path, cacheDependenciesPath) {
 			return 0 // allow files outside the dependency cache area for experimentation
 		}
 		// Dependencies must be inside a folder specific to a technology
 		// such as for npm or go.
-		// Clean all files which are not directories
+		// Clean all files which are not directories.
 		if path == cacheDependenciesPath {
 			return enterDir
 		}
-		// There should be no files below cacheDependenciesPath
-		// but all dirs are deemed valid.
-		// technology-folder names are not meant to be registered
-		// anywhere at this point.
 		if d.IsDir() {
 			return skipDir
 		} else {
@@ -104,17 +96,13 @@ func cleanCache(fsb FileSystemBase, fnRemove RemoveFunc, expirationDays int) err
 		}
 	}
 	fnRemoveWithBase := withBaseFileRemover(filepath.Join(fsb.base, odsCacheDirName), fnRemove)
-	err = deleteDirRecursiveWithSkip(
-		fsCache,
-		dirEntryFunc,
-		fnRemoveWithBase)
+	err = deleteDirRecursiveWithSkip(fsCache, dirEntryFunc, fnRemoveWithBase)
 	if err != nil {
 		return err
 	}
 	keepTimestamp := time.Now().AddDate(0, 0, -1*expirationDays)
 	// now delete build task cache
-	_, err = cleanupNotRecentlyUsed(fsCache, odsCacheBuildOutputDirName, keepTimestamp,
-		fnRemoveWithBase)
+	_, err = cleanupNotRecentlyUsed(fsCache, odsCacheBuildOutputDirName, keepTimestamp, fnRemoveWithBase)
 	return err
 }
 

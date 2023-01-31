@@ -16,7 +16,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +25,7 @@ import (
 )
 
 var outsideKindFlag = flag.Bool("outside-kind", false, "Whether to continue if not in KinD cluster")
+var privateCertFlag = flag.Bool("private-cert", false, "Whether to run tests using a private cert")
 
 func TestE2E(t *testing.T) {
 	tasktesting.CheckCluster(t, *outsideKindFlag)
@@ -70,7 +70,7 @@ func TestE2E(t *testing.T) {
 	}
 	t.Logf("Workspace is in %s", wsDir)
 	odsContext := tasktesting.SetupBitbucketRepo(
-		t, c.KubernetesClientSet, ns, wsDir, tasktesting.BitbucketProjectKey,
+		t, c.KubernetesClientSet, ns, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 	)
 
 	// The webhook URL needs to be the address of the KinD control plane on the node port.
@@ -88,7 +88,7 @@ func TestE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not get Bitbucket webhook secret: %s", err)
 	}
-	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, c.KubernetesClientSet, ns)
+	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, c.KubernetesClientSet, ns, *privateCertFlag)
 	_, err = bitbucketClient.WebhookCreate(
 		odsContext.Project,
 		odsContext.Repository,
@@ -193,7 +193,7 @@ func waitForPipelineRunToBeTriggered(clientset *tekton.Clientset, ns string, tim
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var pipelineRunList *v1beta1.PipelineRunList
+	var pipelineRunList *tektonv1beta1.PipelineRunList
 	for {
 		time.Sleep(2 * time.Second)
 		prs, err := clientset.TektonV1beta1().PipelineRuns(ns).List(ctx, metav1.ListOptions{})
