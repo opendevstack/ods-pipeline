@@ -15,6 +15,7 @@ import (
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"k8s.io/utils/strings/slices"
 )
 
 func TestTaskODSPackageImage(t *testing.T) {
@@ -64,6 +65,7 @@ func TestTaskODSPackageImage(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					checkResultingFiles(t, ctxt, wsDir)
 					checkTagFiles(t, ctxt, wsDir, []string{"latest", "cool"})
+					checkTags(t, ctxt, wsDir, []string{ctxt.ODS.GitCommitSHA, "latest", "cool"})
 					checkResultingImageHelloWorld(t, ctxt, wsDir)
 					checkTaggedImageHelloWorld(t, ctxt, wsDir, "latest")
 					checkTaggedImageHelloWorld(t, ctxt, wsDir, "cool")
@@ -125,18 +127,43 @@ func checkTagFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string,
 	}
 }
 
-func checkLabelOnImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir, wantLabelKey, wantLabelValue string) {
-	stdout, stderr, err := command.RunBuffered("docker", []string{
-		"image", "inspect", "--format", "{{ index .Config.Labels \"" + wantLabelKey + "\"}}",
-		getDockerImageTag(t, ctxt, wsDir),
-	})
+func checkTags(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, expectedTags []string) {
+	// registry := "kind-registry.kind:5000"
+	registry := "localhost:5000"
+	tlsVerify := false
+	args := []string{
+		"inspect",
+		`--format={{.RepoTags}}`,
+		fmt.Sprintf("--tls-verify=%v", tlsVerify),
+	}
+	imageNsStreamSha := fmt.Sprintf("%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, ctxt.ODS.GitCommitSHA)
+	imageRef := fmt.Sprintf("docker://%s/%s", registry, imageNsStreamSha)
+	args = append(args, imageRef)
+
+	stdout, _, err := command.RunBuffered("skopeo", args)
 	if err != nil {
-		t.Fatalf("could not run get label on image: %s, stderr: %s", err, string(stderr))
+		t.Fatalf("skopeo inspect %s: %s", fmt.Sprint(args), err)
 	}
-	got := strings.TrimSpace(string(stdout))
-	if got != wantLabelValue {
-		t.Fatalf("Want label %s=%s, but got value: %s", wantLabelKey, wantLabelValue, got)
+	tags, err := parseSkopeoInspectDigestTags(string(stdout))
+	if err != nil {
+		t.Fatalf("parse tags failed: %s", err)
 	}
+	for _, expectedTag := range expectedTags {
+		if !slices.Contains(tags, expectedTag) {
+			t.Fatalf("Expected tags=%s to be in actual tags=%s", fmt.Sprint(expectedTags), fmt.Sprint(tags))
+		}
+	}
+}
+
+func parseSkopeoInspectDigestTags(out string) ([]string, error) {
+	t := strings.TrimSpace(out)
+	if !(strings.HasPrefix(t, "[") && strings.HasSuffix(t, "]")) {
+		return nil, fmt.Errorf("skopeo inspect: unexpected tag response expecting tags to be in brackets %s", t)
+	}
+	t = t[1 : len(t)-1]
+	// expecting t to have space separated tags.
+	tags := strings.Split(t, " ")
+	return tags, nil
 }
 
 func runSpecifiedImage(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, image string) string {

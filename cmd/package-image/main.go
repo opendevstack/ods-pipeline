@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -230,24 +229,6 @@ func createBitbucketInsightReport(opts options, aquaScanUrl string, success bool
 		},
 	)
 	return err
-}
-
-// getImageDigestFromRegistry returns a SHA256 image digest if the specified
-// imageRef exists. Example return value:
-// "sha256:3b6de1c737065e9973ddb7cc60b769b866b7649ff6f2de3816934dda832de294"
-func (p *packageImage) getImageDigestFromRegistry() (string, error) {
-	args := []string{
-		"inspect",
-		fmt.Sprintf("--format=%s", "{{.Digest}}"),
-		fmt.Sprintf("--tls-verify=%v", p.opts.tlsVerify),
-		fmt.Sprintf("--cert-dir=%s", p.opts.certDir),
-	}
-	if p.opts.debug {
-		args = append(args, "--debug")
-	}
-	stdout, _, err := command.RunBuffered("skopeo",
-		append(args, "docker://"+p.imageId.nsStreamSha()))
-	return string(stdout), err
 }
 
 // getImageDigestFromFile reads the image digest from the file written to by buildah.

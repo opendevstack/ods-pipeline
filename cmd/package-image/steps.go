@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -199,28 +198,24 @@ func storeArtifact() PackageStep {
 func processExtraTags() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		if len(p.parsedExtraTags) > 0 {
-			log.Printf("Processing extra tags missing in registry: %+q", p.parsedExtraTags)
-			missingTags, err := p.skopeoMissingTags()
-			if err != nil {
-				return p, fmt.Errorf("could not determine missing tags: %w", err)
-			}
-			if len(missingTags) == 0 {
-				log.Print("No missing extra tags found.")
-				return p, nil
-			}
-			log.Printf("pushing missing extra tags: %+q", missingTags)
-			for _, missingTag := range missingTags {
-				imageExtraTag := p.imageId.tag(missingTag)
+			p.logger.Infof("Processing extra tags: %+q", p.parsedExtraTags)
+			for _, extraTag := range p.parsedExtraTags {
+				err := imageTagArtifactExists(p, extraTag)
+				if err == nil {
+					p.logger.Infof("Artifact exists for tag: %s", extraTag)
+					continue
+				}
+				p.logger.Infof("pushing extra tag: %s", extraTag)
+				imageExtraTag := p.imageId.tag(extraTag)
 				err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
 				if err != nil {
 					return p, fmt.Errorf("skopeo push failed: %w", err)
 				}
-			}
-			p.logger.Infof("Writing image artifacts for all extra tags ...")
-			for _, extraTag := range p.parsedExtraTags {
+
+				p.logger.Infof("Writing image artifact for tag: %s", extraTag)
 				image := p.artifactImageForTag(extraTag)
-				imageArtifactFilename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, extraTag)
-				err = pipelinectxt.WriteJsonArtifact(image, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+				filename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, extraTag)
+				err = pipelinectxt.WriteJsonArtifact(image, pipelinectxt.ImageDigestsPath, filename)
 				if err != nil {
 					return p, err
 				}
@@ -228,4 +223,11 @@ func processExtraTags() PackageStep {
 		}
 		return p, nil
 	}
+}
+
+func imageTagArtifactExists(p *packageImage, tag string) error {
+	imageArtifactsDir := filepath.Join(p.opts.checkoutDir, pipelinectxt.ImageDigestsPath)
+	filename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, tag)
+	_, err := os.Stat(filepath.Join(imageArtifactsDir, filename))
+	return err
 }
