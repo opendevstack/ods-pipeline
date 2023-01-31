@@ -176,7 +176,7 @@ spec:
   steps:
     - name: build-gradle-binary
       # Image is built from build/package/Dockerfile.gradle-toolset.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-gradle-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: '{{.Values.imageRepository}}/ods-gradle-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: DEBUG
           valueFrom:
@@ -240,8 +240,18 @@ spec:
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
         fi
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
       workingDir: $(workspaces.source.path)
     {{- include "sonar-step" . | indent 4}}
+  volumes:
+    - name: private-cert
+      secret:
+        secretName: ods-private-cert
+        optional: true
   workspaces:
     - name: source
 {{end}}

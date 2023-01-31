@@ -38,6 +38,8 @@ type ClientConfig struct {
 	Timeout time.Duration
 	// HTTP client used to download assets.
 	HTTPClient *http.Client
+	// Certificate to use for HTTP communication.
+	CertFile string
 }
 
 type ClientInterface interface {
@@ -57,6 +59,9 @@ func NewClient(clientConfig *ClientConfig) (*Client, error) {
 		clientConfig.Username,
 		clientConfig.Password,
 	)
+	if clientConfig.CertFile != "" {
+		rm.SetCertFile(clientConfig.CertFile)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("could not create nexus client: %w", err)
 	}

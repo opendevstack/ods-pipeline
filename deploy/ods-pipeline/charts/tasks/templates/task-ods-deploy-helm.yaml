@@ -101,7 +101,7 @@ spec:
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
-      image: '{{.Values.registry}}/{{default .Release.Namespace .Values.namespace}}/ods-helm:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: '{{.Values.imageRepository}}/ods-helm:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: DEBUG
           valueFrom:
@@ -119,7 +119,17 @@ spec:
           -diff-flags="$(params.diff-flags)" \
           -upgrade-flags="$(params.upgrade-flags)" \
           -age-key-secret=$(params.age-key-secret)
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
       workingDir: $(workspaces.source.path)
+  volumes:
+    - name: private-cert
+      secret:
+        secretName: ods-private-cert
+        optional: true
   workspaces:
     - name: source
 {{end}}

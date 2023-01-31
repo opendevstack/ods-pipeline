@@ -65,17 +65,17 @@ if [ "${WORKING_DIR}" != "." ]; then
   ARTIFACT_PREFIX="${WORKING_DIR/\//-}-"
 fi
 
-echo "Configuring npm to use Nexus ..."
-# Remove the protocol segment from NEXUS_URL
-NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
-if [ -n "${NEXUS_HOST}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
+echo "Configuring npm to use Nexus (${NEXUS_URL}) ..."
+if [ -n "${NEXUS_URL}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
     npm config set registry="$NEXUS_URL"/repository/npmjs/
     npm config set always-auth=true
     npm config set _auth="$(echo -n "$NEXUS_AUTH" | base64)"
     npm config set email=no-reply@opendevstack.org
-    npm config set ca=null
-    npm config set strict-ssl=false
+    if [ -f /etc/ssl/certs/private-cert.pem ]; then
+      echo "Configuring private cert ..."
+      npm config set cafile=/etc/ssl/certs/private-cert.pem
+    fi
 fi;
 
 echo "package-*.json checks ..."

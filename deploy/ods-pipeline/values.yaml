@@ -20,22 +20,6 @@ global:
     deployHelm: true
 
 
-# ####################################### #
-# IMAGES CHART CONFIG                     #
-# ####################################### #
-images:
-  # enable chart containing Openshift image streams and build configs
-  enabled: true
-  # When using a local/private CA, specify the server (incl. port!) to pull the root CA cert from.
-  # privateCertServer: 'example.com:443'
-  # if needed, enable images even though related tasks are disabled, e.g.
-  # pythonToolset: true
-  # autoBuild controls whether builds for all BuildConfig resources are started
-  # automatically after a successful Helm upgrade. autoBuild is enabled by default.
-  # autoBuild: true
-  # autoBuildImage allows to override the image used for starting builds.
-  # autoBuildImage: 'quay.io/openshift/origin-cli:4.9'
-
 
 # ####################################### #
 # SETUP CHART CONFIG                      #
@@ -164,21 +148,8 @@ setup:
     storageSize: '5Gi'
     # Number of replicas to run for the pipeline manager.
     replicaCount: 1
-    image:
-      # Image registry from which to pull the pipeline manager container image.
-      registry: 'image-registry.openshift-image-registry.svc:5000'
-      # Namespace from which to pull the pipeline manager container image.
-      # If not given, the image is pulled from the release namespace.
-      # namespace: 'ods'
-      # Repository (ImageStream) from which to pull the pipeline manager
-      # container image.
-      # If not given, the image name equals the chart name.
-      repository: 'ods-pipeline-manager'
-      # Pull policy.
-      pullPolicy: 'Always'
-      # Image tag to pull.
-      # If not given, defaults to the chart appVersion.
-      # tag: 'latest'
+    # Repository from which to pull the pipeline manager container image.
+    imageRepository: ghcr.io/opendevstack/ods-pipeline
     # Deployment pod resources. Typically these settings should not need to change.
     resources:
       limits:
@@ -197,21 +168,14 @@ tasks:
   # enable task definition chart
   enabled: true
 
-  # Registry to pull task images from.
-  registry: image-registry.openshift-image-registry.svc:5000
-
-  # ImageStream to pull task images from.
-  # If images are not located within OpenShift image streams, this maps to
-  # the organisation under which the images are hosted.
-  # If not set, defaults to the Helm release namespace.
-  # namespace: ods
+  # Image repository to pull task images from.
+  imageRepository: ghcr.io/opendevstack/ods-pipeline
 
   # Custom task prefix (defaults to "ods")
   # taskPrefix: "foo"
 
   # Registry to push images to from ods-package-image task.
-  # If not set, defaults to the value of "registry".
-  # pushRegistry: image-registry.openshift-image-registry.svc:5000
+  pushRegistry: image-registry.openshift-image-registry.svc:5000
 
   # To define build task specific sidecars and quotas, add resources/sidecar section(s) per task,
   # e.g.

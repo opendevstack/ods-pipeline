@@ -51,10 +51,3 @@ setup:
     storageProvisioner: 'kubernetes.io/aws-ebs'
     # Storage class. On AWS backed clusters, use 'gp2'.
     storageClassName: 'gp2'
-
-images:
-  # URL from which to download aqua-scanner binary. The URL may need to contain basic authentication.
-  # Make sure that username/password are URL-encoded and that the version matches
-  # your Aqua server version.
-  # If you do not want to use Aqua, leave this empty.
-  aquasecScannerUrl: ''

@@ -43,6 +43,10 @@ go test -run ^TestTaskODSBuildNPM/build_backend_javascript_app$ github.com/opend
 Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too.
 These dependencies are explicitly set for each test suite and at the beginning of each test suite it will be checked if all required services are running. The tests will fail if at least one service is not running.
 
+TIP: If you want to test build tasks without using SonarQube, pass `-skip-sonar` to `go test`.
+
+Tests can be run both without a private certificate (which is the default) or using a private certificate to test how the tasks perform when the services use a certificate which is not part of the OS default trusted certs. If you want to use a private certificate in the task tests, pass `-private-cert` to `go test`.
+
 Particularly the task and e2e tests might consume some time and might run into a timeout. To modify the standard timeout (by default in sync with the timeout predefined for Github actions), set the environment variable `ODS_TESTTIMEOUT` (e.g. to `45m`).
 
 Also, if you make changes to the images backing the tasks (be it by changing the `Dockerfile` or by changing the scripts/commands installed there), make sure to rebuild and push the affected images to the KinD registry for your changes to take effect. You can do this e.g. through `./scripts/build-and-push-images.sh --image finish` (the name of the image flag is the suffix of the respective Dockerfile).

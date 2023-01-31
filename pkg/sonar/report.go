@@ -13,14 +13,15 @@ import (
 // GenerateReports generates SonarQube reports using cnesreport.
 // See https://github.com/cnescatlab/sonar-cnes-report.
 func (c *Client) GenerateReports(sonarProject, author, branch, rootPath, artifactPrefix string) error {
-	reportParams := []string{
+	reportParams := append(
+		c.javaSystemProperties(),
 		"-jar", "/usr/local/cnes/cnesreport.jar",
 		"-s", c.clientConfig.BaseURL,
 		"-t", c.clientConfig.APIToken,
 		"-p", sonarProject,
 		"-a", author,
 		branch,
-	}
+	)
 	stdout, stderr, err := command.RunBuffered("java", reportParams)
 	if err != nil {
 		return fmt.Errorf(

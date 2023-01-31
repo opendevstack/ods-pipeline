@@ -5,7 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 INSECURE=""
-HOST_PORT="8081"
+HOST_HTTP_PORT="8081"
+HOST_HTTPS_PORT="8443"
 ADMIN_USER="admin"
 ADMIN_PASSWORD=""
 DEVELOPER_USERNAME="developer"
@@ -14,8 +15,8 @@ NEXUS_URL=
 IMAGE_NAME="ods-test-nexus"
 CONTAINER_NAME="ods-test-nexus"
 NEXUS_IMAGE_TAG="3.30.1"
-HELM_VALUES_FILE="${ODS_PIPELINE_DIR}/deploy/ods-pipeline/values.generated.yaml"
-ODS_KIND_CREDENTIALS_DIR="${ODS_PIPELINE_DIR}/deploy/.kind-credentials"
+kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
+DOCKER_CONTEXT_DIR="${ODS_PIPELINE_DIR}/test/testdata/private-cert"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -30,20 +31,16 @@ esac; shift; done
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
 cd "${SCRIPT_DIR}"/nexus
-if [ "$(uname -m)" == "arm64" ]; then
-    docker build -t ${IMAGE_NAME} -f Dockerfile.arm64 .
-else 
-    docker build -t ${IMAGE_NAME} .
-fi 
+docker build -t ${IMAGE_NAME} -f "Dockerfile.$(uname -m)" "${DOCKER_CONTEXT_DIR}"
 cd - &> /dev/null
-docker run -d -p "${HOST_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
+docker run -d -p "${HOST_HTTP_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
 
 if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
     docker logs ${CONTAINER_NAME}
     exit 1
-fi 
+fi
 
-NEXUS_URL="http://localhost:${HOST_PORT}"
+NEXUS_URL="http://localhost:${HOST_HTTP_PORT}"
 
 function runJsonScript {
     local jsonScriptName=$1
@@ -88,10 +85,15 @@ sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" "${SCRIPT_DIR}"/nexus/devel
 runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password.json"
 rm "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
 
+echo "Launch TLS proxy"
+TLS_CONTAINER_NAME="${CONTAINER_NAME}-tls"
+"${SCRIPT_DIR}/run-tls-proxy.sh" \
+  --container-name "${TLS_CONTAINER_NAME}" \
+  --https-port "${HOST_HTTPS_PORT}" \
+  --nginx-conf "nginx-nexus.conf"
+
 # Write values / secrets so that it can be picked up by install.sh later.
-if [ ! -e "${HELM_VALUES_FILE}" ]; then
-    echo "setup:" > "${HELM_VALUES_FILE}"
-fi
-echo "  nexusUrl: 'http://${CONTAINER_NAME}.kind:8081'" >> "${HELM_VALUES_FILE}"
-mkdir -p "${ODS_KIND_CREDENTIALS_DIR}"
-echo -n "${DEVELOPER_USERNAME}:${DEVELOPER_PASSWORD}" > "${ODS_KIND_CREDENTIALS_DIR}/nexus-auth"
+mkdir -p "${kind_values_dir}"
+echo -n "https://${TLS_CONTAINER_NAME}.kind:${HOST_HTTPS_PORT}" > "${kind_values_dir}/nexus-https"
+echo -n "http://${CONTAINER_NAME}.kind:${HOST_HTTP_PORT}" > "${kind_values_dir}/nexus-http"
+echo -n "${DEVELOPER_USERNAME}:${DEVELOPER_PASSWORD}" > "${kind_values_dir}/nexus-auth"

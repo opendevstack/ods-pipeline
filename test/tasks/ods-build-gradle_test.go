@@ -13,20 +13,17 @@ import (
 func TestTaskODSBuildGradle(t *testing.T) {
 	runTaskTestCases(t,
 		"ods-build-gradle",
-		[]tasktesting.Service{
-			tasktesting.Nexus,
-			tasktesting.SonarQube,
-		},
+		requiredServices(tasktesting.Nexus, tasktesting.SonarQube),
 		map[string]tasktesting.TestCase{
 			"task should build gradle app": {
 				WorkspaceDirMapping: map[string]string{"source": "gradle-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
 						"cache-build":        "false",
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -38,15 +35,20 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest.xml"),
 						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest2.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
+
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+					}
 
 					logContains(ctxt.CollectedLogs, t,
 						"--gradle-options=--no-daemon --stacktrace",
 						"No sonar-project.properties present, using default:",
-						"Using NEXUS_URL=http://ods-test-nexus.kind:8081",
+						"ods-test-nexus",
 						"Gradle 7.4.2",
 						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
 						"Using GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle",
@@ -60,10 +62,9 @@ func TestTaskODSBuildGradle(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					ctxt.Params = map[string]string{
+					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
-						// "cache-build":        "true", is expected to be default
-					}
+					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
@@ -75,15 +76,20 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest.xml"),
 						filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest2.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-						filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 					)
+
+					if !*skipSonarQubeFlag {
+						checkFilesExist(t, wsDir,
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+						)
+					}
 
 					logContains(ctxt.CollectedLogs, t,
 						"--gradle-options=--no-daemon --stacktrace",
 						"No sonar-project.properties present, using default:",
-						"Using NEXUS_URL=http://ods-test-nexus.kind:8081",
+						"ods-test-nexus",
 						"Gradle 7.4.2",
 						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
 						"Using GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle",
@@ -108,10 +114,15 @@ func TestTaskODSBuildGradle(t *testing.T) {
 							filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest.xml"),
 							filepath.Join(pipelinectxt.XUnitReportsPath, "TEST-ods.java.gradle.sample.app.AppTest2.xml"),
 							filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
-							filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
-							filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
-							filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
 						)
+
+						if !*skipSonarQubeFlag {
+							checkFilesExist(t, wsDir,
+								filepath.Join(pipelinectxt.SonarAnalysisPath, "analysis-report.md"),
+								filepath.Join(pipelinectxt.SonarAnalysisPath, "issues-report.csv"),
+								filepath.Join(pipelinectxt.SonarAnalysisPath, "quality-gate.json"),
+							)
+						}
 
 						logContains(ctxt.CollectedLogs, t,
 							"Copying prior build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",

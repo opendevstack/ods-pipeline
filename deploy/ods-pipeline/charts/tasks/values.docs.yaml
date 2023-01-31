@@ -9,7 +9,3 @@ global:
     buildNPM: true
     packageImage: true
     deployHelm: true
-
-registry: image-registry.openshift-image-registry.svc:5000
-namespace: ods
-pushRegistry: image-registry.openshift-image-registry.svc:5000
