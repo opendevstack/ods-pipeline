@@ -10,10 +10,8 @@ setup:
     storageProvisioner: ''
     storageClassName: 'standard'
     storageSize: '2Gi'
-    image:
-      registry: localhost:5000
-      namespace: ods
-      tag: "latest"
+    imageRepository: localhost:5000/ods
+    imageTag: 'latest'
 
 tasks:
   # Image repository to pull task images from.
