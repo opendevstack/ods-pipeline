@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -375,62 +376,68 @@ func checkoutAndAssembleContext(
 	checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string,
 	baseCtxt *pipelinectxt.ODSContext,
 	logger logging.LeveledLoggerInterface) (*pipelinectxt.ODSContext, error) {
+
 	absCheckoutDir, err := filepath.Abs(checkoutDir)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("absolute path: %w", err)
 	}
+
 	logger.Infof("Checking out %s@%s into %s ...", url, gitFullRef, absCheckoutDir)
-	gitInitArgs := []string{
-		fmt.Sprintf("-url=%v", url),
-		fmt.Sprintf("-revision=%v", gitFullRef),
-		fmt.Sprintf("-refspec=%v", gitRefSpec),
-		fmt.Sprintf("-path=%v", absCheckoutDir),
-		fmt.Sprintf("-sslVerify=%v", sslVerify),
-		fmt.Sprintf("-submodules=%v", submodules),
-		fmt.Sprintf("-depth=%v", depth),
+
+	if err := runGit("init", absCheckoutDir); err != nil {
+		return nil, fmt.Errorf("run git cmd: %w", err)
 	}
-	logger.Debugf("git-init %s", strings.Join(gitInitArgs, " "))
-	stdout, stderr, err := command.RunBuffered("/ko-app/git-init", gitInitArgs)
-	if err != nil {
-		logger.Errorf(string(stderr))
-		log.Fatal(err)
+	if err := os.Chdir(absCheckoutDir); err != nil {
+		return nil, fmt.Errorf("change dir: %w", err)
 	}
-	logger.Infof(string(stdout))
+	if err := runGit("remote", "add", "origin", url); err != nil {
+		return nil, fmt.Errorf("run git cmd: %w", err)
+	}
+	if err := runGit("fetch",
+		"--recurse-submodules=yes", fmt.Sprintf("--depth=%s", depth),
+		"origin",
+		"--update-head-ok", "--force", gitFullRef,
+	); err != nil {
+		return nil, fmt.Errorf("run git cmd: %w", err)
+	}
+	if err := runGit("checkout", "-f", "FETCH_HEAD"); err != nil {
+		return nil, fmt.Errorf("run git cmd: %w", err)
+	}
 
 	odsPipelineIgnoreFile := filepath.Join(absCheckoutDir, ".git", "info", "exclude")
 	if err := pipelinectxt.WriteGitIgnore(odsPipelineIgnoreFile); err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("write git ignore: %w", err)
 	}
 	logger.Infof("Wrote gitignore exclude at %s", odsPipelineIgnoreFile)
 
 	// check git LFS state and maybe pull
 	lfs, err := gitLfsInUse(logger, absCheckoutDir)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("check if git LFS is in use: %w", err)
 	}
 	if lfs {
 		logger.Infof("Git LFS detected, enabling and pulling files...")
 		err := gitLfsEnableAndPullFiles(logger, absCheckoutDir)
 		if err != nil {
-			log.Fatal(err)
+			return nil, fmt.Errorf("git LFS enable and pull: %w", err)
 		}
 	}
 
 	// write ODS cache
 	sha, err := getCommitSHA(absCheckoutDir)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("commit SHA: %w", err)
 	}
 	ctxt := baseCtxt.Copy()
 	ctxt.GitFullRef = gitFullRef
 	ctxt.GitCommitSHA = sha
 	err = ctxt.Assemble(absCheckoutDir)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("assemble ODS context: %w", err)
 	}
 	err = ctxt.WriteCache(absCheckoutDir)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("write ODS context cache: %w", err)
 	}
 	return ctxt, nil
 }
@@ -454,13 +461,22 @@ func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, e
 func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
 	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "install"}, dir)
 	if err != nil {
-		return fmt.Errorf("cannot enable git lfs: %s (%w)", stderr, err)
+		return fmt.Errorf("lfs install: %s (%w)", stderr, err)
 	}
 	logger.Infof(string(stdout))
 	stdout, stderr, err = command.RunBufferedInDir("git", []string{"lfs", "pull"}, dir)
 	if err != nil {
-		return fmt.Errorf("cannot git pull lfs files: %s (%w)", stderr, err)
+		return fmt.Errorf("lfs pull: %s (%w)", stderr, err)
 	}
 	logger.Infof(string(stdout))
 	return err
+}
+
+func runGit(args ...string) error {
+	var output bytes.Buffer
+	err := command.Run("git", args, []string{}, &output, &output)
+	if err != nil {
+		return fmt.Errorf("git %v: %w\n%s", args, err, output.String())
+	}
+	return nil
 }
