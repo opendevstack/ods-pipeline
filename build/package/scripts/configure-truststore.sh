@@ -53,4 +53,6 @@ if [ ! -f "${dest_truststore}" ] || [ "${md5_private_cert}" != "$(cat "${md5_pri
         cat keytool-output.txt; exit 1
     fi
     echo "${md5_private_cert}" > "${md5_private_cert_path}"
+else
+    echo "Trustore with private cert exists already and is up-to-date."
 fi

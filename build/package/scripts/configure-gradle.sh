@@ -4,15 +4,17 @@
 CONTENT=""
 
 if [ -f /etc/ssl/certs/private-cert.pem ]; then
-  echo "Configuring Gradle to trust private cert ..."
-  configure-truststore --dest-store ".ods-cache/truststore/cacerts"
-  # shellcheck disable=SC2181
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-  # Configure Gradle to use the modified trust store.
-  CONTENT+="systemProp.javax.net.ssl.trustStore=.ods-cache/keystore/cacerts\n"
-  CONTENT+="systemProp.javax.net.ssl.trustStorePassword=password\n"
+	truststore_location="$(pwd)/.ods-cache/truststore/cacerts"
+	truststore_pass="changeit"
+	echo "Configuring Gradle to trust private cert ..."
+	configure-truststore --dest-store="${truststore_location}" --dest-storepass="${truststore_pass}"
+	# shellcheck disable=SC2181
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+	# Configure Gradle to use the modified trust store.
+	CONTENT+="systemProp.javax.net.ssl.trustStore=${truststore_location}\n"
+	CONTENT+="systemProp.javax.net.ssl.trustStorePassword=${truststore_pass}\n"
 fi
 
 if [ "${HTTP_PROXY}" != "" ]; then
