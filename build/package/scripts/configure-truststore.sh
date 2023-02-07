@@ -35,6 +35,9 @@ md5_private_cert=$(${md5_bin} < "${private_cert}" | cut -d- -f1)
 if [ ! -f "${dest_truststore}" ] || [ "${md5_private_cert}" != "$(cat "${md5_private_cert_path}")" ]; then
     echo "Creating truststore with private cert ..."
     # Copy global keystone to location where we can write to (hide output containing warnings).
+    if [ -f "${dest_truststore}" ]; then
+        rm "${dest_truststore}"
+    fi
     keytool -importkeystore \
         -srckeystore "${src_truststore}" -destkeystore "${dest_truststore}" \
         -deststorepass "${dest_pass}" -srcstorepass "${src_pass}" &> keytool-output.txt
