@@ -21,6 +21,7 @@ esac; shift; done
 
 aqua_scanner_path="${bin_dir}/aquasec"
 md5_aqua_scanner_url_path="${bin_dir}/.md5-aquasec"
+mkdir -p "${bin_dir}"
 
 # Optionally install Aqua scanner.
 # If the binary already exists and was downloaded from the
@@ -29,7 +30,7 @@ if [ -n "${aqua_scanner_url}" ] && [ "${aqua_scanner_url}" != "none" ]; then
     md5_aqua_scanner_url=$(printf "%s" "${aqua_scanner_url}" | ${md5_bin} | cut -d- -f1)
     if [ ! -f "${md5_aqua_scanner_url_path}" ] || [ "${md5_aqua_scanner_url}" != "$(cat "${md5_aqua_scanner_url_path}")" ]; then
         echo 'Installing Aqua scanner...'
-        curl -v -sSf -L "${aqua_scanner_url}" -o aquasec
+        curl -sSf -L "${aqua_scanner_url}" -o aquasec
         mv aquasec "${aqua_scanner_path}"
         chmod +x "${aqua_scanner_path}"
         echo "${md5_aqua_scanner_url}" > "${md5_aqua_scanner_url_path}"
