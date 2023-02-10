@@ -21,6 +21,7 @@ listed in the changelog.
 - Images used in tasks are now pulled directly from the GitHub registry. "Wrapping" the images in the OpenShift/K8s cluster is not required anymore. If tasks need to trust a private certificate, it needs to be present as a K8s secret, which will then be mounted as a file in the pods. To add the secret to an existing installation, pass `--private-cert <host>` to `./install.sh`. For more details, see [#621](https://github.com/opendevstack/ods-pipeline/issues/621).
 - Remove PVC use protection ([#647](https://github.com/opendevstack/ods-pipeline/issues/647))
 - Use Go 1.19 for building ([#659](https://github.com/opendevstack/ods-pipeline/issues/659))
+- Pipeline manager now returns `application/problem+json` when it encounters an error. Further, it now returns different, better fitting error status codes for some responses. See ([#661](https://github.com/opendevstack/ods-pipeline/issues/661)) for details.
 
 ### Fixed
 

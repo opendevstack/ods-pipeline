@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/opendevstack/pipeline/internal/httpjson"
 	intrepo "github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -60,28 +61,23 @@ type PipelineInfo struct {
 
 // Handle handles Bitbucket requests. It extracts pipeline data from the request
 // body and sends the gained data to the scheduler.
-func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request) {
+func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request) (any, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		msg := "could not read body"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
+		return nil, httpjson.NewInternalProblem("could not read body", err)
 	}
 
 	if err := validatePayload(r.Header, body, []byte(s.WebhookSecret)); err != nil {
-		msg := "failed to validate incoming request"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+		return nil, httpjson.NewStatusProblem(
+			http.StatusUnauthorized, "failed to validate incoming request", err,
+		)
 	}
 
 	req := &requestBitbucket{}
 	if err := json.Unmarshal(body, &req); err != nil {
-		msg := fmt.Sprintf("cannot parse JSON: %s", err)
-		s.Logger.Errorf(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+		return nil, httpjson.NewStatusProblem(
+			http.StatusBadRequest, fmt.Sprintf("cannot parse JSON: %s", err), nil,
+		)
 	}
 
 	var repo string
@@ -104,15 +100,10 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 		if change.Ref.Type != allowedChangeRefType {
 			msg := fmt.Sprintf(
-				"Skipping change ref type %s, only %s is supported",
-				change.Ref.Type,
-				allowedChangeRefType,
+				"skipping change ref type %s, only %s is supported",
+				change.Ref.Type, allowedChangeRefType,
 			)
-			s.Logger.Warnf(msg)
-			// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
-			// "some websites use this response for requests they do not wish to handle [...]".
-			http.Error(w, msg, http.StatusTeapot)
-			return
+			return nil, httpjson.NewStatusProblem(http.StatusUnprocessableEntity, msg, nil)
 		}
 	} else if strings.HasPrefix(req.EventKey, "pr:") {
 		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
@@ -124,10 +115,9 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		}
 		commitSHA = req.PullRequest.FromRef.LatestCommit
 	} else {
-		msg := fmt.Sprintf("Unsupported event key: %s", req.EventKey)
-		s.Logger.Warnf(msg)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+		return nil, httpjson.NewStatusProblem(
+			http.StatusBadRequest, fmt.Sprintf("unsupported event key: %s", req.EventKey), nil,
+		)
 	}
 
 	project = determineProject(s.Project, projectParam)
@@ -150,10 +140,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	if len(commitSHA) == 0 {
 		csha, err := getCommitSHA(s.BitbucketClient, pInfo.Project, pInfo.Repository, pInfo.GitFullRef)
 		if err != nil {
-			msg := "could not get commit SHA"
-			s.Logger.Errorf("%s: %s", msg, err)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
+			return nil, httpjson.NewInternalProblem("could not get commit SHA", err)
 		}
 		commitSHA = csha
 	}
@@ -161,19 +148,13 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	skip := shouldSkip(s.BitbucketClient, pInfo.Project, pInfo.Repository, commitSHA)
 	if skip {
-		msg := fmt.Sprintf("Commit %s should be skipped", commitSHA)
-		s.Logger.Infof(msg)
-		// According to MDN (https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418),
-		// "some websites use this response for requests they do not wish to handle [..]".
-		http.Error(w, msg, http.StatusTeapot)
-		return
+		return nil, httpjson.NewStatusProblem(
+			http.StatusAccepted, fmt.Sprintf("Commit %s should be skipped", commitSHA), nil,
+		)
 	}
 	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pInfo.Project, pInfo.Repository, commitSHA)
 	if err != nil {
-		msg := "Could not extract PR info"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
+		return nil, httpjson.NewInternalProblem("could not extract PR info", err)
 	}
 	pInfo.PullRequestKey = prInfo.ID
 	pInfo.PullRequestBase = prInfo.Base
@@ -186,10 +167,9 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	)
 
 	if err != nil {
-		msg := fmt.Sprintf("could not download ODS config for repo %s", pInfo.Repository)
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
+		return nil, httpjson.NewInternalProblem(
+			fmt.Sprintf("could not download ODS config for repo %s", pInfo.Repository), err,
+		)
 	}
 
 	pInfo.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pInfo.GitRef)
@@ -197,10 +177,9 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	if pInfo.Environment != "" {
 		env, err := odsConfig.Environment(pInfo.Environment)
 		if err != nil {
-			msg := fmt.Sprintf("environment misconfiguration: %s", err)
-			s.Logger.Errorf("%s: %s", msg, err)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
+			return nil, httpjson.NewInternalProblem(
+				fmt.Sprintf("environment misconfiguration: %s", err), nil,
+			)
 		}
 		pInfo.Stage = string(env.Stage)
 	}
@@ -210,18 +189,13 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	cfg, err := identifyPipelineConfig(pInfo, odsConfig, component)
 	if err != nil {
-		msg := "Couldn't identify pipeline to run"
-		s.Logger.Errorf("%s: %s", msg, err)
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+		return nil, httpjson.NewStatusProblem(
+			http.StatusBadRequest, "could not identify pipeline to run", err,
+		)
 	}
 	s.TriggeredPipelines <- cfg
 
-	err = json.NewEncoder(w).Encode(pInfo)
-	if err != nil {
-		s.Logger.Errorf("cannot write body: %s", err)
-		return
-	}
+	return pInfo, nil
 }
 
 // identifyPipelineConfig finds the first configuration matching the triggering event
@@ -239,7 +213,7 @@ func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component
 			}, nil
 		}
 	}
-	return PipelineConfig{}, errors.New("No pipeline definition matched webhook event")
+	return PipelineConfig{}, errors.New("no pipeline definition matched webhook event")
 }
 
 func pipelineMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
