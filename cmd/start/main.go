@@ -366,7 +366,7 @@ func downloadArtifacts(
 		logger,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("download group %s: %w", group, err)
 	}
 	return pipelinectxt.WriteJsonArtifact(am, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
 
@@ -375,21 +375,31 @@ func downloadArtifacts(
 func checkoutAndAssembleContext(
 	checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string,
 	baseCtxt *pipelinectxt.ODSContext,
-	logger logging.LeveledLoggerInterface) (*pipelinectxt.ODSContext, error) {
+	logger logging.LeveledLoggerInterface) (ctxt *pipelinectxt.ODSContext, err error) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return
+	}
+	// Change back to working dir after checkout.
+	defer func(wd string) {
+		if err != nil { // if there are previous errors, give them predence.
+			return
+		}
+		err = os.Chdir(wd)
+	}(workingDir)
 
 	absCheckoutDir, err := filepath.Abs(checkoutDir)
 	if err != nil {
 		return nil, fmt.Errorf("absolute path: %w", err)
 	}
-
 	logger.Infof("Checking out %s@%s into %s ...", url, gitFullRef, absCheckoutDir)
-
-	if err := runGit("init", absCheckoutDir); err != nil {
-		return nil, fmt.Errorf("run git cmd: %w", err)
-	}
 	if err := os.Chdir(absCheckoutDir); err != nil {
 		return nil, fmt.Errorf("change dir: %w", err)
 	}
+	if err := runGit("init"); err != nil {
+		return nil, fmt.Errorf("run git cmd: %w", err)
+	}
+
 	if err := runGit("remote", "add", "origin", url); err != nil {
 		return nil, fmt.Errorf("run git cmd: %w", err)
 	}
@@ -428,7 +438,7 @@ func checkoutAndAssembleContext(
 	if err != nil {
 		return nil, fmt.Errorf("commit SHA: %w", err)
 	}
-	ctxt := baseCtxt.Copy()
+	ctxt = baseCtxt.Copy()
 	ctxt.GitFullRef = gitFullRef
 	ctxt.GitCommitSHA = sha
 	err = ctxt.Assemble(absCheckoutDir)
@@ -439,7 +449,7 @@ func checkoutAndAssembleContext(
 	if err != nil {
 		return nil, fmt.Errorf("write ODS context cache: %w", err)
 	}
-	return ctxt, nil
+	return
 }
 
 func getCommitSHA(dir string) (string, error) {
