@@ -175,9 +175,9 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
-
         if [ -f /etc/ssl/certs/private-cert.pem ]; then
-          git config --global http.sslCAInfo /etc/ssl/certs/private-cert.pem
+          cat /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/private-cert.pem > /tekton/home/git-cert.pem
+          git config --global http.sslCAInfo /tekton/home/git-cert.pem
         fi
 
         # ods-start is built from cmd/start/main.go.
