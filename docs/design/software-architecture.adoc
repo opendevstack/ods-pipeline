@@ -88,19 +88,19 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | Task `ods-package-image`
 | Push image
 | HTTP
-| OpenShift ImageStream
+| Container registry (e.g. OpenShift ImageStream)
 |
 
 | Task `ods-package-image`
 | Tag image
 | HTTP
-| OpenShift ImageStream
+| Container registry (e.g. OpenShift ImageStream)
 | 
 
 | Task `ods-deploy-helm`
 | Copy image
 | HTTP
-| OpenShift ImageStream
+| Container registry (e.g. OpenShift ImageStream)
 |
 
 | Task `ods-deploy-helm`
