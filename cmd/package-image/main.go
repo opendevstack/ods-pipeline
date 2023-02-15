@@ -154,6 +154,8 @@ func main() {
 		logger.Errorf(err.Error())
 		os.Exit(1)
 	}
+	// If skipIfImageArtifactExists skips the remaining runSteps, extra-tags
+	// still should be processed if their related artifact has not been set.
 	err = (&p).runSteps(processExtraTags())
 	if err != nil {
 		logger.Errorf(err.Error())
