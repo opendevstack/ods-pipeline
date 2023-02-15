@@ -18,6 +18,7 @@ listed in the changelog.
 
 - Node.js 18 is now the default for `ods-build-npm` task ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
 - Images used in tasks are now pulled directly from the GitHub registry. "Wrapping" the images in the OpenShift/K8s cluster is not required anymore. If tasks need to trust a private certificate, it needs to be present as a K8s secret, which will then be mounted as a file in the pods. To add the secret to an existing installation, pass `--private-cert <host>` to `./install.sh`. For more details, see [#621](https://github.com/opendevstack/ods-pipeline/issues/621).
+- Remove PVC use protection ([#647](https://github.com/opendevstack/ods-pipeline/issues/647))
 
 ### Fixed
 
