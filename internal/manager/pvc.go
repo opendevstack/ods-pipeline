@@ -11,12 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	// Annotation to set the storage provisioner for a PVC.
-	storageProvisionerAnnotation = "volume.beta.kubernetes.io/storage-provisioner"
-	// PVC finalizer.
-	pvcProtectionFinalizer = "kubernetes.io/pvc-protection"
-)
+// Annotation to set the storage provisioner for a PVC.
+const storageProvisionerAnnotation = "volume.beta.kubernetes.io/storage-provisioner"
 
 // createPVCIfRequired if it does not exist yet
 func (s *Scheduler) createPVCIfRequired(ctxt context.Context, pData PipelineConfig) error {
@@ -30,7 +26,7 @@ func (s *Scheduler) createPVCIfRequired(ctxt context.Context, pData PipelineConf
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        pData.PVC,
 				Labels:      map[string]string{repositoryLabel: pData.Repository},
-				Finalizers:  []string{pvcProtectionFinalizer},
+				Finalizers:  []string{},
 				Annotations: map[string]string{},
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{

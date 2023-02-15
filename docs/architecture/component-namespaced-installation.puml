@@ -42,27 +42,6 @@ Container_Boundary(c1, "Namespaced ODS Pipeline Installation"){
 
 }
 
-Rel(task_build_go, image_go_toolset, "uses")
-Rel(task_build_go, image_sonar, "uses")
-
-Rel(task_build_npm, image_node16_npm_toolset, "uses")
-Rel(task_build_npm, image_node18_npm_toolset, "uses")
-Rel(task_build_npm, image_sonar, "uses")
-
-Rel(task_build_python, image_python_toolset, "uses")
-Rel(task_build_python, image_sonar, "uses")
-
-Rel(task_build_gradle, image_gradle_toolset, "uses")
-Rel(task_build_gradle, image_sonar, "uses")
-
-Rel(task_package_image, image_buildah, "uses")
-
-Rel(task_deploy_helm, image_helm, "uses")
-
-Rel(task_start, image_start, "uses")
-
-Rel(task_finish, image_finish, "uses")
-
 Rel(ods_pipeline_manager, route, "exposed via")
 
 config_maps -[hidden]- secrets

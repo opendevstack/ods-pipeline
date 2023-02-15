@@ -34,9 +34,9 @@
 
       truststore="${JAVA_HOME}/lib/security/cacerts"
       if [ -f /etc/ssl/certs/private-cert.pem ]; then
-        truststore=".ods-cache/truststore/cacerts"
+        truststore="$(pwd)/.ods-cache/truststore/cacerts"
+        configure-truststore --dest-store "${truststore}"
       fi
-      configure-truststore --dest-store "${truststore}"
       # sonar is built from cmd/sonar/main.go.
       sonar \
         -working-dir=$(params.working-dir) \

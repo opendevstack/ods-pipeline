@@ -207,7 +207,7 @@ Input parameters: TODO
 
 | SDS-TASK-8
 | `ods-start` container image
-| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-22, SDS-EXT-27, SDS-EXT-30 and SDS-TASK-9.
+| Container image to start a pipeline. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes SDS-EXT-9, SDS-EXT-13, SDS-EXT-27, SDS-EXT-30 and SDS-TASK-9.
 
 | SDS-TASK-9
 | `start` binary
@@ -622,12 +622,6 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 | 3.10
 | Manages secrets with Git workflow.
 | https://github.com/jkroepke/helm-secrets
-
-| SDS-EXT-22
-| Tekton
-| 0.24
-| Cloud-native Pipeline resource.
-| https://github.com/tektoncd/pipeline
 
 | SDS-EXT-23
 | Sops
