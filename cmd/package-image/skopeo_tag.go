@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/image"
 )
 
-func (p *packageImage) skopeoTag(idt *imageIdentityWithTag, outWriter, errWriter io.Writer) error {
-	imageRef := idt.imageRefWithSha(p.opts.registry)
+func (p *packageImage) skopeoTag(idt *image.IdentityWithTag, outWriter, errWriter io.Writer) error {
+	imageRef := idt.ImageRefWithSha(p.opts.registry)
 	p.logger.Infof("Tagging image %s with %s", imageRef, idt.Tag)
 	tlsVerify := p.opts.tlsVerify
 	// TLS verification of the KinD registry is not possible at the moment as
@@ -31,7 +32,7 @@ func (p *packageImage) skopeoTag(idt *imageIdentityWithTag, outWriter, errWriter
 		args = append(args, "--debug")
 	}
 	source := fmt.Sprintf("docker://%s", imageRef)
-	destination := fmt.Sprintf("docker://%s", idt.imageRef(p.opts.registry))
+	destination := fmt.Sprintf("docker://%s", idt.ImageRef(p.opts.registry))
 
 	args = append(args, source, destination)
 

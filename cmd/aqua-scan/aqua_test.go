@@ -31,7 +31,7 @@ func TestAquaScan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			success, err := aquaScan(
+			success, err := runScan(
 				"../../test/scripts/exit-with-code.sh",
 				[]string{"", "", strconv.Itoa(tc.cmdExitCode)},
 				&stdout, &stderr,
@@ -44,6 +44,32 @@ func TestAquaScan(t *testing.T) {
 			}
 			if tc.wantSuccess != success {
 				t.Fatalf("want success=%v, got success=%v", tc.wantSuccess, success)
+			}
+		})
+	}
+}
+
+func TestAquaScanURL(t *testing.T) {
+	tests := map[string]struct {
+		aquaURL string
+	}{
+		"base URL without trailing slash": {
+			aquaURL: "https://console.example.com",
+		},
+		"base URL with trailing slash": {
+			aquaURL: "https://console.example.com/",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			opts := options{aquaURL: tc.aquaURL, aquaRegistry: "ods"}
+			u, err := aquaScanURL(opts, "foo")
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := "https://console.example.com/#/images/ods/foo/vulns"
+			if u != want {
+				t.Fatalf("want: %s, got: %s", want, u)
 			}
 		})
 	}

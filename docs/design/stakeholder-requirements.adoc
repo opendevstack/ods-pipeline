@@ -71,7 +71,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 
 
 | SHR-5
-| ODS Pipeline shall provide a task building container images (e.g., using artifacts produced by SHR-1, SHR-2, SHR-3 or SHR-4 and other source files). An SBOM file shall be generated for the images, and the images shall be scanned for known vulnerabilities.
+| ODS Pipeline shall provide functionality to build container images, create an SBOM file describing the contents of those images, and to scan those images for known vulnerabilities.
 
 | SHR-6
 | ODS Pipeline shall provide a task deploying Helm charts. The release namespace may be in the same cluster or an external cluster.

@@ -3,11 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -129,31 +127,20 @@ func setReleaseTarget() DeployStep {
 
 func detectSubrepos() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-		d.subrepos = []fs.DirEntry{}
-		if _, err := os.Stat(pipelinectxt.SubreposPath); err == nil {
-			f, err := os.ReadDir(pipelinectxt.SubreposPath)
-			if err != nil {
-				return d, fmt.Errorf("read %s: %w", pipelinectxt.SubreposPath, err)
-			}
-			d.subrepos = f
+		subrepos, err := pipelinectxt.DetectSubrepos()
+		if err != nil {
+			return d, fmt.Errorf("detect subrepos: %w", err)
 		}
+		d.subrepos = subrepos
 		return d, nil
 	}
 }
 
 func detectImageDigests() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-		digests, err := collectImageDigests(pipelinectxt.ImageDigestsPath)
+		digests, err := pipelinectxt.ReadArtifactFilesIncludingSubrepos(pipelinectxt.ImageDigestsPath, d.subrepos)
 		if err != nil {
 			return d, fmt.Errorf("collect image digests: %w", err)
-		}
-		for _, s := range d.subrepos {
-			subrepoImageDigestsPath := filepath.Join(pipelinectxt.SubreposPath, s.Name(), pipelinectxt.ImageDigestsPath)
-			subDigests, err := collectImageDigests(subrepoImageDigestsPath)
-			if err != nil {
-				return d, fmt.Errorf("collect image digests for %s: %w", subrepoImageDigestsPath, err)
-			}
-			digests = append(digests, subDigests...)
 		}
 		d.imageDigests = digests
 		return d, nil
@@ -179,19 +166,11 @@ func copyImagesIntoReleaseNamespace() DeployStep {
 
 		d.logger.Infof("Copying images into release namespace ...")
 		for _, artifactFile := range d.imageDigests {
-			var imageArtifact artifact.Image
-			artifactContent, err := os.ReadFile(artifactFile)
+			imageArtifact, err := artifact.ReadFromFile(artifactFile)
 			if err != nil {
-				return d, fmt.Errorf("read image artifact file %s: %w", artifactFile, err)
+				return d, fmt.Errorf("read image artifact %s: %w", artifactFile, err)
 			}
-			err = json.Unmarshal(artifactContent, &imageArtifact)
-			if err != nil {
-				return d, fmt.Errorf(
-					"unmarshal image artifact file %s: %w.\nFile content:\n%s",
-					artifactFile, err, string(artifactContent),
-				)
-			}
-			err = d.copyImage(imageArtifact, destRegistryToken, os.Stdout, os.Stderr)
+			err = d.copyImage(*imageArtifact, destRegistryToken, os.Stdout, os.Stderr)
 			if err != nil {
 				return d, fmt.Errorf("copy image %s: %w", imageArtifact.Name, err)
 			}
@@ -386,20 +365,6 @@ func upgradeHelmRelease() DeployStep {
 		}
 		return d, nil
 	}
-}
-
-func collectImageDigests(imageDigestsDir string) ([]string, error) {
-	var files []string
-	if _, err := os.Stat(imageDigestsDir); err == nil {
-		f, err := os.ReadDir(imageDigestsDir)
-		if err != nil {
-			return files, fmt.Errorf("could not read image digests dir: %w", err)
-		}
-		for _, fi := range f {
-			files = append(files, filepath.Join(imageDigestsDir, fi.Name()))
-		}
-	}
-	return files, nil
 }
 
 func getTrimmedFileContent(filename string) (string, error) {

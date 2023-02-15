@@ -2,8 +2,9 @@ package pipelinectxt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
+	"io/fs"
 	"net/url"
 	"os"
 	"path"
@@ -125,24 +126,72 @@ func ReadArtifactsDir(artifactsDir string) (map[string][]string, error) {
 
 	for _, item := range items {
 		if item.IsDir() {
-			// artifact subdir here, e.g. "xunit-reports"
-			subitems, err := os.ReadDir(filepath.Join(artifactsDir, item.Name()))
+			subpath := filepath.Join(artifactsDir, item.Name())
+			filesInSubDir, err := ReadArtifactFilenames(subpath)
 			if err != nil {
-				log.Fatalf("Failed to read dir %s, %s", item.Name(), err.Error())
+				return artifactsMap, fmt.Errorf("read artifacts in %s: %w", subpath, err)
 			}
-			filesInSubDir := []string{}
-			for _, subitem := range subitems {
-				if !subitem.IsDir() {
-					// artifact file here, e.g. "report.xml"
-					filesInSubDir = append(filesInSubDir, subitem.Name())
-				}
-			}
-
 			artifactsMap[item.Name()] = filesInSubDir
 		}
 	}
 
 	return artifactsMap, nil
+}
+
+// ReadArtifactFilenames returns all filenames in artifactsPath.
+// If artifactsPath does not exist, an empty list is returned.
+func ReadArtifactFilenames(artifactsPath string) ([]string, error) {
+	if _, err := os.Stat(artifactsPath); errors.Is(err, os.ErrNotExist) {
+		return []string{}, nil
+	}
+	var files []string
+	f, err := os.ReadDir(artifactsPath)
+	if err != nil {
+		return files, fmt.Errorf("read dir %s: %w", artifactsPath, err)
+	}
+	for _, fi := range f {
+		if !fi.IsDir() {
+			files = append(files, fi.Name())
+		}
+	}
+	return files, nil
+}
+
+// ReadArtifactFilesIncludingSubrepos reads artifacts in artifactPath of the current
+// repository and all subrepos given. The returned files include path and filename.
+func ReadArtifactFilesIncludingSubrepos(artifactPath string, subrepos []fs.DirEntry) ([]string, error) {
+	topLevelArtifacts, err := ReadArtifactFilenames(artifactPath)
+	if err != nil {
+		return []string{}, fmt.Errorf("read artifacts: %w", err)
+	}
+	artifacts := []string{}
+	for _, a := range topLevelArtifacts {
+		artifacts = append(artifacts, filepath.Join(artifactPath, a))
+	}
+	for _, s := range subrepos {
+		subrepoArtifactsPath := filepath.Join(SubreposPath, s.Name(), artifactPath)
+		subArtifacts, err := ReadArtifactFilenames(subrepoArtifactsPath)
+		if err != nil {
+			return []string{}, fmt.Errorf("read artifacts of %s: %w", subrepoArtifactsPath, err)
+		}
+		for _, a := range subArtifacts {
+			artifacts = append(artifacts, filepath.Join(subrepoArtifactsPath, a))
+		}
+	}
+	return artifacts, nil
+}
+
+// DetectSubrepos returns a slice of subrepo directories
+func DetectSubrepos() ([]fs.DirEntry, error) {
+	subrepos := []fs.DirEntry{}
+	if _, err := os.Stat(SubreposPath); err == nil {
+		f, err := os.ReadDir(SubreposPath)
+		if err != nil {
+			return []fs.DirEntry{}, fmt.Errorf("read %s: %w", SubreposPath, err)
+		}
+		subrepos = f
+	}
+	return subrepos, nil
 }
 
 // ArtifactGroupBase returns the group base in which aritfacts are stored for

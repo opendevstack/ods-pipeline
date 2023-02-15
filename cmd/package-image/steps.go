@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/directory"
+	"github.com/opendevstack/pipeline/internal/image"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
@@ -68,7 +69,7 @@ func setExtraTags() PackageStep {
 
 func setImageId() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		p.imageId = createImageIdentity(p.ctxt, &p.opts)
+		p.imageId = image.CreateImageIdentity(p.ctxt, p.opts.imageNamespace, p.opts.imageStream)
 		return p, nil
 	}
 }
@@ -113,46 +114,6 @@ func generateSBOM() PackageStep {
 		err := p.generateImageSBOM()
 		if err != nil {
 			return p, fmt.Errorf("generate SBOM: %w", err)
-		}
-		return p, nil
-	}
-}
-
-func scanImageWithAqua() PackageStep {
-	return func(p *packageImage) (*packageImage, error) {
-		if aquasecInstalled() {
-			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := p.imageName()
-			htmlReportFile := filepath.Join(p.opts.checkoutDir, "report.html")
-			jsonReportFile := filepath.Join(p.opts.checkoutDir, "report.json")
-			scanArgs := aquaAssembleScanArgs(p.opts, aquaImage, htmlReportFile, jsonReportFile)
-			scanSuccessful, err := aquaScan(aquasecBin, scanArgs, os.Stdout, os.Stderr)
-			if err != nil {
-				return p, fmt.Errorf("aqua scan: %w", err)
-			}
-
-			if !scanSuccessful && p.opts.aquasecGate {
-				return p, errors.New("stopping build as successful Aqua scan is required")
-			}
-
-			asu, err := aquaScanURL(p.opts, aquaImage)
-			if err != nil {
-				return p, fmt.Errorf("aqua scan URL: %w", err)
-			}
-			fmt.Printf("Aqua vulnerability report is at %s ...\n", asu)
-
-			err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
-			if err != nil {
-				return p, err
-			}
-
-			fmt.Println("Creating Bitbucket code insight report ...")
-			err = createBitbucketInsightReport(p.opts, asu, scanSuccessful, p.ctxt)
-			if err != nil {
-				return p, err
-			}
-		} else {
-			fmt.Println("Aqua is not configured, image will not be scanned for vulnerabilities.")
 		}
 		return p, nil
 	}
@@ -206,7 +167,7 @@ func processExtraTags() PackageStep {
 					continue
 				}
 				p.logger.Infof("pushing extra tag: %s", extraTag)
-				imageExtraTag := p.imageId.tag(extraTag)
+				imageExtraTag := p.imageId.Tag(extraTag)
 				err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
 				if err != nil {
 					return p, fmt.Errorf("skopeo push failed: %w", err)

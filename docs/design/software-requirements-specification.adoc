@@ -60,9 +60,6 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 | SRS-GENERAL-4
 | ODS Pipeline shall function within corporate networks (HTTP proxy, private CA).
 
-| SRS-GENERAL-5
-| ODS Pipeline shall automatically build container images after installation / update.
-
 | SRS-GENERAL-6
 | ODS Pipeline shall support installation from within an OpenShift Web Terminal when the OpenShift API cannot be accessed from outside the cluster.
 |===
@@ -288,8 +285,6 @@ a| The task shall build a Node.JS application using npm.
 
 | SRS-TASK-PACKAGE-IMAGE-4
 | The task shall generate the SBOM report of the image.
-
-* The resulting report shall be saved an artifact and attached as a code insight to Bitbucket.
 |===
 
 ==== Task `ods-deploy-helm`

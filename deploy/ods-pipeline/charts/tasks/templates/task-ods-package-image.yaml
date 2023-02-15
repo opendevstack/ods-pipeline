@@ -97,9 +97,58 @@ spec:
     - description: Digest of the image just built.
       name: image-digest
   steps:
-    - name: build-and-push-image
+    - name: package-image
       # Image is built from build/package/Dockerfile.package-image.
       image: '{{.Values.imageRepository}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      env:
+        - name: HOME
+          value: '/tekton/home'
+        - name: NEXUS_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-nexus
+        - name: NEXUS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ods-nexus-auth
+        - name: NEXUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-nexus-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+
+        # ods-package-image is built from cmd/package-image/main.go.
+        ods-package-image \
+          -image-stream=$(params.image-stream) \
+          -extra-tags=$(params.extra-tags) \
+          -registry=$(params.registry) \
+          -storage-driver=$(params.storage-driver) \
+          -format=$(params.format) \
+          -dockerfile=$(params.dockerfile) \
+          -context-dir=$(params.docker-dir) \
+          -buildah-build-extra-args=$(params.buildah-build-extra-args) \
+          -buildah-push-extra-args=$(params.buildah-push-extra-args) \
+          -trivy-sbom-extra-args=$(params.trivy-sbom-extra-args)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
+      workingDir: $(workspaces.source.path)
+    - name: aqua-scan
+      # Image is built from build/package/Dockerfile.aqua-scan.
+      image: '{{.Values.imageRepository}}/ods-aqua-scan:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -138,21 +187,6 @@ spec:
             secretKeyRef:
               key: secret
               name: ods-aqua-scanner-url
-        - name: NEXUS_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: ods-nexus
-        - name: NEXUS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: ods-nexus-auth
-        - name: NEXUS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: ods-nexus-auth
         - name: DEBUG
           valueFrom:
             configMapKeyRef:
@@ -160,27 +194,19 @@ spec:
               name: ods-pipeline
       resources: {}
       script: |
+        if [ "${AQUA_SCANNER_URL:0:4}" != "http" ]; then
+          echo "Skipping Aqua scan"
+        else
+          download-aqua-scanner \
+            --aqua-scanner-url=${AQUA_SCANNER_URL} \
+            $(case ${DEBUG} in (true) printf -- '--debug'; esac)
 
-        download-aqua-scanner \
-          --aqua-scanner-url=${AQUA_SCANNER_URL} \
-          $(case ${DEBUG} in (true) printf -- '--debug'; esac)
-
-        #  ods-package-image is built from cmd/package-image/main.go.
-        ods-package-image \
-          -image-stream=$(params.image-stream) \
-          -extra-tags=$(params.extra-tags) \
-          -registry=$(params.registry) \
-          -storage-driver=$(params.storage-driver) \
-          -format=$(params.format) \
-          -dockerfile=$(params.dockerfile) \
-          -context-dir=$(params.docker-dir) \
-          -buildah-build-extra-args=$(params.buildah-build-extra-args) \
-          -buildah-push-extra-args=$(params.buildah-push-extra-args) \
-          -trivy-sbom-extra-args=$(params.trivy-sbom-extra-args) \
-          -aqua-gate=$(params.aqua-gate)
+          #  ods-aqua-scan is built from cmd/aqua-scan/main.go.
+          ods-aqua-scan \
+            -image-stream=$(params.image-stream) \
+            -aqua-gate=$(params.aqua-gate)
+        fi
       volumeMounts:
-        - mountPath: /var/lib/containers
-          name: varlibcontainers
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert
           readOnly: true
