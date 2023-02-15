@@ -35,6 +35,11 @@ if [ -n "${aqua_scanner_url}" ] && [ "${aqua_scanner_url}" != "none" ]; then
         chmod +x "${aqua_scanner_path}"
         echo "${md5_aqua_scanner_url}" > "${md5_aqua_scanner_url_path}"
         echo 'Installed Aqua scanner version:'
-        "${aqua_scanner_path}" version
+        version_output=$("${aqua_scanner_path}" version)
+        if [ "${version_output}" = "" ]; then
+            echo "Downloaded binary is broken. Re-run the task."
+            rm -rf "${bin_dir}"
+            exit 1
+        fi
     fi
 fi
