@@ -13,6 +13,7 @@ listed in the changelog.
 ### Added
 
 - New image for `ods-build-npm` task with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
+- Add `extra-tags` parameter to `ods-package-image` ([#631](https://github.com/opendevstack/ods-pipeline/issues/631))
 
 ### Changed
 

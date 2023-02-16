@@ -20,7 +20,7 @@ const (
 // buildahBuild builds a local image using the Dockerfile and context directory
 // given in opts, tagging the resulting image with given tag.
 func (p *packageImage) buildahBuild(outWriter, errWriter io.Writer) error {
-	args, err := p.buildahBuildArgs(p.image.Ref)
+	args, err := p.buildahBuildArgs(p.imageRef())
 	if err != nil {
 		return fmt.Errorf("assemble build args: %w", err)
 	}
@@ -37,7 +37,7 @@ func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 	if p.opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	args = append(args, p.image.Ref, fmt.Sprintf("oci:%s", filepath.Join(p.opts.checkoutDir, p.image.Name)))
+	args = append(args, p.imageRef(), fmt.Sprintf("oci:%s", filepath.Join(p.opts.checkoutDir, p.imageName())))
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 
@@ -59,7 +59,11 @@ func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	args = append(args, p.image.Ref, fmt.Sprintf("docker://%s", p.image.Ref))
+
+	source := p.imageId.imageRefWithSha(opts.registry)
+	destination := fmt.Sprintf("docker://%s", source)
+	log.Printf("buildah push %s %s", source, destination)
+	args = append(args, source, destination)
 	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
 }
 

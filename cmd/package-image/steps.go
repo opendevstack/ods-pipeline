@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/directory"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
@@ -54,24 +55,20 @@ func setupContext() PackageStep {
 	}
 }
 
-func setImageName() PackageStep {
+func setExtraTags() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		imageNamespace := p.opts.imageNamespace
-		if len(imageNamespace) == 0 {
-			imageNamespace = p.ctxt.Namespace
+		extraTagsSpecified, err := shlex.Split(p.opts.extraTags)
+		if err != nil {
+			return p, fmt.Errorf("parse extra tags (%s): %w", p.opts.extraTags, err)
 		}
-		imageStream := p.opts.imageStream
-		if len(imageStream) == 0 {
-			imageStream = p.ctxt.Component
-		}
-		imageName := fmt.Sprintf("%s:%s", imageStream, p.ctxt.GitCommitSHA)
-		p.image.Name = imageStream
-		p.image.Repository = imageNamespace
-		p.image.Tag = p.ctxt.GitCommitSHA
-		p.image.Ref = fmt.Sprintf(
-			"%s/%s/%s",
-			p.opts.registry, imageNamespace, imageName,
-		)
+		p.parsedExtraTags = extraTagsSpecified
+		return p, nil
+	}
+}
+
+func setImageId() PackageStep {
+	return func(p *packageImage) (*packageImage, error) {
+		p.imageId = createImageIdentity(p.ctxt, &p.opts)
 		return p, nil
 	}
 }
@@ -80,7 +77,7 @@ func setImageName() PackageStep {
 // In future we might want to check all the expected artifacts, that must exist to do skip properly.
 func skipIfImageArtifactExists() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		fmt.Printf("Checking if image artifact for %s exists already ...\n", p.image.ImageName())
+		fmt.Printf("Checking if image artifact for %s exists already ...\n", p.imageName())
 		err := imageArtifactExists(p)
 		if err == nil {
 			return p, &skipRemainingSteps{"image artifact exists already"}
@@ -91,12 +88,12 @@ func skipIfImageArtifactExists() PackageStep {
 
 func buildImageAndGenerateTar() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		fmt.Printf("Building image %s ...\n", p.image.ImageName())
+		fmt.Printf("Building image %s ...\n", p.imageName())
 		err := p.buildahBuild(os.Stdout, os.Stderr)
 		if err != nil {
 			return p, fmt.Errorf("buildah bud: %w", err)
 		}
-		fmt.Printf("Creating local tar folder for image %s ...\n", p.image.ImageName())
+		fmt.Printf("Creating local tar folder for image %s ...\n", p.imageName())
 		err = p.buildahPushTar(os.Stdout, os.Stderr)
 		if err != nil {
 			return p, fmt.Errorf("buildah push tar: %w", err)
@@ -105,7 +102,7 @@ func buildImageAndGenerateTar() PackageStep {
 		if err != nil {
 			return p, err
 		}
-		p.image.Digest = d
+		p.imageDigest = d
 		return p, nil
 	}
 }
@@ -125,7 +122,7 @@ func scanImageWithAqua() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
 		if aquasecInstalled() {
 			fmt.Println("Scanning image with Aqua scanner ...")
-			aquaImage := p.image.ImageName()
+			aquaImage := p.imageName()
 			htmlReportFile := filepath.Join(p.opts.checkoutDir, "report.html")
 			jsonReportFile := filepath.Join(p.opts.checkoutDir, "report.json")
 			scanArgs := aquaAssembleScanArgs(p.opts, aquaImage, htmlReportFile, jsonReportFile)
@@ -163,7 +160,7 @@ func scanImageWithAqua() PackageStep {
 
 func pushImage() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		fmt.Printf("Pushing image %s ...\n", p.image.ImageName())
+		fmt.Printf("Pushing image %s ...\n", p.imageName())
 		err := p.buildahPush(os.Stdout, os.Stderr)
 		if err != nil {
 			return p, fmt.Errorf("buildah push: %w", err)
@@ -174,20 +171,20 @@ func pushImage() PackageStep {
 
 func storeArtifact() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		err := writeImageDigestToResults(p.image.Digest)
+		err := writeImageDigestToResults(p.imageDigest)
 		if err != nil {
 			return p, err
 		}
 
 		fmt.Println("Writing image artifact ...")
-		imageArtifactFilename := fmt.Sprintf("%s.json", p.image.Name)
-		err = pipelinectxt.WriteJsonArtifact(p.image, pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+		imageArtifactFilename := fmt.Sprintf("%s.json", p.imageNameNoSha())
+		err = pipelinectxt.WriteJsonArtifact(p.artifactImage(), pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 		if err != nil {
 			return p, err
 		}
 
 		fmt.Println("Writing SBOM artifact ...")
-		sbomFilename := fmt.Sprintf("%s.%s", p.image.Name, pipelinectxt.SBOMsFormat)
+		sbomFilename := fmt.Sprintf("%s.%s", p.imageNameNoSha(), pipelinectxt.SBOMsFormat)
 		sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
 		err = pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
 		if err != nil {
@@ -196,4 +193,41 @@ func storeArtifact() PackageStep {
 
 		return p, nil
 	}
+}
+
+func processExtraTags() PackageStep {
+	return func(p *packageImage) (*packageImage, error) {
+		if len(p.parsedExtraTags) > 0 {
+			p.logger.Infof("Processing extra tags: %+q", p.parsedExtraTags)
+			for _, extraTag := range p.parsedExtraTags {
+				err := imageTagArtifactExists(p, extraTag)
+				if err == nil {
+					p.logger.Infof("Artifact exists for tag: %s", extraTag)
+					continue
+				}
+				p.logger.Infof("pushing extra tag: %s", extraTag)
+				imageExtraTag := p.imageId.tag(extraTag)
+				err = p.skopeoTag(&imageExtraTag, os.Stdout, os.Stderr)
+				if err != nil {
+					return p, fmt.Errorf("skopeo push failed: %w", err)
+				}
+
+				p.logger.Infof("Writing image artifact for tag: %s", extraTag)
+				image := p.artifactImageForTag(extraTag)
+				filename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, extraTag)
+				err = pipelinectxt.WriteJsonArtifact(image, pipelinectxt.ImageDigestsPath, filename)
+				if err != nil {
+					return p, err
+				}
+			}
+		}
+		return p, nil
+	}
+}
+
+func imageTagArtifactExists(p *packageImage, tag string) error {
+	imageArtifactsDir := filepath.Join(p.opts.checkoutDir, pipelinectxt.ImageDigestsPath)
+	filename := fmt.Sprintf("%s-%s.json", p.imageId.ImageStream, tag)
+	_, err := os.Stat(filepath.Join(imageArtifactsDir, filename))
+	return err
 }

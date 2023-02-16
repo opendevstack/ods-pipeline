@@ -26,6 +26,20 @@ Container_Boundary(c1, "Namespaced ODS Pipeline Installation"){
         Component(task_finish, "ods-finish", "Task", "Finishes pipeline run (set build status, upload artifacts, ...)")
     }
 
+    Boundary(images, "Images") {
+        Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go, golangci-lint, build script")
+        Component(image_node16_npm_toolset, "ods/node16-npm-toolset", "Container Image", "Node.js 16, npm, build script")
+        Component(image_node18_npm_toolset, "ods/node18-npm-toolset", "Container Image", "Node.js 18, npm, build script")
+        Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python, build script")
+        Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
+        Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Skopeo, Aqua scanner")
+        Component(image_helm, "ods/helm", "Container Image", "Helm, Skopeo, deploy script")
+        Component(image_start, "ods/start", "Container Image", "Git, start script")
+        Component(image_finish, "ods/finish", "Container Image", "Finish script")
+        Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
+        Component(image_pipeline_manager, "ods/pipeline-manager", "Container Image", "Webhook receiver and pipeline manager")
+    }
+
 }
 
 Rel(ods_pipeline_manager, route, "exposed via")

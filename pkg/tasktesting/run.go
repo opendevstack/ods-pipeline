@@ -57,6 +57,20 @@ type TaskRunContext struct {
 	CollectedLogs []byte
 }
 
+func (tc *TaskRunContext) toTektonParams() []tekton.Param {
+	var tektonParams []tekton.Param
+
+	// When tekton supports array usage their usage could be supported here.
+	// (see [Cannot refer array params in script #4912](https://github.com/tektoncd/pipeline/issues/4912))
+	for key, value := range tc.Params {
+		tektonParams = append(tektonParams, tekton.Param{
+			Name:  key,
+			Value: *tekton.NewArrayOrString(value),
+		})
+	}
+	return tektonParams
+}
+
 func runTask(t *testing.T, testOpts TestOpts, taskWorkspaces map[string]string, testCaseContext *TaskRunContext, tc TaskRunCase) {
 	if tc.PreRunFunc != nil {
 		tc.PreRunFunc(t, testCaseContext)
@@ -70,7 +84,7 @@ func runTask(t *testing.T, testOpts TestOpts, taskWorkspaces map[string]string, 
 		testOpts.Clients.TektonClientSet,
 		testOpts.TaskKindRef,
 		testOpts.TaskName,
-		testCaseContext.Params,
+		testCaseContext.toTektonParams(),
 		taskWorkspaces,
 		testOpts.Namespace,
 	)

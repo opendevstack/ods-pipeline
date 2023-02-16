@@ -27,6 +27,7 @@ type options struct {
 	aquaURL               string
 	aquaRegistry          string
 	imageStream           string
+	extraTags             string
 	registry              string
 	certDir               string
 	imageNamespace        string
@@ -46,10 +47,33 @@ type options struct {
 }
 
 type packageImage struct {
-	logger logging.LeveledLoggerInterface
-	opts   options
-	ctxt   *pipelinectxt.ODSContext
-	image  artifact.Image
+	logger          logging.LeveledLoggerInterface
+	opts            options
+	parsedExtraTags []string
+	ctxt            *pipelinectxt.ODSContext
+	imageId         imageIdentity
+	imageDigest     string
+}
+
+func (p *packageImage) imageName() string {
+	return p.imageId.streamSha()
+}
+
+func (p *packageImage) imageNameNoSha() string {
+	return p.imageId.ImageStream
+}
+
+func (p *packageImage) imageRef() string {
+	return p.imageId.imageRefWithSha(p.opts.registry)
+}
+
+func (p *packageImage) artifactImage() artifact.Image {
+	return p.imageId.artifactImage(p.opts.registry, p.imageDigest)
+}
+
+func (p *packageImage) artifactImageForTag(tag string) artifact.Image {
+	imageExtraTag := p.imageId.tag(tag)
+	return imageExtraTag.artifactImage(p.opts.registry, p.imageDigest)
 }
 
 var defaultOptions = options{
@@ -61,6 +85,7 @@ var defaultOptions = options{
 	aquaURL:               os.Getenv("AQUA_URL"),
 	aquaRegistry:          os.Getenv("AQUA_REGISTRY"),
 	imageStream:           "",
+	extraTags:             "",
 	registry:              "image-registry.openshift-image-registry.svc:5000",
 	certDir:               defaultCertDir(),
 	imageNamespace:        "",
@@ -89,6 +114,7 @@ func main() {
 	flag.StringVar(&opts.aquaURL, "aqua-url", defaultOptions.aquaURL, "aqua-url")
 	flag.StringVar(&opts.aquaRegistry, "aqua-registry", defaultOptions.aquaRegistry, "aqua-registry")
 	flag.StringVar(&opts.imageStream, "image-stream", defaultOptions.imageStream, "Image stream")
+	flag.StringVar(&opts.extraTags, "extra-tags", defaultOptions.extraTags, "Extra tags")
 	flag.StringVar(&opts.registry, "registry", defaultOptions.registry, "Registry")
 	flag.StringVar(&opts.certDir, "cert-dir", defaultOptions.certDir, "Use certificates at the specified path to access the registry")
 	flag.StringVar(&opts.imageNamespace, "image-namespace", defaultOptions.imageNamespace, "image namespace")
@@ -106,17 +132,17 @@ func main() {
 	flag.BoolVar(&opts.aquasecGate, "aqua-gate", defaultOptions.aquasecGate, "whether the Aqua security scan needs to pass for the task to succeed")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
-
 	var logger logging.LeveledLoggerInterface
 	if opts.debug {
 		logger = &logging.LeveledLogger{Level: logging.LevelDebug}
 	} else {
 		logger = &logging.LeveledLogger{Level: logging.LevelInfo}
 	}
-
-	err := (&packageImage{logger: logger, opts: opts}).runSteps(
+	p := packageImage{logger: logger, opts: opts}
+	err := (&p).runSteps(
+		setExtraTags(),
 		setupContext(),
-		setImageName(),
+		setImageId(),
 		skipIfImageArtifactExists(),
 		buildImageAndGenerateTar(),
 		generateSBOM(),
@@ -124,6 +150,13 @@ func main() {
 		scanImageWithAqua(),
 		storeArtifact(),
 	)
+	if err != nil {
+		logger.Errorf(err.Error())
+		os.Exit(1)
+	}
+	// If skipIfImageArtifactExists skips the remaining runSteps, extra-tags
+	// still should be processed if their related artifact has not been set.
+	err = (&p).runSteps(processExtraTags())
 	if err != nil {
 		logger.Errorf(err.Error())
 		os.Exit(1)
