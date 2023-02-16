@@ -15,10 +15,7 @@ RUN cd cmd/pipeline-manager && CGO_ENABLED=0 go build -o /usr/local/bin/pipeline
 # Final image
 # ubi-micro cannot be used as it misses the ca-certificates package.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
-ENV OPENSSL_VERSION=1.1
-RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* && microdnf clean all
 COPY --from=builder /usr/local/bin/pipeline-manager /usr/local/bin/pipeline-manager
-
 EXPOSE 8080
 CMD pipeline-manager
 USER 1001
