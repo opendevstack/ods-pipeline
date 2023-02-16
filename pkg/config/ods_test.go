@@ -27,6 +27,10 @@ func TestReadFromFile(t *testing.T) {
 	if gotStage != ProdStage {
 		t.Fatalf("Got %s, want prod", gotStage)
 	}
+	gotName := ods.Environments[0].Name
+	if gotName != "e2e" {
+		t.Fatalf("Got %s, want e2e", gotName)
+	}
 }
 
 func TestReadFromSimplifiedFormatFile(t *testing.T) {
@@ -97,17 +101,36 @@ environments:
 			Fixture: []byte(`environments:
 - name: "Hello World!"
   stage: dev`),
-			WantError: "name of environment must match ^[a-z-]*$",
+			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
 		},
 		"invalid name - uppercase": {
 			Fixture: []byte(`environments:
 - name: "DEVenv"
   stage: dev`),
-			WantError: "name of environment must match ^[a-z-]*$",
+			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
+		},
+		"invalid name - starts with number": {
+			Fixture: []byte(`environments:
+- name: "2to"
+  stage: dev`),
+			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
+		},
+		"invalid namespace - starts with number": {
+			Fixture: []byte(`environments:
+- name: "e2e"
+  namespace: "2to"
+  stage: dev`),
+			WantError: "namespace of environment must match ^[a-z][a-z0-9-]*[a-z]$",
 		},
 		"valid": {
 			Fixture: []byte(`environments:
 - name: foo-qa
+  stage: qa`),
+			WantError: "",
+		},
+		"valid2": {
+			Fixture: []byte(`environments:
+- name: e2e-q
   stage: qa`),
 			WantError: "",
 		},

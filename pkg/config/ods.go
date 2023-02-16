@@ -139,10 +139,16 @@ func (e Environment) Validate() error {
 	if len(e.Name) == 0 {
 		return errors.New("name of environment must not be blank")
 	}
-	pattern := "^[a-z-]*$"
+	pattern := "^[a-z][a-z0-9-]*[a-z]$"
 	matched, err := regexp.MatchString(pattern, e.Name)
 	if err != nil || !matched {
 		return fmt.Errorf("name of environment must match %s", pattern)
+	}
+	if len(e.Namespace) != 0 {
+		matched, err = regexp.MatchString(pattern, e.Namespace)
+		if err != nil || !matched {
+			return fmt.Errorf("namespace of environment must match %s", pattern)
+		}
 	}
 	switch e.Stage {
 	case DevStage, QAStage, ProdStage:
