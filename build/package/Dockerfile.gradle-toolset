@@ -3,7 +3,6 @@ FROM registry.access.redhat.com/ubi8/openjdk-17:1.13
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV GIT_VERSION=2.31 \
-    OPENSSL_VERSION=1.1 \
     GRADLE_VERSION=7.4.2 \
     GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle
 
@@ -12,7 +11,7 @@ ARG GRADLE_WRAPPER_DOWNLOAD_SHA256=29e49b10984e585d8118b7d0bc452f944e386458df273
 
 USER root
 
-RUN microdnf install --nodocs openssl-${OPENSSL_VERSION}* git-${GIT_VERSION}* && microdnf clean all
+RUN microdnf install --nodocs git-${GIT_VERSION}* && microdnf clean all
 
 # Install Gradle
 RUN cd /opt && \

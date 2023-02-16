@@ -665,12 +665,6 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 | Basic directory searching utilities, included due to the dependency of `helm-secrets` on `xargs`
 | https://www.gnu.org/software/findutils/
 
-| SDS-EXT-30
-| OpenSSL
-| 1.1
-| Toolkit for general-purpose cryptography and secure communication.
-| https://www.openssl.org
-
 | SDS-EXT-31
 | Trivy
 | 0.36.0
