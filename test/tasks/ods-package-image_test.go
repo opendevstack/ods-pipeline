@@ -15,7 +15,7 @@ import (
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
-	"k8s.io/utils/strings/slices"
+	"golang.org/x/exp/slices"
 )
 
 func TestTaskODSPackageImage(t *testing.T) {
