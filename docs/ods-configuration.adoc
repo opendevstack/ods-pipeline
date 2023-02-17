@@ -116,7 +116,7 @@ environments:
   stage: dev
 ----
 
-The value of `name` may freely be chosen, but must only contain lowercase `a-z` and dashes (`-`). The `stage` must be one of `dev`, `qa` or `prod`. Each environment corresponds to one namespace in an OpenShift/Kubernetes cluster. The namespace may either be specified explicitly (via `namespace`), or it will be computed based on the project and the environment name (`<PROJECT>-<ENV-NAME>`). In the example above, `namespace` is not configured, therefore the target namespace will be resolved to `foo-development` (if the project is named `foo`).
+The value of `name` may freely be chosen, but must begin and end with a lowercase `a-z` and can use `a-z0-9` and (`-`) in between. The `stage` must be one of `dev`, `qa` or `prod`. Each environment corresponds to one namespace in an OpenShift/Kubernetes cluster. The namespace may either be specified explicitly (via `namespace`), or it will be computed based on the project and the environment name (`<PROJECT>-<ENV-NAME>`). In the example above, `namespace` is not configured, therefore the target namespace will be resolved to `foo-development` (if the project is named `foo`). If `namespace` is specified it must follow the same rules as the `name` described above.
 
 Environments may also be located external to the cluster in which the pipeline runs. In this case, an environment may specify further fields:
 

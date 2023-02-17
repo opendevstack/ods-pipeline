@@ -25,6 +25,7 @@ listed in the changelog.
 
 - npm-toolset tests fail with new release of ubi8 Node.js image ([#650](https://github.com/opendevstack/ods-pipeline/issues/650))
 - Installation does not ask for Bitbucket username ([#652](https://github.com/opendevstack/ods-pipeline/issues/652))
+- e2e environment name not allowed ([#634](https://github.com/opendevstack/ods-pipeline/issues/634))
 
 ## [0.8.0] - 2023-01-06
 

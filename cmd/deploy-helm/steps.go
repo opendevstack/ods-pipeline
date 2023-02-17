@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/command"
@@ -114,6 +115,11 @@ func setReleaseTarget() DeployStep {
 		d.releaseNamespace = targetConfig.Namespace
 		if d.releaseNamespace == "" {
 			d.releaseNamespace = fmt.Sprintf("%s-%s", d.ctxt.Project, targetConfig.Name)
+		}
+		pattern := "^[a-z][a-z0-9-]{0,61}[a-z]$"
+		matched, err := regexp.MatchString(pattern, d.releaseNamespace)
+		if err != nil || !matched {
+			return d, fmt.Errorf("release namespace: %s must match %s", d.releaseNamespace, pattern)
 		}
 		d.logger.Infof("Release namespace: %s", d.releaseNamespace)
 
