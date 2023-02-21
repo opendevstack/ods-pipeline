@@ -152,7 +152,7 @@ installSecret () {
     if "${KUBECTL_BIN}" -n "${NAMESPACE}" get "secret/${secretName}" &> /dev/null; then
         # In case the secret was previously managed by Helm, we want to instruct Helm
         # to keep the resource during helm upgrade.
-        "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate secret "${secretName}" "helm.sh/resource-policy=keep"
+        "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate --overwrite secret "${secretName}" "helm.sh/resource-policy=keep"
         if [ -n "${flagValue}" ]; then
             echo "Updating secret ${secretName} ..."
             kubectlApplySecret "${secretName}" "${secretTemplate}" "${authUser}" "${authPassword}"
@@ -304,7 +304,7 @@ if [ "${DRY_RUN}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
     bitbucketUrl=$("${KUBECTL_BIN}" -n "${NAMESPACE}" get cm/ods-bitbucket -ojsonpath='{.data.url}')
-    "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate secret ods-bitbucket-auth "tekton.dev/git-0=${bitbucketUrl}"
+    "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate --overwrite secret ods-bitbucket-auth "tekton.dev/git-0=${bitbucketUrl}"
 fi
 
 echo "Adding ods-bitbucket-auth secret to ${SERVICEACCOUNT} serviceaccount ..."
