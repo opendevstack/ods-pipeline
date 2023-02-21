@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"os/exec"
+	"os"
+	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/pipeline/internal/image"
+	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
 
 const (
@@ -14,12 +17,6 @@ const (
 	scanComplianceFailureExitCode        = 4
 	scanLicenseValidationFailureExitCode = 5
 )
-
-// aquasecInstalled checks whether the Aqua binary is in the $PATH.
-func aquasecInstalled() bool {
-	_, err := exec.LookPath(aquasecBin)
-	return err == nil
-}
 
 // aquaScanURL returns an URL to the given aquaImage.
 func aquaScanURL(opts options, aquaImage string) (string, error) {
@@ -41,7 +38,7 @@ func aquaScanURL(opts options, aquaImage string) (string, error) {
 // aquaScan runs the scan and returns whether there was a policy incompliance or not.
 // An error is returned when the scan cannot be started or encounters failures
 // unrelated to policy compliance.
-func aquaScan(exe string, args []string, outWriter, errWriter io.Writer) (bool, error) {
+func runScan(exe string, args []string, outWriter, errWriter io.Writer) (bool, error) {
 	// STDERR contains the scan log output, hence we read it before STDOUT.
 	// STDOUT contains the scan summary (incl. ASCII table).
 	return command.RunWithSpecialFailureCode(
@@ -63,4 +60,48 @@ func aquaAssembleScanArgs(opts options, image, htmlReportFile, jsonReportFile st
 		image,
 		fmt.Sprintf("--registry=%s", opts.aquaRegistry),
 	}
+}
+
+// htmlReportFilename returns the HTML report filename for given image.
+func htmlReportFilename(iid image.Identity) string {
+	return fmt.Sprintf("%s.html", iid.ImageStream)
+}
+
+// htmlReportFilename returns the JSON report filename for given image.
+func jsonReportFilename(iid image.Identity) string {
+	return fmt.Sprintf("%s.json", iid.ImageStream)
+}
+
+// reportFilenames returns the list of scan report filenames.
+func reportFilenames(iid image.Identity) []string {
+	return []string{htmlReportFilename(iid), jsonReportFilename(iid)}
+}
+
+// aquaReportsExist checks whether the reports associated with the image name
+// exist in the given artifacts path.
+func aquaReportsExist(artifactsPath string, iid image.Identity) bool {
+	d := filepath.Join(artifactsPath, pipelinectxt.AquaScansDir)
+	for _, f := range reportFilenames(iid) {
+		if _, err := os.Stat(filepath.Join(d, f)); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+// copyAquaReportsToArtifacts copies the Aqua scan reports to the artifacts directory.
+func copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile string) error {
+	if _, err := os.Stat(htmlReportFile); err == nil {
+		err := pipelinectxt.CopyArtifact(htmlReportFile, pipelinectxt.AquaScansPath)
+		if err != nil {
+			return fmt.Errorf("copying HTML report to artifacts failed: %w", err)
+		}
+	}
+	if _, err := os.Stat(jsonReportFile); err == nil {
+		err := pipelinectxt.CopyArtifact(jsonReportFile, pipelinectxt.AquaScansPath)
+		if err != nil {
+			return fmt.Errorf("copying JSON report to artifacts failed: %w", err)
+		}
+	}
+	return nil
 }

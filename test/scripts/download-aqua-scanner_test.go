@@ -31,21 +31,21 @@ func TestCachedDownload(t *testing.T) {
 	defer cleanupDir()
 
 	t.Log("Fresh run -> download")
-	runScript(t, dir, fmt.Sprintf("%s/foo", ts.URL))
+	runScriptOrFatal(t, dir, fmt.Sprintf("%s/foo", ts.URL))
 	if hits != 1 {
 		t.Error("Wanted hit, got none")
 	}
 	fileExistsInDir(t, dir, "aquasec", ".md5-aquasec")
 
 	t.Log("Second run for same URL -> no download")
-	runScript(t, dir, fmt.Sprintf("%s/foo", ts.URL))
+	runScriptOrFatal(t, dir, fmt.Sprintf("%s/foo", ts.URL))
 	if hits > 1 {
 		t.Error("Wanted no further hit, got more")
 	}
 	fileExistsInDir(t, dir, "aquasec", ".md5-aquasec")
 
 	t.Log("Third run for different URL -> download")
-	runScript(t, dir, fmt.Sprintf("%s/bar", ts.URL))
+	runScriptOrFatal(t, dir, fmt.Sprintf("%s/bar", ts.URL))
 	if hits != 2 {
 		t.Error("Wanted further hit, got none")
 	}
@@ -57,18 +57,41 @@ func TestSkipDownload(t *testing.T) {
 	defer cleanupDir()
 
 	t.Log("No URL")
-	runScript(t, dir, "")
+	runScriptOrFatal(t, dir, "")
 	fileDoesNotExistInDir(t, dir, "aquasec", ".md5-aquasec")
 
 	t.Log("URL set to 'none'")
-	runScript(t, dir, "none")
+	runScriptOrFatal(t, dir, "none")
 	fileDoesNotExistInDir(t, dir, "aquasec", ".md5-aquasec")
+}
+
+func TestBrokenDownload(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "")
+	}))
+	defer ts.Close()
+	dir, cleanupDir := tmpDir(t)
+	defer cleanupDir()
+
+	t.Log("Download")
+	err := runScript(t, dir, fmt.Sprintf("%s/foo", ts.URL))
+	if err == nil {
+		t.Fatal("script should error on broken download")
+	}
+	fileDoesNotExistInDir(t, dir, "aquasec", ".md5-aquasec")
+}
+
+// runScriptOrFatal calls runScript, then t.Fatal on error.
+func runScriptOrFatal(t *testing.T, dir, url string) {
+	if err := runScript(t, dir, url); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // runScript runs the download script against given url
 // and places the downloaded file into dir.
-func runScript(t *testing.T, dir, url string) {
-	err := command.Run(
+func runScript(t *testing.T, dir, url string) error {
+	return command.Run(
 		downloadAquaScannerScript,
 		[]string{
 			fmt.Sprintf("--bin-dir=%s", dir),
@@ -77,9 +100,6 @@ func runScript(t *testing.T, dir, url string) {
 		&testingLogWriter{t},
 		&testingLogWriter{t},
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 // fileExistsInDir checks if file(s) exist in dir or errors.

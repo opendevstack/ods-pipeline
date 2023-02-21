@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["package-image", "finish", "go-toolset", "gradle-toolset", "helm", "sonar", "start", "pipeline-manager", "python-toolset", "node16-npm-toolset", "node18-npm-toolset"]
+        image: ["aqua-scan", "finish", "go-toolset", "gradle-toolset", "helm", "node16-npm-toolset", "node18-npm-toolset", "package-image", "pipeline-manager", "python-toolset", "sonar", "start"]
     permissions:
       contents: read
       packages: write

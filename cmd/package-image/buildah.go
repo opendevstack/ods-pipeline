@@ -60,7 +60,7 @@ func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
 		args = append(args, "--log-level=debug")
 	}
 
-	source := p.imageId.imageRefWithSha(opts.registry)
+	source := p.imageId.ImageRefWithSha(opts.registry)
 	destination := fmt.Sprintf("docker://%s", source)
 	log.Printf("buildah push %s %s", source, destination)
 	args = append(args, source, destination)
