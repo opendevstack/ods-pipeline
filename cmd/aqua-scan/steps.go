@@ -63,7 +63,7 @@ func skipIfScanArtifactsExist() AquaScanStep {
 func scanImagesWithAqua() AquaScanStep {
 	return func(s *aquaScan) (*aquaScan, error) {
 		slog.Info("Scanning image with Aqua scanner ...")
-		aquaImage := s.imageId.StreamSha()
+		aquaImage := s.imageId.NamespaceStreamSha()
 		htmlReportFile := filepath.Join(s.opts.checkoutDir, htmlReportFilename(s.imageId))
 		jsonReportFile := filepath.Join(s.opts.checkoutDir, jsonReportFilename(s.imageId))
 		scanArgs := aquaAssembleScanArgs(s.opts, aquaImage, htmlReportFile, jsonReportFile)
