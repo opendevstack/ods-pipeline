@@ -8,7 +8,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
 	github.com/tektoncd/pipeline v0.28.3
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/net v0.7.0
 	k8s.io/api v0.21.14
 	k8s.io/apimachinery v0.21.14
 	k8s.io/client-go v0.21.14
@@ -69,9 +69,9 @@ require (
 	golang.org/x/exp v0.0.0-20230111222715-75897c7a292a
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/api v0.36.0 // indirect
