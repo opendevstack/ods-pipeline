@@ -14,7 +14,7 @@ while [[ "$#" -gt 0 ]]; do
     --aqua-scanner-url) aqua_scanner_url="$2"; shift;;
     --aqua-scanner-url=*) aqua_scanner_url="${1#*=}";;
 
-    --debug) set -x; shift;;
+    --debug) set -x;;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
