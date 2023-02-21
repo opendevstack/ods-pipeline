@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opendevstack/pipeline/internal/httpjson"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -111,11 +112,10 @@ func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server 
 		BitbucketClient:    bc,
 		Logger:             &logging.LeveledLogger{Level: logging.LevelNull},
 	}
-	return httptest.NewServer(http.HandlerFunc(r.Handle))
+	return httptest.NewServer(httpjson.Handler(r.Handle))
 }
 
 func TestWebhookHandling(t *testing.T) {
-
 	tests := map[string]struct {
 		requestBodyFixture    string
 		bitbucketClient       *bitbucket.TestClient
@@ -128,26 +128,26 @@ func TestWebhookHandling(t *testing.T) {
 		"wrong signature is not processed": {
 			requestBodyFixture: "manager/payload.json", // valid payload
 			wrongSignature:     true,
-			wantStatus:         http.StatusBadRequest,
-			wantBody:           "failed to validate incoming request",
+			wantStatus:         http.StatusUnauthorized,
+			wantBody:           `{"title":"Unauthorized","detail":"failed to validate incoming request"}`,
 			wantPipelineConfig: false,
 		},
 		"invalid JSON is not processed": {
 			requestBodyFixture: "manager/payload-invalid.json",
 			wantStatus:         http.StatusBadRequest,
-			wantBody:           "cannot parse JSON: invalid character '\\n' in string literal",
+			wantBody:           `{"title":"BadRequest","detail":"cannot parse JSON: invalid character '\\n' in string literal"}`,
 			wantPipelineConfig: false,
 		},
 		"unsupported events are not processed": {
 			requestBodyFixture: "manager/payload-unknown-event.json",
 			wantStatus:         http.StatusBadRequest,
-			wantBody:           "Unsupported event key: repo:ref_changed",
+			wantBody:           `{"title":"BadRequest","detail":"unsupported event key: repo:ref_changed"}`,
 			wantPipelineConfig: false,
 		},
 		"tags are not processed": {
 			requestBodyFixture: "manager/payload-tag.json",
-			wantStatus:         http.StatusTeapot,
-			wantBody:           "Skipping change ref type TAG, only BRANCH is supported",
+			wantStatus:         http.StatusUnprocessableEntity,
+			wantBody:           `{"title":"UnprocessableEntity","detail":"skipping change ref type TAG, only BRANCH is supported"}`,
 			wantPipelineConfig: false,
 		},
 		"commits with skip message are not processed": {
@@ -161,8 +161,8 @@ func TestWebhookHandling(t *testing.T) {
 					},
 				},
 			},
-			wantStatus:         http.StatusTeapot,
-			wantBody:           "Commit 0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f should be skipped",
+			wantStatus:         http.StatusAccepted,
+			wantBody:           `{"title":"Accepted","detail":"Commit 0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f should be skipped"}`,
 			wantPipelineConfig: false,
 		},
 		"repo:refs_changed triggers pipeline": {
