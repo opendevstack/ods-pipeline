@@ -9,6 +9,7 @@ import (
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/clock"
 )
 
 func TestAdvanceQueue(t *testing.T) {
@@ -129,7 +130,7 @@ func cancelledPipelineRun(t *testing.T, name string, creationTime time.Time) *te
 			Status: tekton.PipelineRunSpecStatusCancelled,
 		},
 	}
-	if !pr.IsCancelled() || pr.IsPending() || pr.IsDone() || pr.IsTimedOut() {
+	if !pr.IsCancelled() || pr.IsPending() || pr.IsDone() || pr.HasTimedOut(context.Background(), clock.RealClock{}) {
 		t.Fatal("pr should be cancelled")
 	}
 	return pr
@@ -152,7 +153,7 @@ func timedOutPipelineRun(t *testing.T, name string, creationTime time.Time) *tek
 			},
 		},
 	}
-	if !pr.IsTimedOut() || pr.IsPending() || pr.IsDone() || pr.IsCancelled() {
+	if !pr.HasTimedOut(context.Background(), clock.RealClock{}) || pr.IsPending() || pr.IsDone() || pr.IsCancelled() {
 		t.Fatal("pr should be timed out")
 	}
 	return pr
@@ -165,7 +166,7 @@ func runningPipelineRun(t *testing.T, name string, creationTime time.Time) *tekt
 			CreationTimestamp: metav1.Time{Time: creationTime},
 		},
 	}
-	if pr.IsDone() || pr.IsPending() || pr.IsTimedOut() || pr.IsCancelled() {
+	if pr.IsDone() || pr.IsPending() || pr.HasTimedOut(context.Background(), clock.RealClock{}) || pr.IsCancelled() {
 		t.Fatal("pr should be running")
 	}
 	return pr

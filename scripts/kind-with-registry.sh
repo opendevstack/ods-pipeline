@@ -27,9 +27,9 @@ KIND_CLUSTER_NAME="kind"
 RECREATE_KIND_CLUSTER="false"
 REGISTRY_PORT="5000"
 
-# K8S version is aligned with OpenShift GA 4.8.
-# See https://docs.openshift.com/container-platform/4.8/release_notes/ocp-4-8-release-notes.html
-K8S_VERSION="v1.21.1"
+# K8S version is aligned with OpenShift GA 4.11.
+# See https://docs.openshift.com/container-platform/4.11/release_notes/ocp-4-11-release-notes.html
+K8S_VERSION="v1.24.7"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
