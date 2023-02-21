@@ -22,7 +22,7 @@ while [[ "$#" -gt 0 ]]; do
     --dest-storepass) dest_pass="$2"; shift;;
     --dest-storepass=*) dest_pass="${1#*=}";;
 
-    --debug) set -x; shift;;
+    --debug) set -x;;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
