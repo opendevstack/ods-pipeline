@@ -10,6 +10,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.9.0] - 2023-02-22
+
 ### Added
 
 - New image for `ods-build-npm` task with Node.js 18 ([#585](https://github.com/opendevstack/ods-pipeline/issues/585))
