@@ -101,8 +101,6 @@ spec:
       # Image is built from build/package/Dockerfile.package-image.
       image: '{{.Values.imageRepository}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
       env:
-        - name: HOME
-          value: '/tekton/home'
         - name: NEXUS_URL
           valueFrom:
             configMapKeyRef:
@@ -138,6 +136,10 @@ spec:
           -buildah-build-extra-args=$(params.buildah-build-extra-args) \
           -buildah-push-extra-args=$(params.buildah-push-extra-args) \
           -trivy-sbom-extra-args=$(params.trivy-sbom-extra-args)
+      securityContext:
+        capabilities:
+          add:
+            - SETFCAP
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
