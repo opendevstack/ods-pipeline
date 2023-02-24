@@ -10,10 +10,12 @@ import (
 	"strings"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/utils/clock"
 )
 
 const (
@@ -38,7 +40,7 @@ type PipelineConfig struct {
 	Tasks        []tekton.PipelineTask
 	Finally      []tekton.PipelineTask
 	Timeouts     *tekton.TimeoutFields
-	PodTemplate  *tekton.PodTemplate
+	PodTemplate  *pod.PodTemplate
 	TaskRunSpecs []tekton.PipelineTaskRunSpec
 }
 
@@ -189,7 +191,7 @@ func sortPipelineRunsDescending(pipelineRuns []tekton.PipelineRun) {
 // pipelineRunIsProgressing returns true if the PR is not done, not pending,
 // not cancelled, and not timed out.
 func pipelineRunIsProgressing(pr tekton.PipelineRun) bool {
-	return !(pr.IsDone() || pr.IsPending() || pr.IsCancelled() || pr.IsTimedOut())
+	return !(pr.IsDone() || pr.IsPending() || pr.IsCancelled() || pr.HasTimedOut(context.Background(), clock.RealClock{}))
 }
 
 // tektonStringParam returns a Tekton task parameter.

@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"sigs.k8s.io/yaml"
 )
@@ -115,7 +116,7 @@ type Pipeline struct {
 	Tasks        []tekton.PipelineTask        `json:"tasks,omitempty"`
 	Finally      []tekton.PipelineTask        `json:"finally,omitempty"`
 	Timeouts     *tekton.TimeoutFields        `json:"timeouts,omitempty"`
-	PodTemplate  *tekton.PodTemplate          `json:"podTemplate,omitempty"`
+	PodTemplate  *pod.PodTemplate             `json:"podTemplate,omitempty"`
 	TaskRunSpecs []tekton.PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
 }
 

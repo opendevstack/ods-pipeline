@@ -363,7 +363,7 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
 | SDS-TASK-31
 | `ods-aqua-scan` container image
-| Container image to scan images. Based on `ubi8` (SDS-EXT-1). Includes SDS-TASK-33.
+| Container image to scan images. Based on `ubi8-minimal` (SDS-EXT-2). Includes SDS-TASK-33.
 
 | SDS-TASK-21
 | `package-image` binary
@@ -527,7 +527,7 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-1
 | Red Hat Universal Base Image 8
-| 8.4
+| 8.7
 | Universal Base Image is designed and engineered to be the base layer for a wide range of applications, middleware and utilities. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/ubi/5c359854d70cc534b3a3784e
 

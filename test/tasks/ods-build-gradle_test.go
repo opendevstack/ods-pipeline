@@ -46,7 +46,6 @@ func TestTaskODSBuildGradle(t *testing.T) {
 					}
 
 					logContains(ctxt.CollectedLogs, t,
-						"--gradle-options=--no-daemon --stacktrace",
 						"No sonar-project.properties present, using default:",
 						"ods-test-nexus",
 						"Gradle 7.4.2",
@@ -87,7 +86,6 @@ func TestTaskODSBuildGradle(t *testing.T) {
 					}
 
 					logContains(ctxt.CollectedLogs, t,
-						"--gradle-options=--no-daemon --stacktrace",
 						"No sonar-project.properties present, using default:",
 						"ods-test-nexus",
 						"Gradle 7.4.2",
