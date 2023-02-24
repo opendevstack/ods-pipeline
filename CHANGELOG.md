@@ -12,7 +12,7 @@ listed in the changelog.
 
 ### Changed
 
-- Update Tekton to v.041.1 (matching OpenShift Pipelines operator 1.9). Unfortunately the `package-image` task of v0.9.0 breaks in OpenShift Pipelines operator 1.9, so v0.9.0 is not compatible with 1.9, and the v0.10.0 will not compatible with 1.6. For details of the change, see [#663](https://github.com/opendevstack/ods-pipeline/pull/663).
+- Update Tekton to v.041.1 (matching OpenShift Pipelines operator 1.9). Unfortunately the `package-image` task of v0.9.0 breaks in OpenShift Pipelines operator 1.9, so v0.9.0 is not compatible with 1.9, and v0.10.0 will not compatible with 1.6. For details of the change, see [#663](https://github.com/opendevstack/ods-pipeline/pull/663).
 
 
 ## [0.9.0] - 2023-02-22
