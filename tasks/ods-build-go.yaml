@@ -1,15 +1,16 @@
-{{if .Values.global.enabledTasks.buildPython }}
+
+# Source: tasks/templates/task-ods-build-go.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-build-python{{- include "taskSuffix" .}}'
+  name: 'ods-build-go'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
-    Builds Python applications.
+    Builds Go (module) applications.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-build-python.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-build-go.adoc
   params:
     - name: working-dir
       description: |
@@ -17,9 +18,21 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
+    - name: enable-cgo
+      description: Whether to enable CGO. When not enabled the build will set `CGO_ENABLED=0`.
+      type: string
+      default: "false"
+    - name: go-os
+      description: "`GOOS` variable (the execution operating system such as `linux`, `windows`)."
+      type: string
+      default: "linux"
+    - name: go-arch
+      description: "`GOARCH` variable (the execution architecture such as `arm`, `amd64`)."
+      type: string
+      default: "amd64"
     - name: output-dir
       description: >-
-        Path to the directory into which outputs should be placed, relative to `working-dir`.
+        Path to the directory into which the resulting Go binary should be copied, relative to `working-dir`.
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
@@ -30,73 +43,50 @@ spec:
         You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
       type: string
       default: "true"
-    - name: max-line-length
-      description: Maximum line length.
-      type: string
-      default: "120"
-    - name: pre-test-script
-      description: Script to execute before running tests, relative to the working directory.
-      type: string
-      default: ""
     - name: build-script
       description: >-
         Build script to execute. The
-        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-python.sh[default script]
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-go.sh[default script]
         is located in the container image. If you specify a relative path
         instead, it will be resolved from the workspace. See the task definition
         for details how the build script is invoked.
       type: string
-      default: "/usr/local/bin/build-python"
+      default: "/usr/local/bin/build-go"
+    - name: pre-test-script
+      description: Script to execute before running tests, relative to the working directory.
+      type: string
+      default: ""
     - name: sonar-quality-gate
-      description: Whether quality gate needs to pass.
+      description: Whether the SonarQube quality gate needs to pass for the task to succeed.
       type: string
       default: "false"
     - name: sonar-skip
-      description: Whether to skip the SonarQube analysis or not.
+      description: Whether to skip SonarQube analysis or not.
       type: string
       default: "false"
   results:
     - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
       name: build-reused-from-location
-  {{- with ((.Values.python).sidecars) }}
-  sidecars:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
   steps:
-    - name: build-python
-      # Image is built from build/package/Dockerfile.python-toolset.
-      image: '{{.Values.imageRepository}}/ods-python-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+    - name: build-go-binary
+      # Image is built from build/package/Dockerfile.go-toolset.
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-go-toolset:0.9.0'
       env:
         - name: HOME
           value: '/tekton/home'
         - name: CI
           value: "true"
-        - name: NEXUS_URL
-          valueFrom:
-            configMapKeyRef:
-              key: url
-              name: ods-nexus
-        - name: NEXUS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: ods-nexus-auth
-        - name: NEXUS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: ods-nexus-auth
         - name: DEBUG
           valueFrom:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
       resources:
-        {{- (.Values.python).resources | default dict | toYaml | nindent 8 }}
+        {}
       script: |
         supply-sonar-project-properties-default
         echo -n "" > $(results.build-reused-from-location.path)
-        cache_build_key=python
+        cache_build_key=go-$(params.go-os)-$(params.go-arch)
         if copy-build-if-cached \
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
@@ -106,11 +96,13 @@ spec:
           --debug=${DEBUG} ; then
           exit 0
         fi
-        # Default build script is build/package/scripts/build-python.sh.
+        # Default build script is build/package/scripts/build-go.sh.
         set +e 
         $(params.build-script) \
           --working-dir=$(params.working-dir) \
-          --max-line-length=$(params.max-line-length) \
+          --enable-cgo=$(params.enable-cgo) \
+          --go-os=$(params.go-os) \
+          --go-arch=$(params.go-arch) \
           --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
@@ -127,6 +119,56 @@ spec:
             --working-dir=$(params.working-dir) \
             --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
+        fi        
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
+      workingDir: $(workspaces.source.path)    
+    - name: scan-with-sonar
+      # Image is built from build/package/Dockerfile.sonar.
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.9.0'
+      env:
+        - name: HOME
+          value: '/tekton/home'
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-sonar
+        - name: SONAR_EDITION
+          valueFrom:
+            configMapKeyRef:
+              key: edition
+              name: ods-sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          mkdir -p .ods/artifacts/sonarqube-analysis
+    
+          truststore="${JAVA_HOME}/lib/security/cacerts"
+          if [ -f /etc/ssl/certs/private-cert.pem ]; then
+            truststore="$(pwd)/.ods-cache/truststore/cacerts"
+            configure-truststore --dest-store "${truststore}"
+          fi
+          # sonar is built from cmd/sonar/main.go.
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate) \
+            -truststore "${truststore}"
         fi
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
@@ -134,7 +176,6 @@ spec:
           readOnly: true
           subPath: tls.crt
       workingDir: $(workspaces.source.path)
-    {{- include "sonar-step" . | indent 4}}
   volumes:
     - name: private-cert
       secret:
@@ -142,4 +183,3 @@ spec:
         optional: true
   workspaces:
     - name: source
-{{end}}

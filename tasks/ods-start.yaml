@@ -1,14 +1,16 @@
+
+# Source: tasks/templates/task-ods-start.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-start{{- include "taskSuffix" .}}'
+  name: 'ods-start'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
     Starts the pipeline run.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-start.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-start.adoc
   params:
     - name: url
       description: Git URL to clone
@@ -92,7 +94,7 @@ spec:
   steps:
     - name: ods-start
       # Image is built from build/package/Dockerfile.start.
-      image: '{{.Values.imageRepository}}/ods-start:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-start:0.9.0'
       env:
         - name: HOME
           value: '/tekton/home'

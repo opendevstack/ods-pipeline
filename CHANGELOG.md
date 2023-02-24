@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Rendered task versions are available under `tasks/` now. These can be referenced directly from pipeline runs through [remote resolution](https://tekton.dev/docs/pipelines/pipelines/#specifying-remote-tasks). In future versions, tasks may be removed from the Helm chart and only be accessible via Git. See [#665](https://github.com/opendevstack/ods-pipeline/issues/665).
+
 ### Changed
 
 - Update Tekton to v.041.1 (matching OpenShift Pipelines operator 1.9). Unfortunately the `package-image` task of v0.9.0 breaks in OpenShift Pipelines operator 1.9, so v0.9.0 is not compatible with 1.9, and the v0.10.0 will not compatible with 1.6. For details of the change, see [#663](https://github.com/opendevstack/ods-pipeline/pull/663).

@@ -38,7 +38,11 @@ lint-shell: ## Run shellcheck.
 
 ##@ Building
 
-docs: ## Render documentation for tasks.
+tasks: ## Render tasks.
+	go run cmd/tasks/main.go
+.PHONY: tasks
+
+docs: tasks ## Render documentation for tasks.
 	go run cmd/docs/main.go
 .PHONY: docs
 

@@ -1,20 +1,21 @@
-{{if .Values.global.enabledTasks.packageImage }}
+
+# Source: tasks/templates/task-ods-package-image.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-package-image{{- include "taskSuffix" .}}'
+  name: 'ods-package-image'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
     Packages applications into container images using buildah.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-package-image.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-package-image.adoc
   params:
     - name: registry
       description: Image registry to push image to.
       type: string
-      default: '{{default .Values.pushRegistry}}'
+      default: 'image-registry.openshift-image-registry.svc:5000'
     - name: image-stream
       description: Reference of the image stream buildah will produce. If not set, the value of `.ods/component` is used.
       type: string
@@ -61,7 +62,7 @@ spec:
   steps:
     - name: package-image
       # Image is built from build/package/Dockerfile.package-image.
-      image: '{{.Values.imageRepository}}/ods-package-image:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-package-image:0.9.0'
       env:
         - name: NEXUS_URL
           valueFrom:
@@ -112,7 +113,7 @@ spec:
       workingDir: $(workspaces.source.path)
     - name: aqua-scan
       # Image is built from build/package/Dockerfile.aqua-scan.
-      image: '{{.Values.imageRepository}}/ods-aqua-scan:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-aqua-scan:0.9.0'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -185,4 +186,3 @@ spec:
         optional: true
   workspaces:
     - name: source
-{{end}}
