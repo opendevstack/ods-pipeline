@@ -10,6 +10,9 @@ listed in the changelog.
 
 ## [Unreleased]
 
+
+## [0.10.0] - 2023-02-27
+
 ### Added
 
 - Rendered task versions are available under `tasks/` now. These can be referenced directly from pipeline runs through [remote resolution](https://tekton.dev/docs/pipelines/pipelines/#specifying-remote-tasks). In future versions, tasks may be removed from the Helm chart and only be accessible via Git. See [#665](https://github.com/opendevstack/ods-pipeline/issues/665).
