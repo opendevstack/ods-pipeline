@@ -1,14 +1,16 @@
+
+# Source: tasks/templates/task-ods-finish.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-finish{{- include "taskSuffix" .}}'
+  name: 'ods-finish'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
     Finishes the pipeline run.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-finish.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-finish.adoc
   params:
     - name: pipeline-run-name
       description: Name of pipeline run.
@@ -19,7 +21,7 @@ spec:
   steps:
     - name: ods-finish
       # Image is built from build/package/Dockerfile.finish.
-      image: '{{.Values.imageRepository}}/ods-finish:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-finish:0.9.0'
       env:
         - name: HOME
           value: '/tekton/home'

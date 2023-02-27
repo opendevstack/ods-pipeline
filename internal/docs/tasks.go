@@ -74,14 +74,17 @@ func parseTasks(helmTemplateOutput []byte) ([]*tekton.Task, error) {
 
 // RenderTasks extracts the task information into a struct, and
 // executes the Asciidoctor template belonging to it.
-func RenderTasks(sourceDir, targetDir string) error {
-	if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
+func RenderTasks(tasksSourceDir, descriptionsSourceDir, targetDir string) error {
+	if _, err := os.Stat(tasksSourceDir); os.IsNotExist(err) {
+		return err
+	}
+	if _, err := os.Stat(descriptionsSourceDir); os.IsNotExist(err) {
 		return err
 	}
 	stdout, stderr, err := command.RunBufferedInDir(
 		"helm",
 		[]string{"template", "--values=values.docs.yaml", "."},
-		sourceDir,
+		tasksSourceDir,
 	)
 	if err != nil {
 		fmt.Println(string(stderr))
@@ -90,12 +93,16 @@ func RenderTasks(sourceDir, targetDir string) error {
 
 	tasks, err := parseTasks(stdout)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	for _, t := range tasks {
+		desc, err := os.ReadFile(filepath.Join(descriptionsSourceDir, fmt.Sprintf("%s.adoc", t.Name)))
+		if err != nil {
+			return err
+		}
 		task := Task{
 			Name:        t.Name,
-			Description: t.Spec.Description,
+			Description: string(desc),
 			Params:      []Param{},
 		}
 		for _, p := range t.Spec.Params {
@@ -117,7 +124,7 @@ func RenderTasks(sourceDir, targetDir string) error {
 		}
 		targetFilename := fmt.Sprintf("%s.adoc", t.Name)
 		target := filepath.Join(targetDir, targetFilename)
-		err := renderTemplate(targetDir, target, task)
+		err = renderTemplate(targetDir, target, task)
 		if err != nil {
 			log.Fatal(err)
 		}

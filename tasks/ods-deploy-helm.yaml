@@ -1,15 +1,16 @@
-{{if .Values.global.enabledTasks.deployHelm }}
+
+# Source: tasks/templates/task-ods-deploy-helm.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-deploy-helm{{- include "taskSuffix" .}}'
+  name: 'ods-deploy-helm'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
     Deploy Helm charts.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-deploy-helm.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-deploy-helm.adoc
   params:
     - name: chart-dir
       description: Helm chart directory that will be deployed
@@ -45,7 +46,7 @@ spec:
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
-      image: '{{.Values.imageRepository}}/ods-helm:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-helm:0.9.0'
       env:
         - name: DEBUG
           valueFrom:
@@ -76,4 +77,3 @@ spec:
         optional: true
   workspaces:
     - name: source
-{{end}}

@@ -1,15 +1,16 @@
-{{if .Values.global.enabledTasks.buildPython }}
+
+# Source: tasks/templates/task-ods-build-npm.yaml
 apiVersion: tekton.dev/v1beta1
-kind: '{{default "Task" .Values.global.taskKind}}'
+kind: 'Task'
 metadata:
-  name: '{{default "ods" .Values.taskPrefix}}-build-python{{- include "taskSuffix" .}}'
+  name: 'ods-build-npm'
   annotations:
     "helm.sh/resource-policy": keep
 spec:
   description: |
-    Builds Python applications.
+    Builds Node.js applications using npm.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v{{.Chart.AppVersion}}/docs/tasks/ods-build-python.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.9.0/docs/tasks/ods-build-npm.adoc
   params:
     - name: working-dir
       description: |
@@ -30,23 +31,15 @@ spec:
         You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
       type: string
       default: "true"
-    - name: max-line-length
-      description: Maximum line length.
-      type: string
-      default: "120"
-    - name: pre-test-script
-      description: Script to execute before running tests, relative to the working directory.
-      type: string
-      default: ""
     - name: build-script
       description: >-
         Build script to execute. The
-        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-python.sh[default script]
+        link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-npm.sh[default script]
         is located in the container image. If you specify a relative path
         instead, it will be resolved from the workspace. See the task definition
         for details how the build script is invoked.
       type: string
-      default: "/usr/local/bin/build-python"
+      default: "/usr/local/bin/build-npm"
     - name: sonar-quality-gate
       description: Whether quality gate needs to pass.
       type: string
@@ -55,17 +48,33 @@ spec:
       description: Whether to skip the SonarQube analysis or not.
       type: string
       default: "false"
+    - name: node-version
+      description: "Node.js version to use - supported versions: 16, 18"
+      type: string
+      default: "18"
+    - name: build-dir
+      description: >-
+        Must match the directory into which `npm run build` places files.
+        The files inside `build-dir` will be copied to the `dist` folder in `output-dir`
+        As a result the files will be in `$output-dir/dist`
+        Other common build directories are `build` and `public`.
+      type: string
+      default: "dist"
+    - name: copy-node-modules
+      description: >-
+        Whether `node-modules` is copied to the `output-dir` or not.
+        If copied the node modules are in `$output-dir/dist/node_modules`.
+        For frontend components this should be set to "false",
+        while for backend components this should be set to "true".
+      type: string
+      default: "false"
   results:
     - description: The cache location that the build task used. If caching is not enabled this will be an empty string.
       name: build-reused-from-location
-  {{- with ((.Values.python).sidecars) }}
-  sidecars:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
   steps:
-    - name: build-python
-      # Image is built from build/package/Dockerfile.python-toolset.
-      image: '{{.Values.imageRepository}}/ods-python-toolset:{{.Values.global.imageTag | default .Chart.AppVersion}}'
+    - name: build-npm
+      # Image is built from build/package/Dockerfile.node<xx>-npm-toolset.
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-node$(params.node-version)-npm-toolset:0.9.0'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -92,11 +101,11 @@ spec:
               key: debug
               name: ods-pipeline
       resources:
-        {{- (.Values.python).resources | default dict | toYaml | nindent 8 }}
+        {}
       script: |
         supply-sonar-project-properties-default
         echo -n "" > $(results.build-reused-from-location.path)
-        cache_build_key=python
+        cache_build_key=npm
         if copy-build-if-cached \
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
@@ -106,14 +115,14 @@ spec:
           --debug=${DEBUG} ; then
           exit 0
         fi
-        # Default build script is build/package/scripts/build-python.sh.
+        # Default build script is build/package/scripts/build-npm.sh.
         set +e 
         $(params.build-script) \
           --working-dir=$(params.working-dir) \
-          --max-line-length=$(params.max-line-length) \
-          --pre-test-script=$(params.pre-test-script) \
           --output-dir=$(params.output-dir) \
-          --debug=${DEBUG}
+          --debug=${DEBUG} \
+          --build-dir=$(params.build-dir) \
+          --copy-node-modules=$(params.copy-node-modules)
         build_exit=$?
         set -e
         copy-artifacts --debug=${DEBUG}
@@ -133,8 +142,57 @@ spec:
           name: private-cert
           readOnly: true
           subPath: tls.crt
+      workingDir: $(workspaces.source.path)    
+    - name: scan-with-sonar
+      # Image is built from build/package/Dockerfile.sonar.
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.9.0'
+      env:
+        - name: HOME
+          value: '/tekton/home'
+        - name: SONAR_URL
+          valueFrom:
+            configMapKeyRef:
+              key: url
+              name: ods-sonar
+        - name: SONAR_EDITION
+          valueFrom:
+            configMapKeyRef:
+              key: edition
+              name: ods-sonar
+        - name: SONAR_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ods-sonar-auth
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              key: debug
+              name: ods-pipeline
+      resources: {}
+      script: |
+        if [ "$(params.sonar-skip)" = "true" ]; then
+          echo "Skipping SonarQube analysis"
+        else
+          mkdir -p .ods/artifacts/sonarqube-analysis
+    
+          truststore="${JAVA_HOME}/lib/security/cacerts"
+          if [ -f /etc/ssl/certs/private-cert.pem ]; then
+            truststore="$(pwd)/.ods-cache/truststore/cacerts"
+            configure-truststore --dest-store "${truststore}"
+          fi
+          # sonar is built from cmd/sonar/main.go.
+          sonar \
+            -working-dir=$(params.working-dir) \
+            -quality-gate=$(params.sonar-quality-gate) \
+            -truststore "${truststore}"
+        fi
+      volumeMounts:
+        - mountPath: /etc/ssl/certs/private-cert.pem
+          name: private-cert
+          readOnly: true
+          subPath: tls.crt
       workingDir: $(workspaces.source.path)
-    {{- include "sonar-step" . | indent 4}}
   volumes:
     - name: private-cert
       secret:
@@ -142,4 +200,3 @@ spec:
         optional: true
   workspaces:
     - name: source
-{{end}}
