@@ -66,11 +66,13 @@ if [ "${WORKING_DIR}" != "." ]; then
 fi
 
 echo "Configuring npm to use Nexus (${NEXUS_URL}) ..."
+# Remove the protocol segment from NEXUS_URL
+NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 if [ -n "${NEXUS_URL}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
     npm config set registry="$NEXUS_URL"/repository/npmjs/
     npm config set always-auth=true
-    npm config set _auth="$(echo -n "$NEXUS_AUTH" | base64)"
+    npm config set "//${NEXUS_HOST}/repository/npmjs/:_auth"="$(echo -n "$NEXUS_AUTH" | base64)"
     npm config set email=no-reply@opendevstack.org
     if [ -f /etc/ssl/certs/private-cert.pem ]; then
       echo "Configuring private cert ..."
