@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestBuildahBuildArgs(t *testing.T) {
+	basePath, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dockerDir := filepath.Join(basePath, "docker")
 	tests := map[string]struct {
 		opts     options
 		tag      string
@@ -21,7 +28,7 @@ func TestBuildahBuildArgs(t *testing.T) {
 				"--storage-driver=vfs", "bud", "--format=oci",
 				"--tls-verify=true", "--cert-dir=/etc/containers/certs.d",
 				"--no-cache",
-				"--file=./Dockerfile", "--tag=foo", "docker",
+				"--file=./Dockerfile", "--tag=foo", dockerDir,
 			},
 		},
 		"with blank tag": {
@@ -53,7 +60,7 @@ func TestBuildahBuildArgs(t *testing.T) {
 				"--build-arg=nexusHost=nexus.example.com",
 				"--build-arg=nexusAuth=developer:s3cr3t",
 				"--build-arg=nexusUrlWithAuth=http://developer:s3cr3t@nexus.example.com",
-				"docker",
+				dockerDir,
 			},
 		},
 		"with debug on": {
@@ -63,7 +70,7 @@ func TestBuildahBuildArgs(t *testing.T) {
 				"--storage-driver=vfs", "bud", "--format=oci",
 				"--tls-verify=true", "--cert-dir=/etc/containers/certs.d",
 				"--no-cache",
-				"--file=./Dockerfile", "--tag=foo", "--log-level=debug", "docker",
+				"--file=./Dockerfile", "--tag=foo", "--log-level=debug", dockerDir,
 			},
 		},
 	}

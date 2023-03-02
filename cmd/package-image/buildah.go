@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	buildahBin = "buildah"
+	buildahBin     = "buildah"
+	buildahWorkdir = "/tmp"
 )
 
 // buildahBuild builds a local image using the Dockerfile and context directory
@@ -24,7 +25,7 @@ func (p *packageImage) buildahBuild(outWriter, errWriter io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("assemble build args: %w", err)
 	}
-	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
+	return command.RunInDir(buildahBin, args, []string{}, buildahWorkdir, outWriter, errWriter)
 }
 
 // buildahPush pushes a local image to a OCI formatted directory for trivy image scans.
@@ -32,13 +33,13 @@ func (p *packageImage) buildahPushTar(outWriter, errWriter io.Writer) error {
 	args := []string{
 		fmt.Sprintf("--storage-driver=%s", p.opts.storageDriver),
 		"push",
-		fmt.Sprintf("--digestfile=%s", filepath.Join(p.opts.checkoutDir, "image-digest")),
+		fmt.Sprintf("--digestfile=%s", tektonResultsImageDigestFile),
 	}
 	if p.opts.debug {
 		args = append(args, "--log-level=debug")
 	}
 	args = append(args, p.imageRef(), fmt.Sprintf("oci:%s", filepath.Join(p.opts.checkoutDir, p.imageName())))
-	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
+	return command.RunInDir(buildahBin, args, []string{}, buildahWorkdir, outWriter, errWriter)
 }
 
 // buildahPush pushes a local image to the given imageRef.
@@ -53,7 +54,6 @@ func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
 		"push",
 		fmt.Sprintf("--tls-verify=%v", opts.tlsVerify),
 		fmt.Sprintf("--cert-dir=%s", opts.certDir),
-		fmt.Sprintf("--digestfile=%s", filepath.Join(opts.checkoutDir, "image-digest")),
 	}
 	args = append(args, extraArgs...)
 	if opts.debug {
@@ -64,7 +64,7 @@ func (p *packageImage) buildahPush(outWriter, errWriter io.Writer) error {
 	destination := fmt.Sprintf("docker://%s", source)
 	log.Printf("buildah push %s %s", source, destination)
 	args = append(args, source, destination)
-	return command.Run(buildahBin, args, []string{}, outWriter, errWriter)
+	return command.RunInDir(buildahBin, args, []string{}, buildahWorkdir, outWriter, errWriter)
 }
 
 // buildahBuildArgs assembles the args to be passed to buildah based on
@@ -77,6 +77,11 @@ func (p *packageImage) buildahBuildArgs(tag string) ([]string, error) {
 	extraArgs, err := shlex.Split(opts.buildahBuildExtraArgs)
 	if err != nil {
 		return nil, fmt.Errorf("parse extra args (%s): %w", opts.buildahBuildExtraArgs, err)
+	}
+
+	absDir, err := filepath.Abs(opts.checkoutDir)
+	if err != nil {
+		return nil, fmt.Errorf("abs dir: %w", err)
 	}
 
 	args := []string{
@@ -99,7 +104,7 @@ func (p *packageImage) buildahBuildArgs(tag string) ([]string, error) {
 	if opts.debug {
 		args = append(args, "--log-level=debug")
 	}
-	return append(args, opts.contextDir), nil
+	return append(args, filepath.Join(absDir, opts.contextDir)), nil
 }
 
 // nexusBuildArgs computes --build-arg parameters so that the Dockerfile
