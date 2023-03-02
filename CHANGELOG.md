@@ -17,6 +17,7 @@ listed in the changelog.
 ### Fixed
 
 - `ods-start` is unable to cleanup workspace for some storage configurations due to changes in `ods-package-image` ([#672](https://github.com/opendevstack/ods-pipeline/issues/672))
+- `runAfter: [start]` not set for all parallel tasks ([#671](https://github.com/opendevstack/ods-pipeline/issues/671))
 
 ## [0.10.0] - 2023-02-27
 

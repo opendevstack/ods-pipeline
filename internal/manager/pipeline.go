@@ -143,8 +143,16 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 			tektonStringParam("version", "$(params.version)"),
 		},
 	})
+
 	if len(cfg.Tasks) > 0 {
-		cfg.Tasks[0].RunAfter = append(cfg.Tasks[0].RunAfter, "start")
+		// Add "start" to runAfter of the first configured task, and to each further task
+		// that does not set runAfter until we hit a task that does.
+		for i := range cfg.Tasks {
+			if i > 0 && len(cfg.Tasks[i].RunAfter) > 0 {
+				break
+			}
+			cfg.Tasks[i].RunAfter = append(cfg.Tasks[i].RunAfter, "start")
+		}
 		tasks = append(tasks, cfg.Tasks...)
 	}
 
