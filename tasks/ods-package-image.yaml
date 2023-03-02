@@ -99,6 +99,10 @@ spec:
           -buildah-build-extra-args=$(params.buildah-build-extra-args) \
           -buildah-push-extra-args=$(params.buildah-push-extra-args) \
           -trivy-sbom-extra-args=$(params.trivy-sbom-extra-args)
+
+        # As this task does not run unter uid 1001, chown created artifacts
+        # to make them deletable by ods-start's cleanup procedure.
+        chown -R 1001:0 .ods/artifacts/image-digests .ods/artifacts/sboms
       securityContext:
         capabilities:
           add:

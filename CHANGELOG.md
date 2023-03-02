@@ -14,6 +14,10 @@ listed in the changelog.
 
 - Updated `_auth` value in npm config to be scoped to the npm registry in Nexus [#668](https://github.com/opendevstack/ods-pipeline/issues/668)
 
+### Fixed
+
+- `ods-start` is unable to cleanup workspace for some storage configurations due to changes in `ods-package-image` ([#672](https://github.com/opendevstack/ods-pipeline/issues/672))
+
 ## [0.10.0] - 2023-02-27
 
 ### Added

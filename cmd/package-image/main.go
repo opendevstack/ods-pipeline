@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	kubernetesServiceaccountDir = "/var/run/secrets/kubernetes.io/serviceaccount"
+	kubernetesServiceaccountDir  = "/var/run/secrets/kubernetes.io/serviceaccount"
+	tektonResultsImageDigestFile = "/tekton/results/image-digest"
 )
 
 type options struct {
@@ -45,6 +46,7 @@ type packageImage struct {
 	ctxt            *pipelinectxt.ODSContext
 	imageId         image.Identity
 	imageDigest     string
+	sbomFile        string
 }
 
 func (p *packageImage) imageName() string {
@@ -149,20 +151,11 @@ func defaultCertDir() string {
 
 // getImageDigestFromFile reads the image digest from the file written to by buildah.
 func getImageDigestFromFile(workingDir string) (string, error) {
-	content, err := os.ReadFile(filepath.Join(workingDir, "image-digest"))
+	content, err := os.ReadFile(tektonResultsImageDigestFile)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(content)), nil
-}
-
-// writeImageDigestToResults writes the image digest into the Tekton results file.
-func writeImageDigestToResults(imageDigest string) error {
-	err := os.MkdirAll("/tekton/results", 0644)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("/tekton/results/image-digest", []byte(imageDigest), 0644)
 }
 
 // imageArtifactExists checks if image artifact JSON file exists in its artifacts path

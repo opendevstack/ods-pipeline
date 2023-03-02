@@ -132,24 +132,17 @@ func pushImage() PackageStep {
 
 func storeArtifact() PackageStep {
 	return func(p *packageImage) (*packageImage, error) {
-		err := writeImageDigestToResults(p.imageDigest)
-		if err != nil {
-			return p, err
-		}
-
 		fmt.Println("Writing image artifact ...")
 		imageArtifactFilename := fmt.Sprintf("%s.json", p.imageNameNoSha())
-		err = pipelinectxt.WriteJsonArtifact(p.artifactImage(), pipelinectxt.ImageDigestsPath, imageArtifactFilename)
+		err := pipelinectxt.WriteJsonArtifact(p.artifactImage(), pipelinectxt.ImageDigestsPath, imageArtifactFilename)
 		if err != nil {
 			return p, err
 		}
 
 		fmt.Println("Writing SBOM artifact ...")
-		sbomFilename := fmt.Sprintf("%s.%s", p.imageNameNoSha(), pipelinectxt.SBOMsFormat)
-		sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
-		err = pipelinectxt.CopyArtifact(sbomFile, pipelinectxt.SBOMsPath)
+		err = pipelinectxt.CopyArtifact(p.sbomFile, pipelinectxt.SBOMsPath)
 		if err != nil {
-			return p, fmt.Errorf("copying SBOM report to artifacts failed: %w", err)
+			return p, fmt.Errorf("copy SBOM report to artifacts: %w", err)
 		}
 
 		return p, nil

@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	trivyBin = "trivy"
+	trivyBin     = "trivy"
+	trivyWorkdir = "/tmp"
 )
 
 func (p *packageImage) generateImageSBOM() error {
@@ -23,19 +24,16 @@ func (p *packageImage) generateImageSBOM() error {
 		p.logger.Errorf("could not parse extra args (%s): %s", p.opts.trivySBOMExtraArgs, err)
 	}
 	sbomFilename := fmt.Sprintf("%s.%s", p.imageNameNoSha(), pipelinectxt.SBOMsFormat)
-	sbomFile := filepath.Join(p.opts.checkoutDir, sbomFilename)
+	p.sbomFile = filepath.Join(trivyWorkdir, sbomFilename)
 	args := []string{
 		"image",
 		fmt.Sprintf("--format=%s", pipelinectxt.SBOMsFormat),
-		fmt.Sprintf("--input=%s", filepath.Join(p.opts.checkoutDir, p.imageNameNoSha())),
-		fmt.Sprintf("--output=%s", sbomFile),
+		fmt.Sprintf("--input=%s", filepath.Join(buildahWorkdir, p.imageNameNoSha())),
+		fmt.Sprintf("--output=%s", p.sbomFile),
 	}
 	if p.opts.debug {
 		args = append(args, "--debug=true")
 	}
 	args = append(args, extraArgs...)
-	return command.Run(
-		trivyBin, args, []string{},
-		os.Stdout, os.Stderr,
-	)
+	return command.RunInDir(trivyBin, args, []string{}, trivyWorkdir, os.Stdout, os.Stderr)
 }

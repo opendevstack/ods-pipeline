@@ -37,6 +37,13 @@ func RunBufferedInDir(executable string, args []string, wsDir string) (outBytes,
 // Run invokes exe with given args and env. Stdout and stderr
 // are streamed to outWriter and errWriter, respectively.
 func Run(exe string, args []string, env []string, outWriter, errWriter io.Writer) error {
+	return RunInDir(exe, args, env, "", outWriter, errWriter)
+}
+
+// Run invokes exe with given args and env. Stdout and stderr
+// are streamed to outWriter and errWriter, respectively.
+// If dir is non-empty, the workdir of exe will be set to it.
+func RunInDir(exe string, args []string, env []string, dir string, outWriter, errWriter io.Writer) error {
 	cmd := exec.Command(exe, args...)
 	cmd.Env = append(os.Environ(), env...)
 	cmdStderr, err := cmd.StderrPipe()
@@ -46,6 +53,9 @@ func Run(exe string, args []string, env []string, outWriter, errWriter io.Writer
 	cmdStdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("connect stdout pipe: %w", err)
+	}
+	if dir != "" {
+		cmd.Dir = dir
 	}
 	err = cmd.Start()
 	if err != nil {
