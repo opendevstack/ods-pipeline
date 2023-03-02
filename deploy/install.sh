@@ -133,8 +133,11 @@ kubectlApplySecret () {
     local secretTemplate="$2"
     local username="$3"
     local password="$4"
+    # Render variables into template, then apply.
+    # To avoid forward slashes messing up sed, escape forward slashes first.
+    # See https://tldp.org/LDP/abs/html/string-manipulation.html.
     # shellcheck disable=SC2002
-    cat "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username}/" | sed "s/{{password}}/${password}/" | "${KUBECTL_BIN}" -n "${NAMESPACE}" apply -f -
+    cat "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username//\//\\/}/" | sed "s/{{password}}/${password//\//\\/}/" | "${KUBECTL_BIN}" -n "${NAMESPACE}" apply -f -
 }
 
 installSecret () {

@@ -16,6 +16,7 @@ listed in the changelog.
 
 ### Fixed
 
+- Setup of secrets during `install.sh` does not work if secret contains `/` ([#670](https://github.com/opendevstack/ods-pipeline/issues/670))
 - `ods-start` is unable to cleanup workspace for some storage configurations due to changes in `ods-package-image` ([#672](https://github.com/opendevstack/ods-pipeline/issues/672))
 
 ## [0.10.0] - 2023-02-27
