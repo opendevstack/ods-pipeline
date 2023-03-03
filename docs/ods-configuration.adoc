@@ -61,22 +61,22 @@ Alternatively to referencing tasks, inline task definitions can also be specifie
 [source,yaml]
 ----
 pipeline:
-  - tasks:
-    - name: build
-      taskSpec:
-        steps:
-          - name: message
-            image: ubuntu
-            script: |
-              #!/usr/bin/env bash
-              echo "hello world"
-              cat README.md # assuming there is a README.md file at the root of the repo
-            workingDir: $(workspaces.source.path)    
-        workspaces:
-          - name: source
+- tasks:
+  - name: build
+    taskSpec:
+      steps:
+      - name: message
+        image: ubuntu
+        script: |
+          #!/usr/bin/env bash
+          echo "hello world"
+          cat README.md # assuming there is a README.md file at the root of the repo
+        workingDir: $(workspaces.source.path)    
       workspaces:
       - name: source
-        workspace: shared-workspace
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
 Further, if link:https://tekton.dev/vault/pipelines-v0.43.x/install/#configuring-built-in-remote-task-and-pipeline-resolution[remote resolution is enabled], tasks can also be resolved remotely, e.g. link:https://tekton.dev/vault/pipelines-v0.41.x-lts/git-resolver/#task-resolution[from Git]:
@@ -98,6 +98,7 @@ pipeline:
         value: tasks/ods-build-go.yaml
       workspaces:
       - name: source
+        workspace: shared-workspace
 ----
 
 === Configuring pipeline triggers
@@ -119,15 +120,15 @@ You can also specify further final tasks to be added to the pipeline by specifyi
 [source,yaml]
 ----
 pipeline:
-  - tasks: [ ... ]
-    finally:
-    - name: foo
-      taskRef:
-        kind: Task
-        name: foo
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+- tasks: [ ... ]
+  finally:
+  - name: foo
+    taskRef:
+      kind: Task
+      name: foo
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
 Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
@@ -155,6 +156,7 @@ pipeline:
         value: tasks/ods-build-go.yaml
       workspaces:
       - name: source
+        workspace: shared-workspace
   taskRunSpecs:
   - pipelineTaskName: build
     stepOverrides:
