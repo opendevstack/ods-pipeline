@@ -27,14 +27,14 @@ pipeline:
     - name: build
       taskRef:
         kind: Task
-        name: ods-build-go-v0-10-0
+        name: ods-build-go-v0-10-1
       workspaces:
       - name: source
         workspace: shared-workspace
     - name: package
       taskRef:
         kind: Task
-        name: ods-package-image-v0-10-0
+        name: ods-package-image-v0-10-1
       runAfter:
       - build
       workspaces:

@@ -10,7 +10,7 @@ spec:
   description: |
     Builds Python applications.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.0/docs/tasks/ods-build-python.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.1/docs/tasks/ods-build-python.adoc
   params:
     - name: working-dir
       description: |
@@ -62,7 +62,7 @@ spec:
   steps:
     - name: build-python
       # Image is built from build/package/Dockerfile.python-toolset.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-python-toolset:0.10.0'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-python-toolset:0.10.1'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -133,7 +133,7 @@ spec:
       workingDir: $(workspaces.source.path)    
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.10.0'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.10.1'
       env:
         - name: HOME
           value: '/tekton/home'

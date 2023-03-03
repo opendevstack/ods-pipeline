@@ -10,7 +10,7 @@ spec:
   description: |
     Deploy Helm charts.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.0/docs/tasks/ods-deploy-helm.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.1/docs/tasks/ods-deploy-helm.adoc
   params:
     - name: chart-dir
       description: Helm chart directory that will be deployed
@@ -46,7 +46,7 @@ spec:
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-helm:0.10.0'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-helm:0.10.1'
       env:
         - name: DEBUG
           valueFrom:

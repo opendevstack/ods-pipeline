@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.10.1] - 2023-03-03
+
 ### Changed
 
 - Updated `_auth` value in npm config to be scoped to the npm registry in Nexus [#668](https://github.com/opendevstack/ods-pipeline/issues/668)
