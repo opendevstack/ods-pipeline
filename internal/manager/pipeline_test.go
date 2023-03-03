@@ -209,3 +209,71 @@ func TestAssemblePipeline(t *testing.T) {
 		t.Fatalf("expected (-want +got):\n%s", diff)
 	}
 }
+
+func TestTasksRunAfterInjection(t *testing.T) {
+	tests := map[string]struct {
+		cfgTasks []tekton.PipelineTask
+		want     []tekton.PipelineTask
+	}{
+		"one build task": {
+			cfgTasks: []tekton.PipelineTask{
+				{Name: "build"},
+				{Name: "package-image", RunAfter: []string{"build"}},
+			},
+			want: []tekton.PipelineTask{
+				{Name: "start"},
+				{Name: "build", RunAfter: []string{"start"}},
+				{Name: "package-image", RunAfter: []string{"build"}},
+			},
+		},
+		"parallel build tasks": {
+			cfgTasks: []tekton.PipelineTask{
+				{Name: "build-one"},
+				{Name: "build-two"},
+				{Name: "package-image", RunAfter: []string{"build-one", "build-two"}},
+			},
+			want: []tekton.PipelineTask{
+				{Name: "start"},
+				{Name: "build-one", RunAfter: []string{"start"}},
+				{Name: "build-two", RunAfter: []string{"start"}},
+				{Name: "package-image", RunAfter: []string{"build-one", "build-two"}},
+			},
+		},
+		"no configured tasks": {
+			cfgTasks: []tekton.PipelineTask{},
+			want: []tekton.PipelineTask{
+				{Name: "start"},
+			},
+		},
+		"only parallel tasks": {
+			cfgTasks: []tekton.PipelineTask{
+				{Name: "build-one"},
+				{Name: "build-two"},
+			},
+			want: []tekton.PipelineTask{
+				{Name: "start"},
+				{Name: "build-one", RunAfter: []string{"start"}},
+				{Name: "build-two", RunAfter: []string{"start"}},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cfg := PipelineConfig{Tasks: tc.cfgTasks}
+			got := assemblePipelineSpec(cfg, tekton.NamespacedTaskKind, "")
+			wantRunAfter := [][]string{}
+			for _, task := range tc.want {
+				wantRunAfter = append(wantRunAfter, task.RunAfter)
+			}
+			gotRunAfter := [][]string{}
+			for _, task := range got.Tasks {
+				gotRunAfter = append(gotRunAfter, task.RunAfter)
+			}
+			if diff := cmp.Diff(wantRunAfter, gotRunAfter); diff != "" {
+				t.Fatalf("expected (-want +got):\n%s", diff)
+			}
+		})
+	}
+
+}
