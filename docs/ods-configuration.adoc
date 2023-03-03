@@ -51,6 +51,7 @@ Normal tasks may be specified under `tasks`. Each task is a plain Tekton definit
 The exact name of the task (`taskRef.name` field) depends on the version of `ods-pipeline` that is installed in your project. Available tasks for you to use can be found in your OpenShift console UI under "Pipelines > Tasks".
 
 Next to the tasks you specify, `ods-pipeline` will automatically inject two tasks into the pipeline, `ods-start` and `ods-finish`:
+
 * `ods-start` is inserted as the very first task, checking out the repository given in the webhook, setting the Bitbucket build status and dealing with Nexus artifacts, etc.
 * `ods-finish` task is added as a final task to the pipeline. Final tasks run at the end, regardless whether all previous tasks succeeded. The `ods-finish` sets the Bitbucket build status and deals with Nexus artifacts, etc.
 
