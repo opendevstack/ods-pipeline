@@ -61,6 +61,10 @@ pipeline:
             script: |
               #!/usr/bin/env bash
               echo "hello world"
+              cat README.md # assuming there is a README.md file at the root of the repo
+            workingDir: $(workspaces.source.path)    
+        workspaces:
+          - name: source
       workspaces:
       - name: source
         workspace: shared-workspace
