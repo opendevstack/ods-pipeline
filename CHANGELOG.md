@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade to SonarQube v8.9 LTS (see [#424](https://github.com/opendevstack/ods-pipeline/issues/424)). Note that this is a breaking change: 0.10.1 and prior will not work with SonarQube >= 8.9, and all future ODS Pipeline versions will not work with SonarQube < 8.9.
+
 ## [0.10.1] - 2023-03-03
 
 ### Changed
