@@ -10,7 +10,7 @@ spec:
   description: |
     Starts the pipeline run.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.1/docs/tasks/ods-start.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.11.0/docs/tasks/ods-start.adoc
   params:
     - name: url
       description: Git URL to clone
@@ -94,7 +94,7 @@ spec:
   steps:
     - name: ods-start
       # Image is built from build/package/Dockerfile.start.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-start:0.10.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-start:0.11.0'
       env:
         - name: HOME
           value: '/tekton/home'

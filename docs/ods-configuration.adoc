@@ -27,14 +27,14 @@ pipeline:
   - name: build
     taskRef:
       kind: Task
-      name: ods-build-go-v0-10-1
+      name: ods-build-go-v0-11-0
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package
     taskRef:
       kind: Task
-      name: ods-package-image-v0-10-1
+      name: ods-package-image-v0-11-0
     runAfter:
     - build
     workspaces:
@@ -93,7 +93,7 @@ pipeline:
       - name: url
         value: https://github.com/opendevstack/ods-pipeline.git
       - name: revision
-        value: v0.10.1
+        value: v0.11.0
       - name: pathInRepo
         value: tasks/ods-build-go.yaml
       workspaces:
@@ -151,7 +151,7 @@ pipeline:
       - name: url
         value: https://github.com/opendevstack/ods-pipeline.git
       - name: revision
-        value: v0.10.1
+        value: v0.11.0
       - name: pathInRepo
         value: tasks/ods-build-go.yaml
       workspaces:

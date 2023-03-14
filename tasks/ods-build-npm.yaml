@@ -10,7 +10,7 @@ spec:
   description: |
     Builds Node.js applications using npm.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.10.1/docs/tasks/ods-build-npm.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.11.0/docs/tasks/ods-build-npm.adoc
   params:
     - name: working-dir
       description: |
@@ -74,7 +74,7 @@ spec:
   steps:
     - name: build-npm
       # Image is built from build/package/Dockerfile.node<xx>-npm-toolset.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-node$(params.node-version)-npm-toolset:0.10.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-node$(params.node-version)-npm-toolset:0.11.0'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -145,7 +145,7 @@ spec:
       workingDir: $(workspaces.source.path)    
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.10.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.11.0'
       env:
         - name: HOME
           value: '/tekton/home'
