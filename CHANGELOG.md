@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- make create-kind-with-registry failed locally on mac ([#679](https://github.com/opendevstack/ods-pipeline/issues/679))
+
 ## [0.11.0] - 2023-03-14
 
 ### Changed
