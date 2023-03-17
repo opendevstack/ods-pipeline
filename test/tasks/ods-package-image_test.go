@@ -130,21 +130,19 @@ func checkTagFiles(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string,
 func checkTags(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, expectedTags []string) {
 	// registry := "kind-registry.kind:5000"
 	registry := "localhost:5000"
-	tlsVerify := false
 	args := []string{
 		"inspect",
 		`--format={{.RepoTags}}`,
-		fmt.Sprintf("--tls-verify=%v", tlsVerify),
 	}
 	imageNsStreamSha := fmt.Sprintf("%s/%s:%s", ctxt.Namespace, ctxt.ODS.Component, ctxt.ODS.GitCommitSHA)
-	imageRef := fmt.Sprintf("docker://%s/%s", registry, imageNsStreamSha)
+	imageRef := fmt.Sprintf("%s/%s", registry, imageNsStreamSha)
 	args = append(args, imageRef)
 
-	stdout, _, err := command.RunBuffered("skopeo", args)
+	stdout, _, err := command.RunBuffered("docker", args)
 	if err != nil {
-		t.Fatalf("skopeo inspect %s: %s", fmt.Sprint(args), err)
+		t.Fatalf("docker %s: %s", fmt.Sprint(args), err)
 	}
-	tags, err := parseSkopeoInspectDigestTags(string(stdout))
+	tags, err := parseDockerInspectDigestTags(string(stdout))
 	if err != nil {
 		t.Fatalf("parse tags failed: %s", err)
 	}
@@ -155,10 +153,10 @@ func checkTags(t *testing.T, ctxt *tasktesting.TaskRunContext, wsDir string, exp
 	}
 }
 
-func parseSkopeoInspectDigestTags(out string) ([]string, error) {
+func parseDockerInspectDigestTags(out string) ([]string, error) {
 	t := strings.TrimSpace(out)
 	if !(strings.HasPrefix(t, "[") && strings.HasSuffix(t, "]")) {
-		return nil, fmt.Errorf("skopeo inspect: unexpected tag response expecting tags to be in brackets %s", t)
+		return nil, fmt.Errorf("docker inspect: unexpected tag response expecting tags to be in brackets %s", t)
 	}
 	t = t[1 : len(t)-1]
 	// expecting t to have space separated tags.
