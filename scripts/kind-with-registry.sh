@@ -1,20 +1,20 @@
 #!/bin/bash
-#	
-# Adapted from:	
-# https://github.com/kubernetes-sigs/kind/commits/master/site/static/examples/kind-with-registry.sh	
-#	
-# Copyright 2020 The Kubernetes Project	
-#	
-# Licensed under the Apache License, Version 2.0 (the "License");	
-# you may not use this file except in compliance with the License.	
-# You may obtain a copy of the License at	
-#	
-#     http://www.apache.org/licenses/LICENSE-2.0	
-#	
-# Unless required by applicable law or agreed to in writing, software	
-# distributed under the License is distributed on an "AS IS" BASIS,	
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.	
-# See the License for the specific language governing permissions and	
+#
+# Adapted from:
+# https://github.com/kubernetes-sigs/kind/commits/master/site/static/examples/kind-with-registry.sh
+#
+# Copyright 2020 The Kubernetes Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
 # limitations under the License.
 
 set -o errexit
@@ -76,7 +76,7 @@ if [ "${running}" != 'true' ]; then
   if [ "${reg_network}" != "bridge" ]; then
     docker network create "${reg_network}" || true
   fi
-  
+
   docker run \
     -d --restart=always -p "${REGISTRY_PORT}:5000" --name "${REGISTRY_NAME}" --net "${reg_network}" \
     registry:2
@@ -103,7 +103,11 @@ nodes:
   extraMounts:
   - hostPath: ${ODS_PIPELINE_DIR}/test
     containerPath: /files
-containerdConfigPatches: 
+  kubeadmConfigPatches:
+  - |
+    kind: KubeletConfiguration
+    cgroupDriver: systemd
+containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
     endpoint = ["http://${reg_ip}:${REGISTRY_PORT}"]
