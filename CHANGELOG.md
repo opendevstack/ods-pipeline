@@ -12,7 +12,8 @@ listed in the changelog.
 
 ### Fixed
 
-- make create-kind-with-registry failed locally on mac ([#679](https://github.com/opendevstack/ods-pipeline/issues/679))
+- Configure Git to use bearer token auth mechanism ([#683](https://github.com/opendevstack/ods-pipeline/issues/683))
+- `make create-kind-with-registry` failed locally on Mac ([#679](https://github.com/opendevstack/ods-pipeline/issues/679))
 
 ## [0.11.0] - 2023-03-14
 

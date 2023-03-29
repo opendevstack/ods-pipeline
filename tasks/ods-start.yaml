@@ -19,10 +19,6 @@ spec:
       description: 'Git revision to checkout (branch, tag, sha, ref, ...)'
       type: string
       default: ''
-    - name: refspec
-      description: (Optional) Git refspec to fetch before checking out revision.
-      type: string
-      default: ''
     - name: submodules
       description: Defines if the resource should initialize and fetch the submodules.
       type: string
@@ -33,12 +29,6 @@ spec:
         fetched.
       type: string
       default: '1'
-    - name: ssl-verify
-      description: >-
-        Defines if http.sslVerify should be set to `true` or `false` in the global
-        Git config.
-      type: string
-      default: 'true'
     - name: http-proxy
       description: Git HTTP proxy server for non-SSL requests.
       type: string
@@ -156,14 +146,12 @@ spec:
           -environment=$(params.environment) \
           -version=$(params.version) \
           -git-full-ref=$(params.git-full-ref) \
-          -git-ref-spec=$(params.refspec) \
           -url=$(params.url) \
           -pr-key=$(params.pr-key) \
           -pr-base=$(params.pr-base) \
           -http-proxy=$(params.http-proxy) \
           -https-proxy=$(params.https-proxy) \
           -no-proxy=$(params.no-proxy) \
-          -ssl-verify=$(params.ssl-verify) \
           -submodules=$(params.submodules) \
           -depth=$(params.depth) \
           -pipeline-run-name=$(params.pipeline-run-name)
