@@ -55,11 +55,6 @@ by the pipeline manager and cannot be customized by users at this point.*
 | Git revision to checkout (branch, tag, sha, ref, ...)
 
 
-| refspec
-| 
-| (Optional) Git refspec to fetch before checking out revision.
-
-
 | submodules
 | true
 | Defines if the resource should initialize and fetch the submodules.
@@ -68,11 +63,6 @@ by the pipeline manager and cannot be customized by users at this point.*
 | depth
 | 1
 | Performs a shallow clone where only the most recent commit(s) will be fetched.
-
-
-| ssl-verify
-| true
-| Defines if http.sslVerify should be set to `true` or `false` in the global Git config.
 
 
 | http-proxy

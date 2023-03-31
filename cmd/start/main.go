@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
@@ -35,13 +33,11 @@ type options struct {
 	version                  string
 	prKey                    string
 	prBase                   string
-	gitRefSpec               string
 	httpProxy                string
 	httpsProxy               string
 	noProxy                  string
 	url                      string
 	gitFullRef               string
-	sslVerify                string
 	submodules               string
 	depth                    string
 	cacheBuildTasksForDays   int
@@ -55,7 +51,6 @@ func main() {
 	flag.StringVar(&opts.project, "project", "", "project")
 	flag.StringVar(&opts.environment, "environment", "", "environment")
 	flag.StringVar(&opts.version, "version", "", "version")
-	flag.StringVar(&opts.gitRefSpec, "git-ref-spec", "", "(optional) git refspec to fetch before checking out revision")
 	flag.StringVar(&opts.prKey, "pr-key", "", "pull request key")
 	flag.StringVar(&opts.prBase, "pr-base", "", "pull request base")
 	flag.StringVar(&opts.httpProxy, "http-proxy", ".", "HTTP_PROXY")
@@ -63,7 +58,6 @@ func main() {
 	flag.StringVar(&opts.noProxy, "no-proxy", ".", "NO_PROXY")
 	flag.StringVar(&opts.url, "url", ".", "URL to clone")
 	flag.StringVar(&opts.gitFullRef, "git-full-ref", "", "Git (full) ref to clone")
-	flag.StringVar(&opts.sslVerify, "ssl-verify", "true", "defines if http.sslVerify should be set to true or false in the global git config")
 	flag.StringVar(&opts.submodules, "submodules", "true", "defines if the resource should initialize and fetch the submodules")
 	flag.StringVar(&opts.depth, "depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
 	flag.IntVar(&opts.cacheBuildTasksForDays, "cache-build-tasks-for-days", 7, "the number of days build outputs are cached. A negative number can be used to clear the cache.")
@@ -129,10 +123,7 @@ func main() {
 		checkoutDir,
 		opts.url,
 		opts.gitFullRef,
-		opts.gitRefSpec,
-		opts.sslVerify,
-		opts.submodules,
-		opts.depth,
+		opts,
 		baseCtxt,
 		logger,
 	)
@@ -198,10 +189,7 @@ func main() {
 				subrepoCheckoutDir,
 				subrepoURL,
 				subrepoGitFullRef,
-				opts.gitRefSpec,
-				opts.sslVerify,
-				opts.submodules,
-				opts.depth,
+				opts,
 				baseCtxt,
 				logger,
 			)
@@ -373,7 +361,7 @@ func downloadArtifacts(
 }
 
 func checkoutAndAssembleContext(
-	checkoutDir, url, gitFullRef, gitRefSpec, sslVerify, submodules, depth string,
+	checkoutDir, url, gitFullRef string, opts options,
 	baseCtxt *pipelinectxt.ODSContext,
 	logger logging.LeveledLoggerInterface) (ctxt *pipelinectxt.ODSContext, err error) {
 	workingDir, err := os.Getwd()
@@ -396,22 +384,14 @@ func checkoutAndAssembleContext(
 	if err := os.Chdir(absCheckoutDir); err != nil {
 		return nil, fmt.Errorf("change dir: %w", err)
 	}
-	if err := runGit("init"); err != nil {
-		return nil, fmt.Errorf("run git cmd: %w", err)
-	}
-
-	if err := runGit("remote", "add", "origin", url); err != nil {
-		return nil, fmt.Errorf("run git cmd: %w", err)
-	}
-	if err := runGit("fetch",
-		"--recurse-submodules=yes", fmt.Sprintf("--depth=%s", depth),
-		"origin",
-		"--update-head-ok", "--force", gitFullRef,
-	); err != nil {
-		return nil, fmt.Errorf("run git cmd: %w", err)
-	}
-	if err := runGit("checkout", "-f", "FETCH_HEAD"); err != nil {
-		return nil, fmt.Errorf("run git cmd: %w", err)
+	if err := gitCheckout(gitCheckoutParams{
+		repoURL:              url,
+		bitbucketAccessToken: opts.bitbucketAccessToken,
+		recurseSubmodules:    opts.submodules,
+		depth:                opts.depth,
+		gitFullRef:           gitFullRef,
+	}); err != nil {
+		return nil, fmt.Errorf("git checkout: %w", err)
 	}
 
 	odsPipelineIgnoreFile := filepath.Join(absCheckoutDir, ".git", "info", "exclude")
@@ -450,43 +430,4 @@ func checkoutAndAssembleContext(
 		return nil, fmt.Errorf("write ODS context cache: %w", err)
 	}
 	return
-}
-
-func getCommitSHA(dir string) (string, error) {
-	content, err := os.ReadFile(filepath.Join(dir, ".git/HEAD"))
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(content)), nil
-}
-
-func gitLfsInUse(logger logging.LeveledLoggerInterface, dir string) (lfs bool, err error) {
-	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "ls-files", "--all"}, dir)
-	if err != nil {
-		return false, fmt.Errorf("cannot list git lfs files: %s (%w)", stderr, err)
-	}
-	return strings.TrimSpace(string(stdout)) != "", err
-}
-
-func gitLfsEnableAndPullFiles(logger logging.LeveledLoggerInterface, dir string) (err error) {
-	stdout, stderr, err := command.RunBufferedInDir("git", []string{"lfs", "install"}, dir)
-	if err != nil {
-		return fmt.Errorf("lfs install: %s (%w)", stderr, err)
-	}
-	logger.Infof(string(stdout))
-	stdout, stderr, err = command.RunBufferedInDir("git", []string{"lfs", "pull"}, dir)
-	if err != nil {
-		return fmt.Errorf("lfs pull: %s (%w)", stderr, err)
-	}
-	logger.Infof(string(stdout))
-	return err
-}
-
-func runGit(args ...string) error {
-	var output bytes.Buffer
-	err := command.Run("git", args, []string{}, &output, &output)
-	if err != nil {
-		return fmt.Errorf("git %v: %w\n%s", args, err, output.String())
-	}
-	return nil
 }
