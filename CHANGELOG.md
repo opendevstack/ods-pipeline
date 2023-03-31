@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.11.1] - 2023-03-31
+
 ### Fixed
 
 - Configure Git to use bearer token auth mechanism ([#683](https://github.com/opendevstack/ods-pipeline/issues/683))
