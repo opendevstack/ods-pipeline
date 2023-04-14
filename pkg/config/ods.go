@@ -118,6 +118,7 @@ type Pipeline struct {
 	Timeouts     *tekton.TimeoutFields        `json:"timeouts,omitempty"`
 	PodTemplate  *pod.PodTemplate             `json:"podTemplate,omitempty"`
 	TaskRunSpecs []tekton.PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
+	Params       []tekton.Param               `json:"params,omitempty"`
 }
 
 type Trigger struct {

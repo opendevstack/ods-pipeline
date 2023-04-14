@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
+	"github.com/opendevstack/pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,18 +37,20 @@ const (
 type PipelineConfig struct {
 	PipelineInfo
 	PVC          string `json:"pvc"`
-	Tasks        []tekton.PipelineTask
-	Finally      []tekton.PipelineTask
-	Timeouts     *tekton.TimeoutFields
-	PodTemplate  *pod.PodTemplate
-	TaskRunSpecs []tekton.PipelineTaskRunSpec
+	PipelineSpec config.Pipeline
 }
 
 // createPipelineRun creates a PipelineRun resource
-func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctxt context.Context, cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string, needQueueing bool) (*tekton.PipelineRun, error) {
+func createPipelineRun(
+	tektonClient tektonClient.ClientPipelineRunInterface,
+	ctxt context.Context,
+	cfg PipelineConfig,
+	taskKind tekton.TaskKind,
+	taskSuffix string,
+	needQueueing bool) (*tekton.PipelineRun, error) {
 	pr := &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-", cfg.Component),
+			GenerateName: cfg.Component + "-",
 			Labels:       pipelineLabels(cfg),
 		},
 		TypeMeta: metav1.TypeMeta{
@@ -57,10 +59,11 @@ func createPipelineRun(tektonClient tektonClient.ClientPipelineRunInterface, ctx
 		},
 		Spec: tekton.PipelineRunSpec{
 			PipelineSpec:       assemblePipelineSpec(cfg, taskKind, taskSuffix),
+			Params:             extractPipelineParams(cfg.PipelineSpec.Params),
 			ServiceAccountName: "pipeline", // TODO
-			PodTemplate:        cfg.PodTemplate,
-			TaskRunSpecs:       cfg.TaskRunSpecs,
-			Timeouts:           cfg.Timeouts,
+			PodTemplate:        cfg.PipelineSpec.PodTemplate,
+			TaskRunSpecs:       cfg.PipelineSpec.TaskRunSpecs,
+			Timeouts:           cfg.PipelineSpec.Timeouts,
 			Workspaces: []tekton.WorkspaceBinding{
 				{
 					Name: sharedWorkspaceName,
@@ -131,43 +134,30 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 	tasks = append(tasks, tekton.PipelineTask{
 		Name:       "start",
 		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
+		Params:     startTaskParams(),
 		Workspaces: tektonDefaultWorkspaceBindings(),
-		Params: []tekton.Param{
-			tektonStringParam("url", "$(params.git-repo-url)"),
-			tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
-			tektonStringParam("project", "$(params.project)"),
-			tektonStringParam("pr-key", "$(params.pr-key)"),
-			tektonStringParam("pr-base", "$(params.pr-base)"),
-			tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-			tektonStringParam("environment", "$(params.environment)"),
-			tektonStringParam("version", "$(params.version)"),
-		},
 	})
-
-	if len(cfg.Tasks) > 0 {
+	if len(cfg.PipelineSpec.Tasks) > 0 {
 		// Add "start" to runAfter of the first configured task, and to each further task
 		// that does not set runAfter until we hit a task that does.
-		for i := range cfg.Tasks {
-			if i > 0 && len(cfg.Tasks[i].RunAfter) > 0 {
+		for i := range cfg.PipelineSpec.Tasks {
+			if i > 0 && len(cfg.PipelineSpec.Tasks[i].RunAfter) > 0 {
 				break
 			}
-			cfg.Tasks[i].RunAfter = append(cfg.Tasks[i].RunAfter, "start")
+			cfg.PipelineSpec.Tasks[i].RunAfter = append(cfg.PipelineSpec.Tasks[i].RunAfter, "start")
 		}
-		tasks = append(tasks, cfg.Tasks...)
+		tasks = append(tasks, cfg.PipelineSpec.Tasks...)
 	}
+	tasks = mergeTriggerBasedParams(tasks, cfg.PipelineSpec.Params)
 
-	var finallyTasks []tekton.PipelineTask
-	finallyTasks = append(finallyTasks, cfg.Finally...)
-
+	finallyTasks := append([]tekton.PipelineTask{}, cfg.PipelineSpec.Finally...)
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
 		Name:       "finish",
 		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
 		Workspaces: tektonDefaultWorkspaceBindings(),
-		Params: []tekton.Param{
-			tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-			tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
-		},
+		Params:     finishTaskParams(),
 	})
+	finallyTasks = mergeTriggerBasedParams(finallyTasks, cfg.PipelineSpec.Params)
 
 	return &tekton.PipelineSpec{
 		Params: []tekton.ParamSpec{
@@ -222,4 +212,76 @@ func tektonDefaultWorkspaceBindings() []tekton.WorkspacePipelineTaskBinding {
 	return []tekton.WorkspacePipelineTaskBinding{
 		{Name: "source", Workspace: sharedWorkspaceName},
 	}
+}
+
+// startTaskParams returns the params for the start task.
+func startTaskParams() []tekton.Param {
+	return []tekton.Param{
+		tektonStringParam("url", "$(params.git-repo-url)"),
+		tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
+		tektonStringParam("project", "$(params.project)"),
+		tektonStringParam("pr-key", "$(params.pr-key)"),
+		tektonStringParam("pr-base", "$(params.pr-base)"),
+		tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+		tektonStringParam("environment", "$(params.environment)"),
+		tektonStringParam("version", "$(params.version)"),
+	}
+}
+
+// startTaskParams returns the params for the finish task.
+func finishTaskParams() []tekton.Param {
+	return []tekton.Param{
+		tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+		tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
+	}
+}
+
+// extractPipelineParams returns only those params which are not prefixed.
+func extractPipelineParams(params []tekton.Param) (matching []tekton.Param) {
+	for _, p := range params {
+		if !strings.Contains(p.Name, ".") {
+			matching = append(matching, p)
+		}
+	}
+	return
+}
+
+// extractTaskParams returns only those params which are prefixed with taskName.
+// The returned param names do not include the prefix.
+func extractTaskParams(taskName string, params []tekton.Param) (matching []tekton.Param) {
+	for _, p := range params {
+		if strings.HasPrefix(p.Name, taskName+".") {
+			p.Name = strings.TrimPrefix(p.Name, taskName+".")
+			matching = append(matching, p)
+		}
+	}
+	return
+}
+
+// mergeTriggerBasedParams appends given params to the tasks' params.
+// If the given params contain a param of the same name as an existing param,
+// the existing param will be overriden.
+func mergeTriggerBasedParams(tasks []tekton.PipelineTask, params []tekton.Param) (extended []tekton.PipelineTask) {
+	for _, t := range tasks {
+		var mergedParams []tekton.Param
+		extractedParams := extractTaskParams(t.Name, params)
+		for _, originalParam := range t.Params {
+			if !containsParam(extractedParams, originalParam) {
+				mergedParams = append(mergedParams, originalParam)
+			}
+		}
+		t.Params = append(mergedParams, extractedParams...)
+		extended = append(extended, t)
+	}
+	return
+}
+
+// containsParam checks whether params contains a param with the same name as param's name.
+func containsParam(params []tekton.Param, param tekton.Param) bool {
+	for _, p := range params {
+		if p.Name == param.Name {
+			return true
+		}
+	}
+	return false
 }

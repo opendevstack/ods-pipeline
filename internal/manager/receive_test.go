@@ -370,8 +370,8 @@ func TestWebhookHandling(t *testing.T) {
 }
 
 func extractTaskNames(pConfig PipelineConfig) []string {
-	gotNames := make([]string, 0, len(pConfig.Tasks))
-	for _, task := range pConfig.Tasks {
+	gotNames := make([]string, 0, len(pConfig.PipelineSpec.Tasks))
+	for _, task := range pConfig.PipelineSpec.Tasks {
 		gotNames = append(gotNames, task.Name)
 	}
 	return gotNames

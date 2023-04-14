@@ -205,11 +205,7 @@ func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component
 			return PipelineConfig{
 				PipelineInfo: pInfo,
 				PVC:          makePVCName(component),
-				// Move this to "spec" subfield?
-				Tasks:        pipeline.Tasks,
-				Finally:      pipeline.Finally,
-				PodTemplate:  pipeline.PodTemplate,
-				TaskRunSpecs: pipeline.TaskRunSpecs,
+				PipelineSpec: pipeline,
 			}, nil
 		}
 	}
