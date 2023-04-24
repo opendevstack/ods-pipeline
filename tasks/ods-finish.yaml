@@ -17,7 +17,10 @@ spec:
       type: string
     - name: aggregate-tasks-status
       description: Aggregate status of all tasks.
-      default: "None"
+      default: 'None'
+    - name: artifact-target
+      description: Artifact target respository
+      default: ''
   steps:
     - name: ods-finish
       # Image is built from build/package/Dockerfile.finish.
@@ -40,16 +43,6 @@ spec:
             secretKeyRef:
               key: password
               name: ods-nexus-auth
-        - name: NEXUS_TEMPORARY_REPOSITORY
-          valueFrom:
-            configMapKeyRef:
-              key: temporaryRepository
-              name: ods-nexus
-        - name: NEXUS_PERMANENT_REPOSITORY
-          valueFrom:
-            configMapKeyRef:
-              key: permanentRepository
-              name: ods-nexus
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
@@ -76,7 +69,8 @@ spec:
         # ods-finish is built from cmd/finish/main.go.
         ods-finish \
           -pipeline-run-name=$(params.pipeline-run-name) \
-          -aggregate-tasks-status=$(params.aggregate-tasks-status)
+          -aggregate-tasks-status=$(params.aggregate-tasks-status) \
+          -artifact-target=$(params.artifact-target)
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

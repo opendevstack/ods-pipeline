@@ -2,8 +2,6 @@
     "project": "foo",
     "component": "bar",
     "repository": "foo-bar",
-    "stage": "dev",
-    "environment": "",
     "version": "",
     "gitRef": "feature/other",
     "gitFullRef": "refs/heads/feature/other",

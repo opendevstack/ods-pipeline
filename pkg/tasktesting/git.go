@@ -34,7 +34,6 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		GitFullRef:   "refs/heads/master",
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
-		Environment:  "dev",
 		Version:      pipelinectxt.WIP,
 	}
 	err := ctxt.WriteCache(wsDir)
@@ -61,10 +60,9 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	bbURL := "http://localhost:7990"
 	repoName := filepath.Base(wsDir)
 	ctxt := &pipelinectxt.ODSContext{
-		Namespace:   ns,
-		GitURL:      fmt.Sprintf("%s/scm/%s/%s.git", bbURL, BitbucketProjectKey, repoName),
-		Environment: "dev",
-		Version:     pipelinectxt.WIP,
+		Namespace: ns,
+		GitURL:    fmt.Sprintf("%s/scm/%s/%s.git", bbURL, BitbucketProjectKey, repoName),
+		Version:   pipelinectxt.WIP,
 	}
 	assembleAndCacheOdsCtxtOrFatal(t, ctxt, wsDir)
 	return ctxt
@@ -92,11 +90,10 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 	}
 
 	ctxt := &pipelinectxt.ODSContext{
-		Namespace:   ns,
-		Project:     projectKey,
-		GitURL:      originURL,
-		Environment: "dev",
-		Version:     pipelinectxt.WIP,
+		Namespace: ns,
+		Project:   projectKey,
+		GitURL:    originURL,
+		Version:   pipelinectxt.WIP,
 	}
 	assembleAndCacheOdsCtxtOrFatal(t, ctxt, wsDir)
 

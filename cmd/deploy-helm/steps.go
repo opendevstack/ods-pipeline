@@ -17,7 +17,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/file"
 	k "github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -70,10 +69,10 @@ func setupContext() DeployStep {
 	}
 }
 
-func skipOnEmptyEnv() DeployStep {
+func skipOnEmptyNamespace() DeployStep {
 	return func(d *deployHelm) (*deployHelm, error) {
-		if d.ctxt.Environment == "" {
-			return d, &skipRemainingSteps{"No environment to deploy to selected. Skipping deployment ..."}
+		if d.opts.namespace == "" {
+			return d, &skipRemainingSteps{"No namespace given. Skipping deployment ..."}
 		}
 		return d, nil
 	}
@@ -89,21 +88,16 @@ func setReleaseTarget() DeployStep {
 		}
 		d.logger.Infof("Release name: %s", d.releaseName)
 
-		// ODS configuration
-		odsConfig, err := config.ReadFromDir(d.opts.checkoutDir)
-		if err != nil {
-			return d, fmt.Errorf("read ODS config: %w", err)
-		}
-
 		// Target environment configuration
-		targetConfig, err := odsConfig.Environment(d.ctxt.Environment)
-		if err != nil {
-			return d, fmt.Errorf("select environment from ODS config: %w", err)
+		targetConfig := &targetEnvironment{
+			APIServer:    d.opts.apiServer,
+			Namespace:    d.opts.namespace,
+			RegistryHost: d.opts.registryHost,
 		}
 		if targetConfig.APIServer != "" {
-			token, err := tokenFromSecret(d.clientset, d.ctxt.Namespace, targetConfig.APICredentialsSecret)
+			token, err := tokenFromSecret(d.clientset, d.ctxt.Namespace, d.opts.apiCredentialsSecret)
 			if err != nil {
-				return d, fmt.Errorf("get API token from secret %s: %w", targetConfig.APICredentialsSecret, err)
+				return d, fmt.Errorf("get API token from secret %s: %w", d.opts.apiCredentialsSecret, err)
 			}
 			targetConfig.APIToken = token
 		}
@@ -111,9 +105,6 @@ func setReleaseTarget() DeployStep {
 
 		// Release namespace
 		d.releaseNamespace = targetConfig.Namespace
-		if d.releaseNamespace == "" {
-			d.releaseNamespace = fmt.Sprintf("%s-%s", d.ctxt.Project, targetConfig.Name)
-		}
 		pattern := "^[a-z][a-z0-9-]{0,61}[a-z]$"
 		matched, err := regexp.MatchString(pattern, d.releaseNamespace)
 		if err != nil || !matched {
@@ -269,15 +260,8 @@ func collectValuesFiles() DeployStep {
 		d.valuesFiles = []string{}
 		valuesFilesCandidates := []string{
 			fmt.Sprintf("%s/secrets.yaml", d.opts.chartDir), // equivalent values.yaml is added automatically by Helm
-			fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig.Stage),
-			fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig.Stage),
-		}
-		if string(d.targetConfig.Stage) != d.targetConfig.Name {
-			valuesFilesCandidates = append(
-				valuesFilesCandidates,
-				fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig.Name),
-				fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig.Name),
-			)
+			fmt.Sprintf("%s/values.%s.yaml", d.opts.chartDir, d.targetConfig.Namespace),
+			fmt.Sprintf("%s/secrets.%s.yaml", d.opts.chartDir, d.targetConfig.Namespace),
 		}
 		for _, vfc := range valuesFilesCandidates {
 			if _, err := os.Stat(vfc); os.IsNotExist(err) {
@@ -337,7 +321,7 @@ func diffHelmRelease() DeployStep {
 			return d, &skipRemainingSteps{"No diff detected, skipping helm upgrade."}
 		}
 
-		err = writeDeploymentArtifact(diffStdoutBuf.Bytes(), "diff", d.opts.chartDir, d.targetConfig.Name)
+		err = writeDeploymentArtifact(diffStdoutBuf.Bytes(), "diff", d.opts.chartDir, d.targetConfig.Namespace)
 		if err != nil {
 			return d, fmt.Errorf("write diff artifact: %w", err)
 		}
@@ -359,7 +343,7 @@ func upgradeHelmRelease() DeployStep {
 		if err != nil {
 			return d, fmt.Errorf("helm upgrade: %w", err)
 		}
-		err = writeDeploymentArtifact(upgradeStdoutBuf.Bytes(), "release", d.opts.chartDir, d.targetConfig.Name)
+		err = writeDeploymentArtifact(upgradeStdoutBuf.Bytes(), "release", d.opts.chartDir, d.targetConfig.Namespace)
 		if err != nil {
 			return d, fmt.Errorf("write release artifact: %w", err)
 		}

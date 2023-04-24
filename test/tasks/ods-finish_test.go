@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
@@ -41,28 +40,26 @@ func TestTaskODSFinish(t *testing.T) {
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusFailed)
 				},
 			},
-			"set bitbucket build status to successful and upload artifacts to temporary Nexus repository": {
+			"set bitbucket build status to successful and upload artifacts to Nexus repository": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupBitbucketRepo(
 						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
 					)
-					// Pretend there is alredy a coverage report in Nexus
-					// this assures the safeguard is working to avoid duplicate upload.
+					// Pretend there is alredy a coverage report in Nexus.
+					// This assures the safeguard is working to avoid duplicate upload.
 					// TODO: assure the safeguard is actually invoked by checking the logs.
 					t.Log("Uploading coverage artifact to Nexus and writing manifest")
 					nexusClient := tasktesting.NexusClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
-					_, err := nexusClient.Upload(
-						nexus.TemporaryRepositoryDefault,
+					if _, err := nexusClient.Upload(
+						nexus.TestTemporaryRepository,
 						pipelinectxt.ArtifactGroup(ctxt.ODS, pipelinectxt.CodeCoveragesDir),
 						filepath.Join(wsDir, pipelinectxt.CodeCoveragesPath, "coverage.out"),
-					)
-					if err != nil {
+					); err != nil {
 						t.Fatal(err)
 					}
 					am := pipelinectxt.ArtifactsManifest{
-						SourceRepository: nexus.TemporaryRepositoryDefault,
 						Artifacts: []pipelinectxt.ArtifactInfo{
 							{
 								Directory: pipelinectxt.CodeCoveragesDir,
@@ -70,53 +67,30 @@ func TestTaskODSFinish(t *testing.T) {
 							},
 						},
 					}
-					err = pipelinectxt.WriteJsonArtifact(
+					if err := pipelinectxt.WriteJsonArtifact(
 						am,
 						filepath.Join(wsDir, pipelinectxt.ArtifactsPath),
 						pipelinectxt.ArtifactsManifestFilename,
-					)
-					if err != nil {
+					); err != nil {
 						t.Fatal(err)
 					}
 
 					ctxt.Params = map[string]string{
 						"pipeline-run-name":      "foo",
 						"aggregate-tasks-status": "Succeeded",
+						"artifact-target":        nexus.TestTemporaryRepository,
 					}
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
-					checkArtifactsAreInNexus(t, ctxt, nexus.TemporaryRepositoryDefault)
+					checkArtifactsAreInNexus(t, ctxt, nexus.TestTemporaryRepository)
 
 					wantLogMsg := "Artifact coverage.out is already present in Nexus repository"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
-				},
-			},
-			"set bitbucket build status to successful and upload artifacts to permanent Nexus repository": {
-				WorkspaceDirMapping: map[string]string{"source": "hello-world-app-with-artifacts"},
-				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					wsDir := ctxt.Workspaces["source"]
-					ctxt.ODS = tasktesting.SetupBitbucketRepo(
-						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
-					)
-					err := createFinishODSYML(wsDir)
-					if err != nil {
-						t.Fatal(err)
-					}
-					ctxt.Params = map[string]string{
-						"pipeline-run-name":      "foo",
-						"aggregate-tasks-status": "Succeeded",
-					}
-				},
-				WantRunSuccess: true,
-				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
-					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
-					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
-					checkArtifactsAreInNexus(t, ctxt, nexus.PermanentRepositoryDefault)
 				},
 			},
 			"stops gracefully when context cannot be read": {
@@ -138,18 +112,6 @@ func TestTaskODSFinish(t *testing.T) {
 			},
 		},
 	)
-}
-
-func createFinishODSYML(wsDir string) error {
-	o := &config.ODS{
-		Environments: []config.Environment{
-			{
-				Name:  "dev",  // use "dev" because that is set in the context, but ...
-				Stage: "prod", // set the stage to "prod" to simulate a production pipeline.
-			},
-		},
-	}
-	return createODSYML(wsDir, o)
 }
 
 func checkArtifactsAreInNexus(t *testing.T, ctxt *tasktesting.TaskRunContext, targetRepository string) {

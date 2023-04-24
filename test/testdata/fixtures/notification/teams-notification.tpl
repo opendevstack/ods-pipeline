@@ -12,10 +12,6 @@
         {
           "name": "GitRef",
           "value": "{{.ODSContext.GitRef}}"
-        },
-        {
-          "name": "Environment",
-          "value": "{{.ODSContext.Environment}}"
         }
       ],
       "markdown": true

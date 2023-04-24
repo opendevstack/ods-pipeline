@@ -6,6 +6,11 @@ import (
 	"path/filepath"
 )
 
+const (
+	TestPermanentRepository = "ods-permanent-artifacts"
+	TestTemporaryRepository = "ods-temporary-artifacts"
+)
+
 type TestClient struct {
 	// URLs contains URLs per repository
 	URLs map[string][]string

@@ -56,10 +56,6 @@ setup:
   nexusUrl: ''
   # Nexus username. Example: developer.
   nexusUsername: ''
-  # Nexus repository for temporary artifacts (stage = dev)
-  nexusTemporaryRepository: 'ods-temporary-artifacts'
-  # Nexus repository for permanent artifacts (stage = qa|prod)
-  nexusPermanentRepository: 'ods-permanent-artifacts'
 
   # Sonar
   # SonarQube URL (including scheme, without trailing slash).
@@ -115,10 +111,6 @@ setup:
               {
                 "name": "GitRef",
                 "value": "{{.ODSContext.GitRef}}"
-              },
-              {
-                "name": "Environment",
-                "value": "{{.ODSContext.Environment}}"
               }
             ],
             "markdown": true
@@ -142,7 +134,7 @@ setup:
   # Minimum hours to keep a pipeline run. Has precendence over pipelineRunMaxKeepRuns.
   # Must be at least 1.
   pipelineRunMinKeepHours: '48'
-  # Maximum number of pipeline runs to keep per stage (stages: DEV, QA, PROD).
+  # Maximum number of pipeline runs to keep.
   # Must be at least 1.
   pipelineRunMaxKeepRuns: '20'
 

@@ -2,13 +2,13 @@
 
 = Example Project
 
-The goal of this document is to provide a concrete example of a (fake) application using `ods-pipeline`. You may configure things differently for your own project, but the example here contains some best practices and you are encouraged to align your setup where it makes sense.
+The goal of this document is to provide a concrete example how a complete application can be built and deployed using `ods-pipeline`. You may configure things differently for your own project, but the example here contains some best practices and you are encouraged to align your setup where it makes sense.
 
 == Overview
 
 For this example, we assume that we deal with a simple todo application. The project key in Bitbucket is `TODO`. The application is made up of two components, a backend (repository `todo-backend`) written in Go, and a frontend (repository `todo-frontend`) written in TypeScript.
 
-The example project is deployed on a single OpenShift cluster which has three OpenShift projects to deploy into: `todo-dev`, `todo-qa` and `todo-prod`. ODS pipeline is installed in the `todo-cd` project as per the link:installation.adoc[Installation Guide].
+The example project is deployed on a single OpenShift cluster which has three OpenShift projects to deploy into: `todo-dev`, `todo-qa` and `todo-prod`. ODS Pipelines is installed in the `todo-cd` project as per the link:installation.adoc[Installation Guide].
 
 == Pipeline Configuration
 
@@ -19,128 +19,135 @@ Pushes to the `master` branch should deploy the respective component directly in
 todo-backend/.ods.yaml
 [source,yaml]
 ----
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: todo-dev
-  stage: dev
-
-pipeline:
-  - tasks:
-    - name: build
-      taskRef:
-        kind: Task
-        name: ods-build-go-v0-11-1
-      workspaces:
-      - name: source
-        workspace: shared-workspace
-    - name: package
-      taskRef:
-        kind: Task
-        name: ods-package-image-v0-11-1
-      runAfter:
-      - build
-      workspaces:
-      - name: source
-        workspace: shared-workspace
-    - name: deploy
-      taskRef:
-        kind: Task
-        name: ods-deploy-helm-v0-11-1
-      runAfter:
-      - package
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+pipelines:
+- triggers:
+  - branches: ["master"]
+    params:
+    - name: finish.artifact-target
+      value: dev-artifacts
+    - name: deploy.namespace
+      value: todo-dev
+  - branches: ["*"]
+  tasks:
+  - name: build
+    taskRef:
+      kind: Task
+      name: ods-build-go-v0-11-1
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: package
+    taskRef:
+      kind: Task
+      name: ods-package-image-v0-11-1
+    runAfter:
+    - build
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: deploy
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm-v0-11-1
+    runAfter:
+    - package
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
 todo-frontend/.ods.yaml
 [source,yaml]
 ----
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: todo-dev
-  stage: dev
-
-pipeline:
-  - tasks:
-    - name: build
-      taskRef:
-        kind: Task
-        name: ods-build-npm-v0-11-1
-      workspaces:
-      - name: source
-        workspace: shared-workspace
-    - name: package
-      taskRef:
-        kind: Task
-        name: ods-package-image-v0-11-1
-      runAfter:
-      - build
-      workspaces:
-      - name: source
-        workspace: shared-workspace
-    - name: deploy
-      taskRef:
-        kind: Task
-        name: ods-deploy-helm-v0-11-1
-      runAfter:
-      - package
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+pipelines:
+- triggers:
+  - branches: ["master"]
+    params:
+    - name: finish.artifact-target
+      value: dev-artifacts
+    - name: deploy.namespace
+      value: todo-dev
+  - branches: ["*"]
+  tasks:
+  - name: build
+    taskRef:
+      kind: Task
+      name: ods-build-npm-v0-11-1
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: package
+    taskRef:
+      kind: Task
+      name: ods-package-image-v0-11-1
+    runAfter:
+    - build
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  - name: deploy
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm-v0-11-1
+    runAfter:
+    - package
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
-Both pipelines are almost identical, only the build task differs. Both repositories have a webhook configured, pointing to the event listener in the `todo-cd` namespace.
+Both pipelines are almost identical, only the build task differs. Both Bitbucket repositories have a webhook configured, pointing to the event listener in the `todo-cd` namespace.
 
-Both repositories contain a Helm chart (in the `chart` directory). The Helm chart contains default values in `values.yaml`. Values that only apply to the "dev" environment are stored in `values.dev.yaml`.
+Both Bitbucket repositories contain a Helm chart (in the `chart` directory). The Helm chart contains default values in `values.yaml`. Values that only apply to the `todo-dev` environment are stored in `values.todo-dev.yaml`.
+
+Events triggered from pushes in the `master` branch set the `namespace` parameter of the `deploy`` task, which tells Helm to deploy into this namespace. The trigger also sets the `artifact-target` parameter of the `finish` task which is automatically added to each pipeline run. This causes the task to upload all created artifacts into the `dev-artifacts` Nexus repository. This repository has to be created in Nexus upfront.
 
 == Promotion
 
-In order to deploy the application into "qa" and "prod", another repository is used, serving as an "umbrella" for the whole application. This repository is named `todo-app`. The pipeline definition in that repository is such that the application components are not build again, instead existing artifacts are simply promoted to the respective OpenShift projects.
+In order to deploy the application into `todo-qa` and `todo-prod`, another repository is used, serving as an "umbrella" for the whole application. This repository is named `todo-app`.
+
+Typically, it is desired that the artifacts such as container images are not rebuilt for each environment. To assist with this, the component pipelines configured their `master` branch pipeline to upload artifacts into the `dev-artifacts` Nexus repository. The configuration in `todo-app` makes use of the previously uploaded artifacts by referencing this repository as the artifact source of the pipeline.
 
 todo-app/.ods.yaml
 [source,yaml]
 ----
 repositories:
 - name: todo-backend
+  branch: master
 - name: todo-frontend
+  branch: master
 
-version: 1.0.0
 
-branchToEnvironmentMapping:
-- branch: production
-  environment: prod
-- branch: release/1.0.0
-  environment: qa
 
-environments:
-- name: prod
-  namespace: todo-prod
-  stage: prod
-- name: qa
-  namespace: todo-qa
-  stage: qa
-
-pipeline:
-  - tasks:
-    - name: deploy
-      taskRef:
-        kind: Task
-        name: ods-deploy-helm-v0-11-1
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+pipelines:
+- triggers:
+  - branches: ["master"]
+    params:
+    - name: start.artifact-source
+      value: qa-artifacts
+    - name: finish.artifact-target
+      value: prod-artifacts
+    - name: deploy.namespace
+      value: todo-prod
+  - branches: ["*"]
+    params:
+    - name: start.artifact-source
+      value: dev-artifacts
+    - name: finish.artifact-target
+      value: qa-artifacts
+    - name: deploy.namespace
+      value: todo-qa
+  tasks:
+  - name: deploy
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm-v0-11-1
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
-When a commit is pushed into the `release/1.0.0` branch, a deploy is triggerd into the `todo-qa` project. The deployment uses the chart defined in the `chart` directory of the `todo-app` repository. That chart does not contain any resource templates itself, as all Kubernetes resources are defined in the charts in the components `todo-backend` and `todo-frontend`. However, the umbrella chart has to supply values which are specific to the "qa" environment. This can be done via a `values.qa.yaml` file. Values in that file can set values for dependencies (like the `backend` component) by nesting the values under the respective key, as shown in the following example. Assume we have the following `values.yaml` file in the `todo-backend` application:
+When a commit is pushed into any branch except the `master` branch, a deploy is triggerd into the `todo-qa` project. The deployment uses the Helm chart defined in the `todo-app` repository. That chart does not contain any resource templates itself, as all Kubernetes resources are defined in the charts in the components `todo-backend` and `todo-frontend`. However, the umbrella chart has to supply values which are specific to the `todo-qa` namespace. This can be done via a `values.todo-qa.yaml` file. Values in that file can set values for subcharts (like the `backend` component) by nesting the values under the respective key, as shown in the following example. Assume we have the following `values.yaml` file in the `todo-backend` application:
 
 todo-backend/chart/values.yaml
 [source,yaml]
@@ -148,9 +155,9 @@ todo-backend/chart/values.yaml
 max_connections: 10
 ----
 
-The `todo-app` repository can set a different value for QA like this:
+The `todo-app` repository can set a different value for the QA environment like this:
 
-todo-app/chart/values.qa.yaml
+todo-app/chart/values.todo-qa.yaml
 [source,yaml]
 ----
 backend:
@@ -159,17 +166,8 @@ backend:
 
 For more information on this, see link:https://helm.sh/docs/topics/charts/#scope-dependencies-and-values[scope, dependencies, and values].
 
-The "prod" environment is configured in the same way as the "qa" environment. Note that pushing directly into the `production` branch without a prior pipeline run against a "qa" environment will fail as deployments to environments of stage `prod` require a previous deployment to a `qa` stage.
+The `todo-prod` environment is configured in the same way as the `todo-qa` environment. Any pushes into the `master` branch will trigger a deployment into "prod".
 
-The version that is specified in `ods.yaml` is used whenever a `qa` or `prod` stage environment is selected. In such cases, the version from `ods.yaml` will be used in the Helm chart versions, and the repositories will be tagged at the current commit. For the `qa` stage this Git tag is `v<VERSION>-rc.<NUMBER>`, and for `prod` stage it is `v<VERSION>`.
+The configuration of the different Nexus repositories (component `master` pipeline runs pushing into `dev-artifacts`, `todo-app` non-`master` pipelines runs pushing into `qa-artifacts` and `todo-app` `master` pipelines pushing into `prod-artifacts`) has the benefit that ODS Pipelines prevents deployments into the PROD environment without a prior deployment into the QA environment. This is ensured through the `start` task, which checks for successful pipeline runs of all configured subrepositories when the `artifact-source` parameter is provided.
 
-== Bitbucket Configuration
-
-It is advised to:
-
-* require pull request approval and a successful build before allowing to merge a pull request
-* protect the long-lived branches (`master`, `production`, etc.) from changes without pull request
-* enable merge back so that changes in release branches end up in the main branch
-* favour or even enforce fast-forward merges
-
-Note that merging using fast-forward is required in the umbrella repository when merging between the release branch and the production branch. Otherwise, a merge commit will be created on the production branch, however the pipeline run will not find existing Git tags for the merge commit SHA and therefore abort the pipeline. This is by design as it protects users from accidently loosing changes made only in the production branch but not in the release branch.
+NOTE: In this example, merges into the `master` branch in the `todo-app` repository must be done using a fast-forward merge. If a merge commit were created, the `start` task would not find a successful pipeline run artifact for this new commit hash and fail. This is by design to protect from accidental changes to the `master` branch.

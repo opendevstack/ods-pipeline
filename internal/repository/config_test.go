@@ -29,17 +29,17 @@ func TestGetODSConfig(t *testing.T) {
 		},
 		"ods.yaml file": {
 			files: map[string][]byte{
-				"ods.yaml": []byte("environments: []"),
+				"ods.yaml": []byte("pipelines: []"),
 			},
 			wantErr: "",
-			wantODS: &config.ODS{Environments: []config.Environment{}},
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{}},
 		},
 		"ods.yml file": {
 			files: map[string][]byte{
-				"ods.yml": []byte("environments: []"),
+				"ods.yml": []byte("pipelines: []"),
 			},
 			wantErr: "",
-			wantODS: &config.ODS{Environments: []config.Environment{}},
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{}},
 		},
 		"ods.yaml has precedence over ods.yml file": {
 			files: map[string][]byte{

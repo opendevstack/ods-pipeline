@@ -79,10 +79,9 @@ func TestHandleArtifacts(t *testing.T) {
 		GitCommitSHA: "8d351a10fb428c0c1239530256e21cf24f136e73",
 	}
 	opts := options{
-		aggregateTasksStatus:     "Succeeded",
-		nexusTemporaryRepository: "temporary",
-		nexusPermanentRepository: "permanent",
-		pipelineRunName:          "foo",
+		aggregateTasksStatus: "Succeeded",
+		artifactTarget:       "temporary",
+		pipelineRunName:      "foo",
 	}
 	t.Log("Add ods.yaml")
 	subrepoName := "my-subrepo"
@@ -112,7 +111,7 @@ func TestHandleArtifacts(t *testing.T) {
 	}
 	t.Log("Write empty artifacts manifest for subrepository")
 	subrepoArtifactsDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
-	err = writeArtifactsManifest(subrepoArtifactsDir, nexusRepo)
+	err = writeArtifactsManifest(subrepoArtifactsDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +158,7 @@ func prepareTempWorkingDir(nexusRepo string) (string, func(), error) {
 	}
 	cleanup = func() { os.RemoveAll(tempWorkingDir) }
 	artifactsDir := filepath.Join(tempWorkingDir, pipelinectxt.ArtifactsPath)
-	err = writeArtifactsManifest(artifactsDir, nexusRepo)
+	err = writeArtifactsManifest(artifactsDir)
 	if err != nil {
 		return tempWorkingDir, cleanup, err
 	}
@@ -178,7 +177,6 @@ func writeTestContext(ns, wsDir, repoName string) error {
 		GitFullRef:   "refs/heads/master",
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/my-project/my-repo.git",
-		Environment:  "dev",
 		Version:      pipelinectxt.WIP,
 	}
 	return ctxt.WriteCache(wsDir)
@@ -195,10 +193,9 @@ func writeArtifactFile(artifactsDir, subdir, filename string) error {
 }
 
 // writeArtifactsManifest writes an artigact manifest JSON file into artifactsDir.
-func writeArtifactsManifest(artifactsDir, nexusRepo string) error {
+func writeArtifactsManifest(artifactsDir string) error {
 	am := &pipelinectxt.ArtifactsManifest{
-		SourceRepository: nexusRepo,
-		Artifacts:        []pipelinectxt.ArtifactInfo{},
+		Artifacts: []pipelinectxt.ArtifactInfo{},
 	}
 	return pipelinectxt.WriteJsonArtifact(am, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
 }

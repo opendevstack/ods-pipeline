@@ -46,10 +46,6 @@ spec:
         Name of the project to build.
         The project is equal to the Bitbucket project of the repository to clone.
       type: string
-    - name: environment
-      description: >-
-        Name of the environment to deploy to.
-      type: string
     - name: version
       description: >-
         Version of the application.
@@ -76,6 +72,10 @@ spec:
         A subsequent build reusing the cache resets the time for that cache location.
       type: string
       default: '7'
+    - name: artifact-source
+      description: Artifact source respository
+      type: string
+      default: ''
   results:
     - description: The commit SHA that was fetched by this task.
       name: commit
@@ -103,16 +103,6 @@ spec:
             secretKeyRef:
               key: password
               name: ods-nexus-auth
-        - name: NEXUS_TEMPORARY_REPOSITORY
-          valueFrom:
-            configMapKeyRef:
-              key: temporaryRepository
-              name: ods-nexus
-        - name: NEXUS_PERMANENT_REPOSITORY
-          valueFrom:
-            configMapKeyRef:
-              key: permanentRepository
-              name: ods-nexus
         - name: BITBUCKET_URL
           valueFrom:
             configMapKeyRef:
@@ -143,7 +133,6 @@ spec:
         # ods-start is built from cmd/start/main.go.
         ods-start \
           -project=$(params.project) \
-          -environment=$(params.environment) \
           -version=$(params.version) \
           -git-full-ref=$(params.git-full-ref) \
           -url=$(params.url) \
@@ -154,7 +143,8 @@ spec:
           -no-proxy=$(params.no-proxy) \
           -submodules=$(params.submodules) \
           -depth=$(params.depth) \
-          -pipeline-run-name=$(params.pipeline-run-name)
+          -pipeline-run-name=$(params.pipeline-run-name) \
+          -artifact-source=$(params.artifact-source)
 
         cp .ods/git-commit-sha $(results.commit.path)
 

@@ -11,11 +11,6 @@ import (
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 
-const (
-	TemporaryRepositoryDefault = "ods-temporary-artifacts"
-	PermanentRepositoryDefault = "ods-permanent-artifacts"
-)
-
 // Client represents a Nexus client, wrapping github.com/sonatype-nexus-community/gonexus/rm.RM
 type Client struct {
 	rm           nexusrm.RM

@@ -11,7 +11,6 @@ import (
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,13 +27,12 @@ func TestTaskODSDeployHelm(t *testing.T) {
 		"ods-deploy-helm",
 		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
-			"should skip when no environment selected": {
+			"should skip when no namespace is given": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-					// simulate empty environment
-					writeContextFile(t, wsDir, "environment", "")
+					// no "namespace" param set
 				},
 				WantRunSuccess: true,
 			},
@@ -54,10 +52,8 @@ func TestTaskODSDeployHelm(t *testing.T) {
 							t.Errorf("Failed to delete namespace %s: %s", externalNamespace, err)
 						}
 					}
-
-					err = createHelmODSYML(wsDir, externalNamespace)
-					if err != nil {
-						t.Fatal(err)
+					ctxt.Params = map[string]string{
+						"namespace": externalNamespace,
 					}
 
 					createSampleAppPrivateKeySecret(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
@@ -67,7 +63,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					checkFileContentContains(
 						t, wsDir,
-						filepath.Join(pipelinectxt.DeploymentsPath, "diff-dev.txt"),
+						filepath.Join(pipelinectxt.DeploymentsPath, fmt.Sprintf("diff-%s.txt", separateReleaseNamespace)),
 						"Release was not present in Helm.  Diff will show entire contents as new.",
 						"Deployment (apps) has been added",
 						"Secret (v1) has been added",
@@ -75,7 +71,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					)
 					checkFileContentContains(
 						t, wsDir,
-						filepath.Join(pipelinectxt.DeploymentsPath, "release-dev.txt"),
+						filepath.Join(pipelinectxt.DeploymentsPath, fmt.Sprintf("release-%s.txt", separateReleaseNamespace)),
 						"Installing it now.",
 						fmt.Sprintf("NAMESPACE: %s", separateReleaseNamespace),
 						"STATUS: deployed",
@@ -107,10 +103,8 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
-
-					err := createHelmODSYML(wsDir, ctxt.Namespace)
-					if err != nil {
-						t.Fatal(err)
+					ctxt.Params = map[string]string{
+						"namespace": ctxt.Namespace,
 					}
 				},
 				WantRunSuccess: true,
@@ -206,19 +200,6 @@ func writeContextFile(t *testing.T, wsDir, file, content string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func createHelmODSYML(wsDir, releaseNamespace string) error {
-	o := &config.ODS{
-		Environments: []config.Environment{
-			{
-				Name:      "dev",
-				Namespace: releaseNamespace,
-				Stage:     "dev",
-			},
-		},
-	}
-	return createODSYML(wsDir, o)
 }
 
 func checkDeployment(clientset *k8s.Clientset, namespace, name string) (*appsv1.Deployment, error) {

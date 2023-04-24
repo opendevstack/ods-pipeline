@@ -1,3 +1,4 @@
-environments:
-- name: e2e
-  stage: prod
+pipelines:
+- triggers:
+  - events: ["pr:opened"]
+  tasks: []

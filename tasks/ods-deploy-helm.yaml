@@ -43,6 +43,30 @@ spec:
         If the secret exists, it is expected to have a field named `key.txt` with the age secret key in its content.
       type: string
       default: 'helm-secrets-age-key'
+    - name: api-server
+      description: |
+        API server of the target cluster, including scheme.
+        Only required if the target namespace is outside the cluster in which
+        the pipeline runs.
+      type: string
+      default: ''
+    - name: api-credentials-secret
+      description: |
+        Name of the Secret resource holding the API user credentials.
+        Only required when `api-server` is set.
+      type: string
+      default: ''
+    - name: namespace
+      description: |
+        Target K8s namespace (or OpenShift project) to deploy into.
+      type: string
+      default: ''
+    - name: registry-host
+      description: |
+        Hostname of the target registry to push images to.
+        If not given, the registy host of the source image is used.
+      type: string
+      default: ''
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
@@ -60,10 +84,14 @@ spec:
         # deploy-helm is built from /cmd/deploy-helm/main.go.
         deploy-helm \
           -chart-dir=$(params.chart-dir) \
+          -namespace=$(params.namespace) \
           -release-name=$(params.release-name) \
           -diff-flags="$(params.diff-flags)" \
           -upgrade-flags="$(params.upgrade-flags)" \
-          -age-key-secret=$(params.age-key-secret)
+          -age-key-secret=$(params.age-key-secret) \
+          -api-server=$(params.api-server) \
+          -api-credentials-secret=$(params.api-credentials-secret) \
+          -registry-host=$(params.registry-host)
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

@@ -63,7 +63,6 @@ func TestCreatePipelineRun(t *testing.T) {
 			Component:  "component",
 			Repository: "project-component",
 			GitRef:     "branch",
-			Stage:      config.DevStage,
 		},
 		PVC: "pvc",
 	}
@@ -83,9 +82,6 @@ func TestCreatePipelineRun(t *testing.T) {
 		}
 		if pr.Labels[gitRefLabel] != pData.GitRef {
 			t.Errorf("Expected label %s to be %s, got: %s", gitRefLabel, pData.GitRef, pr.Labels[gitRefLabel])
-		}
-		if pr.Labels[stageLabel] != pData.Stage {
-			t.Errorf("Expected label %s to be %s, got: %s", stageLabel, pData.Stage, pr.Labels[stageLabel])
 		}
 		workspaceCfg := pr.Spec.Workspaces[0]
 		if workspaceCfg.Name != sharedWorkspaceName {
@@ -113,7 +109,7 @@ func TestCreatePipelineRun(t *testing.T) {
 	})
 
 	t.Run("with spec", func(t *testing.T) {
-		pData.PipelineSpec.Params = []tekton.Param{
+		pData.Params = []tekton.Param{
 			tektonStringParam("hello", "world"),
 			tektonStringParam("start.clone-depth", "5"),
 			tektonStringParam("foo.bar", "baz"),
@@ -183,8 +179,6 @@ func TestAssemblePipeline(t *testing.T) {
 			Project:         "project",
 			Component:       "component",
 			Repository:      "repo",
-			Stage:           config.DevStage,
-			Environment:     "env",
 			Version:         "1.0.0",
 			GitRef:          "branch",
 			GitFullRef:      "refs/heads/branch",
@@ -227,7 +221,6 @@ func TestAssemblePipeline(t *testing.T) {
 			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
 			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
 			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-			tektonStringParamSpec("environment", cfg.Environment),
 			tektonStringParamSpec("version", cfg.Version),
 		},
 		Tasks: []tekton.PipelineTask{
@@ -241,7 +234,6 @@ func TestAssemblePipeline(t *testing.T) {
 					tektonStringParam("pr-key", "$(params.pr-key)"),
 					tektonStringParam("pr-base", "$(params.pr-base)"),
 					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-					tektonStringParam("environment", "$(params.environment)"),
 					tektonStringParam("version", "$(params.version)"),
 				},
 				Workspaces: tektonDefaultWorkspaceBindings(),

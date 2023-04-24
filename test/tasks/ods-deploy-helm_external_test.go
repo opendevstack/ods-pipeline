@@ -25,12 +25,17 @@ import (
 // To test deployment to external cluster, you must provide the token for a
 // serviceaccount in an externa cluster, and a matching configuration like this:
 //
-// environments:
-// - name: dev
-//   stage: dev
-//   namespace: foobar
-//   apiServer: https://api.example.openshift.com:443
-//   registryHost: default-route-openshift-image-registry.apps.example.openshiftapps.com
+// TODO: make this part of triggers, and supply
+// tasks:
+//   - name: deploy
+//     taskRef:
+//     kind: Task
+//     name: ods-deploy-helm
+//     params:
+//   - name: namespace
+//     value: foobar
+//     apiServer: https://api.example.openshift.com:443
+//     registryHost: default-route-openshift-image-registry.apps.example.openshiftapps.com
 //
 // You do not need to specify "apiCredentialsSecret", it is set automatically to
 // the secret created from the token given via -external-cluster-token.

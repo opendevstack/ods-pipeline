@@ -44,9 +44,7 @@ const (
 
 // ArtifactsManifest represents all downloaded artifacts.
 type ArtifactsManifest struct {
-	// SourceRepository identifies the repository artifacts where downloaded from
-	SourceRepository string         `json:"sourceRepository"`
-	Artifacts        []ArtifactInfo `json:"artifacts"`
+	Artifacts []ArtifactInfo `json:"artifacts"`
 }
 
 // ArtifactInfo represents one artifact.
@@ -74,10 +72,7 @@ func ReadArtifactsManifestFromFile(filename string) (*ArtifactsManifest, error) 
 }
 
 // Contains checks whether given directory/name is already present in repository.
-func (am *ArtifactsManifest) Contains(repository, directory, name string) bool {
-	if repository != am.SourceRepository {
-		return false
-	}
+func (am *ArtifactsManifest) Contains(directory, name string) bool {
 	for _, a := range am.Artifacts {
 		if a.Directory == directory && a.Name == name {
 			return true
@@ -212,17 +207,16 @@ func ArtifactGroup(ctxt *ODSContext, subdir string) string {
 // An artifacts manifest is returned describing the downloaded files.
 // When none of the given repositories contains any artifacts under the group,
 // no artifacts are downloaded and no error is returned.
-func DownloadGroup(nexusClient nexus.ClientInterface, repositories []string, group, artifactsDir string, logger logging.LeveledLoggerInterface) (*ArtifactsManifest, error) {
+func DownloadGroup(nexusClient nexus.ClientInterface, repository string, group, artifactsDir string, logger logging.LeveledLoggerInterface) (*ArtifactsManifest, error) {
 	// We want to target all artifacts underneath the group, hence the trailing '*'.
 	nexusSearchGroup := fmt.Sprintf("%s/*", group)
 	am := &ArtifactsManifest{
 		Artifacts: []ArtifactInfo{},
 	}
-	sourceRepo, urls, err := searchForAssets(nexusClient, nexusSearchGroup, repositories, logger)
+	urls, err := searchForAssets(nexusClient, nexusSearchGroup, repository, logger)
 	if err != nil {
 		return nil, err
 	}
-	am.SourceRepository = sourceRepo
 
 	for _, s := range urls {
 		u, err := url.Parse(s)
@@ -259,20 +253,17 @@ func DownloadGroup(nexusClient nexus.ClientInterface, repositories []string, gro
 	return am, nil
 }
 
-// searchForAssets looks for assets in searchGroup for each repository in order.
-// Once some assets are found, the repository and the found URLs are returned,
-// skipping any further repositories that are given.
-func searchForAssets(nexusClient nexus.ClientInterface, searchGroup string, repositories []string, logger logging.LeveledLoggerInterface) (string, []string, error) {
-	for _, r := range repositories {
-		urls, err := nexusClient.Search(r, searchGroup)
-		if err != nil {
-			return "", nil, err
-		}
-		if len(urls) > 0 {
-			logger.Infof("Found artifacts in repository %s inside group %s ...", r, searchGroup)
-			return r, urls, nil
-		}
-		logger.Infof("No artifacts found in repository %s inside group %s.", r, searchGroup)
+// searchForAssets looks for assets in searchGroup of given repository.
+// No error is returned when no assets are found.
+func searchForAssets(nexusClient nexus.ClientInterface, searchGroup string, repository string, logger logging.LeveledLoggerInterface) ([]string, error) {
+	urls, err := nexusClient.Search(repository, searchGroup)
+	if err != nil {
+		return nil, err
 	}
-	return "", []string{}, nil
+	if len(urls) > 0 {
+		logger.Infof("Found artifacts in repository %s inside group %s ...", repository, searchGroup)
+		return urls, nil
+	}
+	logger.Infof("No artifacts found in repository %s inside group %s.", repository, searchGroup)
+	return []string{}, nil
 }

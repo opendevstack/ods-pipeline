@@ -25,8 +25,6 @@ const (
 	repositoryLabel = labelPrefix + "repository"
 	// Label specifying the Git ref (e.g. branch) related to the pipeline.
 	gitRefLabel = labelPrefix + "git-ref"
-	// Label specifying the target stage of the pipeline.
-	stageLabel = labelPrefix + "stage"
 	// tektonAPIVersion specifies the Tekton API version in use
 	tektonAPIVersion = "tekton.dev/v1beta1"
 	// sharedWorkspaceName is the name of the workspace shared by all tasks
@@ -36,8 +34,9 @@ const (
 // PipelineConfig holds configuration for a triggered pipeline.
 type PipelineConfig struct {
 	PipelineInfo
-	PVC          string `json:"pvc"`
+	PVC          string
 	PipelineSpec config.Pipeline
+	Params       []tekton.Param
 }
 
 // createPipelineRun creates a PipelineRun resource
@@ -59,7 +58,7 @@ func createPipelineRun(
 		},
 		Spec: tekton.PipelineRunSpec{
 			PipelineSpec:       assemblePipelineSpec(cfg, taskKind, taskSuffix),
-			Params:             extractPipelineParams(cfg.PipelineSpec.Params),
+			Params:             extractPipelineParams(cfg.Params),
 			ServiceAccountName: "pipeline", // TODO
 			PodTemplate:        cfg.PipelineSpec.PodTemplate,
 			TaskRunSpecs:       cfg.PipelineSpec.TaskRunSpecs,
@@ -124,7 +123,6 @@ func pipelineLabels(data PipelineConfig) map[string]string {
 	return map[string]string{
 		repositoryLabel: data.Repository,
 		gitRefLabel:     makeValidLabelValue("", data.GitRef, 63),
-		stageLabel:      data.Stage,
 	}
 }
 
@@ -148,7 +146,7 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 		}
 		tasks = append(tasks, cfg.PipelineSpec.Tasks...)
 	}
-	tasks = mergeTriggerBasedParams(tasks, cfg.PipelineSpec.Params)
+	tasks = mergeTriggerBasedParams(tasks, cfg.Params)
 
 	finallyTasks := append([]tekton.PipelineTask{}, cfg.PipelineSpec.Finally...)
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
@@ -157,7 +155,7 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params:     finishTaskParams(),
 	})
-	finallyTasks = mergeTriggerBasedParams(finallyTasks, cfg.PipelineSpec.Params)
+	finallyTasks = mergeTriggerBasedParams(finallyTasks, cfg.Params)
 
 	return &tekton.PipelineSpec{
 		Params: []tekton.ParamSpec{
@@ -168,7 +166,6 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
 			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
 			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-			tektonStringParamSpec("environment", cfg.Environment),
 			tektonStringParamSpec("version", cfg.Version),
 		},
 		Tasks: tasks,
@@ -223,7 +220,6 @@ func startTaskParams() []tekton.Param {
 		tektonStringParam("pr-key", "$(params.pr-key)"),
 		tektonStringParam("pr-base", "$(params.pr-base)"),
 		tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-		tektonStringParam("environment", "$(params.environment)"),
 		tektonStringParam("version", "$(params.version)"),
 	}
 }

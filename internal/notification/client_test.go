@@ -46,10 +46,9 @@ func TestWebhookCall(t *testing.T) {
 		OverallStatus:   "Succeeded",
 		PipelineRunURL:  "https://localhost",
 		ODSContext: &pipelinectxt.ODSContext{
-			Project:     "Project",
-			GitRef:      "main",
-			Environment: "dev",
-			GitURL:      "https://localhost/vcs",
+			Project: "Project",
+			GitRef:  "main",
+			GitURL:  "https://localhost/vcs",
 		},
 	}
 

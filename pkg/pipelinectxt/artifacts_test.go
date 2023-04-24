@@ -41,12 +41,11 @@ func TestReadArtifactsDir(t *testing.T) {
 
 func TestDownloadGroup(t *testing.T) {
 	nexusClient := &nexus.TestClient{}
-	repositories := []string{nexus.PermanentRepositoryDefault, nexus.TemporaryRepositoryDefault}
 	group := "/my-project/my-repo/20d69cffd00080e20fa2f1419026a301cd0eecac"
 	artifactType := "my-type"
 	nexusURL := "https://nexus.example.com"
-	permanentBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.PermanentRepositoryDefault, group, artifactType)
-	temporaryBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.PermanentRepositoryDefault, group, artifactType)
+	permanentBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.TestPermanentRepository, group, artifactType)
+	temporaryBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.TestPermanentRepository, group, artifactType)
 	artifactsDir, err := os.MkdirTemp(".", "test-artifacts-")
 	if err != nil {
 		t.Fatal(err)
@@ -55,53 +54,39 @@ func TestDownloadGroup(t *testing.T) {
 	logger := &logging.LeveledLogger{Level: logging.LevelDebug}
 
 	tests := map[string]struct {
-		urls             map[string][]string
-		wantSelectedRepo string
+		urls map[string][]string
+		repo string
 	}{
 		"artifacts in permanent repo": {
 			urls: map[string][]string{
-				nexus.PermanentRepositoryDefault: {
+				nexus.TestPermanentRepository: {
 					permanentBaseURL + "/p1.txt", permanentBaseURL + "/p2.txt",
 				},
 			},
-			wantSelectedRepo: nexus.PermanentRepositoryDefault,
+			repo: nexus.TestPermanentRepository,
 		},
 		"artifacts in temporary repo": {
 			urls: map[string][]string{
-				nexus.TemporaryRepositoryDefault: {
+				nexus.TestTemporaryRepository: {
 					temporaryBaseURL + "/t1.txt", temporaryBaseURL + "/t2.txt",
 				},
 			},
-			wantSelectedRepo: nexus.TemporaryRepositoryDefault,
-		},
-		"artifacts in both repos": {
-			urls: map[string][]string{
-				nexus.PermanentRepositoryDefault: {
-					permanentBaseURL + "/p1.txt", permanentBaseURL + "/p2.txt",
-				},
-				nexus.TemporaryRepositoryDefault: {
-					temporaryBaseURL + "/t1.txt", temporaryBaseURL + "/t2.txt",
-				},
-			},
-			wantSelectedRepo: nexus.PermanentRepositoryDefault,
+			repo: nexus.TestTemporaryRepository,
 		},
 		"artifacts in no repo": {
-			urls:             map[string][]string{},
-			wantSelectedRepo: "",
+			urls: map[string][]string{},
+			repo: "",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			nexusClient.URLs = tc.urls
-			am, err := DownloadGroup(nexusClient, repositories, group, artifactsDir, logger)
+			am, err := DownloadGroup(nexusClient, tc.repo, group, artifactsDir, logger)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if am.SourceRepository != tc.wantSelectedRepo {
-				t.Fatalf("want: %s, got: %s", tc.wantSelectedRepo, am.SourceRepository)
-			}
-			if repoURLs, ok := tc.urls[tc.wantSelectedRepo]; ok {
+			if repoURLs, ok := tc.urls[tc.repo]; ok {
 				for _, url := range repoURLs {
 					ai := findArtifact(url, am.Artifacts)
 					if ai == nil {

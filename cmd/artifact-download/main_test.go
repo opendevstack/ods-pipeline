@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/opendevstack/pipeline/internal/gittest"
-	"github.com/opendevstack/pipeline/internal/installation"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
@@ -47,7 +46,6 @@ func TestGetODSContextFromDir(t *testing.T) {
 		GitRef:          "master",
 		GitURL:          "https://example.bitbucket.com/scm/ODS/ods-pipeline.git",
 		Version:         "WIP",
-		Environment:     "",
 		PullRequestBase: "",
 		PullRequestKey:  "",
 	}
@@ -215,10 +213,10 @@ func TestRun(t *testing.T) {
 	// Nexus client with corresponding artifact asset.
 	nexusClient := &nexus.TestClient{
 		URLs: map[string][]string{
-			nexus.PermanentRepositoryDefault: {
+			nexus.TestPermanentRepository: {
 				fmt.Sprintf(
 					"https://nexus.example.com/%s%s/%s",
-					nexus.PermanentRepositoryDefault,
+					nexus.TestPermanentRepository,
 					nexus.ArtifactGroup(project, repository, commitSHA, artifactType),
 					artifactName,
 				),
@@ -247,10 +245,7 @@ func TestRun(t *testing.T) {
 		logger,
 		opts,
 		nexusClient,
-		&installation.NexusRepositories{
-			Permanent: nexus.PermanentRepositoryDefault,
-			Temporary: nexus.TemporaryRepositoryDefault,
-		},
+		nexus.TestPermanentRepository,
 		bitbucketClient,
 		".",
 	)

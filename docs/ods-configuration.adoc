@@ -2,27 +2,22 @@
 
 = `ODS.YAML` Reference
 
-This guide will explain how to configure pipelines for your repositories in an `ods.yaml` file. The configuration in `ods.yaml` allows five top-level fields:
+This guide will explain how to configure pipelines for your repositories in an `ods.yaml` file. The configuration in `ods.yaml` allows the following top-level fields:
 
-* `pipeline`
-* `environments`
-* `branchToEnvironmentMapping`
-* `version`
+* `pipelines`
 * `repositories`
+* `version`
 
-== `pipeline`
+== `pipelines`
 
-The pipeline field allows to define the pipelines' tasks, as well as configuration of other behaviour, such as under which conditions the pipeline should run. Example:
+The `pipelines` field allows to define multiple pipelines. Each pipeline specifies when it is triggered (e.g. when a Git push occurs in a specific branch), and which tasks (e.g. build, package, deploy) to run. Example:
 
 .ods.yaml
 [source,yaml]
 ----
-pipeline:
-- trigger:
-    event: ["repo:refs_changed", "pr:*"]
-    branches: ["feature/*"]
-    exceptBranches: ["feature/foo"]
-    prComment: "/build"
+pipelines:
+- triggers:
+  - branches: ["main"]
   tasks:
   - name: build
     taskRef:
@@ -60,7 +55,7 @@ Alternatively to referencing tasks, inline task definitions can also be specifie
 .ods.yaml
 [source,yaml]
 ----
-pipeline:
+pipelines:
 - tasks:
   - name: build
     taskSpec:
@@ -84,7 +79,7 @@ Further, if link:https://tekton.dev/vault/pipelines-v0.43.x/install/#configuring
 .ods.yaml
 [source,yaml]
 ----
-pipeline:
+pipelines:
 - tasks:
   - name: build
     taskRef:
@@ -101,17 +96,6 @@ pipeline:
         workspace: shared-workspace
 ----
 
-=== Configuring pipeline triggers
-
-Using the `trigger` section, multiple pipelines can be configured, and the web hook data is matched against the conditions specified in the `trigger` section, selecting the pipeline to run. The following selection criteria may be specified:
-
-`event`:: List of events that trigger the pipeline. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match events. In case the `event` property is omitted in `ods.yaml`, any supported event will trigger the respective pipeline.
-`branches`:: List of branches to which the triggering event shall refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match branches. Not specifying the `branches` criterion will match webhook events on any branch in the repository.
-`exceptBranches`:: List of branches to which the triggering event may not refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match the excluded branches. Omitting the criterion will lead to none of the branches referred to in the webhook event to be excluded.
-`prComment`:: Define a prefix a comment has to start with. Might be used to implement functionality like slash commands. If omitted, comments won't be considered in the pipeline selection process.
-
-Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported (for a full list of events, please refer to the link:https://confluence.atlassian.com/bitbucketserver/event-payload-938025882.html[Atlassian Bitbucket Documentation]). Only the first pipeline matching all conditions in the trigger section will be executed. If no trigger section is specified, the pipeline will always match.
-
 === Configuring final tasks
 
 You can also specify further final tasks to be added to the pipeline by specifying them under `finally`. Example:
@@ -119,7 +103,7 @@ You can also specify further final tasks to be added to the pipeline by specifyi
 .ods.yaml
 [source,yaml]
 ----
-pipeline:
+pipelines:
 - tasks: [ ... ]
   finally:
   - name: foo
@@ -133,6 +117,63 @@ pipeline:
 
 Note that you cannot configure the execution order of final tasks. Final tasks all run simultaneously. For more information on final tasks, see the Tekton documentation on link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelines/#adding-finally-to-the-pipeline[Adding Finally to the Pipeline].
 
+=== Configuring pipeline triggers
+
+Using the `triggers` section, it is possible to narrow down in response to which events the pipeline should run. Further, each trigger can pass individual parameters to the referenced pipeline, allowing to modify the behaviour of the pipeline.
+
+==== Matching webhook events
+
+Example:
+```
+pipelines:
+- triggers:
+  - events: ["repo:refs_changed", "pr:*"]
+    branches: ["feature/*"]
+    exceptBranches: ["feature/foo"]
+    prComment: "/build"
+  tasks: []
+```
+
+The following selection criteria may be specified:
+
+`events`:: List of events that trigger the pipeline. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match events. In case the `event` property is omitted in `ods.yaml`, any supported event will trigger the respective pipeline.
+`branches`:: List of branches to which the triggering event shall refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match branches. Not specifying the `branches` criterion will match webhook events on any branch in the repository.
+`exceptBranches`:: List of branches to which the triggering event may not refer. Patterns as supported by link:https://pkg.go.dev/path#Match[`path.Match`] may be used to match the excluded branches. Omitting the criterion will lead to none of the branches referred to in the webhook event to be excluded.
+`prComment`:: Define a prefix a comment has to start with. Might be used to implement functionality like slash commands. If omitted, comments won't be considered in the pipeline selection process.
+
+Currently, the Bitbucket events `repo:refs_changed` (fired on push to a Bitbucket repository) and any Pull Request related events (event types with prefix `pr:`) are supported (for a full list of events, please refer to the link:https://confluence.atlassian.com/bitbucketserver/event-payload-938025882.html[Atlassian Bitbucket Documentation]). Only the first trigger matching all conditions will be selected. If no trigger section is specified, the pipeline will always match.
+
+==== Passing parameters
+
+The `params` field of each trigger can be used to pass parameters to the pipeline and its tasks. This mechanism can be used to pass dynamic parameter values based on the Git ref, for example to deploy into different namespaces depending on the checked out branch.
+
+Example:
+
+.ods.yaml
+[source,yaml]
+----
+pipelines:
+- triggers:
+  - branches: ["develop"]
+    params:
+    - name: deploy.namespace
+      value: foo-dev
+  - branches: ["production"]
+    params:
+    - name: deploy.namespace
+      value: foo-prod
+  tasks:
+  - name: deploy
+    taskRef:
+      kind: Task
+      name: ods-deploy-helm-v0-11-1
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+----
+
+Parameters when prefixed with `<task-name>.` are passed to the task named `<task-name>`. When no prefix is set, the parameter is available as a normal pipeline run parameter.
+
 === Configuring other pipeline run aspects
 
 Aside from `tasks` and `finally`, you may also specify https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#configuring-a-failure-timeout[`timeouts`], link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#specifying-a-pod-template[`podTemplate`] and link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#specifying-taskrunspecs[`taskRunSpecs`] for more advanced configuration.
@@ -142,7 +183,7 @@ For example, the compute resources of a remotely resolved task could be override
 .ods.yaml
 [source,yaml]
 ----
-pipeline:
+pipelines:
 - tasks:
   - name: build
     taskRef:
@@ -166,49 +207,9 @@ pipeline:
           memory: 2Gi
 ----
 
-
-== `environments`
-
-The `environments` field allows you to specify target environments to deploy to. Each environment must have a `name` and a `stage` field. Example:
-
-.ods.yaml
-[source,yaml]
-----
-environments:
-- name: development
-  stage: dev
-----
-
-The value of `name` may freely be chosen, but must begin and end with a lowercase `a-z` and can use `a-z0-9` and (`-`) in between. The `stage` must be one of `dev`, `qa` or `prod`. Each environment corresponds to one namespace in an OpenShift/Kubernetes cluster. The namespace may either be specified explicitly (via `namespace`), or it will be computed based on the project and the environment name (`<PROJECT>-<ENV-NAME>`). In the example above, `namespace` is not configured, therefore the target namespace will be resolved to `foo-development` (if the project is named `foo`). If `namespace` is specified it must follow the same rules as the `name` described above.
-
-Environments may also be located external to the cluster in which the pipeline runs. In this case, an environment may specify further fields:
-
-* `apiServer`: API server of the target cluster, including scheme
-* `apiCredentialsSecret`: Name of the Secret resource holding the API user credentials in field `token`
-* `registryHost`: Hostname of the target registry
-* `config`: Additional configuration of the target in the form of a map. This information may be used by custom tasks.
-
-== `branchToEnvironmentMapping`
-
-In order for the pipeline to select an environment to deploy to, you have to configure which branch should be deployed to which environment. This can be done via `branchToEnvironmentMapping`. Example:
-
-.ods.yaml
-[source,yaml]
-----
-branchToEnvironmentMapping:
-- branch: master
-  environment: development
-----
-
-In this case, the `master` branch will be deployed to the environment with the name `development`.
-
-The `branch` field also supports wildcard suffix match: use `&#42;` to match any branch, or e.g. `release/*` to match all branches that are prefixed with `release/`.
-
-TIP: If you want to promote images between environments without rebuilding them, ensure that you are merging without merge commits (fast-forward, `--ff-only`).
-
 == `version`
 
-`version` is an optional field that can specify a link:https://semver.org[SemVer] version. Its value will be available in the pipeline context. The link:tasks/ods-start.adoc[`ods-start` task] requires a value to be present when the target environment is of stage `qa` or `prod`. When this is the case, the task applies Git tags (`v<VERSION>-rc.<NUMBER>` for `qa` and `v<VERSION>` for `prod`) to the repository and ensures that a pipeline run for a `qa` environment exist before allowing to proceed to a `prod` environment.
+`version` is an optional field that can specify a link:https://semver.org[SemVer] version. Its value will be available in the pipeline context.
 
 == `repositories`
 

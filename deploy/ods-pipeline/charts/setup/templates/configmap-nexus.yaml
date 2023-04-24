@@ -6,5 +6,3 @@ metadata:
     {{- include "chart.labels" . | nindent 4}}
 data:
   url: '{{.Values.nexusUrl | trimSuffix "/"}}'
-  temporaryRepository: '{{.Values.nexusTemporaryRepository}}'
-  permanentRepository: '{{.Values.nexusPermanentRepository}}'

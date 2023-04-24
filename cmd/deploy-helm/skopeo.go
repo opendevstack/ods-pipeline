@@ -28,8 +28,8 @@ func (d *deployHelm) copyImage(imageArtifact artifact.Image, destRegistryToken s
 	destImageURL := getImageDestURL(d.targetConfig.RegistryHost, d.releaseNamespace, imageArtifact)
 	d.logger.Infof("Source image: %s", srcImageURL)
 	d.logger.Infof("Destination image: %s", destImageURL)
-	// TODO: for QA and PROD we want to ensure that the SHA recorded in Nexus
-	// matches the SHA referenced by the Git commit tag.
+	// TODO: for QA/PROD deployments we may want to ensure that the SHA
+	// recorded in Nexus matches the SHA referenced by the Git commit tag.
 	args := []string{
 		"copy",
 		fmt.Sprintf("--src-tls-verify=%v", srcRegistryTLSVerify),
