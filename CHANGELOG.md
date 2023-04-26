@@ -10,7 +10,7 @@ listed in the changelog.
 
 ## [Unreleased]
 
-### Changed
+### Fixed
 
 - Removed addition of `always-auth=true` to the npm config file for nodeJS builds ([#687](https://github.com/opendevstack/ods-pipeline/issues/687))
 
