@@ -71,7 +71,6 @@ NEXUS_HOST=$(echo "${NEXUS_URL}" | sed -E 's/^\s*.*:\/\///g')
 if [ -n "${NEXUS_URL}" ] && [ -n "${NEXUS_USERNAME}" ] && [ -n "${NEXUS_PASSWORD}" ]; then
     NEXUS_AUTH="$(urlencode "${NEXUS_USERNAME}"):$(urlencode "${NEXUS_PASSWORD}")"
     npm config set registry="$NEXUS_URL"/repository/npmjs/
-    npm config set always-auth=true
     npm config set "//${NEXUS_HOST}/repository/npmjs/:_auth"="$(echo -n "$NEXUS_AUTH" | base64)"
     npm config set email=no-reply@opendevstack.org
     if [ -f /etc/ssl/certs/private-cert.pem ]; then
