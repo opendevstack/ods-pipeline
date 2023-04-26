@@ -1,3 +1,12 @@
+# -----------------------  Installation hint  -----------------------
+#                          !!! Important !!!
+#  This is the default values file - if you're editing this as
+#  part of the ODS pipeline installation you're in the wrong file!
+#
+#  Please open ../values.yaml (the file you have created by making
+#  a copy of ../values.yaml.tmpl) and do your changes there.
+# -----------------------  Installation hint  -----------------------
+
 # ####################################### #
 # UMBRELLA                                #
 # ####################################### #
