@@ -10,15 +10,23 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Support webhook events related to Git tags ([#608](https://github.com/opendevstack/ods-pipeline/issues/608))
+- Support Git tags for subrepositories (related to [#630](https://github.com/opendevstack/ods-pipeline/issues/630))
+
+### Changed
+
+- IMPORTANT! The trigger mechanism allows for dynamic parameterisation of pipelines now (see [#677](https://github.com/opendevstack/ods-pipeline/issues/677) for the original idea). As a consequence, a few things have changed. The `pipeline` field is now named `pipelines`, and must specify a list of pipelines. Further, the `trigger` field of a pipeline is now named `triggers` and also specifies a list now. Inside each trigger, the `event` field was renamed to `events` for consistency. Further, trigger has learned a new field, `params`, which allows to specify pipeline and task parameters. The name of task parameters are suffixed with the task name, e.g. `<task-name>.some-param. Finally, the `branchToEnvironmentMapping` and `environments` fields have been dropped and equivalent behaviour must now be configured through the use of trigger parameters.
+- IMPORTANT! Setting a version in `ods.yaml` is no longer supported. Consequently, subrepositories are always checked out at the specified revision - no release branch "matching" the specified version is preferred. Further the version of the Helm chart isn't modified anymore. ([#630](https://github.com/opendevstack/ods-pipeline/issues/630))
+- The created pipeline run artifact records the Git commit SHAs of each checked out subrepository now (related to [#630](https://github.com/opendevstack/ods-pipeline/issues/630)).
+- The `artifact-download` binary is expected to be run from the Git commit in the umbrella repository now for which artifacts should be downloaded (related to [#630](https://github.com/opendevstack/ods-pipeline/issues/630)).
+
 ### Fixed
 
 - Removed addition of `always-auth=true` to the npm config file for nodeJS builds ([#687](https://github.com/opendevstack/ods-pipeline/issues/687))
 
 ## [0.11.1] - 2023-03-31
-
-### Changed
-
-- IMPORTANT! The trigger mechansim allows for dynamic parameterisation of pipelines now (see [#677](https://github.com/opendevstack/ods-pipeline/issues/677) for the original idea). As a consequence, a few things have changed. The `pipeline` field is now named `pipelines`, and must specify a list of pipelines. Further, the `trigger` field of a pipeline is now named `triggers` and also specifies a list now. Inside each trigger, the `event` field was renamed to `events` for consistency. Further, trigger has learned a new field, `params`, which allows to specify pipeline and task parameters. The name of task parameters are suffixed with the task name, e.g. `<task-name>.some-param. Finally, the `branchToEnvironmentMapping` and `environments` fields have been dropped and equivalent behaviour must now be configured through the use of trigger parameters.
 
 ### Fixed
 

@@ -65,10 +65,10 @@
                 "displayId": "v2.0.0",
                 "type": "TAG"
             },
-            "refId": "refs/heads/master",
-            "fromHash": "dc85ccd8bb912006162e0d1d9f48e1f2d7210c9c",
+            "refId": "refs/tags/v2.0.0",
+            "fromHash": "0000000000000000000000000000000000000000",
             "toHash": "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
-            "type": "UPDATE"
+            "type": "ADD"
         }
     ]
 }

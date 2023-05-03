@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"sigs.k8s.io/yaml"
 )
 
@@ -131,14 +130,6 @@ func getHelmChart(filename string) (*helmChart, error) {
 	return hc, nil
 }
 
-// getChartVersion extracts the version from given Helm chart.
-func getChartVersion(contextVersion string, hc *helmChart) string {
-	if len(contextVersion) > 0 && contextVersion != pipelinectxt.WIP {
-		return contextVersion
-	}
-	return hc.Version
-}
-
 // cleanHelmDiffOutput removes error messages from the given Helm output.
 // Those error messages are confusing, because they do not come from  an actual
 // error, but from detecting drift between desired and current Helm state.
@@ -170,13 +161,12 @@ func printlnSafeHelmCmd(args []string, outWriter io.Writer) {
 }
 
 // packageHelmChart creates a Helm package for given chart.
-func packageHelmChart(chartDir, ctxtVersion, gitCommitSHA string, debug bool) (string, error) {
+func packageHelmChart(chartDir, gitCommitSHA string, debug bool) (string, error) {
 	hc, err := getHelmChart(filepath.Join(chartDir, "Chart.yaml"))
 	if err != nil {
 		return "", fmt.Errorf("read chart: %w", err)
 	}
-	chartVersion := getChartVersion(ctxtVersion, hc)
-	packageVersion := fmt.Sprintf("%s+%s", chartVersion, gitCommitSHA)
+	packageVersion := fmt.Sprintf("%s+%s", hc.Version, gitCommitSHA)
 	helmPackageArgs := []string{
 		"package",
 		fmt.Sprintf("--app-version=%s", gitCommitSHA),

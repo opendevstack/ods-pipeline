@@ -1,20 +1,13 @@
 // Package main provides a programm to download all artifacts related to a
-// version easily. The artifacts are expected to be in Nexus repositories,
-// and placed into the local filesystem. The program not only considers the
-// given repository but also any configured subrepositories.
+// revision easily. The artifacts are expected to be in Nexus repositories,
+// and placed into the local filesystem. The program also collects artifacts
+// from any subrepositories that were part of the pipeline run producing the
+// artifacts.
 //
-// There are two main modes of the program:
-// (1) users supply (OpenShift) namespace, (Bitbucket) project, (Git) repository
+// Run this program from the root of a Git repository and supply the OpenShift
+// namespace via -namespace. Example:
 //
-//	and a tag such as "v1.0.0".
-//
-// (2) users run this program from the root of a Git repository and only supply
-//
-//	(OpenShift) namespace and tag=WIP. In this case the latest artifacts are
-//	downloaded.
-//
-// Mode (1) is the main use case, mode (2) is provided as a convenience feature
-// for developers.
+// ./artifact-download -namespace foo-cd
 package main
 
 import (
@@ -25,12 +18,8 @@ import (
 	"path/filepath"
 
 	"github.com/opendevstack/pipeline/internal/installation"
-	"github.com/opendevstack/pipeline/internal/repository"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -44,23 +33,11 @@ var GitCommit string
 type options struct {
 	kubeconfig      string
 	namespace       string
-	project         string
-	repository      string
 	artifactSource  string
-	version         bool
-	tag             string
 	outputDirectory string
 	privateCert     string
 	debug           bool
-}
-
-// bitbucketArtifactClientInterface is a helper interface that contains the
-// methods this program uses on the Bitbucket client. The interface is used
-// in testing to mock a Bitbucket client.
-type bitbucketArtifactClientInterface interface {
-	bitbucket.BranchClientInterface
-	bitbucket.TagClientInterface
-	bitbucket.RawClientInterface
+	version         bool
 }
 
 func main() {
@@ -74,10 +51,7 @@ func main() {
 	opts := options{}
 	flag.StringVar(&opts.kubeconfig, "kubeconfig", kcDefault, "Path to kube config file")
 	flag.StringVar(&opts.namespace, "namespace", "", "Namespace of ods-pipeline user installation (required)")
-	flag.StringVar(&opts.project, "project", "", "Bitbucket project key of repository")
-	flag.StringVar(&opts.repository, "repository", "", "Bitbucket repository key")
 	flag.StringVar(&opts.artifactSource, "artifact-source", "", "Artifact source repository")
-	flag.StringVar(&opts.tag, "tag", "", "Git tag to retrieve artifacts for, e.g. v1.0.0 (required)")
 	flag.StringVar(&opts.outputDirectory, "output", "artifacts-out", "Directory to place outputs into")
 	flag.StringVar(&opts.privateCert, "private-cert", "", "Path to private certification (in PEM format)")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "Enable debug mode")
@@ -104,19 +78,8 @@ func main() {
 	if opts.namespace == "" {
 		logUsageAndExit("-namespace is required")
 	}
-	if opts.tag == "" {
-		logUsageAndExit("-tag is required")
-	}
 	if opts.artifactSource == "" {
 		logUsageAndExit("-artifact-source is required")
-	}
-	if opts.tag != pipelinectxt.WIP {
-		if opts.project == "" {
-			logUsageAndExit("-project is required when version is not WIP")
-		}
-		if opts.repository == "" {
-			logUsageAndExit("-repository is required when version is not WIP")
-		}
 	}
 
 	// Kubernetes client
@@ -135,61 +98,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Bitbucket client
-	bcc, err := installation.NewBitbucketClientConfig(c, opts.namespace, logger, opts.privateCert)
-	if err != nil {
-		log.Fatalf("Could not create Bitbucket client config: %s. Are you logged into the cluster?", err)
-	}
-	bitbucketClient, err := bitbucket.NewClient(bcc)
-	if err != nil {
-		log.Fatal("bitbucket client:", err)
-	}
-
-	err = run(logger, opts, nexusClient, opts.artifactSource, bitbucketClient, workingDir)
+	err = run(logger, opts, nexusClient, opts.artifactSource, workingDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-// run is the actual main method.
-func run(
-	logger logging.LeveledLoggerInterface,
-	opts options,
-	nexusClient nexus.ClientInterface,
-	repository string,
-	bitbucketClient bitbucketArtifactClientInterface,
-	workingDir string) error {
-	// Context
-	ctxt, err := getODSContext(opts, bitbucketClient, workingDir)
-	if err != nil {
-		return err
-	}
-
-	err = downloadArtifacts(logger, opts, ctxt, nexusClient, repository)
-	if err != nil {
-		return err
-	}
-
-	// Read ods.yaml file to detect any subrepositories.
-	odsConfig, err := getODSConfig(opts, bitbucketClient, workingDir)
-	if err != nil {
-		return err
-	}
-
-	if len(odsConfig.Repositories) > 0 {
-		for _, subrepo := range odsConfig.Repositories {
-			subrepoCtxt, err := getSubrepoODSContext(ctxt, subrepo, opts, bitbucketClient)
-			if err != nil {
-				return err
-			}
-			err = downloadArtifacts(logger, opts, subrepoCtxt, nexusClient, repository)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 // kubeconfigDefault returns the default location of the Kubernetes config file.
@@ -221,97 +133,6 @@ func newKubernetesClientset(kubeconfig string) (*kubernetes.Clientset, error) {
 	}
 
 	return kubernetesClientset, nil
-}
-
-// downloadArtifacts downloads the artifact group related to given ODS context.
-func downloadArtifacts(
-	logger logging.LeveledLoggerInterface,
-	opts options,
-	ctxt *pipelinectxt.ODSContext,
-	nexusClient nexus.ClientInterface,
-	repository string) error {
-	artifactsDir := filepath.Join(opts.outputDirectory, opts.tag, ctxt.Repository)
-	if _, err := os.Stat(artifactsDir); err == nil {
-		return fmt.Errorf("output directory %s already exists", artifactsDir)
-	}
-	group := pipelinectxt.ArtifactGroupBase(ctxt)
-	_, err := pipelinectxt.DownloadGroup(
-		nexusClient, repository, group, artifactsDir, logger,
-	)
-	return err
-}
-
-// getODSContext assembles an ODS context from given options. If the version is WIP,
-// the information is gathered from the Git repository in working directory.
-// If the version is not WIP, the information is retrieved from given options
-// and the Bitbucket repository.
-func getODSContext(opts options, bitbucketClient bitbucket.TagClientInterface, workingDir string) (*pipelinectxt.ODSContext, error) {
-	ctxt := &pipelinectxt.ODSContext{
-		Namespace: opts.namespace,
-	}
-
-	if opts.tag == pipelinectxt.WIP {
-		err := ctxt.Assemble(workingDir)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		ctxt.Project = opts.project
-		ctxt.Repository = opts.repository
-		tag, err := bitbucketClient.TagGet(ctxt.Project, ctxt.Repository, opts.tag)
-		if err != nil {
-			return nil, err
-		}
-		ctxt.GitCommitSHA = tag.LatestCommit
-	}
-	return ctxt, nil
-}
-
-// getODSConfig reads an ods.y(a)ml file, either from the current directory (if
-// tag=WIP) or the remote Bitbucket project identified in the options.
-func getODSConfig(opts options, bitbucketClient bitbucket.RawClientInterface, workingDir string) (*config.ODS, error) {
-	if opts.tag == pipelinectxt.WIP {
-		return config.ReadFromDir(workingDir)
-	}
-	return repository.GetODSConfig(
-		bitbucketClient,
-		opts.project,
-		opts.repository,
-		opts.tag,
-	)
-}
-
-// getSubrepoODSContext returns an ODS context for the given subrepo.
-// The ODS context points to a Git commit, which is either retrieved from the
-// best matching branch (if tag=WIP) or the Git tag identified by options.tag.
-func getSubrepoODSContext(
-	ctxt *pipelinectxt.ODSContext,
-	subrepo config.Repository,
-	opts options,
-	bitbucketClient bitbucketArtifactClientInterface) (*pipelinectxt.ODSContext, error) {
-	subrepoCtxt := ctxt.Copy()
-	subrepoCtxt.Repository = subrepo.Name
-	// For WIP versions, select the best matching branches of subrepositories,
-	// and retrieve the latest commit from those branches.
-	if opts.tag == pipelinectxt.WIP {
-		br, err := repository.BestMatchingBranch(bitbucketClient, subrepoCtxt.Project, subrepo, pipelinectxt.WIP)
-		if err != nil {
-			return nil, err
-		}
-		latestCommit, err := repository.LatestCommitForBranch(bitbucketClient, subrepoCtxt.Project, subrepo.Name, br)
-		if err != nil {
-			return nil, err
-		}
-		subrepoCtxt.GitCommitSHA = latestCommit
-	} else {
-		// For non-WIP versions, retrieve the latest commit from given tag.
-		tag, err := bitbucketClient.TagGet(subrepoCtxt.Project, subrepoCtxt.Repository, opts.tag)
-		if err != nil {
-			return nil, err
-		}
-		subrepoCtxt.GitCommitSHA = tag.LatestCommit
-	}
-	return subrepoCtxt, nil
 }
 
 // logUsageAndExit prints given message followed by flag usage, then exits with exit code 2.

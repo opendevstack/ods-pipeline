@@ -225,7 +225,7 @@ func DownloadGroup(nexusClient nexus.ClientInterface, repository string, group, 
 		}
 		urlPathParts := strings.Split(u.Path, fmt.Sprintf("%s/", group))
 		if len(urlPathParts) != 2 {
-			return nil, fmt.Errorf("unexpected URL path (must contain two parts after group): %s", u.Path)
+			return nil, fmt.Errorf("unexpected URL path (must contain two parts after group '%s'): %s", group, u.Path)
 		}
 		fileWithSubPath := urlPathParts[1] // e.g. "pipeline-runs/foo-zh9gt0.json"
 		if !strings.Contains(fileWithSubPath, "/") {

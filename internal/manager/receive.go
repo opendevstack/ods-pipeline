@@ -11,15 +11,12 @@ import (
 	"strings"
 
 	"github.com/opendevstack/pipeline/internal/httpjson"
-	intrepo "github.com/opendevstack/pipeline/internal/repository"
+	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 )
 
-const (
-	// allowedChangeRefType is the Bitbucket change ref handled by this service.
-	allowedChangeRefType = "BRANCH"
-)
+const changeRefTypeTag = "TAG"
 
 // BitbucketWebhookReceiver receives webhook requests from Bitbucket.
 type BitbucketWebhookReceiver struct {
@@ -44,7 +41,6 @@ type PipelineInfo struct {
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
-	Version         string `json:"version"`
 	GitRef          string `json:"gitRef"`
 	GitFullRef      string `json:"gitFullRef"`
 	GitSHA          string `json:"gitSha"`
@@ -52,6 +48,7 @@ type PipelineInfo struct {
 	GitURI          string `json:"gitURI"`
 	Namespace       string `json:"namespace"`
 	TriggerEvent    string `json:"trigger-event"`
+	ChangeRefType   string `json:"change-ref-type"`
 	Comment         string `json:"comment"`
 	PullRequestKey  int    `json:"prKey"`
 	PullRequestBase string `json:"prBase"`
@@ -85,6 +82,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	var projectParam string
 	var component string
 	var commitSHA string
+	var changeRefType string
 	commentText := ""
 
 	if req.EventKey == "repo:refs_changed" {
@@ -95,14 +93,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 		projectParam = req.Repository.Project.Key
 		commitSHA = change.ToHash
-
-		if change.Ref.Type != allowedChangeRefType {
-			msg := fmt.Sprintf(
-				"skipping change ref type %s, only %s is supported",
-				change.Ref.Type, allowedChangeRefType,
-			)
-			return nil, httpjson.NewStatusProblem(http.StatusUnprocessableEntity, msg, nil)
-		}
+		changeRefType = change.Ref.Type
 	} else if strings.HasPrefix(req.EventKey, "pr:") {
 		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
 		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
@@ -129,10 +120,11 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		RepoBase:   s.RepoBase,
 		// Assemble GitURI from scratch instead of using user-supplied URI to
 		// protect against attacks from external Bitbucket servers and/or projects.
-		GitURI:       fmt.Sprintf("%s/%s/%s.git", s.RepoBase, project, repo),
-		Namespace:    s.Namespace,
-		TriggerEvent: req.EventKey,
-		Comment:      commentText,
+		GitURI:        fmt.Sprintf("%s/%s/%s.git", s.RepoBase, project, repo),
+		Namespace:     s.Namespace,
+		TriggerEvent:  req.EventKey,
+		ChangeRefType: changeRefType,
+		Comment:       commentText,
 	}
 
 	if len(commitSHA) == 0 {
@@ -157,7 +149,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	pInfo.PullRequestKey = prInfo.ID
 	pInfo.PullRequestBase = prInfo.Base
 
-	odsConfig, err := intrepo.GetODSConfig(
+	odsConfig, err := fetchODSConfig(
 		s.BitbucketClient,
 		pInfo.Project,
 		pInfo.Repository,
@@ -168,11 +160,10 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 			fmt.Sprintf("could not download ODS config for repo %s", pInfo.Repository), err,
 		)
 	}
-	pInfo.Version = odsConfig.Version
 
 	s.Logger.Infof("%+v", pInfo)
 
-	cfg, err := identifyPipelineConfig(pInfo, odsConfig, component)
+	cfg, err := identifyPipelineConfig(pInfo, *odsConfig, component)
 	if err != nil {
 		return nil, httpjson.NewStatusProblem(
 			http.StatusBadRequest, "could not identify pipeline to run", err,
@@ -184,7 +175,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 }
 
 // identifyPipelineConfig finds the first configuration matching the triggering event
-func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component string) (*PipelineConfig, error) {
+func identifyPipelineConfig(pInfo PipelineInfo, odsConfig config.ODS, component string) (*PipelineConfig, error) {
 	for _, p := range odsConfig.Pipelines {
 		if len(p.Triggers) == 0 {
 			return &PipelineConfig{
@@ -209,8 +200,10 @@ func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component
 }
 
 func triggerMatches(pInfo PipelineInfo, trigger config.Trigger) bool {
-	return triggerEventsMatch(pInfo, trigger) && triggerBranchesMatch(pInfo, trigger) &&
-		triggerExcludedBranchesDoNotMatch(pInfo, trigger) && triggerPRCommentMatches(pInfo, trigger)
+	return triggerEventsMatch(pInfo, trigger) &&
+		((triggerBranchesMatch(pInfo, trigger) && triggerExcludedBranchesDoNotMatch(pInfo, trigger)) ||
+			(triggerTagsMatch(pInfo, trigger) && triggerExcludedTagsDoNotMatch(pInfo, trigger))) &&
+		triggerPRCommentMatches(pInfo, trigger)
 }
 
 func anyPatternMatches(s string, patterns []string) bool {
@@ -230,17 +223,49 @@ func triggerEventsMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
 	return anyPatternMatches(pInfo.TriggerEvent, trigger.Events)
 }
 
+// triggerBranchesMatch is true when any pattern matches the Git ref (which refers to a branch).
+// If the change type is "TAG" or tag constraints are configured, it will always return "false".
 func triggerBranchesMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	if pInfo.ChangeRefType == changeRefTypeTag || len(trigger.Tags) > 0 {
+		return false
+	}
 	return anyPatternMatches(pInfo.GitRef, trigger.Branches)
 }
 
+// triggerExcludedBranchesDoNotMatch is true when no pattern matches the Git ref.
+// If the change type is "TAG", it will always return "false".
 func triggerExcludedBranchesDoNotMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	if pInfo.ChangeRefType == changeRefTypeTag {
+		return false
+	}
 	if len(trigger.ExceptBranches) == 0 {
 		return true
 	}
 	return !anyPatternMatches(pInfo.GitRef, trigger.ExceptBranches)
 }
 
+// triggerBranchesMatch is true when any pattern matches the Git ref (which refers to a tag).
+// If the change type is not "TAG" or branch constraints are configured, it will always return "false".
+func triggerTagsMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	if pInfo.ChangeRefType != changeRefTypeTag || len(trigger.Branches) > 0 {
+		return false
+	}
+	return anyPatternMatches(pInfo.GitRef, trigger.Tags)
+}
+
+// triggerExcludedTagsDoNotMatch is true when no pattern matches the Git ref.
+// If the change type is not "TAG", it will always return "false".
+func triggerExcludedTagsDoNotMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	if pInfo.ChangeRefType != changeRefTypeTag {
+		return false
+	}
+	if len(trigger.ExceptTags) == 0 {
+		return true
+	}
+	return !anyPatternMatches(pInfo.GitRef, trigger.ExceptTags)
+}
+
+// triggerPRCommentMatches is true when the comment is prefixed with trigger.PrComment.
 func triggerPRCommentMatches(pInfo PipelineInfo, trigger config.Trigger) bool {
 	prefix := trigger.PrComment
 	if prefix == nil || *prefix == "" {
@@ -273,4 +298,28 @@ func isCiSkipInCommitMessage(message string) bool {
 	return strings.Contains(subject, "[ciskip]") ||
 		strings.Contains(subject, "[skipci]") ||
 		strings.Contains(subject, "***noci***")
+}
+
+// fetchODSConfig returns a *config.ODS for given project/repository at gitFullRef.
+// If retrieving fails or not ods.y(a)ml file exists, it errors.
+func fetchODSConfig(bitbucketClient bitbucket.RawClientInterface, project, repository, gitFullRef string) (*config.ODS, error) {
+	var body []byte
+	var getErr error
+	for _, c := range config.ODSFileCandidates {
+		b, err := bitbucketClient.RawGet(project, repository, c, gitFullRef)
+		if err == nil {
+			body = b
+			getErr = nil
+			break
+		}
+		getErr = err
+	}
+	if getErr != nil {
+		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, getErr)
+	}
+
+	if body == nil {
+		return nil, fmt.Errorf("no ODS config located in repo %s", repository)
+	}
+	return config.Read(body)
 }

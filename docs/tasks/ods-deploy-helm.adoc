@@ -29,8 +29,7 @@ equals the Git commit SHA being built. This value can be used in your Helm
 templates to refer to images built via `ods-package-image`.
 
 Before the Helm chart is applied, it is packaged, setting the `appVersion`
-to the Git commit SHA and the `version` to the externally provided version,
-if any. If `version` is not given, the value in `Chart.yaml` is used as-is.
+to the checked out Git commit SHA.
 
 If the pipeline runs for a repository defining subrepos in its `ods.y(a)ml`
 file, then any charts in those subrepos are packaged as well, and added as

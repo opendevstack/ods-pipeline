@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/repository"
 	"github.com/opendevstack/pipeline/internal/tekton"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -27,7 +26,6 @@ type options struct {
 	nexusPassword          string
 	artifactSource         string
 	project                string
-	version                string
 	prKey                  string
 	prBase                 string
 	httpProxy              string
@@ -46,7 +44,6 @@ func main() {
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
 	flag.StringVar(&opts.project, "project", "", "project")
-	flag.StringVar(&opts.version, "version", "", "version")
 	flag.StringVar(&opts.prKey, "pr-key", "", "pull request key")
 	flag.StringVar(&opts.prBase, "pr-base", "", "pull request base")
 	flag.StringVar(&opts.httpProxy, "http-proxy", ".", "HTTP_PROXY")
@@ -109,7 +106,6 @@ func main() {
 
 	baseCtxt := &pipelinectxt.ODSContext{
 		Project:         opts.project,
-		Version:         opts.version,
 		PullRequestBase: opts.prBase,
 		PullRequestKey:  opts.prKey,
 	}
@@ -175,14 +171,10 @@ func main() {
 					1,
 				)
 			}
-			subrepoGitFullRef, err := repository.BestMatchingBranch(bitbucketClient, ctxt.Project, subrepo, ctxt.Version)
-			if err != nil {
-				log.Fatal(err)
-			}
 			subrepoCtxt, err := checkoutAndAssembleContext(
 				subrepoCheckoutDir,
 				subrepoURL,
-				subrepoGitFullRef,
+				findBestMatchingRef(subrepo),
 				opts,
 				baseCtxt,
 				logger,
@@ -234,6 +226,23 @@ func main() {
 			}
 		}
 	}
+}
+
+// findBestMatchingRef returns a full Git ref, from either tag, branch or default.
+func findBestMatchingRef(subrepo config.Repository) string {
+	if subrepo.Tag != "" {
+		if !strings.HasPrefix(subrepo.Tag, "refs/tags/") {
+			return fmt.Sprintf("refs/tags/%s", subrepo.Tag)
+		}
+		return subrepo.Tag
+	}
+	if subrepo.Branch != "" {
+		if !strings.HasPrefix(subrepo.Branch, "refs/heads/") {
+			return fmt.Sprintf("refs/heads/%s", subrepo.Branch)
+		}
+		return subrepo.Branch
+	}
+	return config.DefaultBranch
 }
 
 func downloadArtifacts(

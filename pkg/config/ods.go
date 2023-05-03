@@ -28,8 +28,6 @@ type ODS struct {
 	Repositories []Repository `json:"repositories,omitempty"`
 	// Pipeline allows to define the Tekton pipeline tasks.
 	Pipelines []Pipeline `json:"pipelines,omitempty"`
-	// Version is the application version and must follow SemVer.
-	Version string `json:"version,omitempty"`
 }
 
 // Repository represents a Git repository.
@@ -43,9 +41,12 @@ type Repository struct {
 	// Example: "https://acme.org/foo/bar.git"
 	URL string `json:"url"`
 	// Branch of Git repository (optional). If none is given, this defaults to
-	// the "master" branch.
+	// the "master" branch. If "tag" is non-empty, it has precedence.
 	// Example: "develop"
 	Branch string `json:"branch"`
+	// Tag of Git repository (optional). If none is given, branch has precedence.
+	// Example: "develop"
+	Tag string `json:"tag"`
 }
 
 // Pipeline represents a Tekton pipeline run.
@@ -63,6 +64,8 @@ type Trigger struct {
 	Events         []string       `json:"events,omitempty"`
 	Branches       []string       `json:"branches,omitempty"`
 	ExceptBranches []string       `json:"exceptBranches,omitempty"`
+	Tags           []string       `json:"tags,omitempty"`
+	ExceptTags     []string       `json:"exceptTags,omitempty"`
 	PrComment      *string        `json:"prComment,omitempty"`
 	Pipeline       string         `json:"pipeline,omitempty"`
 	Params         []tekton.Param `json:"params,omitempty"`

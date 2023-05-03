@@ -99,7 +99,7 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 | SRS-TASK-START-1
 a| The task shall check out a fresh copy of a Git repository.
 
-* If child repositories are configured, those shall be checked out as well. The checked out branch shall be configurable. If the pipeline run relates to a version, an existing release branch for that version shall be preferred.
+* If child repositories are configured, those shall be checked out as well. The branch/tag to be checked out shall be configurable.
 * All checkouts shall support Git submodules.
 * All checkouts shall support Git LFS extension.
 
@@ -304,7 +304,7 @@ a| The task shall upgrade (or install) a Helm chart.
 * Changes (diff) shall be reported in the log output.
 * Value files corresponding to the target namespace shall be applied.
 * Encrypted secret files shall be decrypted on the fly and applied.
-* The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
+* The "app version" shall be set to the checked out Git commit SHA.
 * Charts in any subrepositories shall be added as a subchart.
 * The target namespace may also be external to the cluster in which the pipeline runs.
 |===
@@ -342,7 +342,7 @@ a| The task shall be configurable to use a build script located in the workspace
 [cols="1,3"]
 |===
 | SRS-DLD-1
-a| The binary shall download all artifacts belonging to one repository/version.
+a| The binary shall download all artifacts belonging to one repository revision.
 
 * If the repository configures subrepositories, those shall be downloaded as well.
 

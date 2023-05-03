@@ -166,7 +166,6 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
 			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
 			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-			tektonStringParamSpec("version", cfg.Version),
 		},
 		Tasks: tasks,
 		Workspaces: []tekton.PipelineWorkspaceDeclaration{

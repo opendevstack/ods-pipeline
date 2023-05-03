@@ -106,7 +106,6 @@ func TestE2E(t *testing.T) {
 	// Push a commit, which should trigger a webhook, which in turn should start a pipeline run.
 	filename := "ods.yaml"
 	fileContent := `
-version: 2022.2.0
 pipelines:
   - tasks:
       - name: package-image

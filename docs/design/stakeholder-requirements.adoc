@@ -86,7 +86,7 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 | ODS Pipeline shall provide feedback about its status in Bitbucket and, if installed in OpenShift, in the Console UI.
 
 | SHR-10
-| ODS Pipeline shall provide easy access to artifacts stored in an artifact repository of each application version.
+| ODS Pipeline shall provide easy access to artifacts stored in an artifact repository of each application revision.
 
 | SHR-11
 | ODS Pipeline shall support applications with multiple components each stored in their own Git repository.
