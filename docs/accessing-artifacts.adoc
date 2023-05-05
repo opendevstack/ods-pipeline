@@ -1,6 +1,6 @@
 = Accessing artifacts
 
-ODS Pipeline is able to create and retain artifacts recording information related to a pipeline run. Those artifacts may be test reports, scan results, image digests, deployment records, etc. They are created during a pipeline run, associated with the commit being built and uploaded to Nexus. This document will describe how you can access the artifacts later on. A typical use case for this is attaching artifacts to verification reports for your (regulated) software.
+ODS Pipeline is able to create and retain artifacts recording information related to a pipeline run. Those artifacts may be test reports, scan results, image digests, deployment records, etc whereas container images are pushed to the cluster's image registry. They are created during a pipeline run, associated with the commit being built and uploaded to Nexus. This document will describe how you can access the artifacts later on. A typical use case for this is attaching artifacts to verification reports for your (regulated) software.
 
 == Artifact Storage
 
