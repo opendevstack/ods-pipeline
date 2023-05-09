@@ -46,6 +46,7 @@ type options struct {
 	namespace       string
 	project         string
 	repository      string
+	artifactSource  string
 	version         bool
 	tag             string
 	outputDirectory string
@@ -75,6 +76,7 @@ func main() {
 	flag.StringVar(&opts.namespace, "namespace", "", "Namespace of ods-pipeline user installation (required)")
 	flag.StringVar(&opts.project, "project", "", "Bitbucket project key of repository")
 	flag.StringVar(&opts.repository, "repository", "", "Bitbucket repository key")
+	flag.StringVar(&opts.artifactSource, "artifact-source", "", "Artifact source repository")
 	flag.StringVar(&opts.tag, "tag", "", "Git tag to retrieve artifacts for, e.g. v1.0.0 (required)")
 	flag.StringVar(&opts.outputDirectory, "output", "artifacts-out", "Directory to place outputs into")
 	flag.StringVar(&opts.privateCert, "private-cert", "", "Path to private certification (in PEM format)")
@@ -105,6 +107,9 @@ func main() {
 	if opts.tag == "" {
 		logUsageAndExit("-tag is required")
 	}
+	if opts.artifactSource == "" {
+		logUsageAndExit("-artifact-source is required")
+	}
 	if opts.tag != pipelinectxt.WIP {
 		if opts.project == "" {
 			logUsageAndExit("-project is required when version is not WIP")
@@ -129,10 +134,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	nr, err := installation.GetNexusRepositories(c, opts.namespace)
-	if err != nil {
-		log.Fatalf("Could not get Nexus repositories: %s. Are you logged into the cluster?", err)
-	}
 
 	// Bitbucket client
 	bcc, err := installation.NewBitbucketClientConfig(c, opts.namespace, logger, opts.privateCert)
@@ -144,7 +145,7 @@ func main() {
 		log.Fatal("bitbucket client:", err)
 	}
 
-	err = run(logger, opts, nexusClient, nr, bitbucketClient, workingDir)
+	err = run(logger, opts, nexusClient, opts.artifactSource, bitbucketClient, workingDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,7 +156,7 @@ func run(
 	logger logging.LeveledLoggerInterface,
 	opts options,
 	nexusClient nexus.ClientInterface,
-	nr *installation.NexusRepositories,
+	repository string,
 	bitbucketClient bitbucketArtifactClientInterface,
 	workingDir string) error {
 	// Context
@@ -164,7 +165,7 @@ func run(
 		return err
 	}
 
-	err = downloadArtifacts(logger, opts, ctxt, nexusClient, nr)
+	err = downloadArtifacts(logger, opts, ctxt, nexusClient, repository)
 	if err != nil {
 		return err
 	}
@@ -181,7 +182,7 @@ func run(
 			if err != nil {
 				return err
 			}
-			err = downloadArtifacts(logger, opts, subrepoCtxt, nexusClient, nr)
+			err = downloadArtifacts(logger, opts, subrepoCtxt, nexusClient, repository)
 			if err != nil {
 				return err
 			}
@@ -228,14 +229,14 @@ func downloadArtifacts(
 	opts options,
 	ctxt *pipelinectxt.ODSContext,
 	nexusClient nexus.ClientInterface,
-	nr *installation.NexusRepositories) error {
+	repository string) error {
 	artifactsDir := filepath.Join(opts.outputDirectory, opts.tag, ctxt.Repository)
 	if _, err := os.Stat(artifactsDir); err == nil {
 		return fmt.Errorf("output directory %s already exists", artifactsDir)
 	}
 	group := pipelinectxt.ArtifactGroupBase(ctxt)
 	_, err := pipelinectxt.DownloadGroup(
-		nexusClient, []string{nr.Permanent, nr.Temporary}, group, artifactsDir, logger,
+		nexusClient, repository, group, artifactsDir, logger,
 	)
 	return err
 }

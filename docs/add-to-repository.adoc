@@ -78,22 +78,14 @@ NOTE: Pay attention to the `runAfter` configuration in the task list: it ensures
 
 === (Optionally) Create Helm Chart
 
-If you want to deploy the created image, you can add the `ods-deploy-helm-v0-11-1` task to the `tasks` list and configure which branches should be deployed to which Kubernetes namespaces, like this:
+If you want to deploy the created image, you can add the `ods-deploy-helm-v0-11-1` task to the `tasks` list and configure which Kubernetes namespaces to deploy into, like this:
 
 .ods.yaml
 [source,yaml]
 ----
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: foo-dev
-  stage: dev
-
 pipeline:
-  - tasks:
+  - name: foo
+    tasks:
     - name: build
       taskRef:
         kind: Task
@@ -114,6 +106,9 @@ pipeline:
       taskRef:
         kind: Task
         name: ods-deploy-helm-v0-11-1
+      params:
+      - name: namespace
+        value: foo-dev
       runAfter:
       - package
       workspaces:

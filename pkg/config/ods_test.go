@@ -12,9 +12,10 @@ func TestReadFromDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gotStage := ods.Environments[0].Stage
-	if gotStage != ProdStage {
-		t.Fatalf("Got %s, want prod", gotStage)
+	want := "pr:opened"
+	got := ods.Pipelines[0].Triggers[0].Events[0]
+	if got != want {
+		t.Fatalf("Got %s, want %s", got, want)
 	}
 }
 
@@ -23,28 +24,10 @@ func TestReadFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gotStage := ods.Environments[0].Stage
-	if gotStage != ProdStage {
-		t.Fatalf("Got %s, want prod", gotStage)
-	}
-	gotName := ods.Environments[0].Name
-	if gotName != "e2e" {
-		t.Fatalf("Got %s, want e2e", gotName)
-	}
-}
-
-func TestReadFromSimplifiedFormatFile(t *testing.T) {
-	ods, err := ReadFromFile(filepath.Join(projectpath.Root, "test/testdata/fixtures/config/ods-simplified.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	gotStage := ods.Environments[0].Stage
-	if gotStage != ProdStage {
-		t.Fatalf("Got %s, want prod", gotStage)
-	}
-	gotNumPipelines := len(ods.Pipeline)
-	if gotNumPipelines != 1 {
-		t.Fatalf("Got %d pipeline definitions, want 1", gotNumPipelines)
+	want := "pr:opened"
+	got := ods.Pipelines[0].Triggers[0].Events[0]
+	if got != want {
+		t.Fatalf("Got %s, want %s", got, want)
 	}
 }
 
@@ -54,84 +37,26 @@ func TestRead(t *testing.T) {
 		WantError string
 	}{
 		"broken YAML": {
-			Fixture: []byte(`environments:
-			- name: foo
-			  stage: dev`),
-			WantError: "could not unmarshal config: error converting YAML to JSON: yaml: line 2: found character that cannot start any token",
+			Fixture: []byte(`pipelines:
+			- triggers: []`),
+			WantError: "error converting YAML to JSON: yaml: line 2: found character that cannot start any token",
 		},
 		"extra field": {
 			Fixture: []byte(`foo: bar
-environments:
-- name: foo
-  stage: dev`),
-			WantError: `could not unmarshal config: error unmarshaling JSON: while decoding JSON: json: unknown field "foo"`,
+pipelines:
+- triggers: []`),
+			WantError: `error unmarshaling JSON: while decoding JSON: json: unknown field "foo"`,
 		},
 		"duplicate field": {
-			Fixture: []byte(`environments: []
-environments:
-- name: foo
-  stage: dev`),
-			WantError: `could not unmarshal config: error converting YAML to JSON: yaml: unmarshal errors:
-  line 3: key "environments" already set in map`,
-		},
-		"missing stage": {
-			Fixture: []byte(`environments:
-- name: foo`),
-			WantError: "invalid stage value '' for environment foo",
-		},
-		"blank stage": {
-			Fixture: []byte(`environments:
-- name: foo
-  stage: ""`),
-			WantError: "invalid stage value '' for environment foo",
-		},
-		"wrong stage": {
-			Fixture: []byte(`environments:
-- name: foo
-  stage: staging`),
-			WantError: "invalid stage value 'staging' for environment foo",
-		},
-		"blank name": {
-			Fixture: []byte(`environments:
-- name: ""
-  stage: qa`),
-			WantError: "name of environment must not be blank",
-		},
-		"invalid name - extra characters": {
-			Fixture: []byte(`environments:
-- name: "Hello World!"
-  stage: dev`),
-			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
-		},
-		"invalid name - uppercase": {
-			Fixture: []byte(`environments:
-- name: "DEVenv"
-  stage: dev`),
-			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
-		},
-		"invalid name - starts with number": {
-			Fixture: []byte(`environments:
-- name: "2to"
-  stage: dev`),
-			WantError: "name of environment must match ^[a-z][a-z0-9-]*[a-z]$",
-		},
-		"invalid namespace - starts with number": {
-			Fixture: []byte(`environments:
-- name: "e2e"
-  namespace: "2to"
-  stage: dev`),
-			WantError: "namespace of environment must match ^[a-z][a-z0-9-]*[a-z]$",
+			Fixture: []byte(`pipelines: []
+pipelines:
+- triggers: []`),
+			WantError: `error converting YAML to JSON: yaml: unmarshal errors:
+  line 3: key "pipelines" already set in map`,
 		},
 		"valid": {
-			Fixture: []byte(`environments:
-- name: foo-qa
-  stage: qa`),
-			WantError: "",
-		},
-		"valid2": {
-			Fixture: []byte(`environments:
-- name: e2e-q
-  stage: qa`),
+			Fixture: []byte(`pipelines:
+- triggers: []`),
 			WantError: "",
 		},
 	}
@@ -147,27 +72,5 @@ environments:
 				}
 			}
 		})
-	}
-}
-
-func TestEnvironment(t *testing.T) {
-	o := &ODS{
-		Environments: []Environment{
-			{
-				Name:  "a",
-				Stage: "dev",
-			},
-			{
-				Name:  "b",
-				Stage: "dev",
-			},
-		},
-	}
-	got, err := o.Environment("b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Name != "b" {
-		t.Fatalf("Want env: b, got: %s", got.Name)
 	}
 }

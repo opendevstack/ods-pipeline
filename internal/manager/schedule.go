@@ -2,12 +2,10 @@ package manager
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
@@ -92,31 +90,6 @@ func (s *Scheduler) schedule(ctx context.Context, pData PipelineConfig) bool {
 func needsQueueing(pipelineRuns *tekton.PipelineRunList) bool {
 	for _, pr := range pipelineRuns.Items {
 		if pr.Spec.Status == tekton.PipelineRunSpecStatusPending || pipelineRunIsProgressing(pr) {
-			return true
-		}
-	}
-	return false
-}
-
-// selectEnvironmentFromMapping selects the environment name matching given branch.
-func selectEnvironmentFromMapping(mapping []config.BranchToEnvironmentMapping, branch string) string {
-	for _, bem := range mapping {
-		if mappingBranchMatch(bem.Branch, branch) {
-			return bem.Environment
-		}
-	}
-	return ""
-}
-
-func mappingBranchMatch(mappingBranch, testBranch string) bool {
-	// exact match
-	if mappingBranch == testBranch {
-		return true
-	}
-	// prefix match like "release/*", also catches "*"
-	if strings.HasSuffix(mappingBranch, "*") {
-		branchPrefix := strings.TrimSuffix(mappingBranch, "*")
-		if strings.HasPrefix(testBranch, branchPrefix) {
 			return true
 		}
 	}

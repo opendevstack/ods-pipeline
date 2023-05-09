@@ -14,29 +14,15 @@ However, if a version (e.g. `1.0.0`) is defined in `ods.y(a)ml`, then
 subrepos are checked out at a corresponding release branch (e.g.
 `release/1.0.0`) if it exists.
 
-Any artifacts in Nexus for the checked out Git commits are downloaded and
+If an artifact source is given, any artifacts in that Nexus repository for the checked out Git commits are downloaded and
 placed into `.ods/artifacts`. When subrepos are configured, a successful
 pipeline run must exist for each subrepo for the pipeline to continue. If no
 such run artifact exists, the pipeline will stop. Users will need to re-run
 the pipeline of the subrepo first before running the pipeline of the
 umbrella repo again.
 
-If a target environment has been resolved based on the `branchToEnvironmentMapping`
-configuration, its `stage` value determines if Git tags are applied:
-
-* for target environments of stage `dev`, no tags are applied
-* for target environments of stage `qa`, a `version` must be set in the `ods.y(a)ml`
-  and a `v<VERSION>-rc.<NUMBER>` tag is applied. Numbering starts at 1 and increases
-  by one for every subsequent pipeline run.
-* for target environments of stage `prod`, a `version` must be set in the `ods.y(a)ml`
-  and a `v<VERSION>` tag is applied. A `v<VERSION>-rc.<NUMBER>` tag must alreadu exist
-  for the checked out commit, otherwise the pipeline run is aborted.
-
-If a pipeline runs for `qa` or `prod` stages with a version for which a `v<VERSION>`
-tag exists already, no further tags are created.
-
 *This task is automatically added to any pipeline run as the first task
-by the pipeline manager and cannot be customized by users at this point.*
+by the pipeline manager. To customize parameters, configure them in the relevant trigger and prefix each param with `start.`*
 
 
 == Parameters
@@ -85,11 +71,6 @@ by the pipeline manager and cannot be customized by users at this point.*
 | Name of the project to build. The project is equal to the Bitbucket project of the repository to clone.
 
 
-| environment
-| 
-| Name of the environment to deploy to.
-
-
 | version
 | 
 | Version of the application. If not set, version will default to `WIP`.
@@ -113,6 +94,11 @@ by the pipeline manager and cannot be customized by users at this point.*
 | cache-build-tasks-for-days
 | 7
 | Number of days build tasks are cached to enable build skipping. A subsequent build reusing the cache resets the time for that cache location.
+
+
+| artifact-source
+| 
+| Artifact source respository
 
 |===
 

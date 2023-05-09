@@ -44,8 +44,6 @@ type PipelineInfo struct {
 	Project         string `json:"project"`
 	Component       string `json:"component"`
 	Repository      string `json:"repository"`
-	Stage           string `json:"stage"`
-	Environment     string `json:"environment"`
 	Version         string `json:"version"`
 	GitRef          string `json:"gitRef"`
 	GitFullRef      string `json:"gitFullRef"`
@@ -165,23 +163,10 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		pInfo.Repository,
 		pInfo.GitFullRef,
 	)
-
 	if err != nil {
 		return nil, httpjson.NewInternalProblem(
 			fmt.Sprintf("could not download ODS config for repo %s", pInfo.Repository), err,
 		)
-	}
-
-	pInfo.Environment = selectEnvironmentFromMapping(odsConfig.BranchToEnvironmentMapping, pInfo.GitRef)
-	pInfo.Stage = string(config.DevStage)
-	if pInfo.Environment != "" {
-		env, err := odsConfig.Environment(pInfo.Environment)
-		if err != nil {
-			return nil, httpjson.NewInternalProblem(
-				fmt.Sprintf("environment misconfiguration: %s", err), nil,
-			)
-		}
-		pInfo.Stage = string(env.Stage)
 	}
 	pInfo.Version = odsConfig.Version
 
@@ -193,35 +178,39 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 			http.StatusBadRequest, "could not identify pipeline to run", err,
 		)
 	}
-	s.TriggeredPipelines <- cfg
+	s.TriggeredPipelines <- *cfg
 
 	return pInfo, nil
 }
 
 // identifyPipelineConfig finds the first configuration matching the triggering event
-func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component string) (PipelineConfig, error) {
-	for _, pipeline := range odsConfig.Pipeline {
-		if pipelineMatches(pInfo, pipeline) {
-			return PipelineConfig{
+func identifyPipelineConfig(pInfo PipelineInfo, odsConfig *config.ODS, component string) (*PipelineConfig, error) {
+	for _, p := range odsConfig.Pipelines {
+		if len(p.Triggers) == 0 {
+			return &PipelineConfig{
 				PipelineInfo: pInfo,
 				PVC:          makePVCName(component),
-				// Move this to "spec" subfield?
-				Tasks:        pipeline.Tasks,
-				Finally:      pipeline.Finally,
-				PodTemplate:  pipeline.PodTemplate,
-				TaskRunSpecs: pipeline.TaskRunSpecs,
+				PipelineSpec: p,
+				// no params available
 			}, nil
 		}
+		for _, t := range p.Triggers {
+			if triggerMatches(pInfo, t) {
+				return &PipelineConfig{
+					PipelineInfo: pInfo,
+					PVC:          makePVCName(component),
+					PipelineSpec: p,
+					Params:       t.Params,
+				}, nil
+			}
+		}
 	}
-	return PipelineConfig{}, errors.New("no pipeline definition matched webhook event")
+	return nil, errors.New("no trigger definition matched webhook event")
 }
 
-func pipelineMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	if pipeline.Trigger == nil {
-		return true
-	}
-	return pipelineEventsMatch(pInfo, pipeline) && pipelineBranchesMatch(pInfo, pipeline) &&
-		pipelineExcludedBranchesDoNotMatch(pInfo, pipeline) && pipelineCommentMatches(pInfo, pipeline)
+func triggerMatches(pInfo PipelineInfo, trigger config.Trigger) bool {
+	return triggerEventsMatch(pInfo, trigger) && triggerBranchesMatch(pInfo, trigger) &&
+		triggerExcludedBranchesDoNotMatch(pInfo, trigger) && triggerPRCommentMatches(pInfo, trigger)
 }
 
 func anyPatternMatches(s string, patterns []string) bool {
@@ -237,23 +226,23 @@ func anyPatternMatches(s string, patterns []string) bool {
 	return false
 }
 
-func pipelineEventsMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	return anyPatternMatches(pInfo.TriggerEvent, pipeline.Trigger.Event)
+func triggerEventsMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	return anyPatternMatches(pInfo.TriggerEvent, trigger.Events)
 }
 
-func pipelineBranchesMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	return anyPatternMatches(pInfo.GitRef, pipeline.Trigger.Branches)
+func triggerBranchesMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	return anyPatternMatches(pInfo.GitRef, trigger.Branches)
 }
 
-func pipelineExcludedBranchesDoNotMatch(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	if len(pipeline.Trigger.ExceptBranches) == 0 {
+func triggerExcludedBranchesDoNotMatch(pInfo PipelineInfo, trigger config.Trigger) bool {
+	if len(trigger.ExceptBranches) == 0 {
 		return true
 	}
-	return !anyPatternMatches(pInfo.GitRef, pipeline.Trigger.ExceptBranches)
+	return !anyPatternMatches(pInfo.GitRef, trigger.ExceptBranches)
 }
 
-func pipelineCommentMatches(pInfo PipelineInfo, pipeline config.Pipeline) bool {
-	prefix := pipeline.Trigger.PrComment
+func triggerPRCommentMatches(pInfo PipelineInfo, trigger config.Trigger) bool {
+	prefix := trigger.PrComment
 	if prefix == nil || *prefix == "" {
 		return true
 	}

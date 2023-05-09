@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +50,6 @@ func TestCreatePVCIfRequired(t *testing.T) {
 				PipelineInfo: PipelineInfo{
 					Repository: "repo",
 					GitRef:     "branch",
-					Stage:      config.DevStage,
 				},
 				PVC: "pvc",
 			}

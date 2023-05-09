@@ -28,7 +28,6 @@ type ODSContext struct {
 	GitRef          string
 	GitURL          string
 	Version         string
-	Environment     string
 	PullRequestBase string
 	PullRequestKey  string
 }
@@ -46,7 +45,6 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 		BaseDir + "/project":        o.Project,
 		BaseDir + "/repository":     o.Repository,
 		BaseDir + "/component":      o.Component,
-		BaseDir + "/environment":    o.Environment,
 		BaseDir + "/version":        o.Version,
 		BaseDir + "/git-commit-sha": o.GitCommitSHA,
 		BaseDir + "/git-url":        o.GitURL,
@@ -72,7 +70,6 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 		BaseDir + "/project":        &o.Project,
 		BaseDir + "/repository":     &o.Repository,
 		BaseDir + "/component":      &o.Component,
-		BaseDir + "/environment":    &o.Environment,
 		BaseDir + "/version":        &o.Version,
 		BaseDir + "/git-commit-sha": &o.GitCommitSHA,
 		BaseDir + "/git-url":        &o.GitURL,

@@ -49,16 +49,16 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 [cols="1,3"]
 |===
 | SRS-GENERAL-1
-| ODS Pipeline shall be installable in Kubernetes (1.21+) clusters with Tekton (0.24+) installed.
+| ODS Pipeline shall be installable in Kubernetes (1.24+) clusters with Tekton (0.41+) installed.
 
 | SRS-GENERAL-2
-| ODS Pipeline shall be installable in OpenShift (4.8+) clusters with the OpenShift Pipelines (1.6+) operator installed.
+| ODS Pipeline shall be installable in OpenShift (4.11+) clusters with the OpenShift Pipelines (1.9+) operator installed.
 
 | SRS-GENERAL-3
-| ODS Pipeline shall be installable without cluster admin permissions.
+| ODS Pipeline shall be installable within a namespace without cluster admin permissions.
 
 | SRS-GENERAL-4
-| ODS Pipeline shall function within corporate networks (HTTP proxy, private CA).
+| ODS Pipeline shall function within corporate networks (must support private CA).
 
 | SRS-GENERAL-6
 | ODS Pipeline shall support installation from within an OpenShift Web Terminal when the OpenShift API cannot be accessed from outside the cluster.
@@ -81,13 +81,13 @@ The tasks shall create artifacts of their work. Those artifacts shall be stored 
 | The pipeline manager shall create a PVC for use as a pipeline run workspace per repository.
 
 | SRS-PIPELINE-MANAGER-5
-| The pipeline manager shall prune pipeline runs per repository and stage.
+| The pipeline manager shall prune pipeline runs per repository.
 
 | SRS-PIPELINE-MANAGER-6
 | The pipeline manager shall prevent concurrent pipeline runs for one repository.
 
 | SRS-PIPELINE-MANAGER-7
-| The pipeline manager shall be able trigger different pipelines dependent on the configured events.
+| The pipeline manager shall be able to trigger different pipelines dependent on the configured events and parameterize those pipeline runs based on the matching trigger.
 |===
 
 === Tasks Requirements
@@ -107,13 +107,13 @@ a| The task shall check out a fresh copy of a Git repository.
 a| The task shall store context information for each checked out repository (such as project and component key, Git commit SHA, target environment, etc.)
 
 | SRS-TASK-START-3
-| The task shall discover artifacts connected to the checked out commit and make them available to subsequent tasks.
+| The task shall be able to discover artifacts connected to the checked out commit in a Nexus repository and make them available to subsequent tasks.
 
 | SRS-TASK-START-4
 | The task shall set the Bitbucket build status of the checked out commit being to "in progress". The build status shall link back to the pipeline run.
 
 | SRS-TASK-START-5
-| The task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
+| When an artifact source is configured, the task shall fail when any child repository is missing a successful pipeline run artifact for the checked out commit.
 
 | SRS-TASK-START-6
 | The task shall support caching. Caching shall enable persisting build dependencies. Caching shall enable to reuse build outputs and artifacts if a build tasks runs when the associated working directory has not changed.
@@ -130,7 +130,7 @@ a| The task shall store context information for each checked out repository (suc
 | The task shall create an artifact representing the pipeline run.
 
 | SRS-TASK-FINISH-3
-| The task shall upload all artifacts to Nexus, associating them with the checked out commit.
+| The task shall be able to upload all artifacts to a Nexus repository, associating them with the checked out commit.
 
 | SRS-TASK-FINISH-4
 | The task shall send a notification to a configured webhook about the pipeline run status.
@@ -292,7 +292,7 @@ a| The task shall build a Node.JS application using npm.
 [cols="1,3"]
 |===
 | SRS-TASK-DEPLOY-HELM-1
-| The task shall skip when no environment is given.
+| The task shall skip when no namespace parameter is given.
 
 | SRS-TASK-DEPLOY-HELM-2
 | The task shall push images built for the checked out commit into the target namespace, which may also be external to the cluster in which the pipeline runs.
@@ -302,10 +302,10 @@ a| The task shall upgrade (or install) a Helm chart.
 
 * The location of the chart shall be customizable.
 * Changes (diff) shall be reported in the log output.
-* Value files corresponding with the target environment and stage shall be respected.
-* Encrypted secret files shall be decrypted on the fly and respected.
+* Value files corresponding to the target namespace shall be applied.
+* Encrypted secret files shall be decrypted on the fly and applied.
 * The "app version" shall be set to the Git commit SHA and the "version" shall be set to given `version` if any, otherwise the chart version in `Chart.yaml`.
-* Charts in any subrespositories shall be added as a subchart.
+* Charts in any subrepositories shall be added as a subchart.
 * The target namespace may also be external to the cluster in which the pipeline runs.
 |===
 

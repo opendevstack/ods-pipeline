@@ -12,10 +12,6 @@
         {
           "name": "GitRef",
           "value": "main"
-        },
-        {
-          "name": "Environment",
-          "value": "dev"
         }
       ],
       "markdown": true

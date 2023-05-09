@@ -87,39 +87,31 @@ An roughly equivalent `ods.yaml` for the above `Jenkinsfile` looks like this:
 .ods.yaml
 [source,yaml]
 ----
-branchToEnvironmentMapping:
-- branch: master
-  environment: dev
-
-environments:
-- name: dev
-  namespace: foo-dev
-  stage: dev
-
-pipeline:
-  - tasks:
-    - name: backend-build-go
+pipelines:
+  - name: foo
+    tasks:
+    - name: build
       taskRef:
         kind: Task
         name: ods-build-go-v0-11-1
       workspaces:
       - name: source
         workspace: shared-workspace
-    - name: backend-package-image
+    - name: package
       taskRef:
         kind: Task
         name: ods-package-image-v0-11-1
       runAfter:
-      - backend-build-go
+      - build
       workspaces:
       - name: source
         workspace: shared-workspace
-    - name: backend-deploy
+    - name: deploy
       taskRef:
         kind: Task
         name: ods-deploy-helm-v0-11-1
       runAfter:
-      - backend-package-image
+      - package
       workspaces:
       - name: source
         workspace: shared-workspace

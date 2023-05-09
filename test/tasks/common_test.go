@@ -28,7 +28,9 @@ var skipSonarQubeFlag = flag.Bool("skip-sonar", false, "Whether to skip SonarQub
 var privateCertFlag = flag.Bool("private-cert", false, "Whether to run tests using a private cert")
 
 const (
-	taskKindRef = "Task"
+	taskKindRef              = "Task"
+	nexusPermanentRepository = "ods-permanent-artifacts"
+	nexusTemporaryRepository = "ods-temporary-artifacts"
 )
 
 // buildTaskParams forces all SonarQube params to be "falsy"

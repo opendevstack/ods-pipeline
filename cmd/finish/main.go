@@ -26,17 +26,16 @@ type PipelineRunArtifact struct {
 }
 
 type options struct {
-	bitbucketAccessToken     string
-	bitbucketURL             string
-	consoleURL               string
-	pipelineRunName          string
-	aggregateTasksStatus     string
-	nexusURL                 string
-	nexusUsername            string
-	nexusPassword            string
-	nexusTemporaryRepository string
-	nexusPermanentRepository string
-	debug                    bool
+	bitbucketAccessToken string
+	bitbucketURL         string
+	consoleURL           string
+	pipelineRunName      string
+	aggregateTasksStatus string
+	nexusURL             string
+	nexusUsername        string
+	nexusPassword        string
+	artifactTarget       string
+	debug                bool
 }
 
 func main() {
@@ -53,8 +52,7 @@ func main() {
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.nexusTemporaryRepository, nexus.TemporaryRepositoryDefault, os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	flag.StringVar(&opts.nexusPermanentRepository, nexus.PermanentRepositoryDefault, os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.artifactTarget, "artifact-target", "", "Target artifact repository")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
@@ -151,7 +149,7 @@ func main() {
 
 // handleArtifacts figures out what to do with the artifacts stored underneath
 // the checkout dir. If the previous Tekton tasks succeeded, then the artifacts
-// are uploaded. The target repository is determined by the environment stage.
+// are uploaded to the artifact target repository.
 func handleArtifacts(
 	logger logging.LeveledLoggerInterface,
 	nexusClient nexus.ClientInterface,
@@ -163,47 +161,31 @@ func handleArtifacts(
 	logger.Infof("Creating artifact of pipeline run ...")
 	err := createPipelineRunArtifact(checkoutDir, opts.pipelineRunName, opts.aggregateTasksStatus)
 	if err != nil {
-		return fmt.Errorf("cannot create pipeline run artifact: %w", err)
+		return fmt.Errorf("create pipeline run artifact: %w", err)
 	}
 
-	odsConfig, err := config.ReadFromDir(checkoutDir)
-	if err != nil {
-		return fmt.Errorf("cannot read ods config: %w", err)
-	}
-
-	logger.Infof("Uploading artifacts to Nexus ...")
-	// Use temporary storage for DEV stage and permanenet repository for
-	// QA and PROD stage environments.
-	nexusRepository := opts.nexusTemporaryRepository
-	if len(ctxt.Environment) > 0 {
-		env, err := odsConfig.Environment(ctxt.Environment)
+	if opts.artifactTarget != "" {
+		logger.Infof("Uploading artifacts to Nexus ...")
+		err = uploadArtifacts(logger, nexusClient, opts.artifactTarget, checkoutDir, ctxt, opts)
 		if err != nil {
-			return fmt.Errorf("cannot determine environment: %w", err)
+			return fmt.Errorf("cannot upload artifacts of main repository: %w", err)
 		}
-		logger.Debugf("Selected environment %s.", env.Name)
-		if env.Stage != config.DevStage {
-			logger.Debugf(
-				"Setting target Nexus repository to %s as environment is not a dev stage environment.",
-				opts.nexusPermanentRepository,
-			)
-			nexusRepository = opts.nexusPermanentRepository
+		odsConfig, err := config.ReadFromDir(checkoutDir)
+		if err != nil {
+			return fmt.Errorf("read ODS config: %w", err)
 		}
-	}
-	err = uploadArtifacts(logger, nexusClient, nexusRepository, checkoutDir, ctxt, opts)
-	if err != nil {
-		return fmt.Errorf("cannot upload artifacts of main repository: %w", err)
-	}
-	if len(odsConfig.Repositories) > 0 {
-		for _, subrepo := range odsConfig.Repositories {
-			subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepo.Name)
-			subrepoCtxt := &pipelinectxt.ODSContext{}
-			err := subrepoCtxt.ReadCache(subrepoCheckoutDir)
-			if err != nil {
-				return fmt.Errorf("cannot read cache of subrepository %s: %w", subrepo.Name, err)
-			}
-			err = uploadArtifacts(logger, nexusClient, nexusRepository, subrepoCheckoutDir, subrepoCtxt, opts)
-			if err != nil {
-				return fmt.Errorf("cannot upload artifacts of subrepository %s: %w", subrepo.Name, err)
+		if len(odsConfig.Repositories) > 0 {
+			for _, subrepo := range odsConfig.Repositories {
+				subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepo.Name)
+				subrepoCtxt := &pipelinectxt.ODSContext{}
+				err := subrepoCtxt.ReadCache(subrepoCheckoutDir)
+				if err != nil {
+					return fmt.Errorf("cannot read cache of subrepository %s: %w", subrepo.Name, err)
+				}
+				err = uploadArtifacts(logger, nexusClient, opts.artifactTarget, subrepoCheckoutDir, subrepoCtxt, opts)
+				if err != nil {
+					return fmt.Errorf("cannot upload artifacts of subrepository %s: %w", subrepo.Name, err)
+				}
 			}
 		}
 	}
@@ -232,7 +214,7 @@ func uploadArtifacts(
 	}
 	for artifactsSubDir, files := range artifactsMap {
 		for _, filename := range files {
-			if am.Contains(nexusRepository, artifactsSubDir, filename) {
+			if am.Contains(artifactsSubDir, filename) {
 				logger.Infof("Artifact %s is already present in Nexus repository %s.", filename, nexusRepository)
 			} else {
 				nexusGroup := artifactGroup(ctxt, artifactsSubDir, opts)

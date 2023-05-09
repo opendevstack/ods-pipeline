@@ -1,26 +1,27 @@
 = Accessing artifacts
 
-ODS Pipeline creates and retains artifacts recording information related to a pipeline run. Those artifacts can be test reports, scan results, image digests, deployment records, etc. They are created during a pipeline run, associated with the commit being built and stored in Nexus. This document will describe how you can access the artifacts later on. A typical use case for this is attaching artifacts to verification reports for your (medical device) software.
+ODS Pipeline is able to create and retain artifacts recording information related to a pipeline run. Those artifacts may be test reports, scan results, image digests, deployment records, etc whereas container images are pushed to the cluster's image registry. They are created during a pipeline run, associated with the commit being built and uploaded to Nexus. This document will describe how you can access the artifacts later on. A typical use case for this is attaching artifacts to verification reports for your (regulated) software.
 
 == Artifact Storage
 
-Artifacts are stored in Nexus. Nexus is setup with two `raw` repositories, one for temporary storage (named `ods-temporary-artifacts` by default), and one for permanent storage (named `ods-permanent-artifacts` by default). When a pipeline runs, the selected target environment determines where artifacts are stored:
+Artifacts are stored in Nexus repositories of type `raw`. When a pipeline finishes, it uploads any artifacts created during the run to the Nexus repository identified by the parameter `artifact-target`, which can be set from a trigger:
 
-* temporary: no environment or environment of stage `dev`
-* permanent: environment of stage `qa` or `prod`
-
-The permanent repository should have no cleanup policy or one that matches the overall retention policy required by the software product you are building. In contrast, the temporary repository might have a cleanup policy that is much shorter (however cleanup is neither enforced nor expected by ODS pipeline).
+```
+name: finish.artifact-target
+value: my-nexus-repo
+```
 
 == Downloading Artifacts
 
-While artifacts are plain Nexus assets and can therefore be downloaded via standard means (e.g. via `curl` or in the Nexus web interface), this would be very time consuming when there are many artifacts. To make it fast and easy to download all artifacts related to a certain version in one go, ODS pipelines ships with the `artifact-download` binary. This binary can be built from this repository via `make build-artifact-download` or simply downloaded pre-built from the GitHub release page.
+While artifacts are plain Nexus assets and can therefore be downloaded via standard means (e.g. via `curl` or in the Nexus web interface), this would be very time consuming when there are many artifacts. To make it quick and easy to download all artifacts related to a certain version in one go, ODS Pipelines ships with the `artifact-download` binary. This binary can be built from this repository via `make build-artifact-download` or simply downloaded pre-built from the GitHub release page.
 
-Usage is simple:
+Usage:
 ```
 artifact-download \
   --namespace my-project-cd \
   --project my-project \
   --repository my-repo \
+  --artifact-source nexus-repo \
   --tag v1.0.0
 ```
 

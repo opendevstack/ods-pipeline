@@ -107,13 +107,7 @@ func TestE2E(t *testing.T) {
 	filename := "ods.yaml"
 	fileContent := `
 version: 2022.2.0
-branchToEnvironmentMapping:
-  - branch: "*"
-    environment: dev
-environments:
-  - name: dev
-    stage: dev
-pipeline:
+pipelines:
   - tasks:
       - name: package-image
         taskRef:

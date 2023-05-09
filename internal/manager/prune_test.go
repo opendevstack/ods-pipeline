@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,19 +68,13 @@ func TestPrune(t *testing.T) {
 	tclient := &tektonClient.TestClient{
 		PipelineRuns: []*tekton.PipelineRun{
 			// not pruned
-			pipelineRun("pr-a", config.DevStage, time.Now().Add(time.Minute*-1)),
+			pipelineRun("pr-a", time.Now().Add(time.Minute*-1)),
 			// would be pruned by maxKeepRuns, but is protected by minKeepHours
-			pipelineRun("pr-b", config.DevStage, time.Now().Add(time.Minute*-3)),
+			pipelineRun("pr-b", time.Now().Add(time.Minute*-3)),
 			// pruned
-			pipelineRun("pr-c", config.DevStage, time.Now().Add(time.Hour*-4)),
+			pipelineRun("pr-c", time.Now().Add(time.Hour*-4)),
 			// pruned
-			pipelineRun("pr-d", config.DevStage, time.Now().Add(time.Hour*-5)),
-			// not pruned because different stage (QA)
-			pipelineRun("pr-e", config.QAStage, time.Now()),
-			// not pruned because different stage (PROD)
-			pipelineRun("pr-f", config.ProdStage, time.Now().Add(time.Hour*-7)),
-			// pruned
-			pipelineRun("pr-g", config.ProdStage, time.Now().Add(time.Hour*-8)),
+			pipelineRun("pr-d", time.Now().Add(time.Hour*-5)),
 		},
 	}
 	minKeepHours := 2
@@ -102,19 +95,16 @@ func TestPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	sort.Strings(tclient.DeletedPipelineRuns)
-	if diff := cmp.Diff([]string{"pr-c", "pr-d", "pr-g"}, tclient.DeletedPipelineRuns); diff != "" {
+	if diff := cmp.Diff([]string{"pr-c", "pr-d"}, tclient.DeletedPipelineRuns); diff != "" {
 		t.Fatalf("pipeline run prune mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func pipelineRun(name string, stage config.Stage, creationTime time.Time) *tekton.PipelineRun {
+func pipelineRun(name string, creationTime time.Time) *tekton.PipelineRun {
 	return &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              name,
 			CreationTimestamp: metav1.Time{Time: creationTime},
-			Labels: map[string]string{
-				stageLabel: string(stage),
-			},
 		},
 	}
 }

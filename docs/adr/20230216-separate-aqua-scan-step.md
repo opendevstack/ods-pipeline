@@ -1,4 +1,4 @@
-# Extrace Aqua scan to separate container
+# Extract Aqua scan to separate container
 
 Date: 2023-02-16
 

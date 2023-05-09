@@ -5,7 +5,6 @@ import (
 	"time"
 
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,9 +17,9 @@ const (
 	pruneTimeout = 5 * time.Minute
 )
 
-// Pruner prunes pipeline runs by target stage.
+// Pruner prunes pipeline runs.
 // It's behaviour can be controlled through MinKeepHours and MaxKeepRuns.
-// When pruning, it keeps MaxKeepRuns number of pipeline runs per stage,
+// When pruning, it keeps MaxKeepRuns number of pipeline runs,
 // however it always keeps all pipeline runs less than MinKeepHours old.
 type Pruner struct {
 	// TriggeredRepos receives repo names for each triggered repository.
@@ -31,7 +30,7 @@ type Pruner struct {
 	// MinKeepHours specifies the minimum hours to keep a pipeline run.
 	// This setting has precendence over MaxKeepRuns.
 	MinKeepHours int
-	// MaxKeepRuns is the maximum number of pipeline runs to keep per stage.
+	// MaxKeepRuns is the maximum number of pipeline runs to keep.
 	MaxKeepRuns   int
 	upcomingPrune map[string]time.Time
 }
@@ -81,38 +80,16 @@ func (p *Pruner) prune(ctx context.Context, repository string) error {
 		return err
 	}
 	p.Logger.Debugf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), repository)
-	prByStage := p.categorizePipelineRunsByStage(pipelineRuns.Items)
-	for stage, prs := range prByStage {
-		p.Logger.Debugf("Calculating prunable pipelines / pipeline runs for stage %s ...", stage)
-		prunable := p.findPrunableResources(prs)
+	prunable := p.findPrunableResources(pipelineRuns.Items)
 
-		p.Logger.Debugf("Pruning %d \"%s\" stage pipeline runs ...", len(prunable), stage)
-		for _, name := range prunable {
-			err := p.pruneRun(ctxt, name)
-			if err != nil {
-				p.Logger.Warnf("Failed to prune pipeline run %s: %s", name, err)
-			}
+	p.Logger.Debugf("Pruning %d pipeline runs ...", len(prunable))
+	for _, name := range prunable {
+		err := p.pruneRun(ctxt, name)
+		if err != nil {
+			p.Logger.Warnf("Failed to prune pipeline run %s: %s", name, err)
 		}
 	}
 	return nil
-}
-
-// categorizePipelineRunsByStage assigns the given pipelineRuns into buckets
-// by target stages (DEV, QA, PROD).
-func (p *Pruner) categorizePipelineRunsByStage(pipelineRuns []tekton.PipelineRun) map[string][]tekton.PipelineRun {
-	pipelineRunsByStage := map[string][]tekton.PipelineRun{
-		string(config.DevStage):  {},
-		string(config.QAStage):   {},
-		string(config.ProdStage): {},
-	}
-	for _, pr := range pipelineRuns {
-		stage := pr.Labels[stageLabel]
-		if _, ok := pipelineRunsByStage[stage]; !ok {
-			p.Logger.Warnf("Unknown stage '%s' for pipeline run %s", stage, pr.Name)
-		}
-		pipelineRunsByStage[stage] = append(pipelineRunsByStage[stage], pr)
-	}
-	return pipelineRunsByStage
 }
 
 // findPrunableResources finds resources that can be pruned.

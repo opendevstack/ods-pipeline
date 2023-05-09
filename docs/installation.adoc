@@ -84,7 +84,7 @@ Create an HTTPS route to expose the `ods-pipeline` service. You'll need the expo
 
 IMPORTANT: The `pipeline` serviceaccount needs `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`). You must create rolebindings for this manually.
 
-CAUTION: The default installation of ODS 4.x does not create `ods-temporary-artifacts` and `ods-permanent-artifacts` repositories in Nexus, however they are required for ODS Pipeline to work. The repositories need to be of type `raw` and should not allow re-deployment of artifacts. It is recommended to use separate blob stores for both. As administrator, you may prune the `ods-temporary-artifacts` repository using cleanup policies of your own choosing. The `ods-permanent-artifacts` repository should not be cleaned up or have a retention period matching your organisation policy of record retention.
+CAUTION: An important feature of ODS Pipeline is to retain pipeline run artifacts in Nexus and re-use them future pipeline runs (e.g. to promote built container images to another environment). For this purpose, you should create a few `raw` repositories in Nexus. These repositories should not allow re-deployment of artifacts. For example, you might want to have `ods-pipeline-dev`, `ods-pipeline-qa` and `ods-pipeline-prod` repositories, each with a different cleanup policy as fitting your needs. You can then use these repositories from your pipeline to store artifacts and enforce a progression of artifacts from DEV > QA > PROD.
 
 Now you are ready to link:add-to-repository.adoc[enable your repositories to use ODS pipeline]!
 

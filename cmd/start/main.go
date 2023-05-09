@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -19,29 +18,27 @@ import (
 )
 
 type options struct {
-	bitbucketAccessToken     string
-	bitbucketURL             string
-	consoleURL               string
-	pipelineRunName          string
-	nexusURL                 string
-	nexusUsername            string
-	nexusPassword            string
-	nexusTemporaryRepository string
-	nexusPermanentRepository string
-	project                  string
-	environment              string
-	version                  string
-	prKey                    string
-	prBase                   string
-	httpProxy                string
-	httpsProxy               string
-	noProxy                  string
-	url                      string
-	gitFullRef               string
-	submodules               string
-	depth                    string
-	cacheBuildTasksForDays   int
-	debug                    bool
+	bitbucketAccessToken   string
+	bitbucketURL           string
+	consoleURL             string
+	pipelineRunName        string
+	nexusURL               string
+	nexusUsername          string
+	nexusPassword          string
+	artifactSource         string
+	project                string
+	version                string
+	prKey                  string
+	prBase                 string
+	httpProxy              string
+	httpsProxy             string
+	noProxy                string
+	url                    string
+	gitFullRef             string
+	submodules             string
+	depth                  string
+	cacheBuildTasksForDays int
+	debug                  bool
 }
 
 func main() {
@@ -49,7 +46,6 @@ func main() {
 	flag.StringVar(&opts.bitbucketAccessToken, "bitbucket-access-token", os.Getenv("BITBUCKET_ACCESS_TOKEN"), "bitbucket-access-token")
 	flag.StringVar(&opts.bitbucketURL, "bitbucket-url", os.Getenv("BITBUCKET_URL"), "bitbucket-url")
 	flag.StringVar(&opts.project, "project", "", "project")
-	flag.StringVar(&opts.environment, "environment", "", "environment")
 	flag.StringVar(&opts.version, "version", "", "version")
 	flag.StringVar(&opts.prKey, "pr-key", "", "pull request key")
 	flag.StringVar(&opts.prBase, "pr-base", "", "pull request base")
@@ -66,8 +62,7 @@ func main() {
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
-	flag.StringVar(&opts.nexusTemporaryRepository, "nexus-temporary-repository", os.Getenv("NEXUS_TEMPORARY_REPOSITORY"), "Nexus temporary repository")
-	flag.StringVar(&opts.nexusPermanentRepository, "nexus-permanent-repository", os.Getenv("NEXUS_PERMANENT_REPOSITORY"), "Nexus permanent repository")
+	flag.StringVar(&opts.artifactSource, "artifact-source", "", "Artifacts source repository")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
@@ -114,7 +109,6 @@ func main() {
 
 	baseCtxt := &pipelinectxt.ODSContext{
 		Project:         opts.project,
-		Environment:     opts.environment,
 		Version:         opts.version,
 		PullRequestBase: opts.prBase,
 		PullRequestKey:  opts.prKey,
@@ -200,155 +194,57 @@ func main() {
 		}
 	}
 
-	if ctxt.Environment != "" {
-		env, err := odsConfig.Environment(ctxt.Environment)
-		if err != nil {
-			log.Fatalf("err during namespace extraction: %s", err)
-		}
-		err = applyVersionTags(logger, bitbucketClient, ctxt, subrepoContexts, env)
+	if err := os.MkdirAll(pipelinectxt.ArtifactsPath, 0755); err != nil {
+		log.Fatalf("could not create %s: %s", pipelinectxt.ArtifactsPath, err)
+	}
+	if opts.artifactSource != "" {
+		logger.Infof("Downloading any artifacts from %s ...", opts.nexusURL)
+		nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
+			BaseURL:  opts.nexusURL,
+			Username: opts.nexusUsername,
+			Password: opts.nexusPassword,
+			Logger:   logger,
+		})
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	logger.Infof("Downloading any artifacts from %s ...", opts.nexusURL)
-	// If there are subrepos, then all of them need to have a successful pipeline run.
-	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
-		BaseURL:  opts.nexusURL,
-		Username: opts.nexusUsername,
-		Password: opts.nexusPassword,
-		Logger:   logger,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = downloadArtifacts(logger, nexusClient, ctxt, opts, pipelinectxt.ArtifactsPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(subrepoContexts) > 0 {
-		for _, src := range subrepoContexts {
-			artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
-			err = downloadArtifacts(logger, nexusClient, src, opts, artifactsDir)
-			if err != nil {
-				log.Fatal(err)
-			}
-			// check that a pipeline run exists
-			// TODO: actually check for success.
-			pipelineRunDir := filepath.Join(artifactsDir, pipelinectxt.PipelineRunsDir)
-			if _, err := os.Stat(pipelineRunDir); os.IsNotExist(err) {
-				log.Fatalf(
-					"Pipeline runs with subrepos require a successful pipeline run "+
-						"for all checked out subrepo commits, "+
-						"however no such run was found for %s. "+
-						"Re-run this pipeline once there is a successful pipeline run.", src.Repository,
-				)
-			}
-		}
-	}
-}
-
-func applyVersionTags(logger logging.LeveledLoggerInterface, bitbucketClient *bitbucket.Client, ctxt *pipelinectxt.ODSContext, subrepoContexts []*pipelinectxt.ODSContext, env *config.Environment) error {
-	var tags []bitbucket.Tag
-	tagVersion := ctxt.Version
-	if env.Stage != config.DevStage {
-		logger.Infof("Applying version tags ...")
-		if tagVersion == pipelinectxt.WIP {
-			return errors.New("when stage != dev, you must provide a version")
-		}
-		t, err := bitbucketClient.TagList(
-			ctxt.Project,
-			ctxt.Repository,
-			bitbucket.TagListParams{
-				FilterText: fmt.Sprintf("v%s", tagVersion),
-			},
-		)
+		err = downloadArtifacts(logger, nexusClient, ctxt, opts.artifactSource, pipelinectxt.ArtifactsPath)
 		if err != nil {
-			return fmt.Errorf("could not list tags in %s/%s: %w", ctxt.Project, ctxt.Repository, err)
+			log.Fatal(err)
 		}
-		tags = t.Values
-	}
-	if env.Stage == config.QAStage {
-		if repository.TagListContainsFinalVersion(tags, tagVersion) {
-			logger.Infof("Final version tag exists already.")
-		} else {
-			_, num := repository.LatestReleaseCandidate(tags, tagVersion)
-			rcNum := num + 1
-			tagName := fmt.Sprintf("v%s-rc.%d", tagVersion, rcNum)
-			_, err := repository.CreateTag(bitbucketClient, ctxt, tagName)
-			if err != nil {
-				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
-			}
-			// subrepos
-			for _, sctxt := range subrepoContexts {
-				_, err := repository.CreateTag(bitbucketClient, sctxt, tagName)
+		// If there are subrepos, then all of them need to have a successful pipeline run
+		// for the currently checkout out commit.
+		if len(subrepoContexts) > 0 {
+			for _, src := range subrepoContexts {
+				artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
+				err = downloadArtifacts(logger, nexusClient, src, opts.artifactSource, artifactsDir)
 				if err != nil {
-					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
+					log.Fatal(err)
 				}
-			}
-		}
-	} else if env.Stage == config.ProdStage {
-		if repository.TagListContainsFinalVersion(tags, tagVersion) {
-			logger.Infof("Final version tag exists already.")
-		} else {
-			err := checkProdTagRequirements(tags, ctxt, tagVersion)
-			if err != nil {
-				return fmt.Errorf("cannot proceed to prod stage: %w", err)
-			}
-			tagName := fmt.Sprintf("v%s", tagVersion)
-			_, err = repository.CreateTag(bitbucketClient, ctxt, tagName)
-			if err != nil {
-				return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, ctxt.Project, ctxt.Repository, err)
-			}
-			// subrepos
-			for _, sctxt := range subrepoContexts {
-				var subtags []bitbucket.Tag
-				t, err := bitbucketClient.TagList(
-					sctxt.Project,
-					sctxt.Repository,
-					bitbucket.TagListParams{
-						FilterText: tagName,
-					},
-				)
-				if err != nil {
-					return fmt.Errorf("could not list tags in %s/%s: %w", sctxt.Project, sctxt.Repository, err)
-				}
-				subtags = t.Values
-				err = checkProdTagRequirements(subtags, sctxt, tagVersion)
-				if err != nil {
-					return fmt.Errorf("cannot proceed to prod stage: %w", err)
-				}
-				_, err = repository.CreateTag(bitbucketClient, sctxt, tagName)
-				if err != nil {
-					return fmt.Errorf("could not create tag %s in %s/%s: %w", tagName, sctxt.Project, sctxt.Repository, err)
+				// check that a pipeline run exists
+				// TODO: actually check for success.
+				pipelineRunDir := filepath.Join(artifactsDir, pipelinectxt.PipelineRunsDir)
+				if _, err := os.Stat(pipelineRunDir); os.IsNotExist(err) {
+					log.Fatalf(
+						"Pipeline runs with subrepos require a successful pipeline run artifact "+
+							"for all checked out subrepo commits, however no such artifact was found for %s. "+
+							"Re-run this pipeline once there is a successful pipeline run.", src.Repository,
+					)
 				}
 			}
 		}
 	}
-	return nil
-}
-
-func checkProdTagRequirements(tags []bitbucket.Tag, ctxt *pipelinectxt.ODSContext, version string) error {
-	tag, _ := repository.LatestReleaseCandidate(tags, version)
-	if tag == nil {
-		return fmt.Errorf("no release candidate tag found for %s. Deploy to QA before deploying to Prod", version)
-	}
-	if tag.LatestCommit != ctxt.GitCommitSHA {
-		return fmt.Errorf("latest release candidate tag for %s does not point to checked out commit, cowardly refusing to deploy", version)
-	}
-	return nil
 }
 
 func downloadArtifacts(
 	logger logging.LeveledLoggerInterface,
 	nexusClient *nexus.Client,
 	ctxt *pipelinectxt.ODSContext,
-	opts options,
-	artifactsDir string) error {
+	artifactSource, artifactsDir string) error {
 	group := pipelinectxt.ArtifactGroupBase(ctxt)
 	am, err := pipelinectxt.DownloadGroup(
 		nexusClient,
-		[]string{opts.nexusPermanentRepository, opts.nexusTemporaryRepository},
+		artifactSource,
 		group,
 		artifactsDir,
 		logger,

@@ -1,6 +1,6 @@
-pipeline:
-  - trigger:
-      event: ["pr:comment:added"]
+pipelines:
+  - triggers:
+    - events: ["pr:comment:added"]
       branches: ["feature/*"]
       exceptBranches: ["feature/foo"]
       prComment: "/select"
@@ -27,8 +27,9 @@ pipeline:
         workspaces:
           - name: source
             workspace: shared-workspace
-  - trigger:
-      event: ["pr:opened", "pr:comment:added"]
+  - triggers:
+    - pipeline: bar
+      events: ["pr:opened", "pr:comment:added"]
       branches: ["feature/foo"]
     tasks:
       - name: go-helm-build-opened-pr-foo
@@ -53,8 +54,9 @@ pipeline:
         workspaces:
           - name: source
             workspace: shared-workspace
-  - trigger:
-      event: ["pr:opened"]
+  - triggers:
+    - pipeline: baz
+      events: ["pr:opened"]
     tasks:
       - name: go-helm-build-opened-pr
         taskRef:
@@ -78,8 +80,9 @@ pipeline:
         workspaces:
           - name: source
             workspace: shared-workspace
-  - trigger:
-      event: ["*"]
+  - triggers:
+    - pipeline: qux
+      events: ["*"]
     tasks:
       - name: go-helm-build-catch-all
         taskRef:

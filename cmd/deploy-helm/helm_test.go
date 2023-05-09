@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/pkg/config"
 )
 
 func TestHelmDiff(t *testing.T) {
@@ -182,7 +181,7 @@ func TestAssembleHelmDiffArgs(t *testing.T) {
 				opts:             tc.opts,
 				valuesFiles:      tc.valuesFiles,
 				cliValues:        tc.cliValues,
-				targetConfig:     &config.Environment{},
+				targetConfig:     &targetEnvironment{},
 			}
 			got, err := d.assembleHelmDiffArgs()
 			if err != nil {
@@ -273,7 +272,10 @@ func TestAssembleHelmUpgradeArgs(t *testing.T) {
 				opts:             tc.opts,
 				valuesFiles:      tc.valuesFiles,
 				cliValues:        tc.cliValues,
-				targetConfig:     &config.Environment{APIServer: "https://example.com", APIToken: "s3cr3t"},
+				targetConfig: &targetEnvironment{
+					APIServer: "https://example.com",
+					APIToken:  "s3cr3t",
+				},
 			}
 			got, err := d.assembleHelmUpgradeArgs()
 			if err != nil {

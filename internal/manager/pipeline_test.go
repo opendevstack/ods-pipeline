@@ -63,49 +63,112 @@ func TestCreatePipelineRun(t *testing.T) {
 			Component:  "component",
 			Repository: "project-component",
 			GitRef:     "branch",
-			Stage:      config.DevStage,
 		},
 		PVC: "pvc",
 	}
-	pr, err := createPipelineRun(tc, ctxt, pData, tekton.ClusterTaskKind, "", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if pr.GenerateName != "component-" {
-		t.Fatalf("Expected generated name to be component-, got: %s", pr.GenerateName)
-	}
-	if pr.Spec.Status != "" {
-		t.Fatalf("Expected status to be empty, got: %s", pr.Spec.Status)
-	}
-	if pr.Labels[repositoryLabel] != pData.Repository {
-		t.Fatalf("Expected label %s to be %s, got: %s", repositoryLabel, pData.Repository, pr.Labels[repositoryLabel])
-	}
-	if pr.Labels[gitRefLabel] != pData.GitRef {
-		t.Fatalf("Expected label %s to be %s, got: %s", gitRefLabel, pData.GitRef, pr.Labels[gitRefLabel])
-	}
-	if pr.Labels[stageLabel] != pData.Stage {
-		t.Fatalf("Expected label %s to be %s, got: %s", stageLabel, pData.Stage, pr.Labels[stageLabel])
-	}
-	workspaceCfg := pr.Spec.Workspaces[0]
-	if workspaceCfg.Name != sharedWorkspaceName {
-		t.Fatalf("Expected generated name to be %s, got: %s", sharedWorkspaceName, workspaceCfg.Name)
-	}
-	if workspaceCfg.PersistentVolumeClaim.ClaimName != "pvc" {
-		t.Fatalf("Expected generated name to be pvc, got: %s", workspaceCfg.Name)
-	}
-	if len(tc.CreatedPipelineRuns) != 1 {
-		t.Fatal("No pipeline run created")
-	}
-	pr, err = createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if pr.Spec.Status != tekton.PipelineRunSpecStatusPending {
-		t.Fatalf("Expected status to be pending, got: %s", pr.Spec.Status)
-	}
-	if len(tc.CreatedPipelineRuns) != 2 {
-		t.Fatal("No pipeline run created")
-	}
+	t.Run("non-queued PR", func(t *testing.T) {
+		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pr.GenerateName != "component-" {
+			t.Errorf("Expected generated name to be component-, got: %s", pr.GenerateName)
+		}
+		if pr.Spec.Status != "" {
+			t.Errorf("Expected status to be empty, got: %s", pr.Spec.Status)
+		}
+		if pr.Labels[repositoryLabel] != pData.Repository {
+			t.Errorf("Expected label %s to be %s, got: %s", repositoryLabel, pData.Repository, pr.Labels[repositoryLabel])
+		}
+		if pr.Labels[gitRefLabel] != pData.GitRef {
+			t.Errorf("Expected label %s to be %s, got: %s", gitRefLabel, pData.GitRef, pr.Labels[gitRefLabel])
+		}
+		workspaceCfg := pr.Spec.Workspaces[0]
+		if workspaceCfg.Name != sharedWorkspaceName {
+			t.Errorf("Expected generated name to be %s, got: %s", sharedWorkspaceName, workspaceCfg.Name)
+		}
+		if workspaceCfg.PersistentVolumeClaim.ClaimName != "pvc" {
+			t.Errorf("Expected generated name to be pvc, got: %s", workspaceCfg.Name)
+		}
+		if len(tc.CreatedPipelineRuns) != 1 {
+			t.Error("No pipeline run created")
+		}
+	})
+
+	t.Run("pending PR", func(t *testing.T) {
+		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pr.Spec.Status != tekton.PipelineRunSpecStatusPending {
+			t.Errorf("Expected status to be pending, got: %s", pr.Spec.Status)
+		}
+		if len(tc.CreatedPipelineRuns) != 2 {
+			t.Error("No pipeline run created")
+		}
+	})
+
+	t.Run("with spec", func(t *testing.T) {
+		pData.Params = []tekton.Param{
+			tektonStringParam("hello", "world"),
+			tektonStringParam("start.clone-depth", "5"),
+			tektonStringParam("foo.bar", "baz"),
+			tektonStringParam("finish.aggregate-tasks-status", "overriden"),
+		}
+		pData.PipelineSpec.Tasks = []tekton.PipelineTask{
+			{
+				Name:    "foo",
+				TaskRef: &tekton.TaskRef{Kind: "Task", Name: "foo"},
+				Params: []tekton.Param{
+					tektonStringParam("some", "value"),
+				},
+			},
+		}
+		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantParams := []tekton.Param{
+			{Name: "hello", Value: tekton.ParamValue{Type: "string", StringVal: "world"}},
+		}
+		if diff := cmp.Diff(wantParams, pr.Spec.Params); diff != "" {
+			t.Fatalf("expected params (-want +got):\n%s", diff)
+		}
+		wantTasks := []tekton.PipelineTask{
+			{
+				Name:       "start",
+				TaskRef:    &tekton.TaskRef{Kind: "Task", Name: "ods-start"},
+				Params:     append(startTaskParams(), tektonStringParam("clone-depth", "5")),
+				Workspaces: tektonDefaultWorkspaceBindings(),
+			},
+			{
+				Name:    "foo",
+				TaskRef: &tekton.TaskRef{Kind: "Task", Name: "foo"},
+				Params: []tekton.Param{
+					tektonStringParam("some", "value"),
+					tektonStringParam("bar", "baz"),
+				},
+				RunAfter: []string{"start"},
+			},
+		}
+		if diff := cmp.Diff(wantTasks, pr.Spec.PipelineSpec.Tasks); diff != "" {
+			t.Fatalf("expected tasks (-want +got):\n%s", diff)
+		}
+		wantFinallyTasks := []tekton.PipelineTask{
+			{
+				Name:    "finish",
+				TaskRef: &tekton.TaskRef{Kind: "Task", Name: "ods-finish"},
+				Params: []tekton.Param{
+					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
+					tektonStringParam("aggregate-tasks-status", "overriden"),
+				},
+				Workspaces: tektonDefaultWorkspaceBindings(),
+			},
+		}
+		if diff := cmp.Diff(wantFinallyTasks, pr.Spec.PipelineSpec.Finally); diff != "" {
+			t.Fatalf("expected finally (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestAssemblePipeline(t *testing.T) {
@@ -116,8 +179,6 @@ func TestAssemblePipeline(t *testing.T) {
 			Project:         "project",
 			Component:       "component",
 			Repository:      "repo",
-			Stage:           config.DevStage,
-			Environment:     "env",
 			Version:         "1.0.0",
 			GitRef:          "branch",
 			GitFullRef:      "refs/heads/branch",
@@ -131,19 +192,21 @@ func TestAssemblePipeline(t *testing.T) {
 			PullRequestBase: "integration",
 		},
 		PVC: "pvc",
-		Tasks: []tekton.PipelineTask{
-			{
-				Name:    "build",
-				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go" + taskSuffix},
-				Workspaces: []tekton.WorkspacePipelineTaskBinding{
-					{Name: "source", Workspace: sharedWorkspaceName},
+		PipelineSpec: config.Pipeline{
+			Tasks: []tekton.PipelineTask{
+				{
+					Name:    "build",
+					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go" + taskSuffix},
+					Workspaces: []tekton.WorkspacePipelineTaskBinding{
+						{Name: "source", Workspace: sharedWorkspaceName},
+					},
 				},
 			},
-		},
-		Finally: []tekton.PipelineTask{
-			{
-				Name:    "final",
-				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final" + taskSuffix},
+			Finally: []tekton.PipelineTask{
+				{
+					Name:    "final",
+					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final" + taskSuffix},
+				},
 			},
 		},
 	}
@@ -158,7 +221,6 @@ func TestAssemblePipeline(t *testing.T) {
 			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
 			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
 			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-			tektonStringParamSpec("environment", cfg.Environment),
 			tektonStringParamSpec("version", cfg.Version),
 		},
 		Tasks: []tekton.PipelineTask{
@@ -172,7 +234,6 @@ func TestAssemblePipeline(t *testing.T) {
 					tektonStringParam("pr-key", "$(params.pr-key)"),
 					tektonStringParam("pr-base", "$(params.pr-base)"),
 					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
-					tektonStringParam("environment", "$(params.environment)"),
 					tektonStringParam("version", "$(params.version)"),
 				},
 				Workspaces: tektonDefaultWorkspaceBindings(),
@@ -260,7 +321,7 @@ func TestTasksRunAfterInjection(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfg := PipelineConfig{Tasks: tc.cfgTasks}
+			cfg := PipelineConfig{PipelineSpec: config.Pipeline{Tasks: tc.cfgTasks}}
 			got := assemblePipelineSpec(cfg, tekton.NamespacedTaskKind, "")
 			wantRunAfter := [][]string{}
 			for _, task := range tc.want {
@@ -276,4 +337,48 @@ func TestTasksRunAfterInjection(t *testing.T) {
 		})
 	}
 
+}
+
+func TestExtractTaskParams(t *testing.T) {
+	taskName := "foo"
+	params := []tekton.Param{
+		tektonStringParam("one", "a"),
+		tektonStringParam("foo.two", "b"),
+		tektonStringParam("foobar.three", "c"),
+		tektonStringParam("foo.four", "d"),
+	}
+	want := []tekton.Param{
+		tektonStringParam("two", "b"),
+		tektonStringParam("four", "d"),
+	}
+	got := extractTaskParams(taskName, params)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("expected (-want +got):\n%s", diff)
+	}
+}
+
+func TestAppendTriggerBasedParams(t *testing.T) {
+	var tasks []tekton.PipelineTask
+	params := []tekton.Param{
+		tektonStringParam("one", "a"),
+		tektonStringParam("foo.two", "b"),
+		tektonStringParam("foobar.three", "c"),
+		tektonStringParam("foo.four", "d"),
+	}
+	tasks = append(tasks, tekton.PipelineTask{
+		Name: "foo",
+		Params: []tekton.Param{
+			tektonStringParam("zero", "0"),
+			tektonStringParam("four", "should be overriden"),
+		},
+	})
+	got := mergeTriggerBasedParams(tasks, params)
+	want := []tekton.Param{
+		tektonStringParam("zero", "0"),
+		tektonStringParam("two", "b"),
+		tektonStringParam("four", "d"),
+	}
+	if diff := cmp.Diff(want, got[0].Params); diff != "" {
+		t.Fatalf("expected (-want +got):\n%s", diff)
+	}
 }
