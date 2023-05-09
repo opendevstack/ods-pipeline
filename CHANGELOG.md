@@ -18,7 +18,7 @@ listed in the changelog.
 
 ### Changed
 
-- IMPORTANT! The trigger mechansim allows for dynamic parameterisation of pipelines now (see [#677](https://github.com/opendevstack/ods-pipeline/issues/677) for the original idea). As a consequence, a few things have changed. The `pipeline` field is now named `pipelines`, and must specify a list of pipelines. Further, the `trigger` field of a pipeline is now named `triggers` and also specifies a list now. Inside each trigger, the `event` field was renamed to `events` for consistency. Further, trigger has learned a new field, `params`, which allows to specify pipeline and task parameters. The name of task parameters are suffixed with the task name, e.g. `<task-name>.some-param. Finally, the `branchToEnvironmentMapping` and `environments` fields have been dropped and equivalent behaviour must now be configured through the use of trigger parameters.
+- IMPORTANT! The trigger mechanism allows for dynamic parameterisation of pipelines now (see [#677](https://github.com/opendevstack/ods-pipeline/issues/677) for the original idea). As a consequence, a few things have changed. The `pipeline` field is now named `pipelines`, and must specify a list of pipelines. Further, the `trigger` field of a pipeline is now named `triggers` and also specifies a list now. Inside each trigger, the `event` field was renamed to `events` for consistency. Further, trigger has learned a new field, `params`, which allows to specify pipeline and task parameters. The name of task parameters are suffixed with the task name, e.g. `<task-name>.some-param. Finally, the `branchToEnvironmentMapping` and `environments` fields have been dropped and equivalent behaviour must now be configured through the use of trigger parameters.
 
 ### Fixed
 

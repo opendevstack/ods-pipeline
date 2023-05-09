@@ -494,7 +494,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 |===
 | SDS-SETUP-1
 | Helm chart `ods-pipeline`
-a| The Helm chart consists of two subhcharts:
+a| The Helm chart consists of two subcharts:
 
 * `tasks`: Contains `Task` resources
 * `setup`: Contains resources related to the pipeline manager and config maps / secrets supporting pipeline runs
