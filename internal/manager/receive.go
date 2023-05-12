@@ -2,7 +2,6 @@ package manager
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -157,25 +156,25 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 	)
 	if err != nil {
 		return nil, httpjson.NewInternalProblem(
-			fmt.Sprintf("could not download ODS config for repo %s", pInfo.Repository), err,
+			fmt.Sprintf("could not fetch ODS config for repo %s", pInfo.Repository), err,
 		)
 	}
 
 	s.Logger.Infof("%+v", pInfo)
 
-	cfg, err := identifyPipelineConfig(pInfo, *odsConfig, component)
-	if err != nil {
+	cfg := identifyPipelineConfig(pInfo, *odsConfig, component)
+	if cfg == nil {
 		return nil, httpjson.NewStatusProblem(
-			http.StatusBadRequest, "could not identify pipeline to run", err,
+			http.StatusAccepted, "Could not identify any pipeline to run as no trigger matched", nil,
 		)
 	}
-	s.TriggeredPipelines <- *cfg
 
+	s.TriggeredPipelines <- *cfg
 	return pInfo, nil
 }
 
 // identifyPipelineConfig finds the first configuration matching the triggering event
-func identifyPipelineConfig(pInfo PipelineInfo, odsConfig config.ODS, component string) (*PipelineConfig, error) {
+func identifyPipelineConfig(pInfo PipelineInfo, odsConfig config.ODS, component string) *PipelineConfig {
 	for _, p := range odsConfig.Pipelines {
 		if len(p.Triggers) == 0 {
 			return &PipelineConfig{
@@ -183,7 +182,7 @@ func identifyPipelineConfig(pInfo PipelineInfo, odsConfig config.ODS, component 
 				PVC:          makePVCName(component),
 				PipelineSpec: p,
 				// no params available
-			}, nil
+			}
 		}
 		for _, t := range p.Triggers {
 			if triggerMatches(pInfo, t) {
@@ -192,11 +191,11 @@ func identifyPipelineConfig(pInfo PipelineInfo, odsConfig config.ODS, component 
 					PVC:          makePVCName(component),
 					PipelineSpec: p,
 					Params:       t.Params,
-				}, nil
+				}
 			}
 		}
 	}
-	return nil, errors.New("no trigger definition matched webhook event")
+	return nil
 }
 
 func triggerMatches(pInfo PipelineInfo, trigger config.Trigger) bool {
@@ -315,7 +314,7 @@ func fetchODSConfig(bitbucketClient bitbucket.RawClientInterface, project, repos
 		getErr = err
 	}
 	if getErr != nil {
-		return nil, fmt.Errorf("could not download ODS config for repo %s: %w", repository, getErr)
+		return nil, fmt.Errorf("could not find ODS config for repo %s: %w", repository, getErr)
 	}
 
 	if body == nil {

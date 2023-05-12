@@ -165,6 +165,17 @@ func TestWebhookHandling(t *testing.T) {
 			wantBody:           `{"title":"Accepted","detail":"Commit 0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f should be skipped"}`,
 			wantPipelineConfig: false,
 		},
+		"repo:refs_changed (branch push) without matching trigger is no-op": {
+			requestBodyFixture: "manager/payload.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/non-matching-trigger-ods.yaml"),
+				},
+			},
+			wantStatus:         http.StatusAccepted,
+			wantBody:           `{"title":"Accepted","detail":"Could not identify any pipeline to run as no trigger matched"}`,
+			wantPipelineConfig: false,
+		},
 		"repo:refs_changed (branch push) triggers pipeline": {
 			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
@@ -693,22 +704,50 @@ func TestIdentifyPipelineConfig(t *testing.T) {
 					}
 				}
 			}
-			got, err := identifyPipelineConfig(tc.pInfo, tc.odsConfig, "component")
-			if tc.wantPipelineIndex > -1 && err != nil {
-				t.Fatal(err)
+			got := identifyPipelineConfig(tc.pInfo, tc.odsConfig, "component")
+			if tc.wantPipelineIndex > -1 && got == nil {
+				t.Fatal("wanted a matching pipeline but got none")
 			}
-			if tc.wantPipelineIndex < 0 && err == nil {
-				t.Fatal("expected no matching pipeline, but got one")
+			if tc.wantPipelineIndex < 0 && got != nil {
+				t.Fatal("wanted no matching pipeline, but got one")
 			}
-			if tc.wantPipelineIndex < 0 && err != nil {
-				return // no matching pipeline, as expected by the test case.
+			if tc.wantPipelineIndex < 0 && got == nil {
+				return // no matching pipeline, as wanted by the test case.
 			}
-			// Check if the
 			if len(got.PipelineSpec.Tasks) < 1 {
-				t.Fatal("did not match expected pipeline")
+				t.Fatal("did not match wanted pipeline")
 			}
 			if tc.wantTriggerIndex > -1 && len(got.Params) < 1 {
-				t.Fatal("did not match expected trigger")
+				t.Fatal("did not match wanted trigger")
+			}
+		})
+	}
+}
+
+func TestAnyPatternMatches(t *testing.T) {
+	match := true
+	tests := []struct {
+		input   string
+		pattern []string
+		want    bool
+	}{
+		{"master", []string{"*"}, match},
+		// TODO: The following is probably expected to work by users but does not work right now.
+		// {"feature/foo", []string{"*"}, true},
+		{"master", []string{"main", "*"}, match},
+		{"feature/foo", []string{"feature/*"}, match},
+		{"feature/foo", []string{"*/*"}, match},
+		{"production", []string{}, match},
+		{"feature/foo", []string{"feature"}, !match},
+		{"production", []string{"main", "develop"}, !match},
+		{"production", []string{"*/*"}, !match},
+		{"production", []string{"p"}, !match},
+	}
+	for _, tc := range tests {
+		t.Run(fmt.Sprintf("%v matches %s", tc.pattern, tc.input), func(t *testing.T) {
+			got := anyPatternMatches(tc.input, tc.pattern)
+			if got != tc.want {
+				t.Fatalf("want %v, got %v", tc.want, got)
 			}
 		})
 	}
