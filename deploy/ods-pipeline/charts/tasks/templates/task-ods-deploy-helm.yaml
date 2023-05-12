@@ -58,6 +58,7 @@ spec:
     - name: namespace
       description: |
         Target K8s namespace (or OpenShift project) to deploy into.
+        If empty, the task will be a no-op.
       type: string
       default: ''
     - name: registry-host

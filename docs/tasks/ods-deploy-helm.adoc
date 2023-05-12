@@ -120,6 +120,7 @@ Only required when `api-server` is set.
 | namespace
 | 
 | Target K8s namespace (or OpenShift project) to deploy into.
+If empty, the task will be a no-op.
 
 
 
