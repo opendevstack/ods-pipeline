@@ -12,7 +12,6 @@ import (
 
 const (
 	namespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	WIP           = "WIP"
 	BaseDir       = ".ods"
 	SubreposDir   = "repos"
 	SubreposPath  = BaseDir + "/" + SubreposDir
@@ -27,7 +26,6 @@ type ODSContext struct {
 	GitFullRef      string
 	GitRef          string
 	GitURL          string
-	Version         string
 	PullRequestBase string
 	PullRequestKey  string
 }
@@ -45,7 +43,6 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 		BaseDir + "/project":        o.Project,
 		BaseDir + "/repository":     o.Repository,
 		BaseDir + "/component":      o.Component,
-		BaseDir + "/version":        o.Version,
 		BaseDir + "/git-commit-sha": o.GitCommitSHA,
 		BaseDir + "/git-url":        o.GitURL,
 		BaseDir + "/git-ref":        o.GitRef,
@@ -70,7 +67,6 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 		BaseDir + "/project":        &o.Project,
 		BaseDir + "/repository":     &o.Repository,
 		BaseDir + "/component":      &o.Component,
-		BaseDir + "/version":        &o.Version,
 		BaseDir + "/git-commit-sha": &o.GitCommitSHA,
 		BaseDir + "/git-url":        &o.GitURL,
 		BaseDir + "/git-ref":        &o.GitRef,
@@ -145,9 +141,6 @@ func (o *ODSContext) Assemble(wsDir string) error {
 	}
 	if len(o.Component) == 0 {
 		o.Component = strings.TrimPrefix(o.Repository, o.Project+"-")
-	}
-	if len(o.Version) == 0 {
-		o.Version = WIP
 	}
 	return nil
 }

@@ -26,7 +26,7 @@ func TestTaskODSStart(t *testing.T) {
 			tasktesting.Nexus,
 		},
 		map[string]tasktesting.TestCase{
-			"clones repo": {
+			"clones repo @ branch": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -37,7 +37,6 @@ func TestTaskODSStart(t *testing.T) {
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
 						"project":           ctxt.ODS.Project,
-						"version":           ctxt.ODS.Version,
 						"pipeline-run-name": "foo",
 					}
 				},
@@ -49,6 +48,29 @@ func TestTaskODSStart(t *testing.T) {
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
+				},
+			},
+			"clones repo @ tag": {
+				WorkspaceDirMapping: map[string]string{"source": "hello-world-app"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupBitbucketRepo(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+					)
+					tasktesting.UpdateBitbucketRepoWithTagOrFatal(t, ctxt.ODS, wsDir, "v1.0.0")
+					ctxt.ODS.GitRef = "v1.0.0"
+					ctxt.ODS.GitFullRef = "refs/tags/v1.0.0"
+					ctxt.Params = map[string]string{
+						"url":               ctxt.ODS.GitURL,
+						"git-full-ref":      ctxt.ODS.GitFullRef,
+						"project":           ctxt.ODS.Project,
+						"pipeline-run-name": "foo",
+					}
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					checkODSContext(t, wsDir, ctxt.ODS)
 				},
 			},
 			"clones repo and configured subrepos": {
@@ -103,7 +125,6 @@ func TestTaskODSStart(t *testing.T) {
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
 						"project":           ctxt.ODS.Project,
-						"version":           ctxt.ODS.Version,
 						"pipeline-run-name": "foo",
 						"artifact-source":   nexus.TestTemporaryRepository,
 					}
@@ -164,7 +185,6 @@ func TestTaskODSStart(t *testing.T) {
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
 						"project":           ctxt.ODS.Project,
-						"version":           ctxt.ODS.Version,
 						"pipeline-run-name": "foo",
 						"artifact-source":   "empty-repo",
 					}
@@ -194,7 +214,6 @@ func TestTaskODSStart(t *testing.T) {
 						"url":               ctxt.ODS.GitURL,
 						"git-full-ref":      "refs/heads/master",
 						"project":           ctxt.ODS.Project,
-						"version":           ctxt.ODS.Version,
 						"pipeline-run-name": "foo",
 					}
 				},

@@ -13,41 +13,37 @@ value: my-nexus-repo
 
 == Downloading Artifacts
 
-While artifacts are plain Nexus assets and can therefore be downloaded via standard means (e.g. via `curl` or in the Nexus web interface), this would be very time consuming when there are many artifacts. To make it quick and easy to download all artifacts related to a certain version in one go, ODS Pipelines ships with the `artifact-download` binary. This binary can be built from this repository via `make build-artifact-download` or simply downloaded pre-built from the GitHub release page.
+While artifacts are plain Nexus assets and can therefore be downloaded via standard means (e.g. via `curl` or in the Nexus web interface), this would be very time consuming for many artifacts. To make it quick and easy to download all artifacts related to a certain revision in one go, ODS Pipelines ships with the `artifact-download` binary. This binary can be built from this repository via `make build-artifact-download` or simply downloaded pre-built from the GitHub release page.
 
 Usage:
 ```
 artifact-download \
   --namespace my-project-cd \
-  --project my-project \
-  --repository my-repo \
-  --artifact-source nexus-repo \
-  --tag v1.0.0
+  --artifact-source nexus-repo
 ```
 
-The binary will then fetch artifacts for repository `bar` in Bitbucket project `foo`, as well as for any subrepositories that might be configured, and download them into `artifacts-out`. Example:
+The binary will then fetch artifacts for the checked out revision of the Git repository in the working directoy, as well as for any subrepositories that might be configured, and download them into `artifacts-out`. Example:
 
 ```
 artifacts-out/
-├─ v1.0.0/
-│  ├─ my-repo/
-│  │  ├─ xunit-reports/
-│  │  │  ├─ report.xml
-│  │  │  ├─ index.html
-│  │  ├─ sonarqube-analysis/
-│  │  │  ├─ analysis-report.md
-│  │  │  ├─ issues-report.csv
-│  ├─ my-subrepo/
-│  │  ├─ xunit-reports/
-│  │  │  ├─ report.xml
-│  │  │  ├─ index.html
-│  │  ├─ sonarqube-analysis/
-│  │  │  ├─ analysis-report.md
-│  │  │  ├─ issues-report.csv
+├─ my-repo/
+│  ├─ xunit-reports/
+│  │  ├─ report.xml
+│  │  ├─ index.html
+│  ├─ sonarqube-analysis/
+│  │  ├─ analysis-report.md
+│  │  ├─ issues-report.csv
+│  ├─ pipeline-runs/
+│  │  ├─ run-123.json
+├─ my-subrepo/
+│  ├─ xunit-reports/
+│  │  ├─ report.xml
+│  │  ├─ index.html
+│  ├─ sonarqube-analysis/
+│  │  ├─ analysis-report.md
+│  │  ├─ issues-report.csv
 ```
 
-IMPORTANT: Using `artifact-download` requires to be logged into your cluster (`oc login ...`) in the terminal. The binary fetches all required credentials (e.g. to access Bitbucket) from the specified namespace.
+IMPORTANT: Using `artifact-download` requires to be logged into your cluster (`oc login ...`) in the terminal. The binary fetches all required credentials (e.g. to access Nexus) from the specified namespace.
 
 See `artifact-download --help` for all options, e.g. how to specify another output directory.
-
-TIP: While the primary use case of `artifact-download` is to download artifacts for final versions, it may also be used to look at the latest artifacts of a checked out repository. From inside a Git repository, run `artifact-download --namespace foo-cd --tag=WIP`.

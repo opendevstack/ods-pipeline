@@ -35,7 +35,6 @@ func TestAssemble(t *testing.T) {
 		GitFullRef:      "refs/heads/master",
 		GitRef:          "master",
 		GitURL:          "https://example.bitbucket.com/scm/ODS/ods-pipeline.git",
-		Version:         "WIP",
 		PullRequestBase: "",
 		PullRequestKey:  "",
 	}

@@ -2,7 +2,6 @@
     "project": "foo",
     "component": "bar",
     "repository": "foo-bar",
-    "version": "",
     "gitRef": "feature/other",
     "gitFullRef": "refs/heads/feature/other",
     "gitSha": "ef8755f06ee4b28c96a847a95cb8ec8ed6ddd1ca",
@@ -10,6 +9,7 @@
     "gitURI": "https://domain.com/foo/foo-bar.git",
     "namespace": "bar-cd",
     "trigger-event": "pr:opened",
+    "change-ref-type": "",
     "comment": "",
     "prKey": 1,
     "prBase": "refs/heads/master"

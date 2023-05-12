@@ -221,7 +221,7 @@ func packageHelmChartWithSubcharts() DeployStep {
 			if d.releaseName == d.ctxt.Component {
 				d.cliValues = append(d.cliValues, fmt.Sprintf("--set=%s.fullnameOverride=%s", hc.Name, hc.Name))
 			}
-			helmArchive, err := packageHelmChart(subchart, d.ctxt.Version, gitCommitSHA, d.opts.debug)
+			helmArchive, err := packageHelmChart(subchart, gitCommitSHA, d.opts.debug)
 			if err != nil {
 				return d, fmt.Errorf("package Helm chart of %s: %w", subrepo, err)
 			}
@@ -245,7 +245,7 @@ func packageHelmChartWithSubcharts() DeployStep {
 		}
 
 		d.logger.Infof("Packaging Helm chart ...")
-		helmArchive, err := packageHelmChart(d.opts.chartDir, d.ctxt.Version, d.ctxt.GitCommitSHA, d.opts.debug)
+		helmArchive, err := packageHelmChart(d.opts.chartDir, d.ctxt.GitCommitSHA, d.opts.debug)
 		if err != nil {
 			return d, fmt.Errorf("package Helm chart: %w", err)
 		}

@@ -46,11 +46,6 @@ spec:
         Name of the project to build.
         The project is equal to the Bitbucket project of the repository to clone.
       type: string
-    - name: version
-      description: >-
-        Version of the application.
-        If not set, version will default to `WIP`.
-      type: string
     - name: pr-key
       description: >-
         Bitbucket pull request key.
@@ -133,7 +128,6 @@ spec:
         # ods-start is built from cmd/start/main.go.
         ods-start \
           -project=$(params.project) \
-          -version=$(params.version) \
           -git-full-ref=$(params.git-full-ref) \
           -url=$(params.url) \
           -pr-key=$(params.pr-key) \

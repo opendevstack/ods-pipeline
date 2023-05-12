@@ -11,19 +11,13 @@ import (
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/notification"
 	"github.com/opendevstack/pipeline/internal/tekton"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
 	"github.com/opendevstack/pipeline/pkg/nexus"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 )
-
-type PipelineRunArtifact struct {
-	// Name is the pipeline run name.
-	Name string `json:"name"`
-	// AggregateTaskStatus is the aggregate Tekton task status.
-	AggregateTaskStatus string `json:"aggregateTaskStatus"`
-}
 
 type options struct {
 	bitbucketAccessToken string
@@ -158,34 +152,41 @@ func handleArtifacts(
 	ctxt *pipelinectxt.ODSContext) error {
 	logger.Infof("Handling artifacts ...")
 
-	logger.Infof("Creating artifact of pipeline run ...")
-	err := createPipelineRunArtifact(checkoutDir, opts.pipelineRunName, opts.aggregateTasksStatus)
-	if err != nil {
-		return fmt.Errorf("create pipeline run artifact: %w", err)
-	}
-
 	if opts.artifactTarget != "" {
+		odsConfig, err := config.ReadFromDir(checkoutDir)
+		if err != nil {
+			return fmt.Errorf("read ODS config: %w", err)
+		}
+		subrepoCtxts := []*pipelinectxt.ODSContext{}
+		for _, subrepo := range odsConfig.Repositories {
+			subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepo.Name)
+			subrepoCtxt := &pipelinectxt.ODSContext{}
+			err := subrepoCtxt.ReadCache(subrepoCheckoutDir)
+			if err != nil {
+				return fmt.Errorf("cannot read cache of subrepository %s: %w", subrepo.Name, err)
+			}
+			subrepoCtxts = append(subrepoCtxts, subrepoCtxt)
+		}
+		logger.Infof("Creating artifact of pipeline run ...")
+		err = createPipelineRunArtifact(
+			checkoutDir,
+			opts.pipelineRunName, opts.aggregateTasksStatus,
+			subrepoCtxts,
+		)
+		if err != nil {
+			return fmt.Errorf("create pipeline run artifact: %w", err)
+		}
+
 		logger.Infof("Uploading artifacts to Nexus ...")
 		err = uploadArtifacts(logger, nexusClient, opts.artifactTarget, checkoutDir, ctxt, opts)
 		if err != nil {
 			return fmt.Errorf("cannot upload artifacts of main repository: %w", err)
 		}
-		odsConfig, err := config.ReadFromDir(checkoutDir)
-		if err != nil {
-			return fmt.Errorf("read ODS config: %w", err)
-		}
-		if len(odsConfig.Repositories) > 0 {
-			for _, subrepo := range odsConfig.Repositories {
-				subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepo.Name)
-				subrepoCtxt := &pipelinectxt.ODSContext{}
-				err := subrepoCtxt.ReadCache(subrepoCheckoutDir)
-				if err != nil {
-					return fmt.Errorf("cannot read cache of subrepository %s: %w", subrepo.Name, err)
-				}
-				err = uploadArtifacts(logger, nexusClient, opts.artifactTarget, subrepoCheckoutDir, subrepoCtxt, opts)
-				if err != nil {
-					return fmt.Errorf("cannot upload artifacts of subrepository %s: %w", subrepo.Name, err)
-				}
+		for _, subrepoCtxt := range subrepoCtxts {
+			subrepoCheckoutDir := filepath.Join(checkoutDir, pipelinectxt.SubreposPath, subrepoCtxt.Repository)
+			err = uploadArtifacts(logger, nexusClient, opts.artifactTarget, subrepoCheckoutDir, subrepoCtxt, opts)
+			if err != nil {
+				return fmt.Errorf("cannot upload artifacts of subrepository %s: %w", subrepoCtxt.Repository, err)
 			}
 		}
 	}
@@ -238,10 +239,18 @@ func artifactGroup(ctxt *pipelinectxt.ODSContext, artifactsSubDir string, opts o
 	return pipelinectxt.ArtifactGroup(ctxt, artifactsSubDir)
 }
 
-func createPipelineRunArtifact(checkoutDir string, pipelineRunName, aggregateTasksStatus string) error {
-	pra := PipelineRunArtifact{
+func createPipelineRunArtifact(
+	checkoutDir string,
+	pipelineRunName, aggregateTasksStatus string,
+	subrepoCtxts []*pipelinectxt.ODSContext) error {
+	gitCommits := map[string]string{}
+	for _, sc := range subrepoCtxts {
+		gitCommits[sc.Repository] = sc.GitCommitSHA
+	}
+	pra := artifact.PipelineRun{
 		Name:                pipelineRunName,
 		AggregateTaskStatus: aggregateTasksStatus,
+		Repositories:        gitCommits,
 	}
 	writeDir := filepath.Join(checkoutDir, pipelinectxt.PipelineRunsPath)
 	return pipelinectxt.WriteJsonArtifact(pra, writeDir, pra.Name+".json")

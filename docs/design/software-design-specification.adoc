@@ -211,7 +211,7 @@ Input parameters: TODO
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of a given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref. If a release branch (`release/<VERSION>`) corresponding to the current version exists, it is preferred. All checkouts are by default shallow (depth=1) and include submodules.
+a| The task checks out the repository of a given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref (either tag or branch, defaulting to `master`). All checkouts are by default shallow (depth=1) and include submodules.
 
 A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation.
 
@@ -219,7 +219,6 @@ Context information is stored under `.ods` for each checked out repository:
 
 * repository related information: project key, component key, repository name, Git URL, Git (full) ref, Git commit SHA, pull request base and pull request key.
 * OpenShift related information: namespace
-* deployment related information: version
 
 If the `artifact-source` parameter is given, any artifacts in the referenced Nexus repository belonging to the same commit being built are downloaded and placed into the respective `.ods/artifacts` folder of each checked out repository. If any child repository is missing a successful pipeline run artifact for the checked out commit, the task fails.
 
@@ -428,7 +427,7 @@ Upgrades (or installs) a Helm chart.
 * Any values and secrets files corresponding to the namespace are respected (`values.yaml`, `secrets.yaml`, `values.<NAMESPACE>.yaml`, `secrets.<NAMESPACE>.yaml`; in that order of specificity).
 * A values file containing the Git commit SHA is auto-generated and added to the Helm diff/upgrade invocation.
 * Any encrypted secrets files are decrypted on the fly, using the age key provided by the `Secret` identified by the `age-key-secret` parameter (defaulting to `helm-secrets-age-key`). The secret is expected to expose the age key under the `key.txt` field.
-* The "app version" is set to the Git commit SHA and the "version" is set to given `version` if any, otherwise the chart version in `Chart.yaml`.
+* The "app version" is set to the checked out Git commit SHA.
 * Charts in any of the child repositories configured in `ods.y(a)ml` are packaged according to the same rules and added as subcharts.
 * The target namespace may also be external to the cluster in which the pipeline runs. The API server is identified by the `api-server` parameter, and the credential token of `api-credentials-secret` is used to authenticate.
 |===
@@ -494,7 +493,7 @@ For all repositories in scope, the artifacts in the corresponding groups in Nexu
 |===
 | SDS-SETUP-1
 | Helm chart `ods-pipeline`
-a| The Helm chart consists of two subhcharts:
+a| The Helm chart consists of two subcharts:
 
 * `tasks`: Contains `Task` resources
 * `setup`: Contains resources related to the pipeline manager and config maps / secrets supporting pipeline runs

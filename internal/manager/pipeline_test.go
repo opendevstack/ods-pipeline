@@ -179,7 +179,6 @@ func TestAssemblePipeline(t *testing.T) {
 			Project:         "project",
 			Component:       "component",
 			Repository:      "repo",
-			Version:         "1.0.0",
 			GitRef:          "branch",
 			GitFullRef:      "refs/heads/branch",
 			GitSHA:          "6621c6060715428933a1d20851e0d51614b0a195",
@@ -221,7 +220,6 @@ func TestAssemblePipeline(t *testing.T) {
 			tektonStringParamSpec("git-full-ref", cfg.GitFullRef),
 			tektonStringParamSpec("pr-key", strconv.Itoa(cfg.PullRequestKey)),
 			tektonStringParamSpec("pr-base", cfg.PullRequestBase),
-			tektonStringParamSpec("version", cfg.Version),
 		},
 		Tasks: []tekton.PipelineTask{
 			{

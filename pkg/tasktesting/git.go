@@ -34,7 +34,6 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		GitFullRef:   "refs/heads/master",
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
-		Version:      pipelinectxt.WIP,
 	}
 	err := ctxt.WriteCache(wsDir)
 	if err != nil {
@@ -62,7 +61,6 @@ func SetupGitRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 	ctxt := &pipelinectxt.ODSContext{
 		Namespace: ns,
 		GitURL:    fmt.Sprintf("%s/scm/%s/%s.git", bbURL, BitbucketProjectKey, repoName),
-		Version:   pipelinectxt.WIP,
 	}
 	assembleAndCacheOdsCtxtOrFatal(t, ctxt, wsDir)
 	return ctxt
@@ -93,7 +91,6 @@ func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKe
 		Namespace: ns,
 		Project:   projectKey,
 		GitURL:    originURL,
-		Version:   pipelinectxt.WIP,
 	}
 	assembleAndCacheOdsCtxtOrFatal(t, ctxt, wsDir)
 
@@ -288,6 +285,17 @@ func getAttribute(n *html.Node, key string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func UpdateBitbucketRepoWithTagOrFatal(t *testing.T, ctxt *pipelinectxt.ODSContext, wsDir, tag string) {
+	stdout, stderr, err := command.RunBufferedInDir("git", []string{"tag", tag}, wsDir)
+	if err != nil {
+		t.Fatalf("error running git tag: %s, stdout: %s, stderr: %s", err, stdout, stderr)
+	}
+	stdout, stderr, err = command.RunBufferedInDir("git", []string{"push", "origin", "--tags"}, wsDir)
+	if err != nil {
+		t.Fatalf("failed to push to remote: %s, stdout: %s, stderr: %s", err, stdout, stderr)
+	}
 }
 
 // UpdateBitbucketRepoWithLfsOrFatal create, track, commit and push a random JPG file with git LFS, and return its hash.

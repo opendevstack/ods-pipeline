@@ -43,9 +43,7 @@ func TestDownloadGroup(t *testing.T) {
 	nexusClient := &nexus.TestClient{}
 	group := "/my-project/my-repo/20d69cffd00080e20fa2f1419026a301cd0eecac"
 	artifactType := "my-type"
-	nexusURL := "https://nexus.example.com"
-	permanentBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.TestPermanentRepository, group, artifactType)
-	temporaryBaseURL := fmt.Sprintf("%s/%s%s/%s", nexusURL, nexus.TestPermanentRepository, group, artifactType)
+	basePath := fmt.Sprintf("%s/%s", group, artifactType)
 	artifactsDir, err := os.MkdirTemp(".", "test-artifacts-")
 	if err != nil {
 		t.Fatal(err)
@@ -54,49 +52,61 @@ func TestDownloadGroup(t *testing.T) {
 	logger := &logging.LeveledLogger{Level: logging.LevelDebug}
 
 	tests := map[string]struct {
-		urls map[string][]string
+		urls map[string][]nexus.TestArtifact
 		repo string
 	}{
 		"artifacts in permanent repo": {
-			urls: map[string][]string{
+			urls: map[string][]nexus.TestArtifact{
 				nexus.TestPermanentRepository: {
-					permanentBaseURL + "/p1.txt", permanentBaseURL + "/p2.txt",
+					nexus.TestArtifact{
+						Path:    basePath + "/p1.txt",
+						Content: []byte("test"),
+					}, nexus.TestArtifact{
+						Path:    basePath + "/p2.txt",
+						Content: []byte("test"),
+					},
 				},
 			},
 			repo: nexus.TestPermanentRepository,
 		},
 		"artifacts in temporary repo": {
-			urls: map[string][]string{
+			urls: map[string][]nexus.TestArtifact{
 				nexus.TestTemporaryRepository: {
-					temporaryBaseURL + "/t1.txt", temporaryBaseURL + "/t2.txt",
+					nexus.TestArtifact{
+						Path:    basePath + "/t1.txt",
+						Content: []byte("test"),
+					}, nexus.TestArtifact{
+						Path:    basePath + "/t2.txt",
+						Content: []byte("test"),
+					},
 				},
 			},
 			repo: nexus.TestTemporaryRepository,
 		},
 		"artifacts in no repo": {
-			urls: map[string][]string{},
+			urls: map[string][]nexus.TestArtifact{},
 			repo: "",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nexusClient.URLs = tc.urls
+			nexusClient.Artifacts = tc.urls
 			am, err := DownloadGroup(nexusClient, tc.repo, group, artifactsDir, logger)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if repoURLs, ok := tc.urls[tc.repo]; ok {
-				for _, url := range repoURLs {
-					ai := findArtifact(url, am.Artifacts)
+				for _, ta := range repoURLs {
+					ai := findArtifact(ta.Path, am.Artifacts)
 					if ai == nil {
-						t.Fatalf("expected artifact for %s in manifest, got none", url)
+						t.Fatalf("expected artifact for %s in manifest, got none", ta)
 					}
 					if ai.Directory != artifactType {
 						t.Fatalf("want: %s, got: %s", artifactType, ai.Directory)
 					}
-					if !strings.HasSuffix(url, ai.Name) {
-						t.Fatalf("want art to end in: %s, got: %s", ai.Name, url)
+					if !strings.HasSuffix(ta.Path, ai.Name) {
+						t.Fatalf("want art to end in: %s, got: %s", ai.Name, ta)
 					}
 					wantOutfile := filepath.Join(artifactsDir, ai.Directory, ai.Name)
 					if _, err := os.Stat(wantOutfile); os.IsNotExist(err) {

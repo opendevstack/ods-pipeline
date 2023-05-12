@@ -20,7 +20,9 @@ import (
 	"github.com/opendevstack/pipeline/internal/httpjson"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/pipeline/pkg/config"
 	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 func TestIsCiSkipInCommitMessage(t *testing.T) {
@@ -42,6 +44,68 @@ func TestIsCiSkipInCommitMessage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFetchODSConfig(t *testing.T) {
+	bitbucketClient := &bitbucket.TestClient{}
+
+	tests := map[string]struct {
+		files   map[string][]byte
+		wantErr string
+		wantODS *config.ODS
+	}{
+		"no ODS file": {
+			files:   map[string][]byte{},
+			wantErr: "ods.yml not found",
+		},
+		"empty ODS file": {
+			files: map[string][]byte{
+				"ods.yaml": []byte(""),
+			},
+			wantErr: "config is empty",
+		},
+		"ods.yaml file": {
+			files: map[string][]byte{
+				"ods.yaml": []byte("pipelines: []"),
+			},
+			wantErr: "",
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{}},
+		},
+		"ods.yml file": {
+			files: map[string][]byte{
+				"ods.yml": []byte("pipelines: []"),
+			},
+			wantErr: "",
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{}},
+		},
+		"ods.yaml has precedence over ods.yml file": {
+			files: map[string][]byte{
+				"ods.yaml": []byte("pipelines: [{tasks: [{name: yaml}]}]"),
+				"ods.yml":  []byte("pipelines: [{tasks: [{name: yml}]}]"),
+			},
+			wantErr: "",
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{{Tasks: []v1beta1.PipelineTask{{Name: "yaml"}}}}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			bitbucketClient.Files = tc.files
+			// As context is read from fake Bitbucket, dir value is unused.
+			got, err := fetchODSConfig(bitbucketClient, "foo", "bar", "refs/heads/master")
+			if tc.wantErr == "" && err != nil {
+				t.Fatal(err)
+			} else if tc.wantErr != "" && err == nil {
+				t.Fatalf("want err: %s, got nothing", tc.wantErr)
+			} else if err != nil && tc.wantErr != "" && !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("want err: %s, got err: %s", tc.wantErr, err)
+			}
+			if diff := cmp.Diff(tc.wantODS, got); diff != "" {
+				t.Fatalf("context mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+
 }
 
 func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server {
@@ -86,12 +150,6 @@ func TestWebhookHandling(t *testing.T) {
 			wantBody:           `{"title":"BadRequest","detail":"unsupported event key: repo:ref_changed"}`,
 			wantPipelineConfig: false,
 		},
-		"tags are not processed": {
-			requestBodyFixture: "manager/payload-tag.json",
-			wantStatus:         http.StatusUnprocessableEntity,
-			wantBody:           `{"title":"UnprocessableEntity","detail":"skipping change ref type TAG, only BRANCH is supported"}`,
-			wantPipelineConfig: false,
-		},
 		"commits with skip message are not processed": {
 			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
@@ -107,7 +165,7 @@ func TestWebhookHandling(t *testing.T) {
 			wantBody:           `{"title":"Accepted","detail":"Commit 0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f should be skipped"}`,
 			wantPipelineConfig: false,
 		},
-		"repo:refs_changed triggers pipeline": {
+		"repo:refs_changed (branch push) triggers pipeline": {
 			requestBodyFixture: "manager/payload.json",
 			bitbucketClient: &bitbucket.TestClient{
 				Files: map[string][]byte{
@@ -115,6 +173,17 @@ func TestWebhookHandling(t *testing.T) {
 				},
 			},
 			wantBody:           string(readTestdataFile(t, "golden/manager/response-payload-refs-changed.json")),
+			wantStatus:         http.StatusOK,
+			wantPipelineConfig: true,
+		},
+		"repo:refs_changed (tag push) triggers pipeline": {
+			requestBodyFixture: "manager/payload-tag.json",
+			bitbucketClient: &bitbucket.TestClient{
+				Files: map[string][]byte{
+					"ods.yaml": readTestdataFile(t, "fixtures/manager/ods.yaml"),
+				},
+			},
+			wantBody:           string(readTestdataFile(t, "golden/manager/response-payload-refs-changed-tag.json")),
 			wantStatus:         http.StatusOK,
 			wantPipelineConfig: true,
 		},
@@ -310,6 +379,342 @@ func TestWebhookHandling(t *testing.T) {
 		})
 	}
 }
+
+func TestIdentifyPipelineConfig(t *testing.T) {
+	tests := map[string]struct {
+		pInfo     PipelineInfo
+		odsConfig config.ODS
+		// Index of pipeline that should be selected. -1 indicates no pipeline should be selected.
+		wantPipelineIndex int
+		// Index of trigger within pipeline that should be selected. -1 indicates no trigger should be selected.
+		wantTriggerIndex int
+	}{
+		// branch
+		"branch push - pipeline with no triggers": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  -1,
+		},
+		"branch push - pipeline with multiple triggers with no branch constraints": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{},
+						{},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"branch push - pipeline with one trigger with matching branch constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"develop"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"branch push - pipeline with one trigger with non-matching branch constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{{Branches: []string{"master"}}}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"branch push - pipeline with one trigger with tag constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{{Tags: []string{"v*"}}}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"branch push - pipeline with multiple triggers, one of them with matching branch constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"master"}},
+						{Branches: []string{"develop"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  1,
+		},
+		"branch push - pipeline with multiple triggers, none of them with matching branch constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"master"}},
+						{Branches: []string{"production"}},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"branch push - pipeline with multiple triggers, all of them with matching branch constraints": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"*"}},
+						{Branches: []string{"develop"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"branch push - multiple pipelines, one with matching trigger": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"master"}},
+					}},
+					{Triggers: []config.Trigger{
+						{Branches: []string{"*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 1,
+			wantTriggerIndex:  0,
+		},
+		// tag
+		"tag push - pipeline with multiple triggers with no tag constraints": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{},
+						{},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"tag push - pipeline with one trigger with matching tag constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Tags: []string{"v*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"tag push - pipeline with one trigger with non-matching tag constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Tags: []string{"v2.0.0"}},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"tag push - pipeline with one trigger with branch constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"tag push - pipeline with multiple triggers, one of them with matching tag constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Tags: []string{"v2.0.0"}},
+						{Tags: []string{"v1.0.0"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  1,
+		},
+		"tag push - pipeline with multiple triggers, none of them with matching tag constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Tags: []string{"v2.0.0"}},
+						{Tags: []string{"v3.0.0"}},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"tag push - pipeline with multiple triggers, all of them with matching tag constraints": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Tags: []string{"v1.0.0"}},
+						{Tags: []string{"*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"tag push - multiple pipelines, one with matching trigger": {
+			pInfo: PipelineInfo{ChangeRefType: "TAG", GitRef: "v1.0.0"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"master"}},
+					}},
+					{Triggers: []config.Trigger{
+						{Tags: []string{"*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 1,
+			wantTriggerIndex:  0,
+		},
+		// event
+		"event - pipeline with non-matching event constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", TriggerEvent: "pr:opened"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Events: []string{"repo:refs_pushed"}},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"event - pipeline with matching event constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", TriggerEvent: "pr:opened"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Events: []string{"pr:opened"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"event - pipeline with no event constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", TriggerEvent: "pr:opened"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		// PR comment
+		"PR comment - pipeline with non-matching PR comment constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", Comment: "/deploy"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{PrComment: pString("/retest")},
+					}},
+				},
+			},
+			wantPipelineIndex: -1,
+			wantTriggerIndex:  -1,
+		},
+		"PR comment - pipeline with matching PR comment constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", Comment: "/deploy"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{PrComment: pString("/deploy")},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+		"PR comment - pipeline with no PR comment constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop", Comment: "/deploy"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Annotate wanted pipeline/trigger so that
+			// we can check later if it was selected.
+			if tc.wantPipelineIndex > -1 {
+				tc.odsConfig.Pipelines[tc.wantPipelineIndex].Tasks = []v1beta1.PipelineTask{
+					{Name: "match this"},
+				}
+				if tc.wantTriggerIndex > -1 {
+					tc.odsConfig.Pipelines[tc.wantPipelineIndex].Triggers[tc.wantTriggerIndex].Params = []v1beta1.Param{
+						tektonStringParam("match", "this"),
+					}
+				}
+			}
+			got, err := identifyPipelineConfig(tc.pInfo, tc.odsConfig, "component")
+			if tc.wantPipelineIndex > -1 && err != nil {
+				t.Fatal(err)
+			}
+			if tc.wantPipelineIndex < 0 && err == nil {
+				t.Fatal("expected no matching pipeline, but got one")
+			}
+			if tc.wantPipelineIndex < 0 && err != nil {
+				return // no matching pipeline, as expected by the test case.
+			}
+			// Check if the
+			if len(got.PipelineSpec.Tasks) < 1 {
+				t.Fatal("did not match expected pipeline")
+			}
+			if tc.wantTriggerIndex > -1 && len(got.Params) < 1 {
+				t.Fatal("did not match expected trigger")
+			}
+		})
+	}
+}
+
+func pString(v string) *string { return &v }
 
 func extractTaskNames(pConfig PipelineConfig) []string {
 	gotNames := make([]string, 0, len(pConfig.PipelineSpec.Tasks))

@@ -8,11 +8,7 @@ This task will clone a repo from the provided url into the workspace, and
 sets the build status of the checked out commit in Bitbucket to "in progress".
 
 If the checked out repositories' `ods.y(a)ml` file defines subrepos, those will
-be checked out as well into `.ods/repos`. Subrepos will be checked out at
-the branch specified in `ods.y(a)ml` or `master` if no branch is given.
-However, if a version (e.g. `1.0.0`) is defined in `ods.y(a)ml`, then
-subrepos are checked out at a corresponding release branch (e.g.
-`release/1.0.0`) if it exists.
+be checked out as well into `.ods/repos`.
 
 If an artifact source is given, any artifacts in that Nexus repository for the checked out Git commits are downloaded and
 placed into `.ods/artifacts`. When subrepos are configured, a successful
@@ -69,11 +65,6 @@ by the pipeline manager. To customize parameters, configure them in the relevant
 | project
 | 
 | Name of the project to build. The project is equal to the Bitbucket project of the repository to clone.
-
-
-| version
-| 
-| Version of the application. If not set, version will default to `WIP`.
 
 
 | pr-key
