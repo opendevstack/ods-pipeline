@@ -10,7 +10,7 @@ spec:
   description: |
     Packages applications into container images using buildah.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.11.1/docs/tasks/ods-package-image.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.12.0/docs/tasks/ods-package-image.adoc
   params:
     - name: registry
       description: Image registry to push image to.
@@ -62,7 +62,7 @@ spec:
   steps:
     - name: package-image
       # Image is built from build/package/Dockerfile.package-image.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-package-image:0.11.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-package-image:0.12.0'
       env:
         - name: NEXUS_URL
           valueFrom:
@@ -117,7 +117,7 @@ spec:
       workingDir: $(workspaces.source.path)
     - name: aqua-scan
       # Image is built from build/package/Dockerfile.aqua-scan.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-aqua-scan:0.11.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-aqua-scan:0.12.0'
       env:
         - name: HOME
           value: '/tekton/home'

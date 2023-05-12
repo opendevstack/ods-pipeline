@@ -23,17 +23,17 @@ pipeline:
     - name: build
       taskRef:
         kind: Task
-        name: ods-build-go-v0-11-1
+        name: ods-build-go-v0-12-0
       workspaces:
       - name: source
         workspace: shared-workspace
 ----
 
-`ods-build-go-v0-11-1` runs tests and produces a Go binary. If you use another technology, e.g. a Java project using Gradle, exchange the task with `ods-build-gradle-v0-11-1`. See the link:tasks/[tasks reference] for available tasks.
+`ods-build-go-v0-12-0` runs tests and produces a Go binary. If you use another technology, e.g. a Java project using Gradle, exchange the task with `ods-build-gradle-v0-12-0`. See the link:tasks/[tasks reference] for available tasks.
 
 === (Optionally) Create `Dockerfile`
 
-If you want to create a container image with the produced Go binary, you can add the `ods-package-image-v0-11-1` task to the `tasks` list, like this:
+If you want to create a container image with the produced Go binary, you can add the `ods-package-image-v0-12-0` task to the `tasks` list, like this:
 
 .ods.yaml
 [source,yaml]
@@ -43,14 +43,14 @@ pipeline:
     - name: build
       taskRef:
         kind: Task
-        name: ods-build-go-v0-11-1
+        name: ods-build-go-v0-12-0
       workspaces:
       - name: source
         workspace: shared-workspace
     - name: package
       taskRef:
         kind: Task
-        name: ods-package-image-v0-11-1
+        name: ods-package-image-v0-12-0
       runAfter:
       - build
       workspaces:
@@ -72,13 +72,13 @@ EXPOSE 8080
 CMD ["./app"]
 ----
 
-NOTE: `ods-build-go-v0-11-1` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-11-1` task.
+NOTE: `ods-build-go-v0-12-0` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-12-0` task.
 
 NOTE: Pay attention to the `runAfter` configuration in the task list: it ensures that the tasks run sequentially and can use the outputs from the previous task(s).
 
 === (Optionally) Create Helm Chart
 
-If you want to deploy the created image, you can add the `ods-deploy-helm-v0-11-1` task to the `tasks` list and configure which Kubernetes namespaces to deploy into, like this:
+If you want to deploy the created image, you can add the `ods-deploy-helm-v0-12-0` task to the `tasks` list and configure which Kubernetes namespaces to deploy into, like this:
 
 .ods.yaml
 [source,yaml]
@@ -89,14 +89,14 @@ pipeline:
     - name: build
       taskRef:
         kind: Task
-        name: ods-build-go-v0-11-1
+        name: ods-build-go-v0-12-0
       workspaces:
       - name: source
         workspace: shared-workspace
     - name: package
       taskRef:
         kind: Task
-        name: ods-package-image-v0-11-1
+        name: ods-package-image-v0-12-0
       runAfter:
       - build
       workspaces:
@@ -105,7 +105,7 @@ pipeline:
     - name: deploy
       taskRef:
         kind: Task
-        name: ods-deploy-helm-v0-11-1
+        name: ods-deploy-helm-v0-12-0
       params:
       - name: namespace
         value: foo-dev

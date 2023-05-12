@@ -10,7 +10,7 @@ spec:
   description: |
     Builds Gradle applications.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.11.1/docs/tasks/ods-build-gradle.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.12.0/docs/tasks/ods-build-gradle.adoc
   params:
     - name: working-dir
       description: |
@@ -74,7 +74,7 @@ spec:
   steps:
     - name: build-gradle-binary
       # Image is built from build/package/Dockerfile.gradle-toolset.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-gradle-toolset:0.11.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-gradle-toolset:0.12.0'
       env:
         - name: DEBUG
           valueFrom:
@@ -146,7 +146,7 @@ spec:
       workingDir: $(workspaces.source.path)    
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.11.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.12.0'
       env:
         - name: HOME
           value: '/tekton/home'

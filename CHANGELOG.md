@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.12.0] - 2023-05-12
+
 ### Added
 
 - Support webhook events related to Git tags ([#608](https://github.com/opendevstack/ods-pipeline/issues/608))
