@@ -1,0 +1,11 @@
+pipelines:
+- triggers:
+  - branches: ["should-never-match"]
+  tasks:
+  - name: build
+    taskRef:
+      kind: Task
+      name: ods-build-go
+    workspaces:
+      - name: source
+        workspace: shared-workspace
