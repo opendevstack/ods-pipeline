@@ -68,6 +68,12 @@ spec:
         If not given, the registy host of the source image is used.
       type: string
       default: ''
+    - name: diff-only
+      description: |
+        If set to true, the task will only perform a diff, and then stop.
+        No images will be promoted or upgrades attempted.
+      type: string
+      default: 'false'
   steps:
     - name: helm-upgrade-from-repo
       # Image is built from build/package/Dockerfile.helm.
@@ -92,7 +98,8 @@ spec:
           -age-key-secret=$(params.age-key-secret) \
           -api-server=$(params.api-server) \
           -api-credentials-secret=$(params.api-credentials-secret) \
-          -registry-host=$(params.registry-host)
+          -registry-host=$(params.registry-host) \
+          -diff-only=$(params.diff-only)
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

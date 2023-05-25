@@ -42,6 +42,8 @@ type options struct {
 	certDir string
 	// Whether to TLS verify the source image registry.
 	srcRegistryTLSVerify bool
+	// Whether to perform just a diff without any upgrade.
+	diffOnly bool
 	// Whether to enable debug mode.
 	debug bool
 }
@@ -95,6 +97,7 @@ func main() {
 	flag.StringVar(&opts.namespace, "namespace", defaultOptions.namespace, "Target K8s namespace (or OpenShift project) to deploy into")
 	flag.StringVar(&opts.certDir, "cert-dir", defaultOptions.certDir, "Use certificates at the specified path to access the registry")
 	flag.BoolVar(&opts.srcRegistryTLSVerify, "src-registry-tls-verify", defaultOptions.srcRegistryTLSVerify, "TLS verify source registry")
+	flag.BoolVar(&opts.diffOnly, "diff-only", defaultOptions.diffOnly, "Whether to perform only a diff")
 	flag.BoolVar(&opts.debug, "debug", defaultOptions.debug, "debug mode")
 	flag.Parse()
 
@@ -110,13 +113,13 @@ func main() {
 		skipOnEmptyNamespace(),
 		setReleaseTarget(),
 		detectSubrepos(),
-		detectImageDigests(),
-		copyImagesIntoReleaseNamespace(),
 		listHelmPlugins(),
 		packageHelmChartWithSubcharts(),
 		collectValuesFiles(),
 		importAgeKey(),
 		diffHelmRelease(),
+		detectImageDigests(),
+		copyImagesIntoReleaseNamespace(),
 		upgradeHelmRelease(),
 	)
 	if err != nil {

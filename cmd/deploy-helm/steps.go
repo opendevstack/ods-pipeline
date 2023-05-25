@@ -317,6 +317,9 @@ func diffHelmRelease() DeployStep {
 		if err != nil {
 			return d, fmt.Errorf("helm diff: %w", err)
 		}
+		if d.opts.diffOnly {
+			return d, &skipRemainingSteps{"Only diff was requested, skipping helm upgrade."}
+		}
 		if inSync {
 			return d, &skipRemainingSteps{"No diff detected, skipping helm upgrade."}
 		}

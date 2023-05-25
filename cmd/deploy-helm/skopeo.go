@@ -21,6 +21,7 @@ func (d *deployHelm) copyImage(imageArtifact artifact.Image, destRegistryToken s
 	// requests error out with "server gave HTTP response to HTTPS client".
 	if strings.HasPrefix(imageArtifact.Registry, "kind-registry.kind") {
 		srcRegistryTLSVerify = false
+		destRegistryTLSVerify = false
 	}
 	if d.targetConfig.RegistryHost != "" && d.targetConfig.RegistryTLSVerify != nil {
 		destRegistryTLSVerify = *d.targetConfig.RegistryTLSVerify
