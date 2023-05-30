@@ -206,26 +206,45 @@ func main() {
 		}
 		// If there are subrepos, then all of them need to have a successful pipeline run
 		// for the currently checkout out commit.
-		if len(subrepoContexts) > 0 {
-			for _, src := range subrepoContexts {
-				artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
-				err = downloadArtifacts(logger, nexusClient, src, opts.artifactSource, artifactsDir)
-				if err != nil {
-					log.Fatal(err)
-				}
-				// check that a pipeline run exists
-				// TODO: actually check for success.
-				pipelineRunDir := filepath.Join(artifactsDir, pipelinectxt.PipelineRunsDir)
-				if _, err := os.Stat(pipelineRunDir); os.IsNotExist(err) {
-					log.Fatalf(
-						"Pipeline runs with subrepos require a successful pipeline run artifact "+
-							"for all checked out subrepo commits, however no such artifact was found for %s. "+
-							"Re-run this pipeline once there is a successful pipeline run.", src.Repository,
-					)
-				}
+		for _, src := range subrepoContexts {
+			artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
+			err = downloadArtifacts(logger, nexusClient, src, opts.artifactSource, artifactsDir)
+			if err != nil {
+				log.Fatal(err)
+			}
+			// check that a pipeline run exists
+			// TODO: actually check for success.
+			pipelineRunDir := filepath.Join(artifactsDir, pipelinectxt.PipelineRunsDir)
+			if _, err := os.Stat(pipelineRunDir); os.IsNotExist(err) {
+				log.Fatalf(
+					"Pipeline runs with subrepos require a successful pipeline run artifact "+
+						"for all checked out subrepo commits, however no such artifact was found for %s. "+
+						"Re-run this pipeline once there is a successful pipeline run.", src.Repository,
+				)
 			}
 		}
+	} else {
+		err := writeEmptyArtifactManifests(subrepoContexts)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+}
+
+func writeEmptyArtifactManifests(subrepoContexts []*pipelinectxt.ODSContext) error {
+	emptyManifest := &pipelinectxt.ArtifactsManifest{Artifacts: []pipelinectxt.ArtifactInfo{}}
+	err := pipelinectxt.WriteJsonArtifact(emptyManifest, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename)
+	if err != nil {
+		return fmt.Errorf("write repo empty manifest: %w", err)
+	}
+	for _, src := range subrepoContexts {
+		artifactsDir := filepath.Join(pipelinectxt.SubreposPath, src.Repository, pipelinectxt.ArtifactsPath)
+		err := pipelinectxt.WriteJsonArtifact(emptyManifest, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
+		if err != nil {
+			return fmt.Errorf("write subrepo %s empty manifest: %w", src.Repository, err)
+		}
+	}
+	return nil
 }
 
 // findBestMatchingRef returns a full Git ref, from either tag, branch or default.
