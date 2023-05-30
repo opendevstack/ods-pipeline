@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"unicode"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/httpjson"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/pkg/bitbucket"
 	"github.com/opendevstack/pipeline/pkg/config"
@@ -118,7 +118,7 @@ func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server 
 		BitbucketClient:    bc,
 		Logger:             &logging.LeveledLogger{Level: logging.LevelNull},
 	}
-	return httptest.NewServer(httpjson.Handler(r.Handle))
+	return httptest.NewServer(BitbucketHandler(r))
 }
 
 func TestWebhookHandling(t *testing.T) {
@@ -148,6 +148,12 @@ func TestWebhookHandling(t *testing.T) {
 			requestBodyFixture: "manager/payload-unknown-event.json",
 			wantStatus:         http.StatusBadRequest,
 			wantBody:           `{"title":"BadRequest","detail":"unsupported event key: repo:ref_changed"}`,
+			wantPipelineConfig: false,
+		},
+		"unexpected event contents are rejected": {
+			requestBodyFixture: "manager/payload-unexpected-event-content.json",
+			wantStatus:         http.StatusInternalServerError,
+			wantBody:           `{"title":"InternalServerError"}`,
 			wantPipelineConfig: false,
 		},
 		"commits with skip message are not processed": {
@@ -326,6 +332,12 @@ func TestWebhookHandling(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			// Capture log output instead of printing it to stderr.
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+			defer func() {
+				log.SetOutput(os.Stderr)
+			}()
 			if tc.bitbucketClient == nil {
 				tc.bitbucketClient = &bitbucket.TestClient{}
 			}

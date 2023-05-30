@@ -1,0 +1,13 @@
+{  
+    "eventKey":"pr:opened",
+    "date":"2017-09-19T09:58:11+1000",
+    "actor":{  
+      "name":"max.mustermann@acme.org",
+      "emailAddress":"max.mustermann@acme.org",
+      "id":1,
+      "displayName":"Mustermann,Max ACME",
+      "active":true,
+      "slug":"max.mustermann_acme.org",
+      "type":"NORMAL"
+    }
+}

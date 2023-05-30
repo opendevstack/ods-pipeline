@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/httpjson"
 	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/manager"
 	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
@@ -202,18 +201,10 @@ func serve() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/health", http.HandlerFunc(health))
-	mux.Handle("/bitbucket", httpjson.Handler(r.Handle))
+	mux.Handle("/health", manager.HealthHandler())
+	mux.Handle("/bitbucket", manager.BitbucketHandler(r))
 	logger.Infof("Ready to accept requests!")
 	return http.ListenAndServe(":8080", mux)
-}
-
-func health(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte(`{"health":"ok"}`))
-	if err != nil {
-		http.Error(w, `{"health":"error"}`, http.StatusInternalServerError)
-		return
-	}
 }
 
 func getFileContent(filename string) (string, error) {

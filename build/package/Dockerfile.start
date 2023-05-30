@@ -29,7 +29,7 @@ RUN cd /tmp \
 # Final image
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
-ENV GIT_VERSION=2.31 \
+ENV GIT_VERSION=2.39 \
     OPENSSH_CLIENTS_VERSION=8.0
 
 RUN microdnf install --nodocs git-${GIT_VERSION}* openssh-clients-${OPENSSH_CLIENTS_VERSION}* && microdnf clean all

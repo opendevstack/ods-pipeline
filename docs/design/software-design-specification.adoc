@@ -569,7 +569,7 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-9
 | Git
-| 2.31
+| 2.39
 | Distributed version control system.
 | https://git-scm.com
 
@@ -599,13 +599,13 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-17
 | Skopeo
-| 1.9
+| 1.11
 | Tool for moving container images between different types of container storages.
 | https://github.com/containers/skopeo
 
 | SDS-EXT-18
 | Buildah
-| 1.27
+| 1.29
 | Tool that facilitates building OCI images.
 | https://github.com/containers/buildah
 

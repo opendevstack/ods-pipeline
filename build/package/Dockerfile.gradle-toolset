@@ -2,7 +2,7 @@ FROM registry.access.redhat.com/ubi8/openjdk-17:1.13
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV GIT_VERSION=2.31 \
+ENV GIT_VERSION=2.39 \
     GRADLE_VERSION=7.4.2 \
     GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle
 

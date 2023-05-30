@@ -17,8 +17,8 @@ RUN cd cmd/package-image && CGO_ENABLED=0 go build -o /usr/local/bin/ods-package
 # Based on https://catalog.redhat.com/software/containers/detail/5dca3d76dd19c71643b226d5?container-tabs=dockerfile.
 FROM registry.access.redhat.com/ubi8:8.7
 
-ENV BUILDAH_VERSION=1.27 \
-    SKOPEO_VERSION=1.9 \
+ENV BUILDAH_VERSION=1.29 \
+    SKOPEO_VERSION=1.11 \
     TRIVY_VERSION=0.36.0
 
 COPY --from=builder /usr/local/bin/ods-package-image /usr/local/bin/ods-package-image
