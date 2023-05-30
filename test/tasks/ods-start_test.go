@@ -45,6 +45,7 @@ func TestTaskODSStart(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					checkODSContext(t, wsDir, ctxt.ODS)
+					checkFilesExist(t, wsDir, filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
 
 					bitbucketClient := tasktesting.BitbucketClientOrFatal(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace, *privateCertFlag)
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusInProgress)
