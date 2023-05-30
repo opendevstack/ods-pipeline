@@ -1,4 +1,4 @@
-package main
+package manager
 
 import (
 	"io"
@@ -9,7 +9,7 @@ import (
 
 func TestHealthEndpoint(t *testing.T) {
 
-	ts := httptest.NewServer(http.HandlerFunc(health))
+	ts := httptest.NewServer(HealthHandler())
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL + "/health")

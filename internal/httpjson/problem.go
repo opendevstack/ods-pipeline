@@ -45,7 +45,11 @@ func (p *StatusProblem) Code() int {
 }
 
 func (p *StatusProblem) String() string {
-	return fmt.Sprintf("%s: %s: %s", p.title(), p.Detail, p.Err.Error())
+	if p.Err != nil {
+		return fmt.Sprintf("%s: %s: %s", p.title(), p.Detail, p.Err.Error())
+	} else {
+		return fmt.Sprintf("%s: %s", p.title(), p.Detail)
+	}
 }
 
 func (p *StatusProblem) Error() string {

@@ -2,8 +2,10 @@ package httpjson
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"runtime/debug"
 )
 
 // Handler is an HTTP handler implementing http.Handler.
@@ -13,7 +15,7 @@ type Handler func(w http.ResponseWriter, r *http.Request) (any, error)
 // If an error is returned from h, it is converted to a JSON error.
 // Otherwise, the returned value is JSON encoded.
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	res, err := h(w, r)
+	res, err := recoverMiddleware(h, w, r)
 	if err != nil {
 		var pd ProblemDetailer
 		if pe, ok := err.(ProblemDetailer); ok {
@@ -39,4 +41,22 @@ func JSONError(w http.ResponseWriter, err interface{}, code int) {
 	if e := json.NewEncoder(w).Encode(err); e != nil {
 		log.Println(e)
 	}
+}
+
+func recoverMiddleware(h Handler, w http.ResponseWriter, r *http.Request) (res any, err error) {
+	defer func() {
+		e := recover()
+		if e != nil {
+			switch t := e.(type) {
+			case string:
+				err = errors.New(t)
+			case error:
+				err = t
+			default:
+				err = errors.New("unknown error")
+			}
+			log.Println(string(debug.Stack()))
+		}
+	}()
+	return h(w, r)
 }
