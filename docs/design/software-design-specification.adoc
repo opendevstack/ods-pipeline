@@ -569,7 +569,7 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-9
 | Git
-| 2.31
+| 2.39
 | Distributed version control system.
 | https://git-scm.com
 
