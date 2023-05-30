@@ -39,4 +39,8 @@ COPY --from=builder /usr/local/bin/ods-start /usr/local/bin/ods-start
 COPY --from=builder /usr/local/bin/git-lfs /usr/local/bin/git-lfs
 RUN git lfs version
 
+# Ensure that file permissions do not prevent Git checkout into workspace.
+# See https://git-scm.com/docs/git-config/#Documentation/git-config.txt-safedirectory.
+RUN git config --system --add safe.directory '/workspace/source'
+
 USER 1001
