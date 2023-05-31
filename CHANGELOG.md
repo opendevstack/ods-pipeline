@@ -10,6 +10,17 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Update Git from 2.31 to 2.39 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
+- Update Skopeo from 1.9 to 1.11 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
+- Update Buildah from 1.27 to 1.29 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
+
+### Fixed
+
+- Artifact upload fails when no manifest is present ([#694](https://github.com/opendevstack/ods-pipeline/issues/694))
+- Unexpected event payload leads to server panic which is hard to debug ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
+
 ## [0.12.0] - 2023-05-12
 
 ### Added
