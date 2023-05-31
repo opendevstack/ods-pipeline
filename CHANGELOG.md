@@ -21,6 +21,7 @@ listed in the changelog.
 
 - Artifact upload fails when no manifest is present ([#694](https://github.com/opendevstack/ods-pipeline/issues/694))
 - Unexpected event payload leads to server panic which is hard to debug ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
+- `working-dir` param is not taken into account when supplying SQ default properties ([#674](https://github.com/opendevstack/ods-pipeline/issues/674))
 
 ## [0.12.0] - 2023-05-12
 
