@@ -23,12 +23,13 @@ spec:
       description: Defines if the resource should initialize and fetch the submodules.
       type: string
       default: 'true'
-    - name: depth
+    - name: clone-depth
       description: >-
-        Performs a shallow clone where only the most recent commit(s) will be
-        fetched.
+        Perform a shallow clone where only the most recent commit(s) will be
+        fetched. By default, a full clone is performed. Note that the parameter is of string type,
+        therefore the depth value must be quoted, e.g. `value: '1'`.
       type: string
-      default: '1'
+      default: ''
     - name: http-proxy
       description: Git HTTP proxy server for non-SSL requests.
       type: string
@@ -136,7 +137,7 @@ spec:
           -https-proxy=$(params.https-proxy) \
           -no-proxy=$(params.no-proxy) \
           -submodules=$(params.submodules) \
-          -depth=$(params.depth) \
+          -clone-depth=$(params.clone-depth) \
           -pipeline-run-name=$(params.pipeline-run-name) \
           -artifact-source=$(params.artifact-source)
 

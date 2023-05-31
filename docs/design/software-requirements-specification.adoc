@@ -102,6 +102,7 @@ a| The task shall check out a fresh copy of a Git repository.
 * If child repositories are configured, those shall be checked out as well. The branch/tag to be checked out shall be configurable.
 * All checkouts shall support Git submodules.
 * All checkouts shall support Git LFS extension.
+* The clone history depth shall be configurable.
 
 | SRS-TASK-START-2
 a| The task shall store context information for each checked out repository (such as project and component key, Git commit SHA, target environment, etc.)

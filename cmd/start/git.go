@@ -17,11 +17,16 @@ type gitCheckoutParams struct {
 	bitbucketAccessToken string
 	recurseSubmodules    string
 	depth                string
-	gitFullRef           string
+	fullRef              string
 }
 
 // gitCheckout encapsulates the steps required to perform a Git checkout
 func gitCheckout(p gitCheckoutParams) (err error) {
+	fetchArgs := []string{"--recurse-submodules=" + p.recurseSubmodules}
+	if p.depth != "" {
+		fetchArgs = append(fetchArgs, "--depth="+p.depth)
+	}
+	fetchArgs = append(fetchArgs, "origin", "--update-head-ok", "--force", p.fullRef)
 	steps := [][]string{
 		{"init"},
 		// Even though Tekton prepares credentials to be used for each task,
@@ -37,10 +42,7 @@ func gitCheckout(p gitCheckoutParams) (err error) {
 			fmt.Sprintf("Authorization: Bearer %s", p.bitbucketAccessToken),
 		},
 		{"remote", "add", "origin", p.repoURL},
-		{"fetch",
-			fmt.Sprintf("--recurse-submodules=%s", p.recurseSubmodules), fmt.Sprintf("--depth=%s", p.depth),
-			"origin", "--update-head-ok", "--force", p.gitFullRef,
-		},
+		append([]string{"fetch"}, fetchArgs...),
 		{"checkout", "-f", "FETCH_HEAD"},
 	}
 	for _, args := range steps {
