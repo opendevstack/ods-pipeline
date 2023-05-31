@@ -106,7 +106,7 @@ spec:
       resources:
         {{- (.Values.npm).resources | default dict | toYaml | nindent 8 }}
       script: |
-        supply-sonar-project-properties-default
+        supply-sonar-project-properties-default --working-dir=$(params.working-dir)
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=npm
         if copy-build-if-cached \
