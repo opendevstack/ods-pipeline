@@ -34,7 +34,7 @@ type options struct {
 	url                    string
 	gitFullRef             string
 	submodules             string
-	depth                  string
+	cloneDepth             string
 	cacheBuildTasksForDays int
 	debug                  bool
 }
@@ -52,7 +52,7 @@ func main() {
 	flag.StringVar(&opts.url, "url", ".", "URL to clone")
 	flag.StringVar(&opts.gitFullRef, "git-full-ref", "", "Git (full) ref to clone")
 	flag.StringVar(&opts.submodules, "submodules", "true", "defines if the resource should initialize and fetch the submodules")
-	flag.StringVar(&opts.depth, "depth", "1", "performs a shallow clone where only the most recent commit(s) will be fetched")
+	flag.StringVar(&opts.cloneDepth, "clone-depth", "", "perform a shallow clone where only the most recent commit(s) will be fetched")
 	flag.IntVar(&opts.cacheBuildTasksForDays, "cache-build-tasks-for-days", 7, "the number of days build outputs are cached. A negative number can be used to clear the cache.")
 	flag.StringVar(&opts.consoleURL, "console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	flag.StringVar(&opts.pipelineRunName, "pipeline-run-name", "", "name of pipeline run")
@@ -312,8 +312,8 @@ func checkoutAndAssembleContext(
 		repoURL:              url,
 		bitbucketAccessToken: opts.bitbucketAccessToken,
 		recurseSubmodules:    opts.submodules,
-		depth:                opts.depth,
-		gitFullRef:           gitFullRef,
+		depth:                opts.cloneDepth,
+		fullRef:              gitFullRef,
 	}); err != nil {
 		return nil, fmt.Errorf("git checkout: %w", err)
 	}

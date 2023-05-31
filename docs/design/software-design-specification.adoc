@@ -211,7 +211,7 @@ Input parameters: TODO
 
 | SDS-TASK-9
 | `start` binary
-a| The task checks out the repository of a given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref (either tag or branch, defaulting to `master`). All checkouts are by default shallow (depth=1) and include submodules.
+a| The task checks out the repository of a given URL and Git ref into the mounted workspace, cleaning previous contents, except for the caching area at `./ods-cache`. If the checked out `ods.y(a)ml` configures any child repositories, those are checked out as well from the configured URL and Git ref (either tag or branch, defaulting to `master`). All checkouts are by default non-shallow and include submodules.
 
 A build task may store cached dependencies under directory `.ods-cache/deps/<technology-name>/` where technology-name provides a namespace. For example this could be 'npm' if at some point in the future this would be supported. The task deletes files in folder `.ods-cache/deps/`. All other files in `.ods-cache` are reserved for future use. While they are not removed you must not rely on those locations except for experimentation.
 

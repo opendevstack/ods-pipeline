@@ -12,6 +12,7 @@ listed in the changelog.
 
 ### Changed
 
+- Perform non-shallow clone by default ([#164](https://github.com/opendevstack/ods-pipeline/issues/164))
 - Update Git from 2.31 to 2.39 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
 - Update Skopeo from 1.9 to 1.11 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
 - Update Buildah from 1.27 to 1.29 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))

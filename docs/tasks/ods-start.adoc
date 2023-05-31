@@ -42,9 +42,9 @@ by the pipeline manager. To customize parameters, configure them in the relevant
 | Defines if the resource should initialize and fetch the submodules.
 
 
-| depth
-| 1
-| Performs a shallow clone where only the most recent commit(s) will be fetched.
+| clone-depth
+| 
+| Perform a shallow clone where only the most recent commit(s) will be fetched. By default, a full clone is performed. Note that the parameter is of string type, therefore the depth value must be quoted, e.g. `value: '1'`.
 
 
 | http-proxy
