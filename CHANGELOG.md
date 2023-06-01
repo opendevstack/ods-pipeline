@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.13.0] - 2023-06-01
+
 ### Added
 
 - Allow to execute Helm diff only, without running upgrade afterwards (related to [#622](https://github.com/opendevstack/ods-pipeline/issues/622))
