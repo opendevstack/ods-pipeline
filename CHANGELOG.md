@@ -10,8 +10,13 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Allow to execute Helm diff only, without running upgrade afterwards (related to [#622](https://github.com/opendevstack/ods-pipeline/issues/622))
+
 ### Changed
 
+- Only push images when Helm detects drift ([#589](https://github.com/opendevstack/ods-pipeline/issues/589))
 - Perform non-shallow clone by default ([#164](https://github.com/opendevstack/ods-pipeline/issues/164))
 - Update Git from 2.31 to 2.39 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))
 - Update Skopeo from 1.9 to 1.11 ([#693](https://github.com/opendevstack/ods-pipeline/pull/693))

@@ -130,6 +130,13 @@ If empty, the task will be a no-op.
 If not given, the registy host of the source image is used.
 
 
+
+| diff-only
+| false
+| If set to true, the task will only perform a diff, and then stop.
+No images will be promoted or upgrades attempted.
+
+
 |===
 
 == Results

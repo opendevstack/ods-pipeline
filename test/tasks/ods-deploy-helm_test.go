@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/opendevstack/pipeline/internal/command"
 	"github.com/opendevstack/pipeline/internal/kubernetes"
 	"github.com/opendevstack/pipeline/internal/projectpath"
 	"github.com/opendevstack/pipeline/internal/random"
+	"github.com/opendevstack/pipeline/pkg/artifact"
 	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
 	"github.com/opendevstack/pipeline/pkg/tasktesting"
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,13 +23,24 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	localRegistry = "localhost:5000"
+	kindRegistry  = "kind-registry.kind:5000"
+)
+
+type imageImportParams struct {
+	externalRef string
+	namespace   string
+	workdir     string
+}
+
 func TestTaskODSDeployHelm(t *testing.T) {
 	var separateReleaseNamespace string
 	runTaskTestCases(t,
 		"ods-deploy-helm",
 		[]tasktesting.Service{},
 		map[string]tasktesting.TestCase{
-			"should skip when no namespace is given": {
+			"skips when no namespace is given": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -36,26 +49,25 @@ func TestTaskODSDeployHelm(t *testing.T) {
 				},
 				WantRunSuccess: true,
 			},
-			"should upgrade Helm chart in separate namespace": {
+			"upgrades Helm chart in separate namespace": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-sample-app"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 
-					externalNamespace, err := createReleaseNamespace(ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
-					if err != nil {
-						t.Fatal(err)
-					}
+					externalNamespace, cleanupFunc := createReleaseNamespaceOrFatal(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace,
+					)
 					separateReleaseNamespace = externalNamespace
-					ctxt.Cleanup = func() {
-						if err := ctxt.Clients.KubernetesClientSet.CoreV1().Namespaces().Delete(context.TODO(), externalNamespace, metav1.DeleteOptions{}); err != nil {
-							t.Errorf("Failed to delete namespace %s: %s", externalNamespace, err)
-						}
-					}
+					ctxt.Cleanup = cleanupFunc
 					ctxt.Params = map[string]string{
 						"namespace": externalNamespace,
 					}
-
+					importImage(t, imageImportParams{
+						externalRef: "index.docker.io/crccheck/hello-world",
+						namespace:   ctxt.Namespace,
+						workdir:     wsDir,
+					})
 					createSampleAppPrivateKeySecret(t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace)
 				},
 				WantRunSuccess: true,
@@ -98,7 +110,7 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					}
 				},
 			},
-			"should upgrade Helm chart with dependencies": {
+			"upgrades Helm chart with dependencies": {
 				WorkspaceDirMapping: map[string]string{"source": "helm-app-with-dependencies"},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
@@ -150,6 +162,47 @@ func TestTaskODSDeployHelm(t *testing.T) {
 					},
 				}},
 			},
+			"skips upgrade when diff-only is requested": {
+				WorkspaceDirMapping: map[string]string{"source": "helm-app-with-dependencies"},
+				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					wsDir := ctxt.Workspaces["source"]
+					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
+					externalNamespace, cleanupFunc := createReleaseNamespaceOrFatal(
+						t, ctxt.Clients.KubernetesClientSet, ctxt.Namespace,
+					)
+					separateReleaseNamespace = externalNamespace
+					ctxt.Cleanup = cleanupFunc
+					ctxt.Params = map[string]string{
+						"namespace": externalNamespace,
+						"diff-only": "true",
+					}
+					importImage(t, imageImportParams{
+						externalRef: "index.docker.io/crccheck/hello-world",
+						namespace:   ctxt.Namespace,
+						workdir:     wsDir,
+					})
+				},
+				WantRunSuccess: true,
+				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+					t.Log("Verify image was not promoted ...")
+					img := fmt.Sprintf("%s/%s/hello-world", localRegistry, separateReleaseNamespace)
+					promoted := checkIfImageExists(t, img)
+					if promoted {
+						t.Fatalf("Image %s should not have been promoted to %s", img, separateReleaseNamespace)
+					}
+					t.Log("Verify service was not deployed ...")
+					resourceName := fmt.Sprintf("%s-%s", ctxt.ODS.Component, "helm-app-with-dependencies")
+					_, err := checkService(ctxt.Clients.KubernetesClientSet, separateReleaseNamespace, resourceName)
+					if err == nil {
+						t.Fatalf("Service %s should not have been deployed to %s", resourceName, separateReleaseNamespace)
+					}
+					t.Log("Verify task skipped upgrade ...")
+					wantLogMsg := "Only diff was requested, skipping helm upgrade"
+					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
+						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
+					}
+				},
+			},
 		},
 	)
 }
@@ -162,6 +215,18 @@ func createSampleAppPrivateKeySecret(t *testing.T, clientset *k8s.Clientset, ctx
 	_, err = kubernetes.CreateSecret(clientset, ctxtNamespace, secret)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func createReleaseNamespaceOrFatal(t *testing.T, clientset *k8s.Clientset, ctxtNamespace string) (string, func()) {
+	externalNamespace, err := createReleaseNamespace(clientset, ctxtNamespace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return externalNamespace, func() {
+		if err := clientset.CoreV1().Namespaces().Delete(context.TODO(), externalNamespace, metav1.DeleteOptions{}); err != nil {
+			t.Errorf("Failed to delete namespace %s: %s", externalNamespace, err)
+		}
 	}
 }
 
@@ -226,4 +291,50 @@ func readPrivateKeySecret() (*corev1.Secret, error) {
 		return nil, err
 	}
 	return &secretSpec, nil
+}
+
+func importImage(t *testing.T, iip imageImportParams) {
+	var err error
+	cmds := [][]string{
+		{"pull", iip.externalRef},
+		{"tag", iip.externalRef, iip.internalRef(localRegistry)},
+		{"push", iip.internalRef(localRegistry)},
+	}
+	for _, args := range cmds {
+		if err == nil {
+			_, _, err = command.RunBuffered("docker", args)
+		}
+	}
+	if err != nil {
+		t.Fatalf("docker cmd failed: %s", err)
+	}
+
+	err = pipelinectxt.WriteJsonArtifact(artifact.Image{
+		Ref:        iip.internalRef(kindRegistry),
+		Registry:   kindRegistry,
+		Repository: iip.namespace,
+		Name:       iip.name(),
+		Tag:        "latest",
+		Digest:     "not needed",
+	}, filepath.Join(iip.workdir, pipelinectxt.ImageDigestsPath), fmt.Sprintf("%s.json", iip.name()))
+	if err != nil {
+		t.Fatalf("failed to write artifact: %s", err)
+	}
+	t.Log("Imported image", iip.internalRef(localRegistry))
+}
+
+func checkIfImageExists(t *testing.T, name string) bool {
+	t.Helper()
+	_, _, err := command.RunBuffered("docker", []string{"inspect", name})
+	return err == nil
+}
+
+func (iip imageImportParams) name() string {
+	parts := strings.Split(iip.externalRef, "/")
+	return parts[2]
+}
+
+func (iip imageImportParams) internalRef(registry string) string {
+	parts := strings.Split(iip.externalRef, "/")
+	return fmt.Sprintf("%s/%s/%s", registry, iip.namespace, parts[2])
 }
