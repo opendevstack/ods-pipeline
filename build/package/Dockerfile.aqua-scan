@@ -22,4 +22,6 @@ COPY --from=builder /usr/local/bin/ods-aqua-scan /usr/local/bin/ods-aqua-scan
 # Add scripts
 COPY build/package/scripts/download-aqua-scanner.sh /usr/local/bin/download-aqua-scanner
 
+VOLUME /workspace/source
+
 USER 1001

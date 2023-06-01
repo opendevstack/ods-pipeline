@@ -45,4 +45,6 @@ COPY build/package/scripts/configure-truststore.sh /usr/local/bin/configure-trus
 
 ENV PATH=/usr/local/sonar-scanner-cli/bin:$PATH
 
+VOLUME /workspace/source
+
 USER 1001

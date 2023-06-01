@@ -65,4 +65,9 @@ RUN mkdir -p $HELM_PLUGINS \
     && sops --version \
     && age --version
 
+VOLUME /workspace/source
+# Ensure that file permissions do not prevent Git checkout into workspace.
+# See https://git-scm.com/docs/git-config/#Documentation/git-config.txt-safedirectory.
+RUN git config --system --add safe.directory '/workspace/source'
+
 USER 1001
