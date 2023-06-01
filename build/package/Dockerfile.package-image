@@ -43,6 +43,7 @@ ENV _BUILDAH_STARTED_IN_USERNS="" BUILDAH_ISOLATION=chroot
 
 VOLUME /var/lib/containers
 VOLUME /home/build/.local/share/containers
+VOLUME /workspace/source
 
 # Install Trivy
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
