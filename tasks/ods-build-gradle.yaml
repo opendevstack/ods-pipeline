@@ -60,6 +60,11 @@ spec:
         for details how the build script is invoked.
       type: string
       default: "/usr/local/bin/build-gradle"
+    - name: gradle-build-dir
+      description: >-
+        Path to the directory into which Gradle publishes its build.
+      type: string
+      default: build
     - name: sonar-quality-gate
       description: Whether the SonarQube quality gate needs to pass for the task to succeed.
       type: string
@@ -122,6 +127,7 @@ spec:
         $(params.build-script) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
+          --gradle-build-dir=$(params.gradle-build-dir) \
           --gradle-additional-tasks="$(params.gradle-additional-tasks)" \
           --gradle-options="$(params.gradle-options)"
         build_exit=$?

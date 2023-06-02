@@ -149,6 +149,11 @@ without leading `./` and trailing `/`.
 | Build script to execute. The link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-gradle.sh[default script] is located in the container image. If you specify a relative path instead, it will be resolved from the workspace. See the task definition for details how the build script is invoked.
 
 
+| gradle-build-dir
+| build
+| Path to the directory into which Gradle publishes its build.
+
+
 | sonar-quality-gate
 | false
 | Whether the SonarQube quality gate needs to pass for the task to succeed.
