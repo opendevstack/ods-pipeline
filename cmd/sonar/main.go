@@ -150,9 +150,11 @@ func sonarScan(
 
 	if opts.qualityGate {
 		logger.Infof("Checking quality gate ...")
-		qualityGateResult, err := sonarClient.QualityGateGet(
-			sonar.QualityGateGetParams{Project: sonarProject},
-		)
+		qualityGateResult, err := sonarClient.QualityGateGet(sonar.QualityGateGetParams{
+			ProjectKey:  sonarProject,
+			Branch:      ctxt.GitRef,
+			PullRequest: ctxt.PullRequestKey,
+		})
 		if err != nil {
 			return fmt.Errorf("quality gate could not be retrieved: %w", err)
 		}

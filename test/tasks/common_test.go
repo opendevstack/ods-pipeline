@@ -208,7 +208,7 @@ func checkSonarQualityGate(t *testing.T, c *kclient.Clientset, namespace, sonarP
 
 	if qualityGateFlag {
 		qualityGateResult, err := sonarClient.QualityGateGet(
-			sonar.QualityGateGetParams{Project: sonarProject},
+			sonar.QualityGateGetParams{ProjectKey: sonarProject},
 		)
 		if err != nil {
 			t.Fatal(err)
