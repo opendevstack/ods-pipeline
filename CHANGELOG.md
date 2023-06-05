@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.13.1] - 2023-06-05
+
 ### Added
 
 - Gradle build dir is now configurable ([#703](https://github.com/opendevstack/ods-pipeline/pull/703))

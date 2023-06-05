@@ -10,7 +10,7 @@ spec:
   description: |
     Finishes the pipeline run.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.13.0/docs/tasks/ods-finish.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.13.1/docs/tasks/ods-finish.adoc
   params:
     - name: pipeline-run-name
       description: Name of pipeline run.
@@ -24,7 +24,7 @@ spec:
   steps:
     - name: ods-finish
       # Image is built from build/package/Dockerfile.finish.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-finish:0.13.0'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-finish:0.13.1'
       env:
         - name: HOME
           value: '/tekton/home'
