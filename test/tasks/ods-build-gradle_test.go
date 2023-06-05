@@ -45,14 +45,13 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						)
 					}
 
-					logContains(ctxt.CollectedLogs, t,
+					logContains(t, ctxt.CollectedLogs,
 						"No sonar-project.properties present, using default:",
 						"ods-test-nexus",
 						"Gradle 7.4.2",
 						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
 						"Using GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle",
 						"To honour the JVM settings for this build a single-use Daemon process will be forked.",
-						"Using ARTIFACTS_DIR=/workspace/source/.ods/artifacts",
 					)
 				},
 			},
@@ -85,14 +84,13 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						)
 					}
 
-					logContains(ctxt.CollectedLogs, t,
+					logContains(t, ctxt.CollectedLogs,
 						"No sonar-project.properties present, using default:",
 						"ods-test-nexus",
 						"Gradle 7.4.2",
 						"Using GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx512M",
 						"Using GRADLE_USER_HOME=/workspace/source/.ods-cache/deps/gradle",
 						"To honour the JVM settings for this build a single-use Daemon process will be forked.",
-						"Using ARTIFACTS_DIR=/workspace/source/.ods/artifacts",
 					)
 				},
 				AdditionalRuns: []tasktesting.TaskRunCase{{
@@ -122,7 +120,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 							)
 						}
 
-						logContains(ctxt.CollectedLogs, t,
+						logContains(t, ctxt.CollectedLogs,
 							"Copying prior build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",
 							"Copying prior build output from cache: /workspace/source/.ods-cache/build-task/gradle",
 						)
@@ -132,7 +130,8 @@ func TestTaskODSBuildGradle(t *testing.T) {
 		})
 }
 
-func logContains(collectedLogs []byte, t *testing.T, wantLogMsgs ...string) {
+func logContains(t *testing.T, collectedLogs []byte, wantLogMsgs ...string) {
+	t.Helper()
 	logString := string(collectedLogs)
 
 	for _, msg := range wantLogMsgs {

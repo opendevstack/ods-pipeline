@@ -10,6 +10,15 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Gradle build dir is now configurable ([#703](https://github.com/opendevstack/ods-pipeline/pull/703))
+
+### Fixed
+
+- Gradle task artifacts are not picked up by cache ([#700](https://github.com/opendevstack/ods-pipeline/issues/700))
+- Gradle task ignores `working-dir` param ([#702](https://github.com/opendevstack/ods-pipeline/issues/702))
+
 ## [0.13.0] - 2023-06-01
 
 ### Added
