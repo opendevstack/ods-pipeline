@@ -47,7 +47,7 @@ type QualityGateGetParams struct {
 
 func (c *Client) QualityGateGet(p QualityGateGetParams) (*QualityGate, error) {
 	urlPath := "/api/qualitygates/project_status?projectKey=" + p.ProjectKey
-	if p.PullRequest != "" {
+	if p.PullRequest != "" && p.PullRequest != "0" {
 		urlPath = urlPath + "&pullRequest=" + p.PullRequest
 	} else if p.Branch != "" {
 		urlPath = urlPath + "&branch=" + p.Branch
