@@ -239,7 +239,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					writeContextFile(t, wsDir, "pr-key", "3")
-					writeContextFile(t, wsDir, "pr-key", "master")
+					writeContextFile(t, wsDir, "pr-base", "master")
 					ctxt.Params = buildTaskParams(map[string]string{
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
