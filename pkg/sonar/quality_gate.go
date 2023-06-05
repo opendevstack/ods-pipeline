@@ -40,11 +40,18 @@ type QualityGatePeriod struct {
 }
 
 type QualityGateGetParams struct {
-	Project string `json:"project"`
+	ProjectKey  string
+	Branch      string
+	PullRequest string
 }
 
 func (c *Client) QualityGateGet(p QualityGateGetParams) (*QualityGate, error) {
-	urlPath := fmt.Sprintf("/api/qualitygates/project_status?projectKey=%s", p.Project)
+	urlPath := "/api/qualitygates/project_status?projectKey=" + p.ProjectKey
+	if p.PullRequest != "" {
+		urlPath = urlPath + "&pullRequest=" + p.PullRequest
+	} else if p.Branch != "" {
+		urlPath = urlPath + "&branch=" + p.Branch
+	}
 	statusCode, response, err := c.get(urlPath)
 	if err != nil {
 		return &QualityGate{ProjectStatus: QualityGateProjectStatus{Status: QualityGateStatusNone}}, nil

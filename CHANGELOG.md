@@ -18,6 +18,7 @@ listed in the changelog.
 
 - Gradle task artifacts are not picked up by cache ([#700](https://github.com/opendevstack/ods-pipeline/issues/700))
 - Gradle task ignores `working-dir` param ([#702](https://github.com/opendevstack/ods-pipeline/issues/702))
+- SQ quality gate check does not take branch / PR into account ([#701](https://github.com/opendevstack/ods-pipeline/issues/701))
 
 ## [0.13.0] - 2023-06-01
 
