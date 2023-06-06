@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- Gradle build script changes twice into working dir ([#705](https://github.com/opendevstack/ods-pipeline/issues/705))
+
 ## [0.13.1] - 2023-06-05
 
 ### Added

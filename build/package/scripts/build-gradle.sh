@@ -59,7 +59,6 @@ mkdir -p "${GRADLE_USER_HOME}"
 configure-gradle
 
 echo
-cd "${working_dir}"
 echo "Working on Gradle project in '${working_dir}'..."
 echo
 echo "Gradlew version: "
