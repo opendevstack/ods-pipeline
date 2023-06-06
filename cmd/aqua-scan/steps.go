@@ -80,7 +80,7 @@ func scanImagesWithAqua() AquaScanStep {
 		if err != nil {
 			return s, fmt.Errorf("aqua scan URL: %w", err)
 		}
-		slog.Info("Aqua vulnerability report is at %s ...", asu)
+		slog.Info("Aqua vulnerability report is at " + asu)
 
 		err = copyAquaReportsToArtifacts(htmlReportFile, jsonReportFile)
 		if err != nil {
