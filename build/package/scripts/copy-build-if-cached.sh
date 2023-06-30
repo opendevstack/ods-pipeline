@@ -57,7 +57,9 @@ while [ "$#" -gt 0 ]; do
     --cache-location-used-path) cache_location_used_path="$2"; shift;;
     --cache-location-used-path=*) cache_location_used_path="${1#*=}";;
 
-    --debug) debug=true;;
+    --debug) debug="$2"; shift;;
+    --debug=*) debug="${1#*=}";;
+
     --dry-run) dry_run=true;;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
