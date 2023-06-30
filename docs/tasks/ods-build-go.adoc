@@ -84,9 +84,13 @@ without leading `./` and trailing `/`.
 | Path to the directory into which the resulting Go binary should be copied, relative to `working-dir`. This directory may then later be used as Docker context for example.
 
 
-| cache-build
-| true
-| If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that a build can be skipped if the `working-dir` contents did not change. You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
+| cache-sources
+| 
+| List of build source directories (as colon separated string) which influence the build.
+These directories are relative to the repository root.
+If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
+
 
 
 | build-script

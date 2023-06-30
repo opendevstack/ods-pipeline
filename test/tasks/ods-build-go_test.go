@@ -30,7 +30,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-						"cache-build":        "false",
+						"debug":              "true",
 					})
 				},
 				WantRunSuccess: true,
@@ -82,6 +82,8 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
+						"debug":              "true",
+						"cache-sources":      ".",
 					})
 				},
 				WantRunSuccess: true,
@@ -145,6 +147,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
+						"cache-sources":      subdir,
 					})
 				},
 				WantRunSuccess: true,
@@ -184,6 +187,13 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					cleanModcache(t, wsDir)
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"fail linting go app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app-lint-error"},

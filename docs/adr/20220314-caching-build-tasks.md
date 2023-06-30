@@ -2,7 +2,7 @@
 
 Date: 2022-03-14
 
-Last Modified: 2022-12-19 - enable build task caching bu default)
+Last Modified: 2023-08-30 - build task caching to be based on multiple input locations  
 
 ## Status
 
@@ -20,33 +20,19 @@ There is no good reason when only the frontend code changes that the backend bui
 
 ## Decision
 
-Build task caching persists a build's produced files so that future builds can be skipped if the working directory specified in the build task did not change.
+Build task caching persists a build's produced reports and built files (if any) so that future builds can be skipped if the specified builds inputs did not change.
 
-The build files (output and ods artifacts) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
+The built output files (if any) and reports (ods artifacts) are cached in a dedicated cache area named `build-task` on the caching PVC described in the [caching ADR](20220225-caching.md).
 
-By default build task caching is enabled for the following reasons:
+In most cases as ods-pipeline builds should enable build task caching by specifying an appropriate value in their `cache-sources` parameter (colon separated paths). This parameter must list any directories which impact the build. When there are no files impacting the build outside of the `working-dir` one can set the a tasks `cache-sources` to the same value. By default this value is empty which disables build caching.
 
-- Merged PR's can be skipped unless a merge with file changes is needed.
-
-- Since the initial release no fundamental issues have been reported.
-
-- While build caching requires space on the caching PVC the runtime overhead on initial cache population is (typically) small.
-
-Situations where build caching should be disabled are:
-
-- Build caching requires space on the caching PVC and a (typically) small runtime overhead on initial cache population. Teams who mostly don't benefit from caching should consider to disable build caching.
-
-- In repos with multiple build tasks you would typically want to enable build task skipping. However when enabled builds are skipped if the contents of their `working-dir` does not change. **NOTE: Disable build caching of a build task if this build consumes files located outside of the `working-dir` and changes of them are not reflected as version controlled file changes in or below the working dir!** For example this could happen if you consume code maintained in your multi-repo in several build tasks. To safely use build skipping in this case you will have to provide a checksum file of those other areas and check them into the working directory. This should be achievable via a git pre-commit hook.  
-
-Disable build caching by setting the `cache-build` parameter of a build task to `'false'`.
-
-Tasks supporting builds skipping support parameter `cache-build` which by default is `'true'`. If `cache-build` is `'true'` build tasks shall copy their build outputs and ods artifacts to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-working-dir)`, where
+Build tasks with caching enabled shall copy their build outputs and ods artifacts to `.ods-cache/build-task/<technology-build-key>-<cache-build-key>/$(git-sha-combined)`, where
 
 - `<technology-build-key>` is a value to allow humans to easily distinguish for what the artifacts are, while also allowing to have different keys for different versions of a build task. This might be useful for example to separate jar files with different class file versions for example. Such differentiation could be used in later versions. Initially they will likely be simple names such as `go`, `python` etc.
 
 - `<cache-build-key>` allows keeping multiple build tasks associated with the same working directory separate. Such build variants may allow to create builds for different platforms or architectures while keeping the cached files in separate locations. In most cases such a key can be derived from the existing build task's parameters.
 
-- `git-sha-working-dir` is the git sha of the internal tree object of the working directory
+- `git-sha-combined` is the git sha of the internal tree object of the specified `cache-sources` directories (specified colon separated)
 
 <aside class="notice">
 ****
@@ -74,9 +60,9 @@ The build tasks support proper cleanup by touching file named `.ods-last-used-st
 
 ## Consequences
 
-* With build skipping build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs and other produced artifacts (see artifacts.adoc).
+* With build skipping build tasks for which their working directory does not change can skip rebuilding and instead reuse their prior build outputs (if any) and other produced artifacts (see artifacts.adoc).
 
-* For build skipping to work as expected a build task must be self contained by their working directory. In particular a build must not use any files of the repo outside the `working-dir`. You must disable or workaround this if your build is affected by this. See also NOTE of section Decision above for more examples and potential workarounds.
+* For build skipping to work as expected a build task must be have specify all directories which impact the builds in parameter `cache-sources`. In particular a build must not use any files of the repo outside these paths. You can disable build caching by setting `cache-sources` to an empty value which is the default.
 
 * The build skipping cache directories are cleaned up by `ods-start` if they have not been used for 7 days or what you configure with the `ods-start`'s  parameter `cache-build-tasks-for-days`.
 

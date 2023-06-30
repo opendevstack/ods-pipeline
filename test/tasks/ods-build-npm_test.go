@@ -24,7 +24,6 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
-						"cache-build":        "false",
 					})
 				},
 				WantRunSuccess: true,
@@ -37,9 +36,10 @@ func TestTaskODSBuildNPM(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-						"docker/dist/src/index.js",
-						"docker/dist/package.json",
-						"docker/dist/package-lock.json",
+						"dist/src/index.js",
+						"node_modules",
+						"package.json",
+						"package-lock.json",
 					)
 					if !*skipSonarQubeFlag {
 						checkFilesExist(t, wsDir,
@@ -70,8 +70,8 @@ func TestTaskODSBuildNPM(t *testing.T) {
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
-						"working-dir": subdir,
-						"output-dir":  "../docker",
+						"working-dir":   subdir,
+						"cache=sources": subdir,
 					})
 				},
 				WantRunSuccess: true,
@@ -84,9 +84,9 @@ func TestTaskODSBuildNPM(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage-final.json", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-lcov.info", subdir)),
 						filepath.Join(pipelinectxt.LintReportsPath, fmt.Sprintf("%s-report.txt", subdir)),
-						"docker/dist/src/index.js",
-						"docker/dist/package.json",
-						"docker/dist/package-lock.json",
+						fmt.Sprintf("%s/dist/src/index.js", subdir),
+						fmt.Sprintf("%s/package.json", subdir),
+						fmt.Sprintf("%s/package-lock.json", subdir),
 					)
 				},
 				AdditionalRuns: []tasktesting.TaskRunCase{{
@@ -94,8 +94,8 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 						// ctxt still in place from prior run
 						wsDir := ctxt.Workspaces["source"]
-						tasktesting.RemoveAll(t, wsDir, "docker/dist")
-						tasktesting.RemoveAll(t, wsDir, "dist")
+						tasktesting.RemoveAll(t, wsDir, "js-src/dist")
+						tasktesting.RemoveAll(t, wsDir, "js-src/node_modules")
 					},
 					WantRunSuccess: true,
 				}},
@@ -135,16 +135,17 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
-						"copy-node-modules": "true",
+						"cached-sources": ".",
+						"cached-outputs": "node_modules/",
 					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkFilesExist(t, wsDir,
-						"docker/dist/node_modules/",
-						"docker/dist/package.json",
-						"docker/dist/package-lock.json",
+						"node_modules/",
+						"package.json",
+						"package-lock.json",
 					)
 				},
 			},
@@ -154,16 +155,16 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
-						"build-dir": "build",
+						"cached-outputs": "build",
 					})
 				},
 				WantRunSuccess: true,
 				PostRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					checkFilesExist(t, wsDir,
-						"docker/dist/src/index.js",
-						"docker/dist/package.json",
-						"docker/dist/package-lock.json",
+						"build/src/index.js",
+						"package.json",
+						"package-lock.json",
 					)
 				},
 			},
@@ -186,9 +187,9 @@ func TestTaskODSBuildNPM(t *testing.T) {
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage-final.json"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "lcov.info"),
 						filepath.Join(pipelinectxt.LintReportsPath, "report.txt"),
-						"docker/dist/src/index.js",
-						"docker/dist/package.json",
-						"docker/dist/package-lock.json",
+						"dist/src/index.js",
+						"package.json",
+						"package-lock.json",
 					)
 				},
 			},

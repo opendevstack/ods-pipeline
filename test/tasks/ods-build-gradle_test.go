@@ -22,7 +22,6 @@ func TestTaskODSBuildGradle(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
-						"cache-build":        "false",
 					})
 				},
 				WantRunSuccess: true,
@@ -62,6 +61,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
+						"cache-sources":      ".",
 					})
 				},
 				WantRunSuccess: true,
@@ -121,7 +121,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						}
 
 						logContains(t, ctxt.CollectedLogs,
-							"Copying prior build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",
+							"Copying prior ods build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",
 							"Copying prior build output from cache: /workspace/source/.ods-cache/build-task/gradle",
 						)
 					},

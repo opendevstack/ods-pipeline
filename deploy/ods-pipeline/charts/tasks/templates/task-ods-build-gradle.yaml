@@ -43,13 +43,20 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
-    - name: cache-build
-      description: >-
-        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
-        a build can be skipped if the `working-dir` contents did not change.
-        You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
+    - name: cache-sources
+      description: |
+        List of build source directories (as colon separated string) which influence the build.
+        These directories are relative to the repository root.
+        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+        If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
       type: string
-      default: "true"
+      default: ""
+    - name: cached-outputs
+      description: >-
+        List of build output directories (as colon separated string) to be cached.
+        These directories are relative to `working-dir`.
+      type: string
+      default: "docker"
     - name: build-script
       description: >-
         Build script to execute. The
@@ -117,11 +124,11 @@ spec:
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=gradle
         if copy-build-if-cached \
-          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
+          --cache-sources=$(params.cache-sources) \
+          --cached-outputs=$(params.cached-outputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
-          --output-dir=$(params.output-dir) \
           --debug=${DEBUG} ; then
           exit 0
         fi
@@ -139,14 +146,13 @@ spec:
         if [ $build_exit -ne 0 ]; then
           exit $build_exit
         fi
-        if [ "$(params.cache-build)" == "true" ]; then
-          cache-build \
-            --cache-build-key="$cache_build_key" \
-            --cache-location-used-path=$(results.build-reused-from-location.path) \
-            --working-dir=$(params.working-dir) \
-            --output-dir=$(params.output-dir) \
-            --debug=${DEBUG}
-        fi
+        cache-build \
+          --cache-build-key="$cache_build_key" \
+          --cache-sources=$(params.cache-sources) \
+          --cached-outputs=$(params.cached-outputs) \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --debug=${DEBUG}
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

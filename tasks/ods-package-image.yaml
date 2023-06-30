@@ -31,11 +31,11 @@ spec:
     - name: dockerfile
       description: Path to the Dockerfile to build (relative to `docker-dir`).
       type: string
-      default: ./Dockerfile
+      default: ./docker/Dockerfile
     - name: docker-dir
       description: Path to the directory to use as Docker context.
       type: string
-      default: docker
+      default: '.'
     - name: format
       description: 'The format of the built container, `oci` or `docker`.'
       type: string

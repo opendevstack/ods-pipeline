@@ -24,7 +24,6 @@ func TestTaskODSBuildPython(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
-						"cache-build":        "false",
 					})
 				},
 				WantRunSuccess: true,
@@ -32,8 +31,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					checkFilesExist(t, wsDir,
-						"docker/app/main.py",
-						"docker/app/requirements.txt",
+						"src/main.py",
+						"requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 					)
@@ -76,6 +75,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
+						"cache-sources":      ".",
 					})
 				},
 				WantRunSuccess: true,
@@ -83,8 +83,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					checkFilesExist(t, wsDir,
-						"docker/app/main.py",
-						"docker/app/requirements.txt",
+						"src/main.py",
+						"requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 					)
@@ -142,7 +142,7 @@ func TestTaskODSBuildPython(t *testing.T) {
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
-						"cache-build":        "true",
+						"cache-sources":      subdir,
 					})
 				},
 				WantRunSuccess: true,
@@ -151,8 +151,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					subdir := "fastapi-src"
 
 					checkFilesExist(t, wsDir,
-						fmt.Sprintf("%s/docker/app/main.py", subdir),
-						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
+						fmt.Sprintf("%s/src/main.py", subdir),
+						fmt.Sprintf("%s/requirements.txt", subdir),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.xml", subdir)),
 					)

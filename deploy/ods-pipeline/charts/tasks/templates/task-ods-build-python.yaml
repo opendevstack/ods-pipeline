@@ -17,19 +17,16 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
-    - name: output-dir
-      description: >-
-        Path to the directory into which outputs should be placed, relative to `working-dir`.
-        This directory may then later be used as Docker context for example.
+    - name: cache-sources
+      description: |
+        List of build source directories (as colon separated string) which influence the build.
+        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+        These directories are relative to the repository root.
+        If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
       type: string
-      default: docker
-    - name: cache-build
-      description: >-
-        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
-        a build can be skipped if the `working-dir` contents did not change.
-        You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
+      default: ""
       type: string
-      default: "true"
+      default: ""
     - name: max-line-length
       description: Maximum line length.
       type: string
@@ -98,11 +95,10 @@ spec:
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=python
         if copy-build-if-cached \
-          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
+          --cache-sources=$(params.cache-sources) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
-          --output-dir=$(params.output-dir) \
           --debug=${DEBUG} ; then
           exit 0
         fi
@@ -112,7 +108,6 @@ spec:
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
           --pre-test-script=$(params.pre-test-script) \
-          --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
         build_exit=$?
         set -e
@@ -120,14 +115,12 @@ spec:
         if [ $build_exit -ne 0 ]; then
           exit $build_exit
         fi
-        if [ "$(params.cache-build)" == "true" ]; then
-          cache-build \
-            --cache-build-key="$cache_build_key" \
-            --cache-location-used-path=$(results.build-reused-from-location.path) \
-            --working-dir=$(params.working-dir) \
-            --output-dir=$(params.output-dir) \
-            --debug=${DEBUG}
-        fi
+        cache-build \
+          --cache-build-key="$cache_build_key" \
+          --cache-sources=$(params.cache-sources) \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --debug=${DEBUG}
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

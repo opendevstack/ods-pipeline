@@ -1,6 +1,9 @@
 FROM node:16-alpine
 
-COPY dist /node
+COPY src /node/
+COPY node_modules /node/
+COPY package.json /node/
+COPY package-lock.json /node/
 
 RUN chown -R node: /node
 
@@ -10,4 +13,4 @@ USER node
 
 WORKDIR /node
 
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "src/index.js"]
