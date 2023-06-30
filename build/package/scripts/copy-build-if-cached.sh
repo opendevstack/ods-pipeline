@@ -127,7 +127,7 @@ fi
 
 # Copying build output
 for i in "${!outputs[@]}"; do
-  cache_of_output_dir="$cache_location_dir/output/$i}"
+  cache_of_output_dir="$cache_location_dir/output/$i"
   output_dir="${outputs[$i]}"
   echo "Copying prior build output from cache: $cache_of_output_dir to $output_dir"
   if [ "${debug}" == "true" ]; then
