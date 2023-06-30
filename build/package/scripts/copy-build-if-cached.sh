@@ -105,7 +105,7 @@ done
 git_sha_combined=$(join "-" ${git_shas[*]})
 cache_location_dir="$root_dir/.ods-cache/build-task/$cache_build_key/$git_sha_combined"
 
-if [ ! -d"$cache_location_dir" ]; then
+if [ ! -d "$cache_location_dir" ]; then
   echo "No prior build output found in cache at $cache_location_dir"
   exit 1  # subsequent build log makes clear what happens next
 fi

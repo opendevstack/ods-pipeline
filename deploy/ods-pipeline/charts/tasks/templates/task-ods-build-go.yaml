@@ -102,7 +102,7 @@ spec:
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
           --cache-extra-inputs=$(params.cache-extra-inputs) \
-          --outputs=$(params.output-dir) \
+          --cached-outputs=$(params.output-dir) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
           --debug=${DEBUG} ; then
