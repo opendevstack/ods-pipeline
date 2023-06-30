@@ -31,6 +31,14 @@ spec:
         You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
       type: string
       default: "true"
+    - name: cache-extra-inputs
+      description: |
+        Paths in addition to the working-dir which are used as inputs by the build.
+        If there are any changes in these locations a prior cache can no longer be used and thus the build task will rebuild from scratch.
+        The paths are relative to the repository root and separated by colon.
+        If caching is not enabled this value is not used.
+      type: string
+      default: ""
     - name: max-line-length
       description: Maximum line length.
       type: string
@@ -97,6 +105,7 @@ spec:
         if copy-build-if-cached \
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
+          --cache-extra-inputs=$(params.cache-extra-inputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
           --output-dir=$(params.output-dir) \
@@ -109,7 +118,6 @@ spec:
           --working-dir=$(params.working-dir) \
           --max-line-length=$(params.max-line-length) \
           --pre-test-script=$(params.pre-test-script) \
-          --output-dir=$(params.output-dir) \
           --debug=${DEBUG}
         build_exit=$?
         set -e
@@ -120,9 +128,9 @@ spec:
         if [ "$(params.cache-build)" == "true" ]; then
           cache-build \
             --cache-build-key="$cache_build_key" \
+            --cache-extra-inputs=$(params.cache-extra-inputs) \
             --cache-location-used-path=$(results.build-reused-from-location.path) \
             --working-dir=$(params.working-dir) \
-            --output-dir=$(params.output-dir) \
             --debug=${DEBUG}
         fi
       volumeMounts:
