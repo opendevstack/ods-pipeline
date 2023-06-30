@@ -19,7 +19,7 @@ join() {
 
 splitAtColon() { 
   # colon is 
-  echo $1 | tr ":" "\n"
+  echo "$1" | tr ":" "\n"
 }
 # https://stackoverflow.com/a/918931
 

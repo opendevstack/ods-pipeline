@@ -13,7 +13,6 @@ urlencode() {
     done
 }
 
-OUTPUT_DIR="docker"
 MAX_LINE_LENGTH="120"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
