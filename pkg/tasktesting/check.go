@@ -31,7 +31,7 @@ func CheckCluster(t *testing.T, outsideKindAllowed bool) {
 			t.Fatalf("could not check current Kube context: %s, err: %s", string(stderr), err)
 		}
 		gotContext := strings.TrimSpace(string(stdout))
-		wantContext := "kind-kind"
+		wantContext := "kind-ods-pipeline"
 		if gotContext != wantContext {
 			t.Fatalf("Not running tests outside KinD cluster ('%s') without -outside-kind! Current context: %s", wantContext, gotContext)
 		}

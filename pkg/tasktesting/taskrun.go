@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/opendevstack/ods-pipeline/internal/random"
+	"github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -37,14 +37,13 @@ func CreateTaskRunWithParams(tknClient *pipelineclientset.Clientset, taskRefKind
 
 	taskWorkspaces := []tekton.WorkspaceBinding{}
 	for wn, wd := range workspaces {
-		wsDirName := filepath.Base(wd)
 		taskWorkspaces = append(taskWorkspaces, tekton.WorkspaceBinding{
 			Name: wn,
 			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 				ClaimName: "task-pv-claim",
 				ReadOnly:  false,
 			},
-			SubPath: filepath.Join(TestdataWorkspacesPath, wsDirName),
+			SubPath: strings.TrimPrefix(wd, tektontaskrun.KinDMountHostPath+"/"),
 		})
 	}
 

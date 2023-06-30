@@ -14,8 +14,10 @@ import (
 
 	"github.com/opendevstack/ods-pipeline/internal/command"
 	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +66,11 @@ func TestE2E(t *testing.T) {
 	}
 
 	// Initialize workspace with basic app.
-	wsDir, err := tasktesting.InitWorkspace("source", "hello-world-app")
+	workspaceSourceDirectory := filepath.Join(
+		projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app",
+	)
+	wsDir, wsDirCleanupFunc, err := tektontaskrun.SetupWorkspaceDir(workspaceSourceDirectory)
+	defer wsDirCleanupFunc()
 	if err != nil {
 		t.Fatal(err)
 	}

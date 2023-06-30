@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/opendevstack/ods-pipeline/internal/directory"
 	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
 	"github.com/opendevstack/ods-pipeline/internal/projectpath"
 	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -133,11 +132,16 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 	}
 
 	taskWorkspaces := map[string]string{}
+	var workspaceCleanupFuncs []func()
 	for wn, wd := range tc.WorkspaceDirMapping {
-		tempDir, err := InitWorkspace(wn, wd)
+		workspaceSourceDirectory := filepath.Join(
+			projectpath.Root, "test", TestdataWorkspacesPath, wd,
+		)
+		tempDir, cf, err := tektontaskrun.SetupWorkspaceDir(workspaceSourceDirectory)
 		if err != nil {
 			t.Fatal(err)
 		}
+		workspaceCleanupFuncs = append(workspaceCleanupFuncs, cf)
 		t.Logf("Workspace is in %s", tempDir)
 		taskWorkspaces[wn] = tempDir
 	}
@@ -175,25 +179,10 @@ func Run(t *testing.T, tc TestCase, testOpts TestOpts) {
 
 	if !testOpts.AlwaysKeepTmpWorkspaces {
 		// Clean up only if test is successful
-		for _, wd := range taskWorkspaces {
-			err := os.RemoveAll(wd)
-			if err != nil {
-				t.Fatal(err)
-			}
+		for _, cf := range workspaceCleanupFuncs {
+			cf()
 		}
 	}
-}
-
-func InitWorkspace(workspaceName, workspaceDir string) (string, error) {
-	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", TestdataWorkspacesPath, workspaceDir,
-	)
-	workspaceParentDirectory := filepath.Dir(workspaceSourceDirectory)
-	return directory.CopyToTempDir(
-		workspaceSourceDirectory,
-		workspaceParentDirectory,
-		"workspace-",
-	)
 }
 
 func WatchTaskRunUntilDone(t *testing.T, testOpts TestOpts, tr *tekton.TaskRun) (*tekton.TaskRun, bytes.Buffer, error) {

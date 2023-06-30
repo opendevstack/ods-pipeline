@@ -36,6 +36,12 @@ func TestQualityGateGet(t *testing.T) {
 			wantRequestURI:  "/api/qualitygates/project_status?projectKey=foo&branch=bar",
 			wantStatus:      "OK",
 		},
+		"OK status for branch (PR=0)": {
+			params:          QualityGateGetParams{ProjectKey: "foo", Branch: "bar", PullRequest: "0"},
+			responseFixture: "sonar/project_status_ok.json",
+			wantRequestURI:  "/api/qualitygates/project_status?projectKey=foo&branch=bar",
+			wantStatus:      "OK",
+		},
 		"OK status for PR": {
 			params:          QualityGateGetParams{ProjectKey: "foo", PullRequest: "123"},
 			responseFixture: "sonar/project_status_ok.json",

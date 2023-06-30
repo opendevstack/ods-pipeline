@@ -14,15 +14,28 @@ BITBUCKET_SERVER_IMAGE_NAME="atlassian/bitbucket"
 BITBUCKET_SERVER_IMAGE_TAG="7.6.5"
 BITBUCKET_POSTGRES_CONTAINER_NAME="ods-test-bitbucket-postgres"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
-kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
+kind_values_dir="/tmp/ods-pipeline/kind-values"
+mkdir -p "${kind_values_dir}"
+reuse="false"
 
 while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;
 
+    -r|--reuse) reuse="true";;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ "${reuse}" = "true" ]; then
+    if ! docker inspect ${BITBUCKET_SERVER_CONTAINER_NAME} &> /dev/null; then
+        echo "No existing Bitbucket container ${BITBUCKET_SERVER_CONTAINER_NAME} found ..."
+    else
+        echo "Reusing existing Bitbucket container ${BITBUCKET_SERVER_CONTAINER_NAME} ..."
+        exit 0
+    fi
+fi
 
 echo "Run Postgres container"
 docker rm -f ${BITBUCKET_POSTGRES_CONTAINER_NAME} || true
@@ -61,14 +74,14 @@ docker run --name ${BITBUCKET_SERVER_CONTAINER_NAME} \
   -d --net kind -p "${HOST_HTTP_PORT}:7990" -p 7999:7999 \
   "${BITBUCKET_SERVER_IMAGE_NAME}:${BITBUCKET_SERVER_IMAGE_TAG}"
 
-if ! "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
+if ! bash "${SCRIPT_DIR}/waitfor-bitbucket.sh" ; then
     docker logs ${BITBUCKET_SERVER_CONTAINER_NAME}
     exit 1
 fi 
 
 echo "Launch TLS proxy"
 TLS_CONTAINER_NAME="${BITBUCKET_SERVER_CONTAINER_NAME}-tls"
-"${SCRIPT_DIR}/run-tls-proxy.sh" \
+bash "${SCRIPT_DIR}/run-tls-proxy.sh" \
   --container-name "${TLS_CONTAINER_NAME}" \
   --https-port "${HOST_HTTPS_PORT}" \
   --nginx-conf "nginx-bitbucket.conf"
