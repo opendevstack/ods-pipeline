@@ -51,7 +51,7 @@ spec:
       default: ''
     - name: api-credentials-secret
       description: |
-        Name of the Secret resource holding the API user credentials.
+        Name of the Secret resource holding the token of a serviceaccount (in field `token`).
         Only required when `api-server` is set.
       type: string
       default: ''
