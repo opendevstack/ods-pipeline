@@ -38,7 +38,7 @@ if [ "$(uname -m)" = "arm64" ]; then
         rm -rf docker-sonarqube || true
         git clone https://github.com/SonarSource/docker-sonarqube
         cd docker-sonarqube
-        git checkout refs/tags/9.7.0 # Last available Git tag
+        git checkout refs/tags/9.9.1 # Last available Git tag
         cd 9/community
         docker build -t sonarqube-arm:${SONAR_IMAGE_TAG} .
         cd "${SCRIPT_DIR}"/sonarqube
