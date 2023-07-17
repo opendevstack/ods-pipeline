@@ -118,6 +118,84 @@ func TestDownloadGroup(t *testing.T) {
 	}
 }
 
+func TestContains(t *testing.T) {
+	tests := map[string]struct {
+		manifest *ArtifactsManifest
+		repo     string
+		dir      string
+		name     string
+		want     bool
+	}{
+		"different repo": {
+			manifest: &ArtifactsManifest{
+				Repository: "a",
+				Artifacts: []ArtifactInfo{
+					{
+						Directory: "b",
+						Name:      "c",
+					},
+				},
+			},
+			repo: "x",
+			dir:  "b",
+			name: "c",
+			want: false,
+		},
+		"same repo, different dir": {
+			manifest: &ArtifactsManifest{
+				Repository: "a",
+				Artifacts: []ArtifactInfo{
+					{
+						Directory: "b",
+						Name:      "c",
+					},
+				},
+			},
+			repo: "a",
+			dir:  "x",
+			name: "c",
+			want: false,
+		},
+		"same repo, same dir, different name": {
+			manifest: &ArtifactsManifest{
+				Repository: "a",
+				Artifacts: []ArtifactInfo{
+					{
+						Directory: "b",
+						Name:      "c",
+					},
+				},
+			},
+			repo: "a",
+			dir:  "b",
+			name: "x",
+			want: false,
+		},
+		"match": {
+			manifest: &ArtifactsManifest{
+				Repository: "a",
+				Artifacts: []ArtifactInfo{
+					{
+						Directory: "b",
+						Name:      "c",
+					},
+				},
+			},
+			repo: "a",
+			dir:  "b",
+			name: "c",
+			want: true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.manifest.Contains(tc.repo, tc.dir, tc.name) != tc.want {
+				t.Errorf("Want %q to contain=%v, but did not", name, tc.want)
+			}
+		})
+	}
+}
+
 func findArtifact(url string, artifacts []ArtifactInfo) *ArtifactInfo {
 	for _, a := range artifacts {
 		if a.URL == url {

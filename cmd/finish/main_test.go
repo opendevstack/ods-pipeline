@@ -28,33 +28,35 @@ func TestUploadArtifacts(t *testing.T) {
 		Repository:   "my-repo",
 		GitCommitSHA: "8d351a10fb428c0c1239530256e21cf24f136e73",
 	}
-	t.Log("Write dummy artifact")
+	t.Logf("Write dummy image-digest artifact to %q\n", pipelinectxt.ArtifactsPath)
 	artifactsDir := filepath.Join(tempWorkingDir, pipelinectxt.ArtifactsPath)
 	err = writeArtifactFile(artifactsDir, pipelinectxt.ImageDigestsDir, "foo.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, options{aggregateTasksStatus: "Succeeded"})
-	if err != nil {
+	t.Logf("Upload dummy image-digest artifact to %q on PR failure\n", nexusRepo)
+	opts := options{pipelineRunName: "pipelineRun", aggregateTasksStatus: "Failed"}
+	if err := uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, opts); err != nil {
 		t.Fatal(err)
 	}
 	if len(nexusClient.Artifacts[nexusRepo]) != 1 {
 		t.Fatalf("want 1 uploaded file, got: %v", nexusClient.Artifacts[nexusRepo])
 	}
-	wantFile := "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/image-digests/foo.json"
+	wantFile := "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/failed-pipelineRun-artifacts/image-digests/foo.json"
 	if !nexusRepoContains(nexusClient.Artifacts[nexusRepo], wantFile) {
 		t.Fatalf("want: %s, got: %s", wantFile, nexusClient.Artifacts[nexusRepo][0])
 	}
 
-	err = uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, options{pipelineRunName: "pipelineRun", aggregateTasksStatus: "Failed"})
-	if err != nil {
+	t.Logf("Upload dummy image-digest artifact to %q on PR success\n", nexusRepo)
+	opts = options{pipelineRunName: "pipelineRun", aggregateTasksStatus: "Succeeded"}
+	if err := uploadArtifacts(logger, nexusClient, nexusRepo, tempWorkingDir, ctxt, opts); err != nil {
 		t.Fatal(err)
 	}
 	if len(nexusClient.Artifacts[nexusRepo]) != 2 {
-		t.Fatalf("expected one additional file upload, got: %v", nexusClient.Artifacts[nexusRepo])
+		t.Fatalf("expected two artifacts in repo, got: %v", nexusClient.Artifacts[nexusRepo])
 	}
-	wantFile = "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/failed-pipelineRun-artifacts/image-digests/foo.json"
+	wantFile = "/my-project/my-repo/8d351a10fb428c0c1239530256e21cf24f136e73/image-digests/foo.json"
 	if !nexusRepoContains(nexusClient.Artifacts[nexusRepo], wantFile) {
 		t.Fatalf("want: %s, got: %s", wantFile, nexusClient.Artifacts[nexusRepo][1])
 	}
@@ -109,7 +111,7 @@ func TestHandleArtifacts(t *testing.T) {
 	}
 	t.Log("Write empty artifacts manifest for subrepository")
 	subrepoArtifactsDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
-	err = writeArtifactsManifest(subrepoArtifactsDir)
+	err = writeArtifactsManifest("nexus-repo", subrepoArtifactsDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +158,7 @@ func prepareTempWorkingDir(nexusRepo string) (string, func(), error) {
 	}
 	cleanup = func() { os.RemoveAll(tempWorkingDir) }
 	artifactsDir := filepath.Join(tempWorkingDir, pipelinectxt.ArtifactsPath)
-	err = writeArtifactsManifest(artifactsDir)
+	err = writeArtifactsManifest("nexus-repo", artifactsDir)
 	if err != nil {
 		return tempWorkingDir, cleanup, err
 	}
@@ -190,9 +192,7 @@ func writeArtifactFile(artifactsDir, subdir, filename string) error {
 }
 
 // writeArtifactsManifest writes an artigact manifest JSON file into artifactsDir.
-func writeArtifactsManifest(artifactsDir string) error {
-	am := &pipelinectxt.ArtifactsManifest{
-		Artifacts: []pipelinectxt.ArtifactInfo{},
-	}
+func writeArtifactsManifest(repository, artifactsDir string) error {
+	am := pipelinectxt.NewArtifactsManifest(repository)
 	return pipelinectxt.WriteJsonArtifact(am, artifactsDir, pipelinectxt.ArtifactsManifestFilename)
 }

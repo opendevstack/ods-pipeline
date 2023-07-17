@@ -12,6 +12,7 @@ listed in the changelog.
 
 ### Fixed
 
+- Artifacts may not be uploaded to target repository when the target repository differs from the source repository ([#715](https://github.com/opendevstack/ods-pipeline/pull/715))
 - Gradle build script changes twice into working dir ([#705](https://github.com/opendevstack/ods-pipeline/issues/705))
 
 ## [0.13.1] - 2023-06-05

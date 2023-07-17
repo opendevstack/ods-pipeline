@@ -44,6 +44,9 @@ const (
 
 // ArtifactsManifest represents all downloaded artifacts.
 type ArtifactsManifest struct {
+	// Repository is the artifact repository from which the manifests were downloaded.
+	Repository string `json:"repository"`
+	// Artifacts lists all artifacts downloaded.
 	Artifacts []ArtifactInfo `json:"artifacts"`
 }
 
@@ -52,6 +55,11 @@ type ArtifactInfo struct {
 	URL       string `json:"url"`
 	Directory string `json:"directory"`
 	Name      string `json:"name"`
+}
+
+// NewArtifactsManifest returns a new ArtifactsManifest instance.
+func NewArtifactsManifest(repository string, artifacts ...ArtifactInfo) *ArtifactsManifest {
+	return &ArtifactsManifest{Repository: repository, Artifacts: artifacts}
 }
 
 // ReadArtifactsManifestFromFile reads an artifact manifest from given filename or errors.
@@ -72,7 +80,10 @@ func ReadArtifactsManifestFromFile(filename string) (*ArtifactsManifest, error) 
 }
 
 // Contains checks whether given directory/name is already present in repository.
-func (am *ArtifactsManifest) Contains(directory, name string) bool {
+func (am *ArtifactsManifest) Contains(repository, directory, name string) bool {
+	if am.Repository != repository {
+		return false
+	}
 	for _, a := range am.Artifacts {
 		if a.Directory == directory && a.Name == name {
 			return true
@@ -203,19 +214,26 @@ func ArtifactGroup(ctxt *ODSContext, subdir string) string {
 
 // DownloadGroup searches given repositories in order for assets in given group.
 // As soon as one repository has any asset in the group, the search is stopped
-// and all fond artifacts are downloaded into artifactsDir.
+// and all found artifacts are downloaded into artifactsDir.
 // An artifacts manifest is returned describing the downloaded files.
 // When none of the given repositories contains any artifacts under the group,
 // no artifacts are downloaded and no error is returned.
-func DownloadGroup(nexusClient nexus.ClientInterface, repository string, group, artifactsDir string, logger logging.LeveledLoggerInterface) (*ArtifactsManifest, error) {
+// If artifactsDir is an empty string, the searched files are not downloaded but
+// the artifacts are still recorded in the returned manifest.
+func DownloadGroup(
+	nexusClient nexus.ClientInterface,
+	repository, group, artifactsDir string,
+	logger logging.LeveledLoggerInterface) (*ArtifactsManifest, error) {
 	// We want to target all artifacts underneath the group, hence the trailing '*'.
 	nexusSearchGroup := fmt.Sprintf("%s/*", group)
-	am := &ArtifactsManifest{
-		Artifacts: []ArtifactInfo{},
-	}
+	am := NewArtifactsManifest(repository)
 	urls, err := searchForAssets(nexusClient, nexusSearchGroup, repository, logger)
 	if err != nil {
 		return nil, err
+	}
+
+	if artifactsDir == "" {
+		logger.Debugf("Artifacts will not be downloaded but only added to the manifest ...")
 	}
 
 	for _, s := range urls {
@@ -223,26 +241,26 @@ func DownloadGroup(nexusClient nexus.ClientInterface, repository string, group, 
 		if err != nil {
 			return nil, err
 		}
-		urlPathParts := strings.Split(u.Path, fmt.Sprintf("%s/", group))
-		if len(urlPathParts) != 2 {
-			return nil, fmt.Errorf("unexpected URL path (must contain two parts after group '%s'): %s", group, u.Path)
+		_, fileWithSubPath, ok := strings.Cut(u.Path, fmt.Sprintf("%s/", group)) // e.g. "pipeline-runs/foo-zh9gt0.json"
+		if !ok {
+			return nil, fmt.Errorf("unexpected URL path (must contain group '%s'): %s", group, u.Path)
 		}
-		fileWithSubPath := urlPathParts[1] // e.g. "pipeline-runs/foo-zh9gt0.json"
 		if !strings.Contains(fileWithSubPath, "/") {
 			return nil, fmt.Errorf("unexpected URL path (must contain a subfolder after the commit SHA): %s", fileWithSubPath)
 		}
 		aritfactName := path.Base(fileWithSubPath) // e.g. "pipeline-runs"
 		artifactType := path.Dir(fileWithSubPath)  // e.g. "foo-zh9gt0.json"
-		artifactsSubPath := filepath.Join(artifactsDir, artifactType)
-		if _, err := os.Stat(artifactsSubPath); os.IsNotExist(err) {
-			if err := os.MkdirAll(artifactsSubPath, 0755); err != nil {
-				return nil, fmt.Errorf("failed to create directory: %s, error: %w", artifactsSubPath, err)
+		if artifactsDir != "" {
+			artifactsSubPath := filepath.Join(artifactsDir, artifactType)
+			if _, err := os.Stat(artifactsSubPath); os.IsNotExist(err) {
+				if err := os.MkdirAll(artifactsSubPath, 0755); err != nil {
+					return nil, fmt.Errorf("failed to create directory: %s, error: %w", artifactsSubPath, err)
+				}
 			}
-		}
-		outfile := filepath.Join(artifactsDir, fileWithSubPath)
-		_, err = nexusClient.Download(s, outfile)
-		if err != nil {
-			return nil, err
+			outfile := filepath.Join(artifactsDir, fileWithSubPath)
+			if _, err := nexusClient.Download(s, outfile); err != nil {
+				return nil, err
+			}
 		}
 		am.Artifacts = append(am.Artifacts, ArtifactInfo{
 			URL:       s,
@@ -261,9 +279,9 @@ func searchForAssets(nexusClient nexus.ClientInterface, searchGroup string, repo
 		return nil, err
 	}
 	if len(urls) > 0 {
-		logger.Infof("Found artifacts in repository %s inside group %s ...", repository, searchGroup)
+		logger.Infof("Found artifacts in repository %q inside group %q ...", repository, searchGroup)
 		return urls, nil
 	}
-	logger.Infof("No artifacts found in repository %s inside group %s.", repository, searchGroup)
+	logger.Infof("No artifacts found in repository %q inside group %q.", repository, searchGroup)
 	return []string{}, nil
 }
