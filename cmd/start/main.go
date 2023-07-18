@@ -232,7 +232,7 @@ func main() {
 }
 
 func writeEmptyArtifactManifests(subrepoContexts []*pipelinectxt.ODSContext) error {
-	emptyManifest := &pipelinectxt.ArtifactsManifest{Artifacts: []pipelinectxt.ArtifactInfo{}}
+	emptyManifest := pipelinectxt.NewArtifactsManifest("")
 	err := pipelinectxt.WriteJsonArtifact(emptyManifest, pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename)
 	if err != nil {
 		return fmt.Errorf("write repo empty manifest: %w", err)

@@ -213,19 +213,27 @@ func uploadArtifacts(
 	if err != nil {
 		return err
 	}
+	if am.Repository != nexusRepository {
+		logger.Infof("Artifacts were downloaded from %q but should be uploaded to %q. Checking for existing artifacts in %q before proceeding ...", am.Repository, nexusRepository, nexusRepository)
+		group := pipelinectxt.ArtifactGroupBase(ctxt)
+		am, err = pipelinectxt.DownloadGroup(nexusClient, nexusRepository, group, "", logger)
+		if err != nil {
+			return err
+		}
+	}
 	for artifactsSubDir, files := range artifactsMap {
 		for _, filename := range files {
-			if am.Contains(artifactsSubDir, filename) {
-				logger.Infof("Artifact %s is already present in Nexus repository %s.", filename, nexusRepository)
+			if am.Contains(nexusRepository, artifactsSubDir, filename) {
+				logger.Infof("Artifact %q is already present in Nexus repository %q.", filename, nexusRepository)
 			} else {
 				nexusGroup := artifactGroup(ctxt, artifactsSubDir, opts)
 				localFile := filepath.Join(checkoutDir, pipelinectxt.ArtifactsPath, artifactsSubDir, filename)
-				logger.Infof("Uploading %s to Nexus repository %s, group %s ...", localFile, nexusRepository, nexusGroup)
+				logger.Infof("Uploading %q to Nexus repository %q, group %q ...", localFile, nexusRepository, nexusGroup)
 				link, err := nexusClient.Upload(nexusRepository, nexusGroup, localFile)
 				if err != nil {
 					return err
 				}
-				logger.Infof("Successfully uploaded %s to %s", localFile, link)
+				logger.Infof("Successfully uploaded %q to %s", localFile, link)
 			}
 		}
 	}

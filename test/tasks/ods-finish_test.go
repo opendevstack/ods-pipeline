@@ -59,14 +59,13 @@ func TestTaskODSFinish(t *testing.T) {
 					); err != nil {
 						t.Fatal(err)
 					}
-					am := pipelinectxt.ArtifactsManifest{
-						Artifacts: []pipelinectxt.ArtifactInfo{
-							{
-								Directory: pipelinectxt.CodeCoveragesDir,
-								Name:      "coverage.out",
-							},
+					am := pipelinectxt.NewArtifactsManifest(
+						nexus.TestTemporaryRepository,
+						pipelinectxt.ArtifactInfo{
+							Directory: pipelinectxt.CodeCoveragesDir,
+							Name:      "coverage.out",
 						},
-					}
+					)
 					if err := pipelinectxt.WriteJsonArtifact(
 						am,
 						filepath.Join(wsDir, pipelinectxt.ArtifactsPath),
@@ -87,7 +86,7 @@ func TestTaskODSFinish(t *testing.T) {
 					checkBuildStatus(t, bitbucketClient, ctxt.ODS.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 					checkArtifactsAreInNexus(t, ctxt, nexus.TestTemporaryRepository)
 
-					wantLogMsg := "Artifact coverage.out is already present in Nexus repository"
+					wantLogMsg := "Artifact \"coverage.out\" is already present in Nexus repository"
 					if !strings.Contains(string(ctxt.CollectedLogs), wantLogMsg) {
 						t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, string(ctxt.CollectedLogs))
 					}
