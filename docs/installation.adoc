@@ -33,7 +33,7 @@ Now use `git subtree` to get the required source files. The following commands m
 
 [source]
 ----
-pipelineGitRef=v0.13.1 # Pick the version you want to install
+pipelineGitRef=v0.13.2 # Pick the version you want to install
 
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
 git checkout ods-pipeline-$pipelineGitRef && \
@@ -101,7 +101,7 @@ You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
 
 [source]
 ----
-pipelineGitRef=v0.13.1 # Pick the version you want to update to
+pipelineGitRef=v0.13.2 # Pick the version you want to update to
 
 git branch -D ods-pipeline-$pipelineGitRef subtree-split-branch-$pipelineGitRef || true && \
 git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
@@ -145,4 +145,4 @@ TIP: The credentials stored in the K8s secrets will not be updated. If you need 
 
 ==== Finishing the update
 
-Once the resources in your namespace are updated, you likely have to update the `ods.yaml` files in your repository to point to the new tasks, e.g. changing `ods-build-go-v0-12-0` to `ods-build-go-v0-13-1`. Whether or not you have to update the `ods.yaml` file depends whether the task suffix (controlled by the value `taskSuffix`) has changed due to the update.
+Once the resources in your namespace are updated, you likely have to update the `ods.yaml` files in your repository to point to the new tasks, e.g. changing `ods-build-go-v0-12-0` to `ods-build-go-v0-13-2`. Whether or not you have to update the `ods.yaml` file depends whether the task suffix (controlled by the value `taskSuffix`) has changed due to the update.

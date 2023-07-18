@@ -10,7 +10,7 @@ spec:
   description: |
     Builds Go (module) applications.
 
-    See https://github.com/opendevstack/ods-pipeline/blob/v0.13.1/docs/tasks/ods-build-go.adoc
+    See https://github.com/opendevstack/ods-pipeline/blob/v0.13.2/docs/tasks/ods-build-go.adoc
   params:
     - name: working-dir
       description: |
@@ -70,7 +70,7 @@ spec:
   steps:
     - name: build-go-binary
       # Image is built from build/package/Dockerfile.go-toolset.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-go-toolset:0.13.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-go-toolset:0.13.2'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -128,7 +128,7 @@ spec:
       workingDir: $(workspaces.source.path)    
     - name: scan-with-sonar
       # Image is built from build/package/Dockerfile.sonar.
-      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.13.1'
+      image: 'ghcr.io/opendevstack/ods-pipeline/ods-sonar:0.13.2'
       env:
         - name: HOME
           value: '/tekton/home'

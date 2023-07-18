@@ -21,14 +21,14 @@ pipelines:
   - name: build
     taskRef:
       kind: Task
-      name: ods-build-go-v0-13-1
+      name: ods-build-go-v0-13-2
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package
     taskRef:
       kind: Task
-      name: ods-package-image-v0-13-1
+      name: ods-package-image-v0-13-2
     runAfter:
     - build
     workspaces:
@@ -87,7 +87,7 @@ pipelines:
       - name: url
         value: https://github.com/opendevstack/ods-pipeline.git
       - name: revision
-        value: v0.13.1
+        value: v0.13.2
       - name: pathInRepo
         value: tasks/ods-build-go.yaml
       workspaces:
@@ -169,7 +169,7 @@ pipelines:
   - name: deploy
     taskRef:
       kind: Task
-      name: ods-deploy-helm-v0-13-1
+      name: ods-deploy-helm-v0-13-2
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -195,7 +195,7 @@ pipelines:
       - name: url
         value: https://github.com/opendevstack/ods-pipeline.git
       - name: revision
-        value: v0.13.1
+        value: v0.13.2
       - name: pathInRepo
         value: tasks/ods-build-go.yaml
       workspaces:

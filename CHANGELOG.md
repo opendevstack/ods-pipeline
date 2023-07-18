@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.13.2] - 2023-07-18
+
 ### Fixed
 
 - Artifacts may not be uploaded to target repository when the target repository differs from the source repository ([#715](https://github.com/opendevstack/ods-pipeline/pull/715))
