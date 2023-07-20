@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
+
 ## [0.13.2] - 2023-07-18
 
 ### Fixed
@@ -22,8 +26,6 @@ listed in the changelog.
 ### Added
 
 - Gradle build dir is now configurable ([#703](https://github.com/opendevstack/ods-pipeline/pull/703))
-
-- ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
 
 ### Fixed
 
