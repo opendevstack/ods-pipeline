@@ -23,6 +23,8 @@ listed in the changelog.
 
 - Gradle build dir is now configurable ([#703](https://github.com/opendevstack/ods-pipeline/pull/703))
 
+- ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
+
 ### Fixed
 
 - Gradle task artifacts are not picked up by cache ([#700](https://github.com/opendevstack/ods-pipeline/issues/700))
