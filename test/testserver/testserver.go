@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 )
 
 type RecordedResponse struct {

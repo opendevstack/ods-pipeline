@@ -17,9 +17,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/opendevstack/pipeline/internal/installation"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/ods-pipeline/internal/installation"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/nexus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )

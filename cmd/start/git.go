@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 )
 
 // gitCheckoutParams holds the parameters configuring the checkout.

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/shlex"
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 const (

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 type ClientInterface interface {

@@ -12,12 +12,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/file"
-	k "github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/directory"
+	"github.com/opendevstack/ods-pipeline/internal/file"
+	k "github.com/opendevstack/ods-pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

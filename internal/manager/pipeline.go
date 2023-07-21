@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/config"
+	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
+	"github.com/opendevstack/ods-pipeline/pkg/config"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

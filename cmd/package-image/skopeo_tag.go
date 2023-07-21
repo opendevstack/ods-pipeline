@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/image"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/image"
 )
 
 func (p *packageImage) skopeoTag(idt *image.IdentityWithTag, outWriter, errWriter io.Writer) error {

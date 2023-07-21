@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/gittest"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/nexus"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/gittest"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/nexus"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 func TestGetODSContextFromDir(t *testing.T) {

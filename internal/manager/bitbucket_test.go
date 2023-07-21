@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 )
 
 func TestGetRepoNames(t *testing.T) {

@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/installation"
-	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/installation"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 	"golang.org/x/exp/slices"
 )
 

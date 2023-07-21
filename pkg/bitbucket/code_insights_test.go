@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/testfile"
-	"github.com/opendevstack/pipeline/test/testserver"
+	"github.com/opendevstack/ods-pipeline/internal/testfile"
+	"github.com/opendevstack/ods-pipeline/test/testserver"
 )
 
 func TestInsightReportCreate(t *testing.T) {

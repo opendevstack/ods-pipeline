@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/command"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"sigs.k8s.io/yaml"
 )

@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/httpjson"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/config"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/httpjson"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/config"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 )
 
 const changeRefTypeTag = "TAG"

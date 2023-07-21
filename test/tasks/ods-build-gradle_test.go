@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 
-	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSBuildGradle(t *testing.T) {

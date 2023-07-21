@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/nexus"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/nexus"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSFinish(t *testing.T) {

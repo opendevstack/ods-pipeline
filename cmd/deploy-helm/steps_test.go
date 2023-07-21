@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/opendevstack/pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
 )
 
 func TestArtifactFilename(t *testing.T) {

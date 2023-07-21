@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/testfile"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/testfile"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 )
 
 func TestDownload(t *testing.T) {

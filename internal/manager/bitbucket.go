@@ -3,7 +3,7 @@ package manager
 import (
 	"fmt"
 
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 )
 
 type bitbucketInterface interface {

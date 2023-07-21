@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/nexus"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/nexus"
 )
 
 func TestReadArtifactsDir(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

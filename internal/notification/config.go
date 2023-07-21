@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/opendevstack/pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

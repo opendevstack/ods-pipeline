@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/google/shlex"
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/image"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/directory"
+	"github.com/opendevstack/ods-pipeline/internal/image"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 type PackageStep func(d *packageImage) (*packageImage, error)

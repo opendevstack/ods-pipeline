@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/directory"
-	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/directory"
+	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )

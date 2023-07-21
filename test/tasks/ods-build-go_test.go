@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/pipeline/pkg/sonar"
-	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/sonar"
+	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSBuildGo(t *testing.T) {

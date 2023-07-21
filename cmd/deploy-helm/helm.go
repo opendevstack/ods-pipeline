@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/shlex"
-	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/command"
 	"sigs.k8s.io/yaml"
 )
 

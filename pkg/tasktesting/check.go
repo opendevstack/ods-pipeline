@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/command"
 )
 
 type Service string

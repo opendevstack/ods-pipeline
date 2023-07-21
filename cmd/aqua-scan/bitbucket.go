@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 // createBitbucketInsightReport attaches a code insight report to the Git commit

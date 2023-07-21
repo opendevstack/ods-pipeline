@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/command"
 )
 
 type PullRequest struct {

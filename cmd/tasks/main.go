@@ -4,8 +4,8 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/internal/tasks"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/internal/tasks"
 )
 
 func main() {
