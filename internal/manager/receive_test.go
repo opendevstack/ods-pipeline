@@ -111,12 +111,14 @@ func TestFetchODSConfig(t *testing.T) {
 func testServer(bc bitbucketInterface, ch chan PipelineConfig) *httptest.Server {
 	r := &BitbucketWebhookReceiver{
 		TriggeredPipelines: ch,
-		Namespace:          "bar-cd",
-		Project:            "bar",
 		WebhookSecret:      testWebhookSecret,
-		RepoBase:           "https://domain.com",
 		BitbucketClient:    bc,
 		Logger:             &logging.LeveledLogger{Level: logging.LevelNull},
+		BitbucketWebhookReceiverBase: BitbucketWebhookReceiverBase{
+			Namespace: "bar-cd",
+			Project:   "bar",
+			RepoBase:  "https://domain.com",
+		},
 	}
 	return httptest.NewServer(BitbucketHandler(r))
 }
@@ -448,6 +450,18 @@ func TestIdentifyPipelineConfig(t *testing.T) {
 			wantPipelineIndex: 0,
 			wantTriggerIndex:  0,
 		},
+		"branch push - pipeline with one trigger with matching branch constraint upper case": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "feature/FOO-123-hello-world"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"feature/FOO-123-hello-world"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
 		"branch push - pipeline with one trigger with non-matching branch constraint": {
 			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "develop"},
 			odsConfig: config.ODS{
@@ -704,34 +718,104 @@ func TestIdentifyPipelineConfig(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Annotate wanted pipeline/trigger so that
-			// we can check later if it was selected.
-			if tc.wantPipelineIndex > -1 {
-				tc.odsConfig.Pipelines[tc.wantPipelineIndex].Tasks = []v1beta1.PipelineTask{
-					{Name: "match this"},
-				}
-				if tc.wantTriggerIndex > -1 {
-					tc.odsConfig.Pipelines[tc.wantPipelineIndex].Triggers[tc.wantTriggerIndex].Params = []v1beta1.Param{
-						tektonStringParam("match", "this"),
-					}
-				}
+			verifyMatchingPipelineInfo(&tc.pInfo, &tc.odsConfig, tc.wantPipelineIndex, tc.wantTriggerIndex, t)
+		})
+	}
+}
+
+func verifyMatchingPipelineInfo(pInfo *PipelineInfo, odsConfig *config.ODS, wantPipelineIndex int, wantTriggerIndex int, t *testing.T) {
+	if wantPipelineIndex > -1 {
+		// Annotate wanted pipeline/trigger so that
+		// we can check later if it was selected.
+		// no matching pipeline, as wanted by the test case.
+		odsConfig.Pipelines[wantPipelineIndex].Tasks = []v1beta1.PipelineTask{
+			{Name: "match this"},
+		}
+		if wantTriggerIndex > -1 {
+			odsConfig.Pipelines[wantPipelineIndex].Triggers[wantTriggerIndex].Params = []v1beta1.Param{
+				tektonStringParam("match", "this"),
 			}
-			got := identifyPipelineConfig(tc.pInfo, tc.odsConfig, "component")
-			if tc.wantPipelineIndex > -1 && got == nil {
-				t.Fatal("wanted a matching pipeline but got none")
+		}
+	}
+	got := identifyPipelineConfig(*pInfo, *odsConfig, "component")
+	if wantPipelineIndex > -1 && got == nil {
+		t.Fatal("wanted a matching pipeline but got none")
+	}
+	if wantPipelineIndex < 0 && got != nil {
+		t.Fatal("wanted no matching pipeline, but got one")
+	}
+	if wantPipelineIndex < 0 && got == nil {
+		return // no matching pipeline, as wanted by the test case.
+	}
+	if len(got.PipelineSpec.Tasks) < 1 {
+		t.Fatal("did not match wanted pipeline")
+	}
+	if wantTriggerIndex > -1 && len(got.Params) < 1 {
+		t.Fatal("did not match wanted trigger")
+	}
+}
+
+func TestProcessWebhookPayloadAndIdentifyPipelineConfig(t *testing.T) {
+	tests := map[string]struct {
+		requestBodyFixture string
+		bbb                BitbucketWebhookReceiverBase
+		wantPipelineInfo   PipelineInfo
+		odsConfig          config.ODS
+		// Index of pipeline that should be selected. -1 indicates no pipeline should be selected.
+		wantPipelineIndex int
+		// Index of trigger within pipeline that should be selected. -1 indicates no trigger should be selected.
+		wantTriggerIndex int
+	}{
+		"repo:refs_changed (branch push) identifies pipeline with matching branch": {
+			requestBodyFixture: "manager/payload-feature-branch.json",
+			bbb:                BitbucketWebhookReceiverBase{Namespace: "bar", Project: "foo", RepoBase: "base"},
+			wantPipelineInfo: PipelineInfo{
+				Project:       "foo",
+				Component:     "bar",
+				Repository:    "foo-bar",
+				GitRef:        "feature/FOO-123-hello-world",
+				GitFullRef:    "refs/heads/feature/FOO-123-hello-world",
+				GitSHA:        "0e183aa3bc3c6deb8f40b93fb2fc4354533cf62f",
+				RepoBase:      "base",
+				GitURI:        "base/foo/foo-bar.git",
+				Namespace:     "bar",
+				TriggerEvent:  "repo:refs_changed",
+				ChangeRefType: "BRANCH",
+			},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"feature/FOO-123-hello-world"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  -1,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			filename := filepath.Join(projectpath.Root, "test/testdata/fixtures", tc.requestBodyFixture)
+			f, err := os.Open(filename)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if tc.wantPipelineIndex < 0 && got != nil {
-				t.Fatal("wanted no matching pipeline, but got one")
+			body, err := io.ReadAll(f)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if tc.wantPipelineIndex < 0 && got == nil {
-				return // no matching pipeline, as wanted by the test case.
+			pInfo, err := readBitbucketRequest(&tc.bbb, body)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if len(got.PipelineSpec.Tasks) < 1 {
-				t.Fatal("did not match wanted pipeline")
+			if diff := cmp.Diff(tc.wantPipelineInfo, *pInfo); diff != "" {
+				t.Fatalf("pInfo mismatch (-want, +got):\n%s", diff)
 			}
-			if tc.wantTriggerIndex > -1 && len(got.Params) < 1 {
-				t.Fatal("did not match wanted trigger")
-			}
+
+			// identify pipeline based on pInfo
+
+			verifyMatchingPipelineInfo(pInfo, &tc.odsConfig, tc.wantPipelineIndex, tc.wantTriggerIndex, t)
 		})
 	}
 }

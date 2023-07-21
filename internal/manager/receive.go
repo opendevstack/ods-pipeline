@@ -17,6 +17,15 @@ import (
 
 const changeRefTypeTag = "TAG"
 
+type BitbucketWebhookReceiverBase struct {
+	// Namespace is the Kubernetes namespace in which the server runs.
+	Namespace string
+	// Project is the Bitbucket project to which this server corresponds.
+	Project string
+	// RepoBase is the common URL base of all repositories on Bitbucket.
+	RepoBase string
+}
+
 // BitbucketWebhookReceiver receives webhook requests from Bitbucket.
 type BitbucketWebhookReceiver struct {
 	// Channel to send new runs to
@@ -27,12 +36,8 @@ type BitbucketWebhookReceiver struct {
 	BitbucketClient bitbucketInterface
 	// WebhookSecret is the shared Bitbucket secret to validate webhook requests.
 	WebhookSecret string
-	// Namespace is the Kubernetes namespace in which the server runs.
-	Namespace string
-	// Project is the Bitbucket project to which this server corresponds.
-	Project string
-	// RepoBase is the common URL base of all repositories on Bitbucket.
-	RepoBase string
+
+	BitbucketWebhookReceiverBase
 }
 
 // PipelineInfo holds information about a triggered pipeline.
@@ -67,81 +72,26 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 		)
 	}
 
-	req := &requestBitbucket{}
-	if err := json.Unmarshal(body, &req); err != nil {
-		return nil, httpjson.NewStatusProblem(
-			http.StatusBadRequest, fmt.Sprintf("cannot parse JSON: %s", err), nil,
-		)
+	pInfo, err := readBitbucketRequest(&s.BitbucketWebhookReceiverBase, body)
+	if err != nil {
+		return nil, err
 	}
 
-	var repo string
-	var gitRef string
-	var gitFullRef string
-	var project string
-	var projectParam string
-	var component string
-	var commitSHA string
-	var changeRefType string
-	commentText := ""
-
-	if req.EventKey == "repo:refs_changed" {
-		repo = strings.ToLower(req.Repository.Slug)
-		change := req.Changes[0]
-		gitRef = strings.ToLower(change.Ref.DisplayID)
-		gitFullRef = change.Ref.ID
-
-		projectParam = req.Repository.Project.Key
-		commitSHA = change.ToHash
-		changeRefType = change.Ref.Type
-	} else if strings.HasPrefix(req.EventKey, "pr:") {
-		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
-		gitRef = strings.ToLower(req.PullRequest.FromRef.DisplayID)
-		gitFullRef = req.PullRequest.FromRef.ID
-		projectParam = req.PullRequest.FromRef.Repository.Project.Key
-		if req.Comment != nil {
-			commentText = req.Comment.Text
-		}
-		commitSHA = req.PullRequest.FromRef.LatestCommit
-	} else {
-		return nil, httpjson.NewStatusProblem(
-			http.StatusBadRequest, fmt.Sprintf("unsupported event key: %s", req.EventKey), nil,
-		)
-	}
-
-	project = determineProject(s.Project, projectParam)
-	component = strings.TrimPrefix(repo, project+"-")
-	pInfo := PipelineInfo{
-		Project:    project,
-		Component:  component,
-		Repository: repo,
-		GitRef:     gitRef,
-		GitFullRef: gitFullRef,
-		RepoBase:   s.RepoBase,
-		// Assemble GitURI from scratch instead of using user-supplied URI to
-		// protect against attacks from external Bitbucket servers and/or projects.
-		GitURI:        fmt.Sprintf("%s/%s/%s.git", s.RepoBase, project, repo),
-		Namespace:     s.Namespace,
-		TriggerEvent:  req.EventKey,
-		ChangeRefType: changeRefType,
-		Comment:       commentText,
-	}
-
-	if len(commitSHA) == 0 {
+	if len(pInfo.GitSHA) == 0 {
 		csha, err := getCommitSHA(s.BitbucketClient, pInfo.Project, pInfo.Repository, pInfo.GitFullRef)
 		if err != nil {
 			return nil, httpjson.NewInternalProblem("could not get commit SHA", err)
 		}
-		commitSHA = csha
+		pInfo.GitSHA = csha
 	}
-	pInfo.GitSHA = commitSHA
 
-	skip := shouldSkip(s.BitbucketClient, pInfo.Project, pInfo.Repository, commitSHA)
+	skip := shouldSkip(s.BitbucketClient, pInfo.Project, pInfo.Repository, pInfo.GitSHA)
 	if skip {
 		return nil, httpjson.NewStatusProblem(
-			http.StatusAccepted, fmt.Sprintf("Commit %s should be skipped", commitSHA), nil,
+			http.StatusAccepted, fmt.Sprintf("Commit %s should be skipped", pInfo.GitSHA), nil,
 		)
 	}
-	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pInfo.Project, pInfo.Repository, commitSHA)
+	prInfo, err := extractPullRequestInfo(s.BitbucketClient, pInfo.Project, pInfo.Repository, pInfo.GitSHA)
 	if err != nil {
 		return nil, httpjson.NewInternalProblem("could not extract PR info", err)
 	}
@@ -162,7 +112,7 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	s.Logger.Infof("%+v", pInfo)
 
-	cfg := identifyPipelineConfig(pInfo, *odsConfig, component)
+	cfg := identifyPipelineConfig(*pInfo, *odsConfig, pInfo.Component)
 	if cfg == nil {
 		return nil, httpjson.NewStatusProblem(
 			http.StatusAccepted, "Could not identify any pipeline to run as no trigger matched", nil,
@@ -171,6 +121,69 @@ func (s *BitbucketWebhookReceiver) Handle(w http.ResponseWriter, r *http.Request
 
 	s.TriggeredPipelines <- *cfg
 	return pInfo, nil
+}
+
+func readBitbucketRequest(bbb *BitbucketWebhookReceiverBase, body []byte) (*PipelineInfo, error) {
+	req := &requestBitbucket{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		return nil, httpjson.NewStatusProblem(
+			http.StatusBadRequest, fmt.Sprintf("cannot parse JSON: %s", err), nil,
+		)
+	}
+
+	var repo string
+	var gitRef string
+	var gitFullRef string
+	var project string
+	var projectParam string
+	var component string
+	var commitSHA string
+	var changeRefType string
+	commentText := ""
+
+	if req.EventKey == "repo:refs_changed" {
+		repo = strings.ToLower(req.Repository.Slug)
+		change := req.Changes[0]
+		gitRef = change.Ref.DisplayID
+		gitFullRef = change.Ref.ID
+
+		projectParam = req.Repository.Project.Key
+		commitSHA = change.ToHash
+		changeRefType = change.Ref.Type
+	} else if strings.HasPrefix(req.EventKey, "pr:") {
+		repo = strings.ToLower(req.PullRequest.FromRef.Repository.Slug)
+		gitRef = req.PullRequest.FromRef.DisplayID
+		gitFullRef = req.PullRequest.FromRef.ID
+		projectParam = req.PullRequest.FromRef.Repository.Project.Key
+		if req.Comment != nil {
+			commentText = req.Comment.Text
+		}
+		commitSHA = req.PullRequest.FromRef.LatestCommit
+	} else {
+		return nil, httpjson.NewStatusProblem(
+			http.StatusBadRequest, fmt.Sprintf("unsupported event key: %s", req.EventKey), nil,
+		)
+	}
+	project = determineProject(bbb.Project, projectParam)
+	component = strings.TrimPrefix(repo, project+"-")
+
+	pInfo := PipelineInfo{
+		Project:    project,
+		Component:  component,
+		Repository: repo,
+		GitRef:     gitRef,
+		GitFullRef: gitFullRef,
+		RepoBase:   bbb.RepoBase,
+		// Assemble GitURI from scratch instead of using user-supplied URI to
+		// protect against attacks from external Bitbucket servers and/or projects.
+		GitURI:        fmt.Sprintf("%s/%s/%s.git", bbb.RepoBase, project, repo),
+		GitSHA:        commitSHA,
+		Namespace:     bbb.Namespace,
+		TriggerEvent:  req.EventKey,
+		ChangeRefType: changeRefType,
+		Comment:       commentText,
+	}
+	return &pInfo, nil
 }
 
 // identifyPipelineConfig finds the first configuration matching the triggering event

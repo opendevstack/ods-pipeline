@@ -195,9 +195,11 @@ func serve() error {
 		Logger:             logger.WithTag("receiver"),
 		BitbucketClient:    bitbucketClient,
 		WebhookSecret:      webhookSecret,
-		Namespace:          namespace,
-		Project:            project,
-		RepoBase:           repoBase,
+		BitbucketWebhookReceiverBase: manager.BitbucketWebhookReceiverBase{
+			Namespace: namespace,
+			Project:   project,
+			RepoBase:  repoBase,
+		},
 	}
 
 	mux := http.NewServeMux()
