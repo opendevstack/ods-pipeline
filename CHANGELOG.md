@@ -14,6 +14,8 @@ listed in the changelog.
 
 - ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
 
+- sonar-scanner invocations stderr not captured ([#719](https://github.com/opendevstack/ods-pipeline/issues/719))
+
 ## [0.13.2] - 2023-07-18
 
 ### Fixed
