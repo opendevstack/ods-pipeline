@@ -119,7 +119,7 @@ func sonarScan(
 		ctxt.GitCommitSHA,
 		prInfo,
 		os.Stdout,
-		os.Stdin,
+		os.Stderr,
 	)
 	if err != nil {
 		return fmt.Errorf("scan failed: %w", err)
