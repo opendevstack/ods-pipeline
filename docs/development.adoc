@@ -32,12 +32,12 @@ As mentioned above, `make test` will run all tests. You may also run only a subs
 
 Individual task test can be executed like this:
 ```
-go test -run ^TestTaskODSBuildImage github.com/opendevstack/pipeline/test/tasks -v -count=1
+go test -run ^TestTaskODSBuildImage github.com/opendevstack/ods-pipeline/test/tasks -v -count=1
 ```
 
 Further, if you only want to run one test case from the map of test cases, this can be done like this:
 ```
-go test -run ^TestTaskODSBuildNPM/build_backend_javascript_app$ github.com/opendevstack/pipeline/test/tasks -v -count=1
+go test -run ^TestTaskODSBuildNPM/build_backend_javascript_app$ github.com/opendevstack/ods-pipeline/test/tasks -v -count=1
 ```
 
 Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too.
@@ -73,7 +73,7 @@ If you place this file in the root of the `ods-pipeline` repository, it will aut
 Finally, you need to run the tests, passing the configuration created earlier and the token of a serviceaccount with enough permissions in the target namespace:
 
 ```
-go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/pipeline/test/tasks -count=1 -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
+go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/ods-pipeline/test/tasks -count=1 -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
 ```
 
 The above command runs only the external deployment test, but you may also remove this limitation (by removing `-run ^TestTaskODSDeployHelmExternal$`) and run the whole test suite including the external deployment test.

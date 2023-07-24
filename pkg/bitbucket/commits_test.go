@@ -3,7 +3,7 @@ package bitbucket
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/test/testserver"
+	"github.com/opendevstack/ods-pipeline/test/testserver"
 )
 
 func TestCommitGet(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"text/template"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/testfile"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/testfile"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 func TestWebhookCall(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kclient "k8s.io/client-go/kubernetes"
 )

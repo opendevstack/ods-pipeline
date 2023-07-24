@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/image"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/image"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 const (

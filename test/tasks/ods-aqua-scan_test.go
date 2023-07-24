@@ -3,7 +3,7 @@ package tasks
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/pkg/tasktesting"
+	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 )
 
 func TestTaskODSAquaScan(t *testing.T) {

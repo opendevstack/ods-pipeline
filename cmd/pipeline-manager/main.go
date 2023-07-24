@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	kubernetesClient "github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/internal/manager"
-	tektonClient "github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	kubernetesClient "github.com/opendevstack/ods-pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/internal/manager"
+	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 

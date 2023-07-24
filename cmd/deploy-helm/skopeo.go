@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
 )
 
 func (d *deployHelm) copyImage(imageArtifact artifact.Image, destRegistryToken string, outWriter, errWriter io.Writer) error {

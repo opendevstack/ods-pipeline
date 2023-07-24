@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/command"
 )
 
 const (

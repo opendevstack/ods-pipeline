@@ -3,7 +3,7 @@ package manager
 import (
 	"net/http"
 
-	"github.com/opendevstack/pipeline/internal/httpjson"
+	"github.com/opendevstack/ods-pipeline/internal/httpjson"
 )
 
 func HealthHandler() http.Handler {

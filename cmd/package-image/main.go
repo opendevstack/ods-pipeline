@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opendevstack/pipeline/internal/image"
-	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/image"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 const (

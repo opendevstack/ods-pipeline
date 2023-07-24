@@ -18,10 +18,10 @@ import (
 	"unicode"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/config"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/config"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 

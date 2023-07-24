@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/opendevstack/pipeline/internal/image"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/image"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 	"golang.org/x/exp/slog"
 )
 

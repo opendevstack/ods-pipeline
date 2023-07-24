@@ -13,6 +13,7 @@ listed in the changelog.
 ### Fixed
 
 - ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
+- Go module name was incorrectly set to `github.com/opendevstack/pipeline`
 
 - sonar-scanner invocations stderr not captured ([#719](https://github.com/opendevstack/ods-pipeline/issues/719))
 

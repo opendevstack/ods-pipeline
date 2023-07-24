@@ -3,8 +3,8 @@ package image
 import (
 	"fmt"
 
-	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 // registry/imageNamespace/imageStream:<tag>

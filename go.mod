@@ -1,4 +1,4 @@
-module github.com/opendevstack/pipeline
+module github.com/opendevstack/ods-pipeline
 
 go 1.19
 

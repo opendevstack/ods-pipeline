@@ -8,15 +8,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/opendevstack/pipeline/internal/kubernetes"
-	"github.com/opendevstack/pipeline/internal/notification"
-	"github.com/opendevstack/pipeline/internal/tekton"
-	"github.com/opendevstack/pipeline/pkg/artifact"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/config"
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/nexus"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
+	"github.com/opendevstack/ods-pipeline/internal/notification"
+	"github.com/opendevstack/ods-pipeline/internal/tekton"
+	"github.com/opendevstack/ods-pipeline/pkg/artifact"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/config"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/nexus"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 type options struct {

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/random"
+	"github.com/opendevstack/ods-pipeline/internal/random"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"

@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 )
 
 // Loosely based on https://github.com/brandur/wanikaniapi.

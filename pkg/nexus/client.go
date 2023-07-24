@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	nexusrm "github.com/sonatype-nexus-community/gonexus/rm"
 )
 

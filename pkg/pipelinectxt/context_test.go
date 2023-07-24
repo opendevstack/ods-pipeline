@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opendevstack/pipeline/internal/gittest"
+	"github.com/opendevstack/ods-pipeline/internal/gittest"
 )
 
 func TestAssemble(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 	"k8s.io/client-go/kubernetes"
 )
 

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/opendevstack/pipeline/internal/command"
-	"github.com/opendevstack/pipeline/internal/file"
-	"github.com/opendevstack/pipeline/pkg/pipelinectxt"
+	"github.com/opendevstack/ods-pipeline/internal/command"
+	"github.com/opendevstack/ods-pipeline/internal/file"
+	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
 )
 
 // GenerateReports generates SonarQube reports using cnesreport.

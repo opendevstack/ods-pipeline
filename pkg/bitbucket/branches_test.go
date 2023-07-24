@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/test/testserver"
+	"github.com/opendevstack/ods-pipeline/test/testserver"
 )
 
 func TestBranchList(t *testing.T) {

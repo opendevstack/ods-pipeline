@@ -3,7 +3,7 @@ package tekton
 import (
 	"errors"
 
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	tektonClient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1"
 	"k8s.io/client-go/rest"

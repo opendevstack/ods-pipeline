@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
 )
 
 func TestReadFromDir(t *testing.T) {

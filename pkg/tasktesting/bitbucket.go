@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opendevstack/pipeline/internal/installation"
-	"github.com/opendevstack/pipeline/internal/projectpath"
-	"github.com/opendevstack/pipeline/pkg/bitbucket"
-	"github.com/opendevstack/pipeline/pkg/logging"
+	"github.com/opendevstack/ods-pipeline/internal/installation"
+	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
+	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	kclient "k8s.io/client-go/kubernetes"
 )
 

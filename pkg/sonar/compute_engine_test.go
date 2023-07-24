@@ -3,7 +3,7 @@ package sonar
 import (
 	"testing"
 
-	"github.com/opendevstack/pipeline/test/testserver"
+	"github.com/opendevstack/ods-pipeline/test/testserver"
 )
 
 func TestComputeEngineTaskGet(t *testing.T) {
