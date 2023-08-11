@@ -7,7 +7,7 @@ src_truststore="${JAVA_HOME}/lib/security/cacerts"
 src_pass="changeit"
 dest_pass="changeit"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --src-store) src_truststore="$2"; shift;;

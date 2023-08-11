@@ -30,7 +30,7 @@ ARTIFACT_PREFIX=""
 DEBUG="${DEBUG:-false}"
 COPY_NODE_MODULES="false"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --working-dir) WORKING_DIR="$2"; shift;;

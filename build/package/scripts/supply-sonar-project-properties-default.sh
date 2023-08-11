@@ -3,7 +3,7 @@ set -eu
 
 working_dir="."
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
     --working-dir) working_dir="$2"; shift;;
     --working-dir=*) working_dir="${1#*=}";;

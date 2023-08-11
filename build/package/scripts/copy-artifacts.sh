@@ -8,7 +8,7 @@ CP="${GNU_CP:-cp}"
 
 DEBUG="${DEBUG:-false}"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;

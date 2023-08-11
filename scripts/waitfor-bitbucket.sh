@@ -7,7 +7,7 @@ set -ue
 INSECURE=""
 BITBUCKET_SERVER_HOST_PORT="7990"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

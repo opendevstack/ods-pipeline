@@ -18,7 +18,7 @@ NEXUS_IMAGE_TAG="3.30.1"
 kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
 DOCKER_CONTEXT_DIR="${ODS_PIPELINE_DIR}/test/testdata/private-cert"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

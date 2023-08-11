@@ -16,7 +16,7 @@ BITBUCKET_POSTGRES_CONTAINER_NAME="ods-test-bitbucket-postgres"
 BITBUCKET_POSTGRES_IMAGE_TAG="12"
 kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

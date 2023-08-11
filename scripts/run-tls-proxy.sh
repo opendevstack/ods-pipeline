@@ -8,7 +8,7 @@ https_port="8443"
 container_name=""
 nginx_conf=""
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

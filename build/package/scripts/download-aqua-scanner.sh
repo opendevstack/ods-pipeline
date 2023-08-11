@@ -5,7 +5,7 @@ md5_bin="${MD5_BIN:-"md5sum"}"
 aqua_scanner_url=""
 bin_dir=".ods-cache/bin"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --bin-dir) bin_dir="$2"; shift;;

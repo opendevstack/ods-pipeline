@@ -15,7 +15,7 @@ CACHE_BUILD_KEY=
 CACHE_LOCATION_USED_PATH=
 DEBUG="${DEBUG:-false}"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --working-dir) WORKING_DIR="$2"; shift;;

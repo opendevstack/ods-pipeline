@@ -16,7 +16,7 @@ SONAR_EDITION="community"
 SONAR_IMAGE_TAG="${SONAR_VERSION}-${SONAR_EDITION}"
 kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

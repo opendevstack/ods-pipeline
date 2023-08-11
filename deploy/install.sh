@@ -63,7 +63,7 @@ function usage {
       \n\t\t--sonar-auth 'auth-token' \n\n" "$0"
 }
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     # shellcheck disable=SC2034
     case $1 in
 

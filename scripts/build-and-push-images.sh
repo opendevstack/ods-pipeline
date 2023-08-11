@@ -17,7 +17,7 @@ https_proxy="${https_proxy:-}"
 PLATFORM=""
 # eg. --platform linux/amd64
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

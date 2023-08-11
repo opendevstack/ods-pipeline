@@ -5,7 +5,7 @@ INSECURE=""
 HOST_PORT="8081"
 NEXUS_URL=
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

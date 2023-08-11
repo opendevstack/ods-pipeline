@@ -6,7 +6,7 @@ HOST_PORT="9000"
 SONAR_USERNAME="admin"
 SONAR_PASSWORD="admin"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

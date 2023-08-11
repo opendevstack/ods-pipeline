@@ -4,7 +4,7 @@ set -ue
 GO_OS=""
 GO_ARCH=""
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --go-os) GO_OS="$2"; shift;;

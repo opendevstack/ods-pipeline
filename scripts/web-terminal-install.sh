@@ -5,7 +5,7 @@ HELM_PLUGIN_DIFF_VERSION=3.3.2
 REPOSITORY=""
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     # shellcheck disable=SC2034
     case $1 in
 

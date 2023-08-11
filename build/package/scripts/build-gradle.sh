@@ -14,7 +14,7 @@ gradle_build_dir="build"
 gradle_additional_tasks=
 gradle_options=
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     --working-dir) working_dir="$2"; shift;;

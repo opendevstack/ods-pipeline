@@ -31,7 +31,7 @@ REGISTRY_PORT="5000"
 # See https://docs.openshift.com/container-platform/4.11/release_notes/ocp-4-11-release-notes.html
 K8S_VERSION="v1.24.7"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

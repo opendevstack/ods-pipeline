@@ -7,7 +7,7 @@ INSECURE=""
 BITBUCKET_SERVER_HOST_PORT="7990"
 BITBUCKET_SERVER_CONTAINER_NAME="ods-test-bitbucket-server"
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;

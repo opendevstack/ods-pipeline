@@ -15,7 +15,7 @@ if ! which kubectl &> /dev/null; then
     echo "kubectl is required"
 fi
 
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
 
     -v|--verbose) set -x;;
