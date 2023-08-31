@@ -557,13 +557,13 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-7
 | sonar-scanner
-| 4.6
+| 4.8
 | General purpose SonarQube scanner
 | https://github.com/SonarSource/sonar-scanner-cli
 
 | SDS-EXT-8
 | cnes-report
-| 4.0
+| 4.2
 | Exports code analysis from a SonarQube server in various file formats.
 | https://github.com/cnescatlab/sonar-cnes-report
 

@@ -17,6 +17,8 @@ listed in the changelog.
 
 - sonar-scanner invocations stderr not captured ([#719](https://github.com/opendevstack/ods-pipeline/issues/719))
 
+- run-sonarqube.sh typically not working on apple silicon ([#711](https://github.com/opendevstack/ods-pipeline/issues/711))
+
 ## [0.13.2] - 2023-07-18
 
 ### Fixed
