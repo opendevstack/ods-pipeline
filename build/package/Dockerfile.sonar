@@ -4,8 +4,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 WORKDIR /usr/src/app
 
-ENV SONAR_SCANNER_VERSION=4.6.2.2472 \
-    CNES_REPORT_VERSION=4.0.0
+ENV SONAR_SCANNER_VERSION=4.8.0.2856 \
+    CNES_REPORT_VERSION=4.2.0
 
 # Build Go binary.
 COPY go.mod .
@@ -37,7 +37,7 @@ ENV SONAR_EDITION="community" \
     JAVA_HOME=/usr/lib/jvm/jre-11
 
 RUN microdnf install --nodocs java-11-openjdk-headless tzdata-java which && microdnf clean all
- # tzdata-java was missing unless explicitly installed: see https://stackoverflow.com/a/76848186
+# tzdata-java was missing unless explicitly installed: see https://stackoverflow.com/a/76848186
 
 COPY --from=builder /usr/local/bin/sonar /usr/local/bin/sonar
 COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli

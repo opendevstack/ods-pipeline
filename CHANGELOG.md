@@ -19,6 +19,9 @@ listed in the changelog.
 
 - sonar-scanner does not start properly: java is lacking tzdb.dat ([#723](https://github.com/opendevstack/ods-pipeline/issues/723))
 
+- update sonar-scanner and cnes-report ([#725](https://github.com/opendevstack/ods-pipeline/issues/725))
+
+
 ## [0.13.2] - 2023-07-18
 
 ### Fixed
