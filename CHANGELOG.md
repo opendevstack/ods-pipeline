@@ -21,6 +21,7 @@ listed in the changelog.
 
 - update sonar-scanner and cnes-report ([#725](https://github.com/opendevstack/ods-pipeline/issues/725))
 
+- SonarQube doesn't scan FE-related code ([#716](https://github.com/opendevstack/ods-pipeline/issues/716))
 
 ## [0.13.2] - 2023-07-18
 
