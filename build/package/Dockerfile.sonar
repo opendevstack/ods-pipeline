@@ -36,7 +36,8 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 ENV SONAR_EDITION="community" \
     JAVA_HOME=/usr/lib/jvm/jre-11
 
-RUN microdnf install --nodocs java-11-openjdk-headless which && microdnf clean all
+RUN microdnf install --nodocs java-11-openjdk-headless tzdata-java which && microdnf clean all
+ # tzdata-java was missing unless explicitly installed: see https://stackoverflow.com/a/76848186
 
 COPY --from=builder /usr/local/bin/sonar /usr/local/bin/sonar
 COPY --from=builder /usr/local/sonar-scanner-cli /usr/local/sonar-scanner-cli
