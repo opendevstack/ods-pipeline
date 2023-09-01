@@ -30,7 +30,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-						"debug":              "true",
 					})
 				},
 				WantRunSuccess: true,
@@ -82,7 +81,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-						"debug":              "true",
 						"cache-sources":      ".",
 					})
 				},
