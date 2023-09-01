@@ -368,7 +368,7 @@ a| Checks if an image with the tag to built exist already in the target registry
 
 Builds a container image using SDS-EXT-18:
 
-* The Docker context directory defaults to `docker` and can be overwritten by the `docker-dir` parameter.
+* The Docker context directory defaults to `.` and can be overwritten by the `docker-dir` parameter.
 * The Dockerfile defaults to `Dockerfile`, and can be overwritten by `dockerfile` parameter. The location is relative to the Docker context directory.
 * The resulting image name and SHA is placed into `.ods/artifacts`.
 

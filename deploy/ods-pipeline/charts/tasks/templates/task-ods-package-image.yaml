@@ -30,7 +30,7 @@ spec:
     - name: dockerfile
       description: Path to the Dockerfile to build (relative to `docker-dir`).
       type: string
-      default: ./docker/Dockerfile
+      default: ./Dockerfile
     - name: docker-dir
       description: Path to the directory to use as Docker context.
       type: string
