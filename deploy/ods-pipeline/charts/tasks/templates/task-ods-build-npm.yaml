@@ -17,19 +17,12 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
-    - name: cache-build
-      description: >-
-        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
-        a build can be skipped if the `working-dir` contents did not change.
-        You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
-      type: string
-      default: "true"
-    - name: cache-extra-inputs
+    - name: cache-sources
       description: |
-        Paths in addition to the working-dir which are used as inputs by the build.
-        If there are any changes in these locations a prior cache can no longer be used and thus the build task will rebuild from scratch.
-        The paths are relative to the repository root and separated by colon.
-        If caching is not enabled this value is not used.
+        List of build source directories (as colon separated string) which influence the build.
+        These directories are relative to the repository root.
+        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+        If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
       type: string
       default: ""
     - name: cached-outputs
@@ -37,7 +30,7 @@ spec:
         List of build output directories (as colon separated string) to be cached.
         These directories are relative to the `working-dir` parameter` 
         Common build directories are `dist` (default), `build` and `public`.
-        If caching is not enabled this value is not used.
+        If empty this could mean that the original sources are being used as build output and no caching of built files are needed. If cache-sources is specified a build can be skipped if these sources do not change.
       type: string
       default: "dist"
     - name: build-script
@@ -104,9 +97,8 @@ spec:
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=npm
         if copy-build-if-cached \
-          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
-          --cache-extra-inputs=$(params.cache-extra-inputs) \
+          --cache-sources=$(params.cache-sources) \
           --cached-outputs=$(params.cached-outputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
@@ -124,15 +116,13 @@ spec:
         if [ $build_exit -ne 0 ]; then
           exit $build_exit
         fi
-        if [ "$(params.cache-build)" == "true" ]; then
-          cache-build \
-            --cache-build-key="$cache_build_key" \
-            --cache-extra-inputs=$(params.cache-extra-inputs) \
-            --cached-outputs=$(params.cached-outputs) \
-            --cache-location-used-path=$(results.build-reused-from-location.path) \
-            --working-dir=$(params.working-dir) \
-            --debug=${DEBUG}
-        fi
+        cache-build \
+          --cache-build-key="$cache_build_key" \
+          --cache-sources=$(params.cache-sources) \
+          --cached-outputs=$(params.cached-outputs) \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --debug=${DEBUG}
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

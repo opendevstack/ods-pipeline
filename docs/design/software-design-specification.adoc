@@ -51,21 +51,26 @@ If the server edition supports it, the branch parameter shall be set, unless the
 | `cache-build.sh` shell script
 a| Caches a build's outputs and ods artifacts to the `build-task` cache area.
 
-Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
+Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_combined`  where
 
-- git_sha_working_dir is the git internal tree hash of the working directory. =$(git rev-parse "HEAD:")
 - CACHE_BUILD_KEY is the value of the input parameter below
+- git_sha_combined is made of dash `-` separated abbreviated git shas for each source directory specified in parameter `cache-sources`. For each directory the git sha is determined by =$(git rev-parse --short "HEAD:")
 
 Copies artifacts to `<cache-location>/artifacts`
 
-Copies build outputs to `<cache-location>/output`
+Copies build outputs specified in `cached-outputs` to `<cache-location>/output/$i` where is is the index of the directory in the colon separated paths of cached-outputs
 
 If successful creates file `.ods-last-used-stamp` in the cache location.
 
 Input parameters:
 
 * `working-dir`: the sub directory in the repo whose build is cached.
-* `output-dir`: sets destination directory of built binary. The files inside this directory are cached.
+* `cache-sources`: list of build source directories (as colon separated string) which influence the build. 
+  These directories are relative to the repository root.
+  If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+  If left empty caching is not enabled. When sources are only in the working-dir, this value can be set to the same value to enable caching.
+* `cached-outputs`: List of build output directories (as colon separated string) to be cached.
+  These directories are relative to the `working-dir` parameter` 
 * `cache-build-key`: key to distinguish build toolset and build variants build from the same working directory for example for different platforms.
 * `cache-location-used-path`: specifies path of the tekton task result parameter in which the location of the cache directory used is stored.
 
@@ -73,18 +78,15 @@ Input parameters:
 | `copy-build-if-cached.sh` shell script
 a| Copies build from cache area.
 
-If `cache-build` is not `"true"` then exit with error code 1 to signal that a build could not be retrieved from the cache (as it is not enabled).
+If `cache-sources` is empty then exit with error code 1 to signal that a build could not be retrieved from the cache (as it is not enabled).
 
-Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir`  where
-
-- git_sha_working_dir is the git internal tree hash of the working directory. =$(git rev-parse "HEAD:")
-- CACHE_BUILD_KEY is the value of the input parameter below.
+Determines cache location at `$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_combined` in the same way as specified in SDS-SHARED-4.
 
 If there is no directory at `<cache-location>` exit with error code 1 to signal that a build could not be retrieved from the cache.
 
 Copy artifacts inside `<cache-location>/artifacts` to `${ROOT_DIR}/.ods/artifacts`
 
-Copy output files inside `<cache-location>/output` to `$OUTPUT_DIR`
+Copy output files inside `<cache-location>/output` to directories specified in `cached-outputs`.
 
 Write the cache-location to file `$CACHE_LOCATION_USED_PATH`.
 
@@ -93,8 +95,12 @@ Touch file `.ods-last-used-stamp` in the cache location so that the cleanup time
 Input parameters:
 
 * `working-dir`: the sub directory in the repo whose build is cached.
-* `output-dir`: sets destination directory of built binary. The files inside this directory are cached.
-* `cache-build`: controls whether build cache is used.
+* `cache-sources`: list of build source directories (as colon separated string) which influence the build. 
+  These directories are relative to the repository root.
+  If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+  If left empty caching is not enabled. When sources are only in the working-dir, this value can be set to the same value to enable caching.
+* `cached-outputs`: List of build output directories (as colon separated string) to be cached.
+  These directories are relative to the `working-dir` parameter` 
 * `cache-build-key`: key to distinguish build toolset and build variants build from the same working directory for example for different platforms.
 * `cache-location-used-path`: specifies path of the tekton task result parameter in which the location of the cache directory used is stored.
 
@@ -110,7 +116,7 @@ Input parameters:
 a| The task defines two steps:
 
 . Build Go (module) applications (referencing SDS-TASK-2 and executing SDS-TASK-3).
-  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-sources`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
@@ -124,7 +130,7 @@ Input parameters:
 * `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
-* `cache-build`: if 'true' build skipping is enabled.
+* `cache-sources`: if the builds' source directories are specified here, then build skipping is enabled. In this case the files in output-dir will be cached.
 
 | SDS-TASK-2
 | `ods-go-toolset` container image
@@ -171,6 +177,8 @@ Input parameters:
 * `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
+* `cache-sources`: if the builds' source directories are specified here, then build skipping is enabled. In this case the files in output-dir will be cached.
+* `cached-outputs`: specifies directories to be cached in case the builds sources don't change. These directories are relative to `working-dir`.
 
 | SDS-TASK-5
 | `ods-gradle-toolset` container image
@@ -264,7 +272,7 @@ Status notification message, webhook URL, content type, HTTP method, and trigger
 a| The task defines two steps:
 
 . Build Python applications (referencing SDS-TASK-14 and executing SDS-TASK-15).
-  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-sources`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
@@ -301,21 +309,19 @@ Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 a| The task defines two steps:
 
 . Build Node.js applications using npm (referencing SDS-TASK-17 or SDS-TASK-30 and executing SDS-TASK-18).
-  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-build`)
+  This step supports build skipping (executing SDS-SHARED-5 and/or SDS-SHARED-4 if enabled with parameter `cache-sources`)
 . Analyze source code (referencing SDS-SHARED-1 and executing SDS-SHARED-2)
 
 Input parameters:
 
 * `working-dir`: allows customizing which directory is used as the Node.js module root. If set, artifacts are prefixed with `<SUBDIRECTORY>-`, and the SQ project is suffixed with `-<SUBDIRECTORY>`.
-* `output-dir`: sets destination directory of the build output
-* `build-dir`: sets source directory of the build output
-* `copy-node-modules`: enables copying node_modules directory to the output directory
 * `max-lint-warnings`: maximum of allowed linting warnings after which eslint will exit with an error
 * `lint-file-ext`: file extensions to lint
 * `build-script`: specifies path to build script
 * `sonar-quality-gate`: enables quality gate check
 * `sonar-skip`: skips SonarQube analysis
-* `cache-build`: if 'true' build skipping is enabled.
+* `cache-sources`: if the builds' source directories are specified here, then build skipping is enabled. In this case the files in the directories specified in cached-outputs are cached.
+* `cached-outputs`: specifies directories to be cached in case the builds sources don't change. These directories are relative to `working-dir`. Defaults to 'dist'
 
 | SDS-TASK-17
 | `ods-node16-npm-toolset` container image
@@ -325,15 +331,9 @@ Input parameters:
 | `build-npm.sh` shell script
 a| Checks that package.json and package-lock.json exist to require best practice of using lock files. See also https://github.com/opendevstack/ods-pipeline/discussions/411
 
-Runs `npm run build`, and copies the files inside the directory specified in `build-dir` into directory `dist` which is placed into the directory specified by `output-dir`.
-
-If `copy-node-modules` is `true` the `node_modules` directory is copied into the mentioned dist directory.
-
-For traceability package.json and package-lock.json are copied into the `dist` directory inside the output directory as well. This happens at the end of the script execution to avoid confusing the subsequent running of tests.
+Runs `npm run lint` to lint the source code. If there are any errors or warnings, the script should exit with a non-zero exit code.
 
 Runs `npm run test`, creating code coverage and xUnit reports. The artifacts are placed in the working directory and in `.ods/artifacts/code-coverage` and `.ods/artifacts/xunit-reports`, respectively.
-
-Runs `npm run lint` to lint the source code. If there are any errors or warnings, the script should exit with a non-zero exit code.
 
 Supplies default SonarQube project properties file if required (SDS-SHARED-3).
 
