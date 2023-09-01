@@ -28,7 +28,7 @@ As described in the architecture, the system is installed into local namespaces.
 |===
 | SDS-SHARED-1
 | `ods-sonar` container image
-| Container image for SQ scanning. Based on `ubi8/ubi-minimal` (SDS-EXT-2), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7, SDS-EXT-8 and SDS-EXT-30).
+| Container image for SQ scanning. Based on `ubi8/nodejs-18` (SDS-EXT-32), includes software to analyze source code statically (SDS-SHARED-2, SDS-EXT-7, SDS-EXT-8 and SDS-EXT-30).
 
 | SDS-SHARED-2
 | `sonar` binary
@@ -380,7 +380,7 @@ If the Aqua scanner is installed in the base image, the pushed image shall be sc
 
 Processes tags specified in the `extra-tags` parameter to add tags to the image in the target registry:
 
-* If an artifact for the tagged image exists, the tag is not further processed. 
+* If an artifact for the tagged image exists, the tag is not further processed.
 * If there is no artifact for the tagged image:
     * Adds the tag using skopeo (SDS-EXT-17) to the image in the target registry.
     * The resulting tagged image artifact is placed into `.ods/artifacts`.
@@ -557,13 +557,13 @@ a| The script installs the Helm chart located in `deploy/ods-pipeline`. Further,
 
 | SDS-EXT-7
 | sonar-scanner
-| 4.6
+| 4.8
 | General purpose SonarQube scanner
 | https://github.com/SonarSource/sonar-scanner-cli
 
 | SDS-EXT-8
 | cnes-report
-| 4.0
+| 4.2
 | Exports code analysis from a SonarQube server in various file formats.
 | https://github.com/cnescatlab/sonar-cnes-report
 
