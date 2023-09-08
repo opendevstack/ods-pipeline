@@ -78,7 +78,7 @@ fi
 
 if [ "$cache_build" != "true" ]; then
   echo "Build skipping is not enabled. Continuing with a regular build (cache_build==$cache_build)"
-  exit 1
+  exit 0
 fi
 
 # note leads to undefined variable if extra_inputs_str is empty on ancient bash
