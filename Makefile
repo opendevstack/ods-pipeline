@@ -67,7 +67,7 @@ build-artifact-download-windows: ## Build artifact-download Windows binary.
 
 ##@ Testing
 
-test: test-cmd test-internal test-pkg test-tasks test-e2e ## Run complete testsuite.
+test: test-cmd test-internal test-pkg test-e2e ## Run complete testsuite.
 .PHONY: test
 
 test-cmd: ## Run testsuite of cmd packages.
@@ -82,12 +82,9 @@ test-pkg: ## Run testsuite of public packages.
 	go test -cover ./pkg/...
 .PHONY: test-pkg
 
-test-tasks: ## Run testsuite of Tekton tasks.
-	go test -v -count=1 -timeout $${ODS_TESTTIMEOUT:-30m} ./test/tasks/...
-.PHONY: test-tasks
-
-test-e2e: ## Run testsuite of end-to-end pipeline run.
-	go test -v -count=1 -timeout $${ODS_TESTTIMEOUT:-10m} ./test/e2e/...
+test-e2e: ## Run testsuite of tasks and full pipeline run.
+	go test -v -count=1 -run ^TestPipelineRun ./test/e2e/...
+	go test -v -count=1 -skip ^TestPipelineRun  ./test/e2e/...
 .PHONY: test-e2e
 
 clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.

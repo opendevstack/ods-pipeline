@@ -67,7 +67,7 @@ func TestCreatePipelineRun(t *testing.T) {
 		PVC: "pvc",
 	}
 	t.Run("non-queued PR", func(t *testing.T) {
-		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", false)
+		pr, err := createPipelineRun(tc, ctxt, pData, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func TestCreatePipelineRun(t *testing.T) {
 	})
 
 	t.Run("pending PR", func(t *testing.T) {
-		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", true)
+		pr, err := createPipelineRun(tc, ctxt, pData, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,7 +124,7 @@ func TestCreatePipelineRun(t *testing.T) {
 				},
 			},
 		}
-		pr, err := createPipelineRun(tc, ctxt, pData, tekton.NamespacedTaskKind, "", false)
+		pr, err := createPipelineRun(tc, ctxt, pData, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -137,7 +137,7 @@ func TestCreatePipelineRun(t *testing.T) {
 		wantTasks := []tekton.PipelineTask{
 			{
 				Name:       "start",
-				TaskRef:    &tekton.TaskRef{Kind: "Task", Name: "ods-start"},
+				TaskRef:    &tekton.TaskRef{Kind: "Task", Name: "ods-pipeline-start"},
 				Params:     append(startTaskParams(), tektonStringParam("clone-depth", "5")),
 				Workspaces: tektonDefaultWorkspaceBindings(),
 			},
@@ -157,7 +157,7 @@ func TestCreatePipelineRun(t *testing.T) {
 		wantFinallyTasks := []tekton.PipelineTask{
 			{
 				Name:    "finish",
-				TaskRef: &tekton.TaskRef{Kind: "Task", Name: "ods-finish"},
+				TaskRef: &tekton.TaskRef{Kind: "Task", Name: "ods-pipeline-finish"},
 				Params: []tekton.Param{
 					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
 					tektonStringParam("aggregate-tasks-status", "overriden"),
@@ -173,7 +173,6 @@ func TestCreatePipelineRun(t *testing.T) {
 
 func TestAssemblePipeline(t *testing.T) {
 	taskKind := tekton.NamespacedTaskKind
-	taskSuffix := "-latest"
 	cfg := PipelineConfig{
 		PipelineInfo: PipelineInfo{
 			Project:         "project",
@@ -195,7 +194,7 @@ func TestAssemblePipeline(t *testing.T) {
 			Tasks: []tekton.PipelineTask{
 				{
 					Name:    "build",
-					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go" + taskSuffix},
+					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-pipeline-go-build"},
 					Workspaces: []tekton.WorkspacePipelineTaskBinding{
 						{Name: "source", Workspace: sharedWorkspaceName},
 					},
@@ -204,12 +203,12 @@ func TestAssemblePipeline(t *testing.T) {
 			Finally: []tekton.PipelineTask{
 				{
 					Name:    "final",
-					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final" + taskSuffix},
+					TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final"},
 				},
 			},
 		},
 	}
-	got := assemblePipelineSpec(cfg, taskKind, taskSuffix)
+	got := assemblePipelineSpec(cfg)
 	want := &tekton.PipelineSpec{
 		Description: "",
 		Params: []tekton.ParamSpec{
@@ -224,7 +223,7 @@ func TestAssemblePipeline(t *testing.T) {
 		Tasks: []tekton.PipelineTask{
 			{
 				Name:    "start",
-				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-start-latest"},
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-pipeline-start"},
 				Params: []tekton.Param{
 					tektonStringParam("url", "$(params.git-repo-url)"),
 					tektonStringParam("git-full-ref", "$(params.git-full-ref)"),
@@ -239,7 +238,7 @@ func TestAssemblePipeline(t *testing.T) {
 			{
 				Name:       "build",
 				RunAfter:   []string{"start"},
-				TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-build-go-latest"},
+				TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-pipeline-go-build"},
 				Params:     nil,
 				Workspaces: tektonDefaultWorkspaceBindings(),
 			},
@@ -247,12 +246,12 @@ func TestAssemblePipeline(t *testing.T) {
 		Finally: []tekton.PipelineTask{
 			{
 				Name:    "final",
-				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final-latest"},
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "final"},
 				Params:  nil,
 			},
 			{
 				Name:    "finish",
-				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-finish-latest"},
+				TaskRef: &tekton.TaskRef{Kind: taskKind, Name: "ods-pipeline-finish"},
 				Params: []tekton.Param{
 					tektonStringParam("pipeline-run-name", "$(context.pipelineRun.name)"),
 					tektonStringParam("aggregate-tasks-status", "$(tasks.status)"),
@@ -320,7 +319,7 @@ func TestTasksRunAfterInjection(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cfg := PipelineConfig{PipelineSpec: config.Pipeline{Tasks: tc.cfgTasks}}
-			got := assemblePipelineSpec(cfg, tekton.NamespacedTaskKind, "")
+			got := assemblePipelineSpec(cfg)
 			wantRunAfter := [][]string{}
 			for _, task := range tc.want {
 				wantRunAfter = append(wantRunAfter, task.RunAfter)

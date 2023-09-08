@@ -18,7 +18,7 @@ const (
 )
 
 // NexusClientOrFatal returns a Nexus client, configured based on ConfigMap/Secret in the given namespace.
-func NexusClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string, privateCert bool) *nexus.Client {
+func NexusClientOrFatal(t *testing.T, c kclient.Interface, namespace string, privateCert bool) *nexus.Client {
 	ncc, err := installation.NewNexusClientConfig(
 		c, namespace, &logging.LeveledLogger{Level: logging.LevelDebug},
 	)

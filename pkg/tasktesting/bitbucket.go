@@ -19,7 +19,7 @@ const (
 )
 
 // BitbucketClientOrFatal returns a Bitbucket client, configured based on ConfigMap/Secret in the given namespace.
-func BitbucketClientOrFatal(t *testing.T, c *kclient.Clientset, namespace string, privateCert bool) *bitbucket.Client {
+func BitbucketClientOrFatal(t *testing.T, c kclient.Interface, namespace string, privateCert bool) *bitbucket.Client {
 	var privateCertPath string
 	if privateCert {
 		privateCertPath = filepath.Join(projectpath.Root, PrivateCertFile)

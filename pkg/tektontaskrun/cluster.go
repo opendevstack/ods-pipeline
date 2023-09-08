@@ -20,6 +20,7 @@ const (
 	KinDMountHostPath         = "/tmp/ods-pipeline/kind-mount"
 	KinDMountContainerPath    = "/files"
 	KinDRegistry              = "localhost:5000"
+	KinDName                  = "ods-pipeline"
 )
 
 var recreateClusterFlag = flag.Bool("ods-recreate-cluster", false, "Whether to remove and recreate the KinD cluster named 'ods-pipeline'")

@@ -1,6 +1,7 @@
 package tektontaskrun
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"os"
@@ -25,7 +26,7 @@ type TaskRunConfig struct {
 	Namespace          string
 	ServiceAccountName string
 	Timeout            time.Duration
-	AfterRunFunc       func(config *TaskRunConfig, taskRun *tekton.TaskRun)
+	AfterRunFunc       func(config *TaskRunConfig, taskRun *tekton.TaskRun, logs bytes.Buffer)
 	CleanupFuncs       []func()
 	NamespaceConfig    *NamespaceConfig
 	WorkspaceConfigs   map[string]*WorkspaceConfig
@@ -57,7 +58,7 @@ func RunTask(opts ...TaskRunOpt) error {
 	cleanupOnInterrupt(trc.Cleanup)
 	defer trc.Cleanup()
 
-	taskRun, err := runTask(trc)
+	taskRun, logsBuffer, err := runTask(trc)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func RunTask(opts ...TaskRunOpt) error {
 	}
 
 	if trc.AfterRunFunc != nil {
-		trc.AfterRunFunc(trc, taskRun)
+		trc.AfterRunFunc(trc, taskRun, logsBuffer)
 	}
 
 	return err
@@ -163,13 +164,7 @@ func WithParams(params ...tekton.Param) TaskRunOpt {
 // simple parameters compares to WithParams.
 func WithStringParams(params map[string]string) TaskRunOpt {
 	return func(c *TaskRunConfig) error {
-		for k, v := range params {
-			tp := tekton.Param{Name: k, Value: tekton.ParamValue{
-				Type:      tekton.ParamTypeString,
-				StringVal: v,
-			}}
-			c.Params = append(c.Params, tp)
-		}
+		c.Params = append(c.Params, TektonParamsFromStringParams(params)...)
 		return nil
 	}
 }
@@ -187,7 +182,7 @@ func ExpectFailure() TaskRunOpt {
 // AfterRun registers a function which is run after the task run completes.
 // The function will receive the task run configuration, as well as an instance
 // of the TaskRun.
-func AfterRun(f func(c *TaskRunConfig, r *tekton.TaskRun)) TaskRunOpt {
+func AfterRun(f func(c *TaskRunConfig, r *tekton.TaskRun, l bytes.Buffer)) TaskRunOpt {
 	return func(c *TaskRunConfig) error {
 		c.AfterRunFunc = f
 		return nil

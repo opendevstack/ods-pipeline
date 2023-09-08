@@ -48,7 +48,7 @@ docker build -t ${IMAGE_NAME} -f "Dockerfile.$(uname -m)" "${DOCKER_CONTEXT_DIR}
 cd - &> /dev/null
 docker run -d -p "${HOST_HTTP_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
 
-if ! bash "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
+if ! bash "${SCRIPT_DIR}"/waitfor-nexus.sh ; then
     docker logs ${CONTAINER_NAME}
     exit 1
 fi

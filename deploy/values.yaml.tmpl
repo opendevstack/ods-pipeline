@@ -6,48 +6,22 @@
 # All of these configuration options are set to a default value in ods-pipeline/values.yaml.
 # If you want to override something there, copy the field here and configure as needed.
 
-global:
-  # Configure which tasks should be installed. Tasks set to "false" will
-  # not be part of the installation and cannot be referenced from ods.yaml.
-  enabledTasks:
-    buildGo: false
-    buildGradle: false
-    buildPython: false
-    buildNPM: false
-    packageImage: true
-    deployHelm: true
+# Bitbucket URL (including scheme, without trailing slash).
+# Example: https://bitbucket.example.com.
+bitbucketUrl: ''
 
-setup:
-  # Bitbucket URL (including scheme, without trailing slash).
-  # Example: https://bitbucket.example.com.
-  bitbucketUrl: ''
+# Nexus URL (including scheme, without trailing slash).
+# Example: https://nexus.example.com.
+nexusUrl: ''
 
-  # Nexus URL (including scheme, without trailing slash).
-  # Example: https://nexus.example.com.
-  nexusUrl: ''
+# OpenShift Web ConsoleURL (including scheme, without trailing slash).
+# Example: https://console-openshift-console.apps.foo.tftp.p1.openshiftapps.com.
+consoleUrl: ''
 
-  # SonarQube URL (including scheme, without trailing slash).
-  # Example: https://sonarqube.example.com.
-  sonarUrl: ''
-  # SonarQube edition. Valid options: 'community', 'developer', 'enterprise' or 'datacenter'
-  sonarEdition: 'community'
-
-  # Aqua URL (including scheme, without trailing slash).
-  # Example: https://aqua.example.com.
-  # Leave empty when not using Aqua.
-  aquaUrl: ''
-  # Aqua registry name.
-  # Leave empty when not using Aqua.
-  aquaRegistry: ''
-
-  # OpenShift Web ConsoleURL (including scheme, without trailing slash).
-  # Example: https://console-openshift-console.apps.foo.tftp.p1.openshiftapps.com.
-  consoleUrl: ''
-
-  # Pipeline Manager
-  pipelineManager:
-    # PVC (used for the pipeline workspace)
-    # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
-    storageProvisioner: 'kubernetes.io/aws-ebs'
-    # Storage class. On AWS backed clusters, use 'gp2'.
-    storageClassName: 'gp2'
+# Pipeline Manager
+pipelineManager:
+  # PVC (used for the pipeline workspace)
+  # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
+  storageProvisioner: 'kubernetes.io/aws-ebs'
+  # Storage class. On AWS backed clusters, use 'gp2'.
+  storageClassName: 'gp2'

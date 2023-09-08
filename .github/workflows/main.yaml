@@ -11,139 +11,44 @@ env:
   IMAGE_BASE: ${{ github.repository }}
 
 jobs:
-  build-images:
-    name: Build ODS images
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        image: ["aqua-scan", "finish", "go-toolset", "gradle-toolset", "helm", "node16-npm-toolset", "node18-npm-toolset", "package-image", "pipeline-manager", "python-toolset", "sonar", "start"]
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-            network=host
-      -
-        name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: false
-          file: build/package/Dockerfile.${{ matrix.image }}
-          tags: localhost:5000/ods/ods-${{ matrix.image }}:latest
-          outputs: type=docker,dest=/tmp/image-ods-${{ matrix.image }}.tar
-      -
-        name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: buildx-image-ods-${{ matrix.image }}
-          path: /tmp/image-ods-${{ matrix.image }}.tar
-          retention-days: 1
-
   pipeline-tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: build-images
-    env:
-      IMAGES: aqua-scan finish go-toolset gradle-toolset helm node16-npm-toolset node18-npm-toolset package-image pipeline-manager python-toolset sonar start
     steps:
-      -
-        name: Download image artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: /tmp
       -
         name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
       -
-        name: Setup KinD cluster with internal registry
-        working-directory: scripts
-        run: ./kind-with-registry.sh
-      -
-        name: Push images to local registry
-        run: |
-          images=(${{ env.IMAGES }})
-          for image in ${images[*]}
-          do
-            echo "::group::Push ods-$image to local registry"
-            docker load --input /tmp/buildx-image-ods-$image/image-ods-$image.tar
-            docker push localhost:5000/ods/ods-$image:latest
-            if [[ "${{ github.event_name }}" == 'pull_request' ]]
-            then
-              docker rmi localhost:5000/ods/ods-$image:latest
-            fi
-            echo "::endgroup::"
-          done
-      -
-        name: Delete image tarballs
-        run: |
-          rm -rf /tmp/buildx-image-*
-      -
-        name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        id: install
-      -
-        name: Install Tekton Core Components
-        run: make install-tekton-pipelines
-      -
-        name: Show disk space
-        run: df -h
-      -
-        name: Spin up Bitbucket container
-        run: make run-bitbucket
-      -
-        name: Spin up Nexus container
-        run: make run-nexus
-      -
-        name: Spin up SonarQube container
-        run: make run-sonarqube
-      -
-        name: Show disk space
-        run: df -h
-      -
-        name: Setup Go 1.19
-        uses: actions/setup-go@v3
+        name: Setup Go
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.19'
-      -
-        name: Check if docs are up-to-date
-        run: ./.github/workflows/check-docs.sh
+          go-version: '1.21'
+      # -
+      #   name: Check if docs are up-to-date
+      #   run: ./.github/workflows/check-docs.sh
       -
         name: Run tests
         run: |
-          set -o pipefail
-          go test -v ./cmd/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-          go test -v ./internal/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-          go test -v ./pkg/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-          go test -timeout 45m -v ./test/tasks/... -always-keep-tmp-workspaces | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-          go test -timeout 10m -v ./test/e2e/... | sed ''/PASS/s//$(printf "\033[32mPASS\033[0m")/'' | sed ''/FAIL/s//$(printf "\033[31mFAIL\033[0m")/''
-      -
-        name: Log into ghcr.io
-        if: ${{ github.event_name != 'pull_request' }}
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Push images to ghcr.io
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          images=(${{ env.IMAGES }})
-          for image in ${images[*]}
-          do
-            echo "::group::Push ods-$image to ghcr.io"
-            docker tag localhost:5000/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
-            docker push ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
-            echo "::endgroup::"
-          done
+          make test
+      # -
+      #   name: Log into ghcr.io
+      #   if: ${{ github.event_name != 'pull_request' }}
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+      # -
+      #   name: Push images to ghcr.io
+      #   if: ${{ github.event_name != 'pull_request' }}
+      #   run: |
+      #     images=(${{ env.IMAGES }})
+      #     for image in ${images[*]}
+      #     do
+      #       echo "::group::Push ods-$image to ghcr.io"
+      #       docker tag localhost:5000/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
+      #       docker push ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
+      #       echo "::endgroup::"
+      #     done

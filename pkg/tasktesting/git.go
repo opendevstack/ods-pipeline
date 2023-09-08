@@ -74,7 +74,7 @@ func RemoveAll(t *testing.T, path ...string) {
 }
 
 // SetupBitbucketRepo initializes a Git repo, commits, pushes to Bitbucket and writes the result to the .ods cache.
-func SetupBitbucketRepo(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string, privateCert bool) *pipelinectxt.ODSContext {
+func SetupBitbucketRepo(t *testing.T, c kclient.Interface, ns, wsDir, projectKey string, privateCert bool) *pipelinectxt.ODSContext {
 	initAndCommitOrFatal(t, wsDir)
 	originURL := pushToBitbucketOrFatal(t, c, ns, wsDir, projectKey, privateCert)
 
@@ -150,7 +150,7 @@ func PushFileToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, b
 	}
 }
 
-func pushToBitbucketOrFatal(t *testing.T, c *kclient.Clientset, ns, wsDir, projectKey string, privateCert bool) string {
+func pushToBitbucketOrFatal(t *testing.T, c kclient.Interface, ns, wsDir, projectKey string, privateCert bool) string {
 	repoName := filepath.Base(wsDir)
 	bbURL := "http://localhost:7990"
 	bbToken, err := kubernetes.GetSecretKey(c, ns, "ods-bitbucket-auth", "password")

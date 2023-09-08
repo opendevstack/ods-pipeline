@@ -1,0 +1,14 @@
+imageTag: latest
+
+# Cluster
+consoleUrl: 'http://example.com'
+# Pipeline Manager
+pipelineManager:
+  storageProvisioner: ''
+  storageClassName: 'standard'
+  storageSize: '2Gi'
+
+# Image repository to pull task images from.
+# To test with the latest public ods-pipeline images, set
+# global.imageTag to 'latest' and use: 'ghcr.io/opendevstack/ods-pipeline'.
+imageRepository: localhost:5000/ods-pipeline

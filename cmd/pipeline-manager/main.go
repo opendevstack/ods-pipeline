@@ -16,7 +16,6 @@ import (
 	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 const (
@@ -25,9 +24,6 @@ const (
 	repoBaseEnvVar           = "REPO_BASE"
 	tokenEnvVar              = "ACCESS_TOKEN"
 	webhookSecretEnvVar      = "WEBHOOK_SECRET"
-	taskKindEnvVar           = "ODS_TASK_KIND"
-	taskKindDefault          = "Task"
-	taskSuffixEnvVar         = "ODS_TASK_SUFFIX"
 	storageProvisionerEnvVar = "ODS_STORAGE_PROVISIONER"
 	storageClassNameEnvVar   = "ODS_STORAGE_CLASS_NAME"
 	storageClassNameDefault  = "standard"
@@ -76,10 +72,6 @@ func serve() error {
 	if webhookSecret == "" {
 		return fmt.Errorf("%s must be set", webhookSecretEnvVar)
 	}
-
-	taskKind := readStringFromEnvVar(taskKindEnvVar, taskKindDefault)
-
-	taskSuffix := readStringFromEnvVar(taskSuffixEnvVar, "")
 
 	storageProvisioner := readStringFromEnvVar(storageProvisionerEnvVar, "")
 
@@ -152,8 +144,6 @@ func serve() error {
 		TektonClient:       tClient,
 		KubernetesClient:   kClient,
 		Logger:             logger.WithTag("scheduler"),
-		TaskKind:           tekton.TaskKind(taskKind),
-		TaskSuffix:         taskSuffix,
 		StorageConfig: manager.StorageConfig{
 			Provisioner: storageProvisioner,
 			ClassName:   storageClassName,

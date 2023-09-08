@@ -73,7 +73,7 @@ func initNamespaceAndPVC(cc *ClusterConfig, nc *NamespaceConfig) (cleanup func()
 	}, nil
 }
 
-func createTempNamespace(clientset *kubernetes.Clientset, name string) (namespace *corev1.Namespace, cleanup func(), err error) {
+func createTempNamespace(clientset kubernetes.Interface, name string) (namespace *corev1.Namespace, cleanup func(), err error) {
 	namespace, err = clientset.CoreV1().Namespaces().Create(
 		context.TODO(),
 		&corev1.Namespace{
@@ -84,6 +84,7 @@ func createTempNamespace(clientset *kubernetes.Clientset, name string) (namespac
 		metav1.CreateOptions{},
 	)
 	return namespace, func() {
+		log.Printf("Removing temporary namespace %q ...", name)
 		err := removeNamespace(clientset, name)
 		if err != nil {
 			log.Println(err)
@@ -91,7 +92,7 @@ func createTempNamespace(clientset *kubernetes.Clientset, name string) (namespac
 	}, err
 }
 
-func createTempPVC(clientset *kubernetes.Clientset, cc *ClusterConfig, name string) (pvc *corev1.PersistentVolumeClaim, cleanup func(), err error) {
+func createTempPVC(clientset kubernetes.Interface, cc *ClusterConfig, name string) (pvc *corev1.PersistentVolumeClaim, cleanup func(), err error) {
 	_, err = k.CreatePersistentVolume(
 		clientset,
 		name,
@@ -120,10 +121,10 @@ func createTempPVC(clientset *kubernetes.Clientset, cc *ClusterConfig, name stri
 	}, err
 }
 
-func removeNamespace(clientset *kubernetes.Clientset, name string) error {
+func removeNamespace(clientset kubernetes.Interface, name string) error {
 	return clientset.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
 }
 
-func removePVC(clientset *kubernetes.Clientset, name string) error {
+func removePVC(clientset kubernetes.Interface, name string) error {
 	return clientset.CoreV1().PersistentVolumes().Delete(context.Background(), name, metav1.DeleteOptions{})
 }

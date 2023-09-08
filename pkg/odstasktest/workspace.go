@@ -8,6 +8,7 @@ import (
 	ttr "github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 )
 
+// GetSourceWorkspaceContext reads the ODS context from the source workspace.
 func GetSourceWorkspaceContext(t *testing.T, config *ttr.TaskRunConfig) (dir string, ctxt *pipelinectxt.ODSContext) {
 	dir = config.WorkspaceConfigs["source"].Dir
 	ctxt, err := pipelinectxt.NewFromCache(dir)

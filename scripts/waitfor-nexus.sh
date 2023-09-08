@@ -28,7 +28,7 @@ function waitForReady {
             break
         else
             echo -n "."
-            sleep 10
+            sleep 5
             n=$((n+1))
         fi
     done

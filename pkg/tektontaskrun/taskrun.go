@@ -20,17 +20,29 @@ import (
 	"knative.dev/pkg/apis"
 )
 
-func runTask(tc *TaskRunConfig) (*tekton.TaskRun, error) {
+func TektonParamsFromStringParams(stringParams map[string]string) []tekton.Param {
+	var params []tekton.Param
+	for k, v := range stringParams {
+		tp := tekton.Param{Name: k, Value: tekton.ParamValue{
+			Type:      tekton.ParamTypeString,
+			StringVal: v,
+		}}
+		params = append(params, tp)
+	}
+	return params
+}
+
+func runTask(tc *TaskRunConfig) (*tekton.TaskRun, bytes.Buffer, error) {
 	clients := k.NewClients()
 	tr, err := createTaskRunWithParams(clients.TektonClientSet, tc)
 	if err != nil {
-		return nil, err
+		return nil, bytes.Buffer{}, err
 	}
 
 	// TODO: if last output is short, it may be omitted from the logs.
-	taskRun, _, err := watchTaskRunUntilDone(clients, tc, tr)
+	taskRun, logsBuffer, err := watchTaskRunUntilDone(clients, tc, tr)
 	if err != nil {
-		return nil, err
+		return nil, logsBuffer, err
 	}
 
 	log.Printf(
@@ -39,7 +51,7 @@ func runTask(tc *TaskRunConfig) (*tekton.TaskRun, error) {
 		taskRun.Status.GetCondition(apis.ConditionSucceeded).GetMessage(),
 	)
 
-	return taskRun, nil
+	return taskRun, logsBuffer, nil
 }
 
 func createTaskRunWithParams(tknClient *pipelineclientset.Clientset, tc *TaskRunConfig) (*tekton.TaskRun, error) {
