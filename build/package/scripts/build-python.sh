@@ -13,7 +13,6 @@ urlencode() {
     done
 }
 
-OUTPUT_DIR="docker"
 MAX_LINE_LENGTH="120"
 WORKING_DIR="."
 ARTIFACT_PREFIX=""
@@ -31,9 +30,6 @@ while [ "$#" -gt 0 ]; do
 
     --pre-test-script) PRE_TEST_SCRIPT="$2"; shift;;
     --pre-test-script=*) PRE_TEST_SCRIPT="${1#*=}";;
-
-    --output-dir) OUTPUT_DIR="$2"; shift;;
-    --output-dir=*) OUTPUT_DIR="${1#*=}";;
 
     --debug) DEBUG="$2"; shift;;
     --debug=*) DEBUG="${1#*=}";;
@@ -89,7 +85,3 @@ mkdir -p "${tmp_artifacts_dir}/xunit-reports"
 cp report.xml "${tmp_artifacts_dir}/xunit-reports/${ARTIFACT_PREFIX}report.xml"
 mkdir -p "${tmp_artifacts_dir}/code-coverage"
 cp coverage.xml "${tmp_artifacts_dir}/code-coverage/${ARTIFACT_PREFIX}coverage.xml"
-
-echo "Copying src and requirements.txt to ${OUTPUT_DIR}/app ..."
-cp -rv src "${OUTPUT_DIR}/app"
-cp -rv requirements.txt "${OUTPUT_DIR}/app"

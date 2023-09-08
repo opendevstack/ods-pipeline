@@ -43,6 +43,13 @@ spec:
         You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
       type: string
       default: "true"
+    - name: build-extra-inputs
+      description: >-
+        List of build source directories (as colon separated string) which in addition working-dir influence the build.
+        These directories are relative to the repository root.
+        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+      type: string
+      default: ""
     - name: build-script
       description: >-
         Build script to execute. The
@@ -90,9 +97,10 @@ spec:
         if copy-build-if-cached \
           --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
+          --build-extra-inputs=$(params.build-extra-inputs) \
+          --cached-outputs=$(params.output-dir) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
-          --output-dir=$(params.output-dir) \
           --debug=${DEBUG} ; then
           exit 0
         fi
@@ -112,14 +120,14 @@ spec:
         if [ $build_exit -ne 0 ]; then
           exit $build_exit
         fi
-        if [ "$(params.cache-build)" == "true" ]; then
-          cache-build \
-            --cache-build-key="$cache_build_key" \
-            --cache-location-used-path=$(results.build-reused-from-location.path) \
-            --working-dir=$(params.working-dir) \
-            --output-dir=$(params.output-dir) \
-            --debug=${DEBUG}
-        fi        
+        cache-build \
+          --cache-build=$(params.cache-build) \
+          --cache-build-key="$cache_build_key" \
+          --build-extra-inputs=$(params.build-extra-inputs) \
+          --cached-outputs=$(params.output-dir) \
+          --cache-location-used-path=$(results.build-reused-from-location.path) \
+          --working-dir=$(params.working-dir) \
+          --debug=${DEBUG}
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert

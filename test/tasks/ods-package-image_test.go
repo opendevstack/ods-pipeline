@@ -87,7 +87,10 @@ func TestTaskODSPackageImage(t *testing.T) {
 			},
 			"task should build image with build extra args param": {
 				WorkspaceDirMapping: map[string]string{"source": "hello-build-extra-args-app"},
-				TaskParamsMapping:   map[string]string{"buildah-build-extra-args": "'--build-arg=firstArg=one --build-arg=secondArg=two'"},
+				TaskParamsMapping: map[string]string{
+					"buildah-build-extra-args": "'--build-arg=firstArg=one --build-arg=secondArg=two'",
+					"docker-dir":               "docker",
+				},
 				PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)

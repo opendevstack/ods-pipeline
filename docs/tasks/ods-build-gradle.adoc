@@ -144,6 +144,16 @@ without leading `./` and trailing `/`.
 | If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that a build can be skipped if the `working-dir` contents did not change. You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
 
 
+| build-extra-inputs
+| 
+| List of build source directories (as colon separated string) which in addition working-dir influence the build. These directories are relative to the repository root. If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
+
+
+| cached-outputs
+| docker
+| List of build output directories (as colon separated string) to be cached. These directories are relative to `working-dir`.
+
+
 | build-script
 | /usr/local/bin/build-gradle
 | Build script to execute. The link:https://github.com/opendevstack/ods-pipeline/blob/master/build/package/scripts/build-gradle.sh[default script] is located in the container image. If you specify a relative path instead, it will be resolved from the workspace. See the task definition for details how the build script is invoked.

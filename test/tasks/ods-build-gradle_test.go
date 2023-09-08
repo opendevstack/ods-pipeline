@@ -121,7 +121,7 @@ func TestTaskODSBuildGradle(t *testing.T) {
 						}
 
 						logContains(t, ctxt.CollectedLogs,
-							"Copying prior build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",
+							"Copying prior ods build artifacts from cache: /workspace/source/.ods-cache/build-task/gradle",
 							"Copying prior build output from cache: /workspace/source/.ods-cache/build-task/gradle",
 						)
 					},

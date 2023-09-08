@@ -34,7 +34,7 @@ spec:
     - name: docker-dir
       description: Path to the directory to use as Docker context.
       type: string
-      default: docker
+      default: '.'
     - name: format
       description: 'The format of the built container, `oci` or `docker`.'
       type: string

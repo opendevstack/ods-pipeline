@@ -32,8 +32,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					checkFilesExist(t, wsDir,
-						"docker/app/main.py",
-						"docker/app/requirements.txt",
+						"src/main.py",
+						"requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 					)
@@ -83,8 +83,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 
 					checkFilesExist(t, wsDir,
-						"docker/app/main.py",
-						"docker/app/requirements.txt",
+						"src/main.py",
+						"requirements.txt",
 						filepath.Join(pipelinectxt.XUnitReportsPath, "report.xml"),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, "coverage.xml"),
 					)
@@ -151,8 +151,8 @@ func TestTaskODSBuildPython(t *testing.T) {
 					subdir := "fastapi-src"
 
 					checkFilesExist(t, wsDir,
-						fmt.Sprintf("%s/docker/app/main.py", subdir),
-						fmt.Sprintf("%s/docker/app/requirements.txt", subdir),
+						fmt.Sprintf("%s/src/main.py", subdir),
+						fmt.Sprintf("%s/requirements.txt", subdir),
 						filepath.Join(pipelinectxt.XUnitReportsPath, fmt.Sprintf("%s-report.xml", subdir)),
 						filepath.Join(pipelinectxt.CodeCoveragesPath, fmt.Sprintf("%s-coverage.xml", subdir)),
 					)

@@ -23,6 +23,10 @@ listed in the changelog.
 
 - SonarQube doesn't scan FE-related code ([#716](https://github.com/opendevstack/ods-pipeline/issues/716))
 
+### Changed
+
+- Build tasks streamlining and avoidance of file copies (#678 fixed by [#710](https://github.com/opendevstack/ods-pipeline/pull/710)). This is an incompatible change. Build tasks were adjusted to (mostly) no longer copy build files in a dedicated location. Instead one should adjust the Dockerfile (or other downstream tasks) to directly consume the build outputs from their natural locations. In addition build task skipping now supports parameter `build-extra-inputs`. The package-image task `dockerfile` and `docker-dir` parameters have been changed to assume that the docker context and file are at the repository root. See the PR for further information and the issue for more context.
+
 ## [0.13.2] - 2023-07-18
 
 ### Fixed

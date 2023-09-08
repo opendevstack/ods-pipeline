@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash  
+# avoids ancient bash on macos
 set -eu
 # Copy build to cache
-
 
 # the copy commands are based on GNU cp tools
 # On a mac `brew install coreutils` gives `g` prefixed cmd line tools such as gcp
@@ -9,82 +9,149 @@ set -eu
 CP="${GNU_CP:-cp}"
 LS="${GNU_LS:-ls}"
 
-OUTPUT_DIR="docker"
-WORKING_DIR="."
-CACHE_BUILD_KEY=
-CACHE_LOCATION_USED_PATH=
-DEBUG="${DEBUG:-false}"
+join() {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
+splitAtColon() { 
+  # colon is 
+  echo "$1" | tr ":" "\n"
+}
+# https://stackoverflow.com/a/918931
+
+outputs_str=
+extra_inputs_str=
+declare -a outputs
+outputs=()
+declare -a inputs
+inputs=()
+working_dir="."
+cache_build="true"
+cache_build_key=
+cache_location_used_path=
+debug="${DEBUG:-false}"
+dry_run=false
+
 
 while [ "$#" -gt 0 ]; do
     case $1 in
 
-    --working-dir) WORKING_DIR="$2"; shift;;
-    --working-dir=*) WORKING_DIR="${1#*=}";;
+    --working-dir) working_dir="$2"; shift;;
+    --working-dir=*) working_dir="${1#*=}";;
 
-    --output-dir) OUTPUT_DIR="$2"; shift;;
-    --output-dir=*) OUTPUT_DIR="${1#*=}";;
+    --cached-outputs) outputs_str="$2"; shift;;
+    --cached-outputs=*) outputs_str="${1#*=}";;
 
-    --cache-build-key) CACHE_BUILD_KEY="$2"; shift;;
-    --cache-build-key=*) CACHE_BUILD_KEY="${1#*=}";;
+    --build-extra-inputs) extra_inputs_str="$2"; shift;;
+    --build-extra-inputs=*) extra_inputs_str="${1#*=}";;
 
-    --cache-location-used-path) CACHE_LOCATION_USED_PATH="$2"; shift;;
-    --cache-location-used-path=*) CACHE_LOCATION_USED_PATH="${1#*=}";;
+    --cache-build) cache_build="$2"; shift;;
+    --cache-build=*) cache_build="${1#*=}";;
 
-    --debug) DEBUG="$2"; shift;;
-    --debug=*) DEBUG="${1#*=}";;
+    --cache-build-key) cache_build_key="$2"; shift;;
+    --cache-build-key=*) cache_build_key="${1#*=}";;
+
+    --cache-location-used-path) cache_location_used_path="$2"; shift;;
+    --cache-location-used-path=*) cache_location_used_path="${1#*=}";;
+
+    --debug) debug="$2"; shift;;
+    --debug=*) debug="${1#*=}";;
+
+    --dry-run) dry_run=true;;
 
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-if [ -z "${CACHE_BUILD_KEY}" ]; then
+if [ -z "${cache_build_key}" ]; then
   echo "Param --cache-build-key is required."; exit 1;
-elif [ -z "${CACHE_LOCATION_USED_PATH}" ]; then
+elif [ -z "${cache_location_used_path}" ]; then
   echo "Param --cache-location-used-path is required."; exit 1;
 fi
 
-CP_VERBOSITY_FLAGS=
-if [ "${DEBUG}" == "true" ]; then
+cp_verbosity_flags=
+if [ "${debug}" == "true" ]; then
   set -x
-  CP_VERBOSITY_FLAGS="-v"
+  cp_verbosity_flags="-v"
 fi
 
-ROOT_DIR=$(pwd)
+if [ "$cache_build" != "true" ]; then
+  echo "Build skipping is not enabled. Continuing with a regular build (cache_build==$cache_build)"
+  exit 0
+fi
 
-git_sha_working_dir=""
-if [ "${WORKING_DIR}" == "." ]; then
-  git_sha_working_dir=$(git rev-parse "HEAD:")
+# note leads to undefined variable if extra_inputs_str is empty on ancient bash
+IFS=":" read -r -a extra_inputs <<< "$extra_inputs_str"
+inputs=("$working_dir")
+for f in "${extra_inputs[@]}"; do
+  inputs+=( "$f" )
+done
+
+IFS=":" read -r -a outputs <<< "$outputs_str"
+
+root_dir=$(pwd)
+
+declare -a git_shas  #  relative to root
+for f in "${inputs[@]}"; do
+  if [ "${f}" == "." ]; then
+    git_shas+=( "$(git rev-parse --short "HEAD:")" )
+  else
+    git_shas+=( "$(git rev-parse --short "HEAD:$f")")
+  fi
+done
+# shellcheck disable=SC2048,SC2086
+git_sha_combined=$(join "-" ${git_shas[*]})
+cache_location_dir="$root_dir/.ods-cache/build-task/$cache_build_key/$git_sha_combined"
+
+if [ "${working_dir}" != "." ]; then
+  cd "${working_dir}"
+fi
+
+if [ "${dry_run}" == "true" ]; then
+  echo "(skipping ensuring empty cache location dir at $cache_location_dir)"
 else
-  git_sha_working_dir=$(git rev-parse "HEAD:$WORKING_DIR")
+  rm -rvf "$cache_location_dir"  # should be empty as otherwise cache should be used.
+  mkdir -p "$cache_location_dir"
 fi
-cache_location_dir="$ROOT_DIR/.ods-cache/build-task/$CACHE_BUILD_KEY/$git_sha_working_dir"
-
-if [ "${WORKING_DIR}" != "." ]; then
-  cd "${WORKING_DIR}"
-fi
-
-rm -rvf "$cache_location_dir"  # should be empty as otherwise cache should be used.
-mkdir -p "$cache_location_dir"
 
 # Copying ods artifacts which are mostly reports (see artifacts.adoc)
 # TODO: consistent casing and naming across scripts regarding dir variables
-cache_of_artifacts_dir="$cache_location_dir/artifacts"
-tmp_artifacts_dir="${ROOT_DIR}/.ods/tmp-artifacts"
-echo "Copying build artifacts to cache: $tmp_artifacts_dir -> $cache_of_artifacts_dir"
-mkdir -p "$cache_of_artifacts_dir"
-"$CP" -v -r "$tmp_artifacts_dir/." "$cache_of_artifacts_dir"
 
-# Copying build output
-cache_of_output_dir="$cache_location_dir/output"
-echo "Copying build output to cache: $OUTPUT_DIR to $cache_of_output_dir"
-mkdir -p "$cache_of_output_dir"
-start_time=$SECONDS
-"$CP" $CP_VERBOSITY_FLAGS -r "$OUTPUT_DIR/." "$cache_of_output_dir"
-elapsed=$(( SECONDS - start_time ))
-echo "Copying took $elapsed seconds"
-if [ "${DEBUG}" == "true" ]; then
-  echo "-- ls OUTPUT IN CACHE -- "
-  $LS -Ral "$cache_of_output_dir"
+cache_of_artifacts_dir="$cache_location_dir/artifacts"
+tmp_artifacts_dir="${root_dir}/.ods/tmp-artifacts"
+echo "Copying ods build artifacts to cache: $tmp_artifacts_dir -> $cache_of_artifacts_dir"
+if [ "${dry_run}" == "true" ]; then
+  echo "(skipping copying ods build artifacts)"
+else 
+  mkdir -p "$cache_of_artifacts_dir"
+  "$CP" -v -r "$tmp_artifacts_dir/." "$cache_of_artifacts_dir"
 fi
 
-echo "$cache_location_dir" > "$CACHE_LOCATION_USED_PATH"
-touch "$cache_location_dir/.ods-last-used-stamp"
+# Copying build output
+for i in "${!outputs[@]}"; do
+  cache_of_output_dir="$cache_location_dir/output/$i"
+  output_dir="${outputs[$i]}"
+  echo "Copying build output to cache: $output_dir to $cache_of_output_dir"
+  if [ "${dry_run}" == "true" ]; then
+      echo "(skipping copying build outputs)"
+  else 
+    mkdir -p "$cache_of_output_dir"
+    start_time=$SECONDS
+    "$CP" $cp_verbosity_flags -r "$output_dir/." "$cache_of_output_dir"
+    elapsed=$(( SECONDS - start_time ))
+    echo "Copying took $elapsed seconds"
+    if [ "${debug}" == "true" ]; then
+      echo "-- ls OUTPUT IN CACHE -- "
+      $LS -Ral "$cache_of_output_dir"
+    fi
+  fi
+done
+
+if [ "${dry_run}" == "true" ]; then
+  echo "(skipping saving $cache_location_dir in $cache_location_used_path)"
+  echo "(skipping touch of $cache_location_dir/.ods-last-used-stamp"
+else
+  echo "$cache_location_dir" > "$cache_location_used_path"
+  touch "$cache_location_dir/.ods-last-used-stamp"
+fi

@@ -4,8 +4,8 @@ FROM registry.access.redhat.com/ubi8/python-39
 ARG nexusUrlWithAuth
 ARG nexusHost
 
-COPY app /app
-COPY run.sh /app/
+COPY requirements.txt /app/
+COPY docker/run.sh /app/
 
 WORKDIR /app
 
@@ -18,6 +18,8 @@ RUN if [ ! -z ${nexusUrlWithAuth} ]; \
       pip install -r requirements.txt; \
     fi && \
     pip check
+
+COPY src /app
 
 USER root
 RUN chown -R 1001:0 /app && \

@@ -184,6 +184,13 @@ func TestTaskODSBuildGo(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					cleanModcache(t, wsDir)
 				},
+				AdditionalRuns: []tasktesting.TaskRunCase{{
+					// inherits funcs from primary task only set explicitly
+					PreRunFunc: func(t *testing.T, ctxt *tasktesting.TaskRunContext) {
+						// ctxt still in place from prior run
+					},
+					WantRunSuccess: true,
+				}},
 			},
 			"fail linting go app and generate lint report": {
 				WorkspaceDirMapping: map[string]string{"source": "go-sample-app-lint-error"},
