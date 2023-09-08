@@ -30,6 +30,7 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
+						"cache-build":        "false",
 					})
 				},
 				WantRunSuccess: true,
@@ -81,7 +82,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-os":              runtime.GOOS,
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
-						"cache-sources":      ".",
 					})
 				},
 				WantRunSuccess: true,
@@ -145,7 +145,6 @@ func TestTaskODSBuildGo(t *testing.T) {
 						"go-arch":            runtime.GOARCH,
 						"sonar-quality-gate": "true",
 						"working-dir":        subdir,
-						"cache-sources":      subdir,
 					})
 				},
 				WantRunSuccess: true,

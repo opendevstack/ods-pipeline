@@ -24,6 +24,7 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
 						"sonar-quality-gate": "true",
+						"cache-build":        "false",
 					})
 				},
 				WantRunSuccess: true,
@@ -70,8 +71,7 @@ func TestTaskODSBuildNPM(t *testing.T) {
 
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
-						"working-dir":   subdir,
-						"cache=sources": subdir,
+						"working-dir": subdir,
 					})
 				},
 				WantRunSuccess: true,
@@ -135,7 +135,6 @@ func TestTaskODSBuildNPM(t *testing.T) {
 					wsDir := ctxt.Workspaces["source"]
 					ctxt.ODS = tasktesting.SetupGitRepo(t, ctxt.Namespace, wsDir)
 					ctxt.Params = buildTaskParams(map[string]string{
-						"cached-sources": ".",
 						"cached-outputs": "node_modules/",
 					})
 				},

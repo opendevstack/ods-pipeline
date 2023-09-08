@@ -43,12 +43,18 @@ spec:
         This directory may then later be used as Docker context for example.
       type: string
       default: docker
-    - name: cache-sources
-      description: |
-        List of build source directories (as colon separated string) which influence the build.
+    - name: cache-build
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
+        a build can be skipped if the `working-dir` contents did not change.
+        You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
+      type: string
+      default: "true"
+    - name: build-extra-inputs
+      description: >-
+        List of build source directories (as colon separated string) which in addition working-dir influence the build.
         These directories are relative to the repository root.
         If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
-        If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
       type: string
       default: ""
     - name: cached-outputs
@@ -125,7 +131,7 @@ spec:
         cache_build_key=gradle
         if copy-build-if-cached \
           --cache-build-key="$cache_build_key" \
-          --cache-sources=$(params.cache-sources) \
+          --build-extra-inputs=$(params.build-extra-inputs) \
           --cached-outputs=$(params.cached-outputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
@@ -147,8 +153,9 @@ spec:
           exit $build_exit
         fi
         cache-build \
+          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
-          --cache-sources=$(params.cache-sources) \
+          --build-extra-inputs=$(params.build-extra-inputs) \
           --cached-outputs=$(params.cached-outputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \

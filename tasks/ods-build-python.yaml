@@ -18,14 +18,18 @@ spec:
         without leading `./` and trailing `/`.
       type: string
       default: "."
-    - name: cache-sources
-      description: |
-        List of build source directories (as colon separated string) which influence the build.
-        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
-        These directories are relative to the repository root.
-        If left empty no caching is enabled. When sources are only in the working-dir, this value can be the same value.
+    - name: cache-build
+      description: >-
+        If enabled tasks uses or populates cache with the output dir contents (and artifacts) so that
+        a build can be skipped if the `working-dir` contents did not change.
+        You must set this to `"false"` if the build can be affected by files outside `working-dir`. See ADR caching-build-tasks for more details and workarounds.
       type: string
-      default: ""
+      default: "true"
+    - name: build-extra-inputs
+      description: >-
+        List of build source directories (as colon separated string) which in addition working-dir influence the build.
+        These directories are relative to the repository root.
+        If the contents in these directories change the cache is invalidated so that the build task will rebuild from scratch.
       type: string
       default: ""
     - name: max-line-length
@@ -92,8 +96,9 @@ spec:
         echo -n "" > $(results.build-reused-from-location.path)
         cache_build_key=python
         if copy-build-if-cached \
+          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
-          --cache-sources=$(params.cache-sources) \
+          --build-extra-inputs=$(params.build-extra-inputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
           --debug=${DEBUG} ; then
@@ -113,8 +118,9 @@ spec:
           exit $build_exit
         fi
         cache-build \
+          --cache-build=$(params.cache-build) \
           --cache-build-key="$cache_build_key" \
-          --cache-sources=$(params.cache-sources) \
+          --build-extra-inputs=$(params.build-extra-inputs) \
           --cache-location-used-path=$(results.build-reused-from-location.path) \
           --working-dir=$(params.working-dir) \
           --debug=${DEBUG}

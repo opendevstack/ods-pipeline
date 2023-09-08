@@ -23,13 +23,15 @@ splitAtColon() {
 }
 # https://stackoverflow.com/a/918931
 
-working_dir=.
 outputs_str=
-sources_str=
+extra_inputs_str=
 declare -a outputs
 outputs=()
-declare -a sources
-sources=()
+declare -a inputs
+inputs=()
+working_dir="."
+cache_build="true"
+cache_build_key=
 cache_location_used_path=
 debug="${DEBUG:-false}"
 dry_run=false
@@ -40,11 +42,14 @@ while [ "$#" -gt 0 ]; do
     --working-dir) working_dir="$2"; shift;;
     --working-dir=*) working_dir="${1#*=}";;
 
-    --cache-sources) sources_str="$2"; shift;;
-    --cache-sources=*) sources_str="${1#*=}";;
-
     --cached-outputs) outputs_str="$2"; shift;;
     --cached-outputs=*) outputs_str="${1#*=}";;
+
+    --build-extra-inputs) extra_inputs_str="$2"; shift;;
+    --build-extra-inputs=*) extra_inputs_str="${1#*=}";;
+
+    --cache-build) cache_build="$2"; shift;;
+    --cache-build=*) cache_build="${1#*=}";;
 
     --cache-build-key) cache_build_key="$2"; shift;;
     --cache-build-key=*) cache_build_key="${1#*=}";;
@@ -72,20 +77,22 @@ if [ "${debug}" == "true" ]; then
   cp_verbosity_flags="-v"
 fi
 
-# note leads to undefined variable if sources_str is empty on ancient bash
-IFS=":" read -r -a sources <<< "$sources_str"
-
-if (( ${#sources[@]} == 0 )); then
-  echo "Build skipping is not enabled as --cache-sources is empty. Continuing with a regular build."
+if [ "$cache_build" != "true" ]; then
+  echo "Build skipping is not enabled. Continuing with a regular build (cache_build==$cache_build)"
   exit 1
 fi
 
+IFS=":" read -r -a extra_inputs <<< "$extra_inputs_str"
+inputs=("$working_dir")
+for f in "${extra_inputs[@]}"; do
+  inputs+=( "$f" )
+done
 IFS=":" read -r -a outputs <<< "$outputs_str"
 
 root_dir=$(pwd)
 
 declare -a git_shas  #  relative to root
-for f in "${sources[@]}"; do
+for f in "${inputs[@]}"; do
   if [ "${f}" == "." ]; then
     git_shas+=( "$(git rev-parse --short "HEAD:")" )
   else
