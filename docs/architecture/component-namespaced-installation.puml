@@ -16,27 +16,13 @@ Container_Boundary(c1, "Namespaced ODS Pipeline Installation"){
     }
 
     Boundary(tasks, "Tasks") {
-        Component(task_build_go, "ods-build-go", "Task", "Builds Go (module) applications")
-        Component(task_build_npm, "ods-build-npm", "Task", "Builds Node.js based applications using npm")
-        Component(task_build_python, "ods-build-python", "Task", "Builds Python applications")
-        Component(task_build_gradle, "ods-build-gradle", "Task", "Builds JDK based applications using Gradle")
-        Component(task_package_image, "ods-package-image", "Task", "Packages container images")
-        Component(task_deploy_helm, "ods-deploy-helm", "Task", "Deploys Helm charts")
-        Component(task_start, "ods-start", "Task", "Starts pipeline run (checkout repository, set build status, download artifacts, ...)")
-        Component(task_finish, "ods-finish", "Task", "Finishes pipeline run (set build status, upload artifacts, ...)")
+        Component(task_start, "ods-pipeline-start", "Task", "Starts pipeline run (checkout repository, set build status, download artifacts, ...)")
+        Component(task_finish, "ods-pipeline-finish", "Task", "Finishes pipeline run (set build status, upload artifacts, ...)")
     }
 
     Boundary(images, "Images") {
-        Component(image_go_toolset, "ods/go-toolset", "Container Image", "Go, golangci-lint, build script")
-        Component(image_node16_npm_toolset, "ods/node16-npm-toolset", "Container Image", "Node.js 16, npm, build script")
-        Component(image_node18_npm_toolset, "ods/node18-npm-toolset", "Container Image", "Node.js 18, npm, build script")
-        Component(image_python_toolset, "ods/python-toolset", "Container Image", "Python, build script")
-        Component(image_gradle_toolset, "ods/gradle-toolset", "Container Image", "JDK, Gradle, build script")
-        Component(image_buildah, "ods/buildah", "Container Image", "Buildah, Skopeo, Aqua scanner")
-        Component(image_helm, "ods/helm", "Container Image", "Helm, Skopeo, deploy script")
-        Component(image_start, "ods/start", "Container Image", "Git, start script")
-        Component(image_finish, "ods/finish", "Container Image", "Finish script")
-        Component(image_sonar, "ods/sonar", "Container Image", "sonar-scanner")
+        Component(image_start, "ods-pipeline/start", "Container Image", "Git, start script")
+        Component(image_finish, "ods-pipeline/finish", "Container Image", "Finish script")
         Component(image_pipeline_manager, "ods/pipeline-manager", "Container Image", "Webhook receiver and pipeline manager")
     }
 

@@ -48,7 +48,7 @@ func TestPipelineRun(t *testing.T) {
 
 	// Initialize workspace with basic app.
 	workspaceSourceDirectory := filepath.Join(
-		projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app",
+		projectpath.Root, "test", testdataWorkspacesPath, "hello-world-app",
 	)
 	wsDir, wsDirCleanupFunc, err := tektontaskrun.SetupWorkspaceDir(workspaceSourceDirectory)
 	defer wsDirCleanupFunc()

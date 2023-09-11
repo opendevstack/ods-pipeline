@@ -37,45 +37,6 @@ Stakeholder requirements describe what the tool shall be able to accomplish and 
 
 [cols="1,3a"]
 |===
-| SHR-1
-| ODS Pipeline shall provide a task supporting to build Go applications:
-
--	lint Go source code files
--	statically analyse Go source code files
--	run the Go test tool
--	build executable Go binaries
-
-
-| SHR-2
-| ODS Pipeline shall provide a task supporting to build JDK-based applications (such as Java, Kotlin) using Gradle:
-
-- statically analyse Java source code files
--	run the Gradle build task (running tests and producing executable JAR files)
-
-
-| SHR-3
-| ODS Pipeline shall provide a task supporting to build Python applications:
-
-- lint Python source code files
--	statically analyse Python source code files
--	run pytest
-
-
-| SHR-4
-| ODS Pipeline shall provide a task supporting to build Node.JS applications using npm:
-
--	lint JavaScript/TypeScript source code files
--	statically analyse JavaScript/TypeScript source code files
--	run the npm test script
--	run the npm build task
-
-
-| SHR-5
-| ODS Pipeline shall provide functionality to build container images, create an SBOM file describing the contents of those images, and to scan those images for known vulnerabilities.
-
-| SHR-6
-| ODS Pipeline shall provide a task deploying Helm charts. The release namespace may be in the same cluster or an external cluster.
-
 | SHR-7
 | ODS Pipeline shall retain immutable artifacts of activities performed by its tasks in an artifact repository. Artifacts shall include, but are not limited to, test results (xUnit), linting results, static analysis results, image digests and deployment configuration changes.
 

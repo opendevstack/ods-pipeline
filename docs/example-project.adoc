@@ -31,15 +31,21 @@ pipelines:
   tasks:
   - name: build
     taskRef:
-      kind: Task
-      name: ods-build-go-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/build.yaml }
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package
     taskRef:
-      kind: Task
-      name: ods-package-image-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/package.yaml }
     runAfter:
     - build
     workspaces:
@@ -47,8 +53,11 @@ pipelines:
       workspace: shared-workspace
   - name: deploy
     taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-helm.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/deploy.yaml }
     runAfter:
     - package
     workspaces:
@@ -71,15 +80,21 @@ pipelines:
   tasks:
   - name: build
     taskRef:
-      kind: Task
-      name: ods-build-npm-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-npm.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/build.yaml }
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package
     taskRef:
-      kind: Task
-      name: ods-package-image-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/package.yaml }
     runAfter:
     - build
     workspaces:
@@ -87,8 +102,11 @@ pipelines:
       workspace: shared-workspace
   - name: deploy
     taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-helm.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/deploy.yaml }
     runAfter:
     - package
     workspaces:
@@ -140,8 +158,11 @@ pipelines:
   tasks:
   - name: deploy
     taskRef:
-      kind: Task
-      name: ods-deploy-helm-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-helm.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/deploy.yaml }
     workspaces:
     - name: source
       workspace: shared-workspace

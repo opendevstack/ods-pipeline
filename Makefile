@@ -83,8 +83,8 @@ test-pkg: ## Run testsuite of public packages.
 .PHONY: test-pkg
 
 test-e2e: ## Run testsuite of tasks and full pipeline run.
-	go test -v -count=1 -run ^TestPipelineRun ./test/e2e/...
 	go test -v -count=1 -skip ^TestPipelineRun  ./test/e2e/...
+	go test -v -count=1 -run ^TestPipelineRun ./test/e2e/...
 .PHONY: test-e2e
 
 clear-tmp-workspaces: ## Clear temporary workspaces created in testruns.

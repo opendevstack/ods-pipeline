@@ -84,15 +84,12 @@ pipelines:
     taskRef:
       resolver: git
       params:
-      - name: url
-        value: https://github.com/opendevstack/ods-pipeline.git
-      - name: revision
-        value: v0.13.2
-      - name: pathInRepo
-        value: tasks/ods-build-go.yaml
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+      - { name: revision, value: v0.13.2 }
+      - { name: pathInRepo, value: tasks/build.yaml }
+    workspaces:
+    - name: source
+      workspace: shared-workspace
 ----
 
 === Configuring final tasks

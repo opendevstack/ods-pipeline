@@ -94,7 +94,7 @@ func TestStartTaskClonesRepoAndSubrepos(t *testing.T) {
 				subrepoContext = setupBitbucketRepoWithSubdirOrFatal(t, c, k8sClient)
 				// Nexus artifacts
 				nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
-				artifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
+				artifactsBaseDir := filepath.Join(projectpath.Root, "test", testdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 				_, err := nexusClient.Upload(
 					nexus.TestTemporaryRepository,
 					pipelinectxt.ArtifactGroup(subrepoContext, pipelinectxt.XUnitReportsDir),
@@ -136,7 +136,7 @@ func TestStartTaskClonesRepoAndSubrepos(t *testing.T) {
 			checkODSContext(t, subrepoDir, subrepoContext)
 
 			// Check artifacts are downloaded properly in subrepo
-			sourceArtifactsBaseDir := filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
+			sourceArtifactsBaseDir := filepath.Join(projectpath.Root, "test", testdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 			xUnitFileSource := "xunit-reports/report.xml"
 			xUnitContent := trimmedFileContentOrFatal(t, filepath.Join(sourceArtifactsBaseDir, xUnitFileSource))
 			destinationArtifactsBaseDir := filepath.Join(subrepoDir, pipelinectxt.ArtifactsPath)
@@ -226,7 +226,7 @@ func TestStartTaskClonesUsingLFS(t *testing.T) {
 func setupBitbucketRepoWithSubdirOrFatal(t *testing.T, c *ttr.WorkspaceConfig, k8sClient kubernetes.Interface) *pipelinectxt.ODSContext {
 	// Setup sub-component
 	tempDir, err := directory.CopyToTempDir(
-		filepath.Join(projectpath.Root, "test", tasktesting.TestdataWorkspacesPath, "hello-world-app"),
+		filepath.Join(projectpath.Root, "test", testdataWorkspacesPath, "hello-world-app"),
 		c.Dir,
 		"subcomponent-",
 	)

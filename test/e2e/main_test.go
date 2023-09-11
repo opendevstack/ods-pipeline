@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	namespaceConfig *ttr.NamespaceConfig
-	rootPath        = "../.."
+	namespaceConfig        *ttr.NamespaceConfig
+	rootPath               = "../.."
+	testdataWorkspacesPath = "testdata/workspaces"
 )
 
 func TestMain(m *testing.M) {
