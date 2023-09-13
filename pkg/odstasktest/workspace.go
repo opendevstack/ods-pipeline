@@ -3,8 +3,8 @@ package odstasktest
 import (
 	"testing"
 
+	"github.com/opendevstack/ods-pipeline/internal/tasktesting"
 	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 	ttr "github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 )
 

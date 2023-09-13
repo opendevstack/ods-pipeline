@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/opendevstack/ods-pipeline/internal/tasktesting"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	ott "github.com/opendevstack/ods-pipeline/pkg/odstasktest"
-	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 	ttr "github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"

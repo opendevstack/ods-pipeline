@@ -25,9 +25,9 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-      # -
-      #   name: Check if docs are up-to-date
-      #   run: ./.github/workflows/check-docs.sh
+      -
+        name: Check if docs are up-to-date
+        run: ./.github/workflows/check-docs.sh
       -
         name: Run tests
         run: |

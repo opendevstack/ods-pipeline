@@ -1,6 +1,6 @@
 // File is generated; DO NOT EDIT.
 
-= ods-start
+= ods-pipeline-start
 
 Starts the pipeline run.
 

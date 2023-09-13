@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/opendevstack/ods-pipeline/internal/tasktesting"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/nexus"
 	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"k8s.io/client-go/kubernetes"
 

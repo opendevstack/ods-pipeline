@@ -1,6 +1,6 @@
 // File is generated; DO NOT EDIT.
 
-= ods-finish
+= ods-pipeline-finish
 
 Finishes the pipeline run.
 

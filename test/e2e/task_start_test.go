@@ -11,11 +11,11 @@ import (
 
 	"github.com/opendevstack/ods-pipeline/internal/directory"
 	"github.com/opendevstack/ods-pipeline/internal/projectpath"
+	"github.com/opendevstack/ods-pipeline/internal/tasktesting"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/config"
 	"github.com/opendevstack/ods-pipeline/pkg/nexus"
 	"github.com/opendevstack/ods-pipeline/pkg/pipelinectxt"
-	"github.com/opendevstack/ods-pipeline/pkg/tasktesting"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
@@ -46,10 +46,8 @@ func TestStartTaskClonesRepoAtBranch(t *testing.T) {
 		},
 		ttr.AfterRun(func(config *ttr.TaskRunConfig, run *tekton.TaskRun, logs bytes.Buffer) {
 			wsDir, odsContext := ott.GetSourceWorkspaceContext(t, config)
-
 			checkODSContext(t, wsDir, odsContext)
 			checkFilesExist(t, wsDir, filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
-
 			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusInProgress)
 		}),
