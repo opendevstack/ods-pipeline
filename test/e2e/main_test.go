@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	clusterConfig          *ttr.ClusterConfig
 	namespaceConfig        *ttr.NamespaceConfig
 	rootPath               = "../.."
 	testdataWorkspacesPath = "testdata/workspaces"
@@ -44,11 +45,12 @@ func testMain(m *testing.M) int {
 	if err != nil {
 		log.Fatal("Could not start KinD cluster: ", err)
 	}
+	clusterConfig = cc
 	nc, cleanup, err := ttr.SetupTempNamespace(
-		cc,
+		clusterConfig,
 		ott.StartBitbucket(),
 		ott.StartNexus(),
-		ott.InstallODSPipeline(),
+		ott.InstallODSPipeline(nil),
 	)
 	if err != nil {
 		log.Fatal("Could not setup temporary namespace: ", err)

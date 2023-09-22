@@ -13,17 +13,27 @@ import (
 
 var privateCertFlag = flag.Bool("ods-private-cert", false, "Whether to use a private cert")
 
+// InstallOptions configure the installation of ODS Pipeline.
+type InstallOptions struct {
+	// PrivateCert specifies if services should be accessed through TLS
+	// with a private certificate.
+	PrivateCert bool
+}
+
 // InstallODSPipeline installs the ODS Pipeline Helm chart in the namespace
 // given in NamespaceConfig.
-func InstallODSPipeline() ttr.NamespaceOpt {
+func InstallODSPipeline(opts *InstallOptions) ttr.NamespaceOpt {
 	flag.Parse()
+	if opts != nil {
+		opts = &InstallOptions{PrivateCert: false}
+	}
 	return func(cc *ttr.ClusterConfig, nc *ttr.NamespaceConfig) error {
-		return installCDNamespaceResources(nc.Name, "pipeline", *privateCertFlag)
+		return installCDNamespaceResources(nc.Name, "pipeline", opts.PrivateCert)
 	}
 }
 
 func installCDNamespaceResources(ns, serviceaccount string, privateCert bool) error {
-	scriptArgs := []string{filepath.Join(projectpath.Root, "scripts/install-inside-kind.sh"), "-n", ns, "-s", serviceaccount, "--no-diff"}
+	scriptArgs := []string{"-n", ns, "-s", serviceaccount, "--no-diff"}
 	// if testing.Verbose() {
 	// 	scriptArgs = append(scriptArgs, "-v")
 	// }
@@ -37,7 +47,7 @@ func installCDNamespaceResources(ns, serviceaccount string, privateCert bool) er
 
 	return command.Run(
 		"bash",
-		scriptArgs,
+		append([]string{filepath.Join(projectpath.Root, "scripts/install-inside-kind.sh")}, scriptArgs...),
 		[]string{},
 		os.Stdout,
 		os.Stderr,
