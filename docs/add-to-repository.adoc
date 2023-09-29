@@ -22,18 +22,21 @@ pipeline:
   - tasks:
     - name: build
       taskRef:
-        kind: Task
-        name: ods-build-go-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
         workspace: shared-workspace
 ----
 
-`ods-build-go-v0-13-2` runs tests and produces a Go binary. If you use another technology, e.g. a Java project using Gradle, exchange the task with `ods-build-gradle-v0-13-2`. See the link:tasks/[tasks reference] for available tasks.
+The task defined in `tasks/build.yaml` in the `ods-pipeline-go` repository runs tests and produces a Go binary. If you use another technology, e.g. a Java project using Gradle, exchange the task with one fitting your needs.
 
 === (Optionally) Create `Dockerfile`
 
-If you want to create a container image with the produced Go binary, you can add the `ods-package-image-v0-13-2` task to the `tasks` list, like this:
+If you want to create a container image with the produced Go binary, you can add the `ods-pipeline-buildah-package` task to the `tasks` list, like this:
 
 .ods.yaml
 [source,yaml]
@@ -42,15 +45,21 @@ pipeline:
   - tasks:
     - name: build
       taskRef:
-        kind: Task
-        name: ods-build-go-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
         workspace: shared-workspace
     - name: package
       taskRef:
-        kind: Task
-        name: ods-package-image-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/package.yaml }
       runAfter:
       - build
       workspaces:
@@ -72,13 +81,13 @@ EXPOSE 8080
 CMD ["./app"]
 ----
 
-NOTE: `ods-build-go-v0-13-2` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-package-image-v0-13-2` task.
+NOTE: `ods-pipeline-go-build` produces a binary called `app` and places it at `docker/app` so that it can be referenced in the `Dockerfile` and copied into the image by the `ods-pipeline-buildah-package` task.
 
 NOTE: Pay attention to the `runAfter` configuration in the task list: it ensures that the tasks run sequentially and can use the outputs from the previous task(s).
 
 === (Optionally) Create Helm Chart
 
-If you want to deploy the created image, you can add the `ods-deploy-helm-v0-13-2` task to the `tasks` list and configure which Kubernetes namespaces to deploy into, like this:
+If you want to deploy the created image, you can add the `ods-pipeline-helm-deploy` task to the `tasks` list and configure which Kubernetes namespaces to deploy into, like this:
 
 .ods.yaml
 [source,yaml]
@@ -88,15 +97,21 @@ pipeline:
     tasks:
     - name: build
       taskRef:
-        kind: Task
-        name: ods-build-go-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
         workspace: shared-workspace
     - name: package
       taskRef:
-        kind: Task
-        name: ods-package-image-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/package.yaml }
       runAfter:
       - build
       workspaces:
@@ -104,8 +119,11 @@ pipeline:
         workspace: shared-workspace
     - name: deploy
       taskRef:
-        kind: Task
-        name: ods-deploy-helm-v0-13-2
+        resolver: git
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-helm.git }
+        - { name: revision, value: v0.13.2 }
+        - { name: pathInRepo, value: tasks/deploy.yaml }
       params:
       - name: namespace
         value: foo-dev

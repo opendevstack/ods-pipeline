@@ -60,6 +60,12 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 	return nil
 }
 
+func NewFromCache(wsDir string) (o *ODSContext, err error) {
+	o = &ODSContext{}
+	err = o.ReadCache(wsDir)
+	return
+}
+
 // ReadCache reads ODS context from .ods
 // TODO: test that this works
 func (o *ODSContext) ReadCache(wsDir string) error {

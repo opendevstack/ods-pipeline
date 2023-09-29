@@ -5,17 +5,12 @@ First, check if your system meets the prerequisites:
 make check-system
 ```
 
-Then, launch a KinD cluster, install Tekton, build & push images and run services:
-```
-make prepare-local-env
-```
-
-Finally, run all tests:
+Then, run all tests:
 ```
 make test
 ```
 
-More fine-grained make targets are available, see:
+To see all available `make` targets:
 ```
 make help
 ```
@@ -27,53 +22,8 @@ As mentioned above, `make test` will run all tests. You may also run only a subs
 * `make test-cmd` for the packages under `cmd`
 * `make test-pkg` for the packages under `pkg`
 * `make test-internal` for the packages under `internal`
-* `make test-tasks` for the Tekton tasks
-* `make test-e2e` for the end-to-end tasks
-
-Individual task test can be executed like this:
-```
-go test -run ^TestTaskODSBuildImage github.com/opendevstack/ods-pipeline/test/tasks -v -count=1
-```
-
-Further, if you only want to run one test case from the map of test cases, this can be done like this:
-```
-go test -run ^TestTaskODSBuildNPM/build_backend_javascript_app$ github.com/opendevstack/ods-pipeline/test/tasks -v -count=1
-```
-
-Be aware that depending on the tested task, some local services (e.g. Bitbucket) need to run for the test to succeed. These are all started via `make prepare-local-env`, but more fine-grained control is possible too.
-These dependencies are explicitly set for each test suite and at the beginning of each test suite it will be checked if all required services are running. The tests will fail if at least one service is not running.
-
-TIP: If you want to test build tasks without using SonarQube, pass `-skip-sonar` to `go test`.
+* `make test-e2e` for the task tests and the pipeline run tests
 
 Tests can be run both without a private certificate (which is the default) or using a private certificate to test how the tasks perform when the services use a certificate which is not part of the OS default trusted certs. If you want to use a private certificate in the task tests, pass `-private-cert` to `go test`.
 
-Particularly the task and e2e tests might consume some time and might run into a timeout. To modify the standard timeout (by default in sync with the timeout predefined for Github actions), set the environment variable `ODS_TESTTIMEOUT` (e.g. to `45m`).
-
-Also, if you make changes to the images backing the tasks (be it by changing the `Dockerfile` or by changing the scripts/commands installed there), make sure to rebuild and push the affected images to the KinD registry for your changes to take effect. You can do this e.g. through `./scripts/build-and-push-images.sh --image finish` (the name of the image flag is the suffix of the respective Dockerfile).
-
-=== Testing deployment to external cluster
-
-The `ods-deploy-helm` task is able to deploy to external clusters. This functionality is covered by tests as well, but they are hidden behind the `external` build flag by default. To run those tests, you must run `go test` with `--tags=external`, and provide information about the external cluster to use as the test does not setup the external cluster automatically.
-
-First, you need to create a ODS configuration file containing one environment describing the external cluster you want to use, e.g.:
-
-.ods.external.yaml
-[source,yaml]
-----
-environments:
-- name: dev
-  stage: dev
-  namespace: foo-dev
-  apiServer: https://api.example.openshiftapps.com:6443
-  registryHost: default-route-openshift-image-registry.apps.example.openshiftapps.com
-----
-
-If you place this file in the root of the `ods-pipeline` repository, it will automtically be ignored by Git. Note that the `namespace` specified will be used to deploy the Helm release into. As the Helm release name is set to the random workspace name, clashes with existing resources is unlikely. Nonetheless, it is always recommended to use an empty namespace setup solely for the purpose of testing.
-
-Finally, you need to run the tests, passing the configuration created earlier and the token of a serviceaccount with enough permissions in the target namespace:
-
-```
-go test --tags=external -run ^TestTaskODSDeployHelmExternal$ github.com/opendevstack/ods-pipeline/test/tasks -count=1 -v -external-cluster-token=*** -external-cluster-config=ods.external.yaml
-```
-
-The above command runs only the external deployment test, but you may also remove this limitation (by removing `-run ^TestTaskODSDeployHelmExternal$`) and run the whole test suite including the external deployment test.
+Images used in tasks are rebuilt automatically before executing tests. This provides the best accuracy but it can slow down testing considerably. If you did not make changes since the last test run that would affect the images, you can pass `-ods-reuse-images` to `go test`.

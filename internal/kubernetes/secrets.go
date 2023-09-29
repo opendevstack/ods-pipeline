@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateSecret(clientset *kubernetes.Clientset, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
+func CreateSecret(clientset kubernetes.Interface, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
 
 	log.Printf("Create secret %s", secret.Name)
 
@@ -21,7 +21,7 @@ func CreateSecret(clientset *kubernetes.Clientset, namespace string, secret *cor
 	return secret, err
 }
 
-func GetSecret(clientset *kubernetes.Clientset, namespace string, secretName string) (*corev1.Secret, error) {
+func GetSecret(clientset kubernetes.Interface, namespace string, secretName string) (*corev1.Secret, error) {
 
 	log.Printf("Get secret %s", secretName)
 
@@ -32,7 +32,7 @@ func GetSecret(clientset *kubernetes.Clientset, namespace string, secretName str
 	return secret, err
 }
 
-func GetSecretKey(clientset *kubernetes.Clientset, namespace, secretName, key string) (string, error) {
+func GetSecretKey(clientset kubernetes.Interface, namespace, secretName, key string) (string, error) {
 
 	log.Printf("Get secret %s", secretName)
 

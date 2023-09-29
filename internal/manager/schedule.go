@@ -30,11 +30,6 @@ type Scheduler struct {
 	TektonClient     tektonClient.ClientInterface
 	KubernetesClient kubernetesClient.ClientInterface
 	Logger           logging.LeveledLoggerInterface
-	// TaskKind is the Tekton resource kind for tasks.
-	// Either "ClusterTask" or "Task".
-	TaskKind tekton.TaskKind
-	// TaskSuffic is the suffix applied to tasks (version information).
-	TaskSuffix string
 
 	StorageConfig StorageConfig
 }
@@ -74,7 +69,7 @@ func (s *Scheduler) schedule(ctx context.Context, pData PipelineConfig) bool {
 	s.Logger.Debugf("Found %d pipeline runs related to repository %s.", len(pipelineRuns.Items), pData.Repository)
 	needQueueing := needsQueueing(pipelineRuns)
 	s.Logger.Debugf("Creating run for pipeline %s (queued=%v) ...", pData.Component, needQueueing)
-	_, err = createPipelineRun(s.TektonClient, ctxt, pData, s.TaskKind, s.TaskSuffix, needQueueing)
+	_, err = createPipelineRun(s.TektonClient, ctxt, pData, needQueueing)
 	if err != nil {
 		s.Logger.Errorf(err.Error())
 		return false

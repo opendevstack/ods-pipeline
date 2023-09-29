@@ -20,7 +20,7 @@ const (
 
 // NewNexusClientConfig returns a *nexus.ClientConfig which is derived
 // from the information about Nexus located in the given Kubernetes namespace.
-func NewNexusClientConfig(c *kclient.Clientset, namespace string, logger logging.LeveledLoggerInterface) (*nexus.ClientConfig, error) {
+func NewNexusClientConfig(c kclient.Interface, namespace string, logger logging.LeveledLoggerInterface) (*nexus.ClientConfig, error) {
 	nexusSecret, err := c.CoreV1().Secrets(namespace).
 		Get(context.TODO(), NexusSecretName, metav1.GetOptions{})
 	if err != nil {

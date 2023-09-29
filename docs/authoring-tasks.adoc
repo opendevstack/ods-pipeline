@@ -102,9 +102,7 @@ In theory you can use pretty much any image that works in OpenShift (e.g. the im
 
 === How do I create my own container image to use in a task?
 
-In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information. You may also use the YAML definitions in `deploy/ods-pipeline/charts/images` as an example.
-
-Occasionally, you might want to extend the images used in an official tasks, e.g. to deploy additional CA certificates, configure proxy settings, etc. The `images` subchart of `ods-pipeline` provides build configurations that allow you to create images that are based on the official `ods-pipeline` images from ghcr.io. The build configurations include inline Dockerfiles that you can adjust to suit your specific needs.
+In OpenShift, the easiest way is by creating an `ImageStream` and a `BuildConfig`. See the link:https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html[OpenShift documentation on builds] for more information.
 
 === How can I test my tasks?
 

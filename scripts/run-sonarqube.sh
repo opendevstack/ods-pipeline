@@ -2,7 +2,6 @@
 set -ue
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ODS_PIPELINE_DIR=${SCRIPT_DIR%/*}
 
 INSECURE=""
 HOST_HTTP_PORT="9000"
@@ -14,7 +13,9 @@ SONAR_USERNAME="admin"
 SONAR_PASSWORD="admin"
 SONAR_EDITION="community"
 SONAR_IMAGE_TAG="${SONAR_VERSION}-${SONAR_EDITION}"
-kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
+kind_values_dir="/tmp/ods-pipeline/kind-values"
+mkdir -p "${kind_values_dir}"
+reuse="false"
 
 while [ "$#" -gt 0 ]; do
     case $1 in
@@ -23,8 +24,19 @@ while [ "$#" -gt 0 ]; do
 
     -i|--insecure) INSECURE="--insecure";;
 
+    -r|--reuse) reuse="true";;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ "${reuse}" = "true" ]; then
+    if [ "$(docker inspect ${CONTAINER_NAME} -f '{{.State.Running}}')" = "true" ]; then
+        echo "Reusing running SonarQube container ${CONTAINER_NAME} ..."
+        exit 0
+    else
+        echo "No running SonarQube container ${CONTAINER_NAME} found ..."
+    fi
+fi
 
 echo "Run container using image tag ${SONAR_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
@@ -54,7 +66,7 @@ cd - &> /dev/null
 docker run -d --net kind --name ${CONTAINER_NAME} -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p "${HOST_HTTP_PORT}:9000" ${IMAGE_NAME}:${SONAR_IMAGE_TAG}
 
 SONARQUBE_URL="http://localhost:${HOST_HTTP_PORT}"
-if ! "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
+if ! bash "${SCRIPT_DIR}/waitfor-sonarqube.sh" ; then
     docker logs ${CONTAINER_NAME}
     exit 1
 fi
@@ -68,7 +80,7 @@ token=$(echo "${tokenResponse}" | jq -r .token)
 
 echo "Launch TLS proxy"
 TLS_CONTAINER_NAME="${CONTAINER_NAME}-tls"
-"${SCRIPT_DIR}/run-tls-proxy.sh" \
+bash "${SCRIPT_DIR}/run-tls-proxy.sh" \
   --container-name "${TLS_CONTAINER_NAME}" \
   --https-port "${HOST_HTTPS_PORT}" \
   --nginx-conf "nginx-sonarqube.conf"

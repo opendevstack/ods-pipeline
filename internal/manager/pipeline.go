@@ -44,8 +44,6 @@ func createPipelineRun(
 	tektonClient tektonClient.ClientPipelineRunInterface,
 	ctxt context.Context,
 	cfg PipelineConfig,
-	taskKind tekton.TaskKind,
-	taskSuffix string,
 	needQueueing bool) (*tekton.PipelineRun, error) {
 	pr := &tekton.PipelineRun{
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,7 +55,7 @@ func createPipelineRun(
 			Kind:       "PipelineRun",
 		},
 		Spec: tekton.PipelineRunSpec{
-			PipelineSpec:       assemblePipelineSpec(cfg, taskKind, taskSuffix),
+			PipelineSpec:       assemblePipelineSpec(cfg),
 			Params:             extractPipelineParams(cfg.Params),
 			ServiceAccountName: "pipeline", // TODO
 			PodTemplate:        cfg.PipelineSpec.PodTemplate,
@@ -127,11 +125,11 @@ func pipelineLabels(data PipelineConfig) map[string]string {
 }
 
 // assemblePipelineSpec returns a Tekton pipeline based on given PipelineConfig.
-func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuffix string) *tekton.PipelineSpec {
+func assemblePipelineSpec(cfg PipelineConfig) *tekton.PipelineSpec {
 	var tasks []tekton.PipelineTask
 	tasks = append(tasks, tekton.PipelineTask{
 		Name:       "start",
-		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-start" + taskSuffix},
+		TaskRef:    &tekton.TaskRef{Kind: tekton.NamespacedTaskKind, Name: "ods-pipeline-start"},
 		Params:     startTaskParams(),
 		Workspaces: tektonDefaultWorkspaceBindings(),
 	})
@@ -151,7 +149,7 @@ func assemblePipelineSpec(cfg PipelineConfig, taskKind tekton.TaskKind, taskSuff
 	finallyTasks := append([]tekton.PipelineTask{}, cfg.PipelineSpec.Finally...)
 	finallyTasks = append(finallyTasks, tekton.PipelineTask{
 		Name:       "finish",
-		TaskRef:    &tekton.TaskRef{Kind: taskKind, Name: "ods-finish" + taskSuffix},
+		TaskRef:    &tekton.TaskRef{Kind: tekton.NamespacedTaskKind, Name: "ods-pipeline-finish"},
 		Workspaces: tektonDefaultWorkspaceBindings(),
 		Params:     finishTaskParams(),
 	})

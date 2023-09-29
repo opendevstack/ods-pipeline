@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" .}}
+  labels:
+    {{- include "chart.labels" . | nindent 4}}
+spec:
+  replicas: {{.Values.pipelineManager.replicaCount}}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6}}
+  template:
+    metadata:
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8}}
+    spec:
+      containers:
+        - name: pipeline-manager
+          securityContext: {}
+          image: "{{.Values.imageRepository}}/pipeline-manager:{{.Values.imageTag | default .Chart.AppVersion}}"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: REPO_BASE
+              valueFrom:
+                configMapKeyRef:
+                  key: repoBase
+                  name: ods-bitbucket
+            - name: ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: ods-bitbucket-auth
+            - name: WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: ods-bitbucket-webhook
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  key: debug
+                  name: ods-pipeline
+            - name: ODS_STORAGE_PROVISIONER
+              value: '{{.Values.pipelineManager.storageProvisioner}}'
+            - name: ODS_STORAGE_CLASS_NAME
+              value: '{{.Values.pipelineManager.storageClassName}}'
+            - name: ODS_STORAGE_SIZE
+              value: '{{.Values.pipelineManager.storageSize}}'
+            - name: ODS_PRUNE_MIN_KEEP_HOURS
+              value: '{{int .Values.pipelineRunMinKeepHours}}'
+            - name: ODS_PRUNE_MAX_KEEP_RUNS
+              value: '{{int .Values.pipelineRunMaxKeepRuns}}'
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 1
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 20
+            periodSeconds: 3
+          resources:
+            {{- toYaml .Values.pipelineManager.resources | nindent 12}}
+      serviceAccountName: '{{.Values.serviceAccountName}}'
+      serviceAccount: '{{.Values.serviceAccountName}}'

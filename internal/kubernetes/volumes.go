@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreatePersistentVolume(clientset *kubernetes.Clientset, pvName string, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
+func CreatePersistentVolume(clientset kubernetes.Interface, pvName string, capacity string, hostPath string, storageClassName string) (*v1.PersistentVolume, error) {
 
 	log.Printf("Create persistent volume %s", pvName)
 
@@ -34,7 +34,7 @@ func CreatePersistentVolume(clientset *kubernetes.Clientset, pvName string, capa
 	return pv, err
 }
 
-func CreatePersistentVolumeClaim(clientset *kubernetes.Clientset, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
+func CreatePersistentVolumeClaim(clientset kubernetes.Interface, capacity string, storageClassName string, namespace string) (*v1.PersistentVolumeClaim, error) {
 
 	pvcName := "task-pv-claim"
 	log.Printf("Create persistent volume claim %s", pvcName)

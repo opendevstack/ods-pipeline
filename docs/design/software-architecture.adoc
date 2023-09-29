@@ -49,79 +49,37 @@ image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubuse
 | ODS Pipeline Installation
 | Endpoint is an exposed event listener.
 
-| Task `ods-start`
+| Task `ods-pipeline-start`
 | Checkout repository
 | Git
 | Bitbucket
 |
 
-| Task `ods-start`
+| Task `ods-pipeline-start`
 | Set build status
 | HTTP / JSON API
 | Bitbucket
 |
 
-| Task `ods-start`
+| Task `ods-pipeline-start`
 | Download existing artifacts
 | HTTP / JSON API
 | Nexus
 |
 
-| Task `ods-build-go`, task `ods-build-python`, task `ods-build-npm`, task `ods-build-gradle`
-| Analyze source code
-| HTTP / JSON API
-| SonarQube
-|
-
-| Task `ods-build-python`, task `ods-build-npm`, task `ods-build-gradle`
-| Download dependencies
-| HTTP
-| Nexus
-| Nexus serves as a proxy for third party dependencies (e.g. hosted on npm), and serves private dependencies hosted in Nexus as well.
-
-| Task `ods-package-image`
-| Scan for vulnerabilities
-| HTTP / JSON API
-| Aqua
-|
-
-| Task `ods-package-image`
-| Push image
-| HTTP
-| Container registry (e.g. OpenShift ImageStream)
-|
-
-| Task `ods-package-image`
-| Tag image
-| HTTP
-| Container registry (e.g. OpenShift ImageStream)
-| 
-
-| Task `ods-deploy-helm`
-| Copy image
-| HTTP
-| Container registry (e.g. OpenShift ImageStream)
-|
-
-| Task `ods-deploy-helm`
-| Install/Upgrade release
-| HTTP / JSON API
-| OpenShift project
-|
-
-| Task `ods-finish`
+| Task `ods-pipeline-finish`
 | Set build status
 | HTTP / JSON API
 | Bitbucket
 |
 
-| Task `ods-finish`
+| Task `ods-pipeline-finish`
 | Upload artifacts
 | HTTP / JSON API
 | Nexus
 |
 
-| Task `ods-finish`
+| Task `ods-pipeline-finish`
 | Send notifications
 | HTTP / API
 | Configured notification service
@@ -156,7 +114,7 @@ ODS Pipeline runs on Redhat OpenShift Container Platform, and is embedded into a
 
 There is one major deployment (typically in the project's cd-namespace) of the system managed by project administrators.
 
-The installation provides the tasks that projects can consume as `Task` resources. It allows triggering pipelines in response to Bitbucket events.
+The installation provides a pipeline manager, allowing to trigger pipelines in response to Bitbucket events, and a start and finish task to do some plumbing for those pipelines, such as setting the Bitbucket build status.
 
 The deployment is described in a Helm chart. For details, see the link:../installation.adoc[Installation Guide].
 

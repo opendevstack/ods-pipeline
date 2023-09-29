@@ -10,15 +10,12 @@ NAMESPACE=""
 RELEASE_NAME="ods-pipeline"
 SERVICEACCOUNT="pipeline"
 VALUES_FILE="values.yaml"
-CHART_DIR="./ods-pipeline"
+CHART_DIR="./chart"
 # Secrets
 AUTH_SEPARATOR=":"
-AQUA_AUTH=""
-AQUA_SCANNER_URL=""
 BITBUCKET_AUTH=""
 BITBUCKET_WEBHOOK_SECRET=""
 NEXUS_AUTH=""
-SONAR_AUTH=""
 PRIVATE_CERT=""
 
 # Check prerequisites.
@@ -47,20 +44,15 @@ function usage {
     printf "\t--no-diff\t\t\tDo not run Helm diff before running Helm upgrade.\n"
     printf "\t--dry-run\t\t\tDo not apply any changes, instead just print what the script would do.\n"
     printf "\t--auth-separator\t\tCharacter to use as a separator for basic auth flags (defaults to '%s')\n" "$AUTH_SEPARATOR"
-    printf "\t--aqua-auth\t\t\tUsername and password (separated by '%s') of an Aqua user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
-    printf "\t--aqua-scanner-url\t\t\tURL from which to download Aqua scanner (if not given, script will prompt for this).\n"
     printf "\t--bitbucket-auth\t\tAccess token of a Bitbucket user (if not given, script will prompt for this).\n"
     printf "\t--bitbucket-webhook-secret\tSecret to protect webhook endpoint with (if not given, script will generate this).\n"
     printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
-    printf "\t--sonar-auth\t\t\tAuth token of a SonarQube user (if not given, script will prompt for this).\n"
     printf "\t--private-cert\t\t\tHost from which to download private certificate (if not given, script will skip this).\n"
     printf "\nExample:\n\n"
     printf "\t%s \ \
       \n\t\t--namespace foo \ \
-      \n\t\t--aqua-auth 'user:password' \ \
       \n\t\t--bitbucket-auth 'personal-access-token' \ \
-      \n\t\t--nexus-auth 'user:password' \ \
-      \n\t\t--sonar-auth 'auth-token' \n\n" "$0"
+      \n\t\t--nexus-auth 'user:password' \n\n" "$0"
 }
 
 while [ "$#" -gt 0 ]; do
@@ -87,12 +79,6 @@ while [ "$#" -gt 0 ]; do
     --auth-separator) AUTH_SEPARATOR="$2"; shift;;
     --auth-separator=*) AUTH_SEPARATOR="${1#*=}";;
 
-    --aqua-auth) AQUA_AUTH="$2"; shift;;
-    --aqua-auth=*) AQUA_AUTH="${1#*=}";;
-
-    --aqua-scanner-url) AQUA_SCANNER_URL="$2"; shift;;
-    --aqua-scanner-url=*) AQUA_SCANNER_URL="${1#*=}";;
-
     --bitbucket-auth) BITBUCKET_AUTH="$2"; shift;;
     --bitbucket-auth=*) BITBUCKET_AUTH="${1#*=}";;
 
@@ -101,9 +87,6 @@ while [ "$#" -gt 0 ]; do
 
     --nexus-auth) NEXUS_AUTH="$2"; shift;;
     --nexus-auth=*) NEXUS_AUTH="${1#*=}";;
-
-    --sonar-auth) SONAR_AUTH="$2"; shift;;
-    --sonar-auth=*) SONAR_AUTH="${1#*=}";;
 
     --private-cert) PRIVATE_CERT="$2"; shift;;
     --private-cert=*) PRIVATE_CERT="${1#*=}";;
@@ -231,19 +214,6 @@ echo "Installing secrets ..."
 if [ "${DRY_RUN}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
-    installSecret "ods-aqua-auth" \
-        "basic-auth-secret.yaml.tmpl" \
-        "${AQUA_AUTH}" \
-        "Please enter the username of an Aqua user with scan permissions. If you do not want to use Aqua, leave this empty:" \
-        "Please enter the password of this Aqua user (input will be hidden). If you do not want to use Aqua, leave this empty:"
-
-    # Aqua scanner URL is a single value.
-    installSecret "ods-aqua-scanner-url" \
-        "opaque-secret.yaml.tmpl" \
-        "${AQUA_SCANNER_URL}" \
-        "" \
-        "Please enter the URL from which to download the Aqua scanner binary. The URL may need to contain basic authentication - if so, ensure username/password are URL-encoded. Further, ensure that the version matches your Aqua server version. If you do not want to use Aqua, leave this empty:"
-
     # Bitbucket username is not required as PAT alone is enough.
     installSecret "ods-bitbucket-auth" \
         "basic-auth-secret.yaml.tmpl" \
@@ -263,13 +233,6 @@ else
         "${NEXUS_AUTH}" \
         "Please enter the username of a Nexus user with write permission:" \
         "Please enter the password of this Nexus user (input will be hidden):"
-
-    # SonarQube username is not required as auth token alone is enough.
-    installSecret "ods-sonar-auth" \
-        "basic-auth-secret.yaml.tmpl" \
-        "${SONAR_AUTH}" \
-        "" \
-        "Please enter an auth token of a SonarQube user with scan permissions (input will be hidden):"
 
     installTLSSecret "ods-private-cert" "${PRIVATE_CERT}"
 fi

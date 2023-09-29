@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v42 v42.0.0
-	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/sonatype-nexus-community/gonexus v0.59.0
 	github.com/tektoncd/pipeline v0.41.1
 	golang.org/x/net v0.7.0
@@ -15,6 +14,8 @@ require (
 	knative.dev/pkg v0.0.0-20221011175852-714b7630a836
 	sigs.k8s.io/yaml v1.3.0
 )
+
+require golang.org/x/tools v0.2.0 // indirect
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200907061046-05415f1de66d // indirect
@@ -63,7 +64,6 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/exp v0.0.0-20230111222715-75897c7a292a
 	golang.org/x/oauth2 v0.1.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect

@@ -13,17 +13,12 @@ listed in the changelog.
 ### Fixed
 
 - ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
+
 - Go module name was incorrectly set to `github.com/opendevstack/pipeline`
 
-- sonar-scanner invocations stderr not captured ([#719](https://github.com/opendevstack/ods-pipeline/issues/719))
-
-- sonar-scanner does not start properly: java is lacking tzdb.dat ([#723](https://github.com/opendevstack/ods-pipeline/issues/723))
-
-- update sonar-scanner and cnes-report ([#725](https://github.com/opendevstack/ods-pipeline/issues/725))
-
-- SonarQube doesn't scan FE-related code ([#716](https://github.com/opendevstack/ods-pipeline/issues/716))
-
 ### Changed
+
+- Move pipeline tasks to separate repositories. This is a huge change with many implications. Instead of providing build, package and deploy taks as part of the `ods-pipeline` repository, the tasks are no provided by separate repositories, such as `ods-pipeline-go`, `ods-pipeline-sonar`, `ods-pipeline-image`, `ods-pipeline-helm` and so on. The only tasks that are provided by `ods-pipeline` are the start and finish tasks automatically injected into each pipeline. This change allows to have a different lifecycle for each task (or set of tasks). It also benefits maintenance greatly: running the tests for this repository is much faster now (around 10 minutes compared to 35+ minutes earlier). This repository facilitates task creation, maintenance and testing by providing a few Go packages that can be used by task repositories such as `ods-pipeline-helm`. For more information, see [#722](https://github.com/opendevstack/ods-pipeline/pull/722).
 
 - Build tasks streamlining and avoidance of file copies (#678 fixed by [#710](https://github.com/opendevstack/ods-pipeline/pull/710)). This is an incompatible change. Build tasks were adjusted to (mostly) no longer copy build files in a dedicated location. Instead one should adjust the Dockerfile (or other downstream tasks) to directly consume the build outputs from their natural locations. In addition build task skipping now supports parameter `build-extra-inputs`. The package-image task `dockerfile` and `docker-dir` parameters have been changed to assume that the docker context and file are at the repository root. See the PR for further information and the issue for more context.
 

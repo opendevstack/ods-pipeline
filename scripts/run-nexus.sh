@@ -15,8 +15,10 @@ NEXUS_URL=
 IMAGE_NAME="ods-test-nexus"
 CONTAINER_NAME="ods-test-nexus"
 NEXUS_IMAGE_TAG="3.30.1"
-kind_values_dir="${ODS_PIPELINE_DIR}/deploy/.kind-values"
+kind_values_dir="/tmp/ods-pipeline/kind-values"
+mkdir -p "${kind_values_dir}"
 DOCKER_CONTEXT_DIR="${ODS_PIPELINE_DIR}/test/testdata/private-cert"
+reuse="false"
 
 while [ "$#" -gt 0 ]; do
     case $1 in
@@ -25,8 +27,19 @@ while [ "$#" -gt 0 ]; do
 
     -i|--insecure) INSECURE="--insecure";;
 
+    -r|--reuse) reuse="true";;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
+
+if [ "${reuse}" = "true" ]; then
+    if ! docker inspect ${CONTAINER_NAME} &> /dev/null; then
+        echo "No existing Nexus container ${CONTAINER_NAME} found ..."
+    else
+        echo "Reusing existing Nexus container ${CONTAINER_NAME} ..."
+        exit 0
+    fi
+fi
 
 echo "Run container using image tag ${NEXUS_IMAGE_TAG}"
 docker rm -f ${CONTAINER_NAME} || true
@@ -35,7 +48,7 @@ docker build -t ${IMAGE_NAME} -f "Dockerfile.$(uname -m)" "${DOCKER_CONTEXT_DIR}
 cd - &> /dev/null
 docker run -d -p "${HOST_HTTP_PORT}:8081" --net kind --name ${CONTAINER_NAME} ${IMAGE_NAME}
 
-if ! "${SCRIPT_DIR}/waitfor-nexus.sh" ; then
+if ! bash "${SCRIPT_DIR}"/waitfor-nexus.sh ; then
     docker logs ${CONTAINER_NAME}
     exit 1
 fi
@@ -81,13 +94,13 @@ echo "Setup developer role"
 runJsonScript "createRole" "-d @${SCRIPT_DIR}/nexus/developer-role.json"
 
 echo "Setup developer user"
-sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" "${SCRIPT_DIR}"/nexus/developer-user.json > "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
-runJsonScript "createUser" "-d @${SCRIPT_DIR}/nexus/developer-user-with-password.json"
-rm "${SCRIPT_DIR}"/nexus/developer-user-with-password.json
+sed "s|@developer_password@|${DEVELOPER_PASSWORD}|g" "${SCRIPT_DIR}"/nexus/developer-user.json > /tmp/nexus-developer-user-with-password.json
+runJsonScript "createUser" "-d @/tmp/nexus-developer-user-with-password.json"
+rm /tmp/nexus-developer-user-with-password.json
 
 echo "Launch TLS proxy"
 TLS_CONTAINER_NAME="${CONTAINER_NAME}-tls"
-"${SCRIPT_DIR}/run-tls-proxy.sh" \
+bash "${SCRIPT_DIR}/run-tls-proxy.sh" \
   --container-name "${TLS_CONTAINER_NAME}" \
   --https-port "${HOST_HTTPS_PORT}" \
   --nginx-conf "nginx-nexus.conf"
