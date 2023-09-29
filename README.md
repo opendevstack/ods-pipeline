@@ -10,7 +10,7 @@ ODS Pipeline provides a  CI/CD pipeline based on OpenShift Pipelines as an alter
 
 The [ODS Pipeline Introduction](/docs/introduction.adoc) describes what ODS pipeline is and how it works. It is important to understand this before looking at further documentation or any other repository content.
 
-ODS Pipeline is well suited for regulated development (e.g. medical device software development) and many trade-offs and design decisions have been made to support this.
+Note that this ODS Pipeline repository does not provide tasks for building, packaging and deploying your application. You can use any Tekton task to fullfil those needs, however, there are a few "companion" tasks specifically designed for ODS Pipeline to cover common use cases. See the "Technical Reference" section below for information on those tasks.
 
 ## Documentation
 
@@ -23,6 +23,7 @@ ODS Pipeline is well suited for regulated development (e.g. medical device softw
 * [Repository configuration (ods.yaml)](/docs/ods-configuration.adoc)
 * [Start task](/docs/task-start.adoc)
 * [Finish task](/docs/task-finish.adoc)
+* Companion tasks: [Go build task](https://github.com/opendevstack/ods-pipeline-go), [Gradle build task](https://github.com/opendevstack/ods-pipeline-gradle), [NPM build task](https://github.com/opendevstack/ods-pipeline-npm), [SonarQube scan task](https://github.com/opendevstack/ods-pipeline-sonar), [Package image task](https://github.com/opendevstack/ods-pipeline-image), [Helm deploy task](https://github.com/opendevstack/ods-pipeline-helm)
 
 ### How-To Guides
 * [Accessing artifacts](/docs/accessing-artifacts.adoc)
