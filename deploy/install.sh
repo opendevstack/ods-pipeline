@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
 set -ue
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-VERBOSE="false"
-DRY_RUN="false"
-DIFF="true"
-NAMESPACE=""
-RELEASE_NAME="ods-pipeline"
-SERVICEACCOUNT="pipeline"
-VALUES_FILE="values.yaml"
-CHART_DIR="./chart"
+verbose="false"
+dry_run="false"
+diff="true"
+namespace=""
+release_name="ods-pipeline"
+serviceaccount="pipeline"
+values_file="values.yaml"
+chart_dir="./chart"
 # Secrets
-AUTH_SEPARATOR=":"
-BITBUCKET_AUTH=""
-BITBUCKET_WEBHOOK_SECRET=""
-NEXUS_AUTH=""
-PRIVATE_CERT=""
+auth_separator=":"
+bitbucket_auth=""
+bitbucket_webhook_secret=""
+nexus_auth=""
+private_cert=""
 
 # Check prerequisites.
-KUBECTL_BIN=""
+kubectl_bin=""
 if command -v oc &> /dev/null; then
-    KUBECTL_BIN="oc"
+    kubectl_bin="oc"
 elif command -v kubectl &> /dev/null; then
-    KUBECTL_BIN="kubectl"
+    kubectl_bin="kubectl"
 else
     echo "ERROR: Neither oc nor kubectl in \$PATH"; exit 1
 fi
-HELM_BIN=""
+helm_bin=""
 if command -v helm &> /dev/null; then
-    HELM_BIN="helm"
+    helm_bin="helm"
 else
     echo "ERROR: helm is not in \$PATH"; exit 1
 fi
@@ -39,14 +39,14 @@ function usage {
     printf "\t-h|--help\t\t\tPrints this usage information.\n"
     printf "\t-v|--verbose\t\t\tTurn on verbose output.\n"
     printf "\t-n|--namespace\t\t\tK8s namespace to target.\n"
-    printf "\t-f|--values\t\t\tValues file to supply to Helm (defaults to '%s'). Multiple files can be specified comma-separated.\n" "$VALUES_FILE"
-    printf "\t-s|--serviceaccount\t\tServiceaccount to use (defaults to '%s').\n" "$SERVICEACCOUNT"
+    printf "\t-f|--values\t\t\tValues file to supply to Helm (defaults to '%s'). Multiple files can be specified comma-separated.\n" "$values_file"
+    printf "\t-s|--serviceaccount\t\tServiceaccount to use (defaults to '%s').\n" "$serviceaccount"
     printf "\t--no-diff\t\t\tDo not run Helm diff before running Helm upgrade.\n"
     printf "\t--dry-run\t\t\tDo not apply any changes, instead just print what the script would do.\n"
-    printf "\t--auth-separator\t\tCharacter to use as a separator for basic auth flags (defaults to '%s')\n" "$AUTH_SEPARATOR"
+    printf "\t--auth-separator\t\tCharacter to use as a separator for basic auth flags (defaults to '%s')\n" "$auth_separator"
     printf "\t--bitbucket-auth\t\tAccess token of a Bitbucket user (if not given, script will prompt for this).\n"
     printf "\t--bitbucket-webhook-secret\tSecret to protect webhook endpoint with (if not given, script will generate this).\n"
-    printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$AUTH_SEPARATOR"
+    printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$auth_separator"
     printf "\t--private-cert\t\t\tHost from which to download private certificate (if not given, script will skip this).\n"
     printf "\nExample:\n\n"
     printf "\t%s \ \
@@ -61,52 +61,52 @@ while [ "$#" -gt 0 ]; do
 
     -h|--help) shift; usage; exit 0;;
 
-    -v|--verbose) VERBOSE="true";;
+    -v|--verbose) verbose="true";;
 
-    -n|--namespace) NAMESPACE="$2"; shift;;
-    -n=*|--namespace=*) NAMESPACE="${1#*=}";;
+    -n|--namespace) namespace="$2"; shift;;
+    -n=*|--namespace=*) namespace="${1#*=}";;
 
-    -f|--values) VALUES_FILE="$2"; shift;;
-    -f=*|--values=*) VALUES_FILE="${1#*=}";;
+    -f|--values) values_file="$2"; shift;;
+    -f=*|--values=*) values_file="${1#*=}";;
 
-    -s|--serviceaccount) SERVICEACCOUNT="$2"; shift;;
-    -s=*|--serviceaccount=*) SERVICEACCOUNT="${1#*=}";;
+    -s|--serviceaccount) serviceaccount="$2"; shift;;
+    -s=*|--serviceaccount=*) serviceaccount="${1#*=}";;
 
-    --no-diff) DIFF="false";;
+    --no-diff) diff="false";;
 
-    --dry-run) DRY_RUN="true";;
+    --dry-run) dry_run="true";;
 
-    --auth-separator) AUTH_SEPARATOR="$2"; shift;;
-    --auth-separator=*) AUTH_SEPARATOR="${1#*=}";;
+    --auth-separator) auth_separator="$2"; shift;;
+    --auth-separator=*) auth_separator="${1#*=}";;
 
-    --bitbucket-auth) BITBUCKET_AUTH="$2"; shift;;
-    --bitbucket-auth=*) BITBUCKET_AUTH="${1#*=}";;
+    --bitbucket-auth) bitbucket_auth="$2"; shift;;
+    --bitbucket-auth=*) bitbucket_auth="${1#*=}";;
 
-    --bitbucket-webhook-secret) BITBUCKET_WEBHOOK_SECRET="$2"; shift;;
-    --bitbucket-webhook-secret=*) BITBUCKET_WEBHOOK_SECRET="${1#*=}";;
+    --bitbucket-webhook-secret) bitbucket_webhook_secret="$2"; shift;;
+    --bitbucket-webhook-secret=*) bitbucket_webhook_secret="${1#*=}";;
 
-    --nexus-auth) NEXUS_AUTH="$2"; shift;;
-    --nexus-auth=*) NEXUS_AUTH="${1#*=}";;
+    --nexus-auth) nexus_auth="$2"; shift;;
+    --nexus-auth=*) nexus_auth="${1#*=}";;
 
-    --private-cert) PRIVATE_CERT="$2"; shift;;
-    --private-cert=*) PRIVATE_CERT="${1#*=}";;
+    --private-cert) private_cert="$2"; shift;;
+    --private-cert=*) private_cert="${1#*=}";;
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-cd "${SCRIPT_DIR}"
+cd "${script_dir}"
 
-VALUES_FILES=$(echo "$VALUES_FILE" | tr "," "\n")
-VALUES_ARGS=()
-for valueFile in ${VALUES_FILES}; do
-    VALUES_ARGS+=(--values="${valueFile}")
+values_fileS=$(echo "$values_file" | tr "," "\n")
+values_args=()
+for valueFile in ${values_fileS}; do
+    values_args+=(--values="${valueFile}")
 done
 
-if [ "${VERBOSE}" == "true" ]; then
+if [ "${verbose}" == "true" ]; then
     set -x
 fi
 
-if [ -z "${NAMESPACE}" ]; then
+if [ -z "${namespace}" ]; then
     echo "--namespace is required"
     exit 1
 fi
@@ -120,7 +120,7 @@ kubectlApplySecret () {
     # To avoid forward slashes messing up sed, escape forward slashes first.
     # See https://tldp.org/LDP/abs/html/string-manipulation.html.
     # shellcheck disable=SC2002
-    cat "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username//\//\\/}/" | sed "s/{{password}}/${password//\//\\/}/" | "${KUBECTL_BIN}" -n "${NAMESPACE}" apply -f -
+    cat "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username//\//\\/}/" | sed "s/{{password}}/${password//\//\\/}/" | "${kubectl_bin}" -n "${namespace}" apply -f -
 }
 
 installSecret () {
@@ -131,14 +131,14 @@ installSecret () {
     local passwordPrompt="$5"
 
     # Split flag value on first occurence of auth separator.
-    local authUser="${flagValue%%"${AUTH_SEPARATOR}"*}"
-    local authPassword="${flagValue#*"${AUTH_SEPARATOR}"}"
+    local authUser="${flagValue%%"${auth_separator}"*}"
+    local authPassword="${flagValue#*"${auth_separator}"}"
 
     # If the secret exists and the flag is present, update the secret.
-    if "${KUBECTL_BIN}" -n "${NAMESPACE}" get "secret/${secretName}" &> /dev/null; then
+    if "${kubectl_bin}" -n "${namespace}" get "secret/${secretName}" &> /dev/null; then
         # In case the secret was previously managed by Helm, we want to instruct Helm
         # to keep the resource during helm upgrade.
-        "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate --overwrite secret "${secretName}" "helm.sh/resource-policy=keep"
+        "${kubectl_bin}" -n "${namespace}" annotate --overwrite secret "${secretName}" "helm.sh/resource-policy=keep"
         if [ -n "${flagValue}" ]; then
             echo "Updating secret ${secretName} ..."
             kubectlApplySecret "${secretName}" "${secretTemplate}" "${authUser}" "${authPassword}"
@@ -181,43 +181,43 @@ installTLSSecret () {
             openssl s_client -showcerts -connect "${privateCert}" </dev/null \
                 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${certFile}"
         fi
-        if "${KUBECTL_BIN}" -n "${NAMESPACE}" get "secret/${secretName}" &> /dev/null; then
+        if "${kubectl_bin}" -n "${namespace}" get "secret/${secretName}" &> /dev/null; then
             echo "Re-creating secret ${secretName} ..."
-            "${KUBECTL_BIN}" -n "${NAMESPACE}" delete secret "${secretName}"
+            "${kubectl_bin}" -n "${namespace}" delete secret "${secretName}"
         else
             echo "Creating secret ${secretName} ..."
         fi
-        "${KUBECTL_BIN}" -n "${NAMESPACE}" create secret generic "${secretName}" \
+        "${kubectl_bin}" -n "${namespace}" create secret generic "${secretName}" \
             --from-file=tls.crt="${certFile}"
         rm private-cert.pem.tmp &>/dev/null || true
     fi
 }
 
 # Manage serviceaccount ...
-if "${KUBECTL_BIN}" -n "${NAMESPACE}" get serviceaccount/"${SERVICEACCOUNT}" &> /dev/null; then
+if "${kubectl_bin}" -n "${namespace}" get serviceaccount/"${serviceaccount}" &> /dev/null; then
     echo "Serviceaccount exists already ..."
 else
     echo "Creating serviceaccount ..."
-    if [ "${DRY_RUN}" == "true" ]; then
+    if [ "${dry_run}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        "${KUBECTL_BIN}" -n "${NAMESPACE}" create serviceaccount "${SERVICEACCOUNT}"
+        "${kubectl_bin}" -n "${namespace}" create serviceaccount "${serviceaccount}"
 
-        "${KUBECTL_BIN}" -n "${NAMESPACE}" \
-            create rolebinding "${SERVICEACCOUNT}-edit" \
+        "${kubectl_bin}" -n "${namespace}" \
+            create rolebinding "${serviceaccount}-edit" \
             --clusterrole edit \
-            --serviceaccount "${NAMESPACE}:${SERVICEACCOUNT}"
+            --serviceaccount "${namespace}:${serviceaccount}"
     fi
 fi
 
 echo "Installing secrets ..."
-if [ "${DRY_RUN}" == "true" ]; then
+if [ "${dry_run}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
     # Bitbucket username is not required as PAT alone is enough.
     installSecret "ods-bitbucket-auth" \
         "basic-auth-secret.yaml.tmpl" \
-        "${BITBUCKET_AUTH}" \
+        "${bitbucket_auth}" \
         "Please enter the username of Bitbucket user with write permission." \
         "Please enter a personal access token of this Bitbucket user (input will be hidden):"
 
@@ -225,60 +225,60 @@ else
     # No prompts -> password will be auto-generated if not given.
     installSecret "ods-bitbucket-webhook" \
         "opaque-secret.yaml.tmpl" \
-        "${BITBUCKET_WEBHOOK_SECRET}" \
+        "${bitbucket_webhook_secret}" \
         "" ""
 
     installSecret "ods-nexus-auth" \
         "basic-auth-secret.yaml.tmpl" \
-        "${NEXUS_AUTH}" \
+        "${nexus_auth}" \
         "Please enter the username of a Nexus user with write permission:" \
         "Please enter the password of this Nexus user (input will be hidden):"
 
-    installTLSSecret "ods-private-cert" "${PRIVATE_CERT}"
+    installTLSSecret "ods-private-cert" "${private_cert}"
 fi
 
-echo "Installing Helm release ${RELEASE_NAME} ..."
-if [ "${DIFF}" == "true" ]; then
-    if "${HELM_BIN}" -n "${NAMESPACE}" \
+echo "Installing Helm release ${release_name} ..."
+if [ "${diff}" == "true" ]; then
+    if "${helm_bin}" -n "${namespace}" \
             diff upgrade --install --detailed-exitcode --three-way-merge --normalize-manifests \
-            "${VALUES_ARGS[@]}" \
-            ${RELEASE_NAME} ${CHART_DIR}; then
+            "${values_args[@]}" \
+            ${release_name} ${chart_dir}; then
         echo "Helm release already up-to-date."
     else
-        if [ "${DRY_RUN}" == "true" ]; then
+        if [ "${dry_run}" == "true" ]; then
             echo "(skipping in dry-run)"
         else
-            "${HELM_BIN}" -n "${NAMESPACE}" \
+            "${helm_bin}" -n "${namespace}" \
                 upgrade --install \
-                "${VALUES_ARGS[@]}" \
-                ${RELEASE_NAME} ${CHART_DIR}
+                "${values_args[@]}" \
+                ${release_name} ${chart_dir}
         fi
     fi
 else
-    if [ "${DRY_RUN}" == "true" ]; then
+    if [ "${dry_run}" == "true" ]; then
         echo "(skipping in dry-run)"
     else
-        "${HELM_BIN}" -n "${NAMESPACE}" \
+        "${helm_bin}" -n "${namespace}" \
             upgrade --install \
-            "${VALUES_ARGS[@]}" \
-            ${RELEASE_NAME} ${CHART_DIR}
+            "${values_args[@]}" \
+            ${release_name} ${chart_dir}
     fi
 fi
 
 echo "Adding Tekton annotation to ods-bitbucket-auth secret ..."
-if [ "${DRY_RUN}" == "true" ]; then
+if [ "${dry_run}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
-    bitbucketUrl=$("${KUBECTL_BIN}" -n "${NAMESPACE}" get cm/ods-bitbucket -ojsonpath='{.data.url}')
-    "${KUBECTL_BIN}" -n "${NAMESPACE}" annotate --overwrite secret ods-bitbucket-auth "tekton.dev/git-0=${bitbucketUrl}"
+    bitbucketUrl=$("${kubectl_bin}" -n "${namespace}" get cm/ods-bitbucket -ojsonpath='{.data.url}')
+    "${kubectl_bin}" -n "${namespace}" annotate --overwrite secret ods-bitbucket-auth "tekton.dev/git-0=${bitbucketUrl}"
 fi
 
-echo "Adding ods-bitbucket-auth secret to ${SERVICEACCOUNT} serviceaccount ..."
-if [ "${DRY_RUN}" == "true" ]; then
+echo "Adding ods-bitbucket-auth secret to ${serviceaccount} serviceaccount ..."
+if [ "${dry_run}" == "true" ]; then
     echo "(skipping in dry-run)"
 else
-    "${KUBECTL_BIN}" -n "${NAMESPACE}" \
-        patch sa "${SERVICEACCOUNT}" \
+    "${kubectl_bin}" -n "${namespace}" \
+        patch sa "${serviceaccount}" \
         --type json \
         -p '[{"op": "add", "path": "/secrets", "value":[{"name": "ods-bitbucket-auth"}]}]'
 fi
