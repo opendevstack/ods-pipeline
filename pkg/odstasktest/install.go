@@ -20,7 +20,7 @@ type InstallOptions struct {
 // InstallODSPipeline installs the ODS Pipeline Helm chart in the namespace
 // given in NamespaceConfig.
 func InstallODSPipeline(opts *InstallOptions) ttr.NamespaceOpt {
-	if opts != nil {
+	if opts == nil {
 		opts = &InstallOptions{PrivateCert: false}
 	}
 	return func(cc *ttr.ClusterConfig, nc *ttr.NamespaceConfig) error {
