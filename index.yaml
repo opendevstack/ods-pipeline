@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  ods-pipeline:
+  - apiVersion: v2
+    appVersion: 0.14.0-preview.1
+    created: "2023-09-29T14:51:49.946133576Z"
+    description: ODS Pipeline
+    digest: 3d6c8b836e5c633ffc877226fad2664ad5dc424d24d386a79b20d7e4e487e1d8
+    name: ods-pipeline
+    type: application
+    urls:
+    - https://github.com/opendevstack/ods-pipeline/releases/download/ods-pipeline-0.14.0-preview.1/ods-pipeline-0.14.0-preview.1.tgz
+    version: 0.14.0-preview.1
+generated: "2023-09-29T14:51:49.946138776Z"
