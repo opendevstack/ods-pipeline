@@ -25,7 +25,7 @@ pipeline:
         resolver: git
         params:
         - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: revision, value: v0.1.2 }
         - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
@@ -48,7 +48,7 @@ pipeline:
         resolver: git
         params:
         - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: revision, value: v0.1.2 }
         - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
@@ -57,8 +57,8 @@ pipeline:
       taskRef:
         resolver: git
         params:
-        - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-image.git }
+        - { name: revision, value: v0.1.0 }
         - { name: pathInRepo, value: tasks/package.yaml }
       runAfter:
       - build
@@ -93,14 +93,13 @@ If you want to deploy the created image, you can add the `ods-pipeline-helm-depl
 [source,yaml]
 ----
 pipeline:
-  - name: foo
-    tasks:
+  - tasks:
     - name: build
       taskRef:
         resolver: git
         params:
         - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: revision, value: v0.1.2 }
         - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
@@ -109,8 +108,8 @@ pipeline:
       taskRef:
         resolver: git
         params:
-        - { name: url, value: https://github.com/opendevstack/ods-pipeline-buildah.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-image.git }
+        - { name: revision, value: v0.1.0 }
         - { name: pathInRepo, value: tasks/package.yaml }
       runAfter:
       - build
@@ -122,7 +121,7 @@ pipeline:
         resolver: git
         params:
         - { name: url, value: https://github.com/opendevstack/ods-pipeline-helm.git }
-        - { name: revision, value: v0.13.2 }
+        - { name: revision, value: v0.1.0 }
         - { name: pathInRepo, value: tasks/deploy.yaml }
       params:
       - name: namespace

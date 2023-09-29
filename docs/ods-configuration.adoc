@@ -20,15 +20,21 @@ pipelines:
   tasks:
   - name: build
     taskRef:
-      kind: Task
-      name: ods-build-go-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+      - { name: revision, value: v0.1.2 }
+      - { name: pathInRepo, value: tasks/build.yaml }
     workspaces:
     - name: source
       workspace: shared-workspace
   - name: package
     taskRef:
-      kind: Task
-      name: ods-package-image-v0-13-2
+      resolver: git
+      params:
+      - { name: url, value: https://github.com/opendevstack/ods-pipeline-image.git }
+      - { name: revision, value: v0.1.0 }
+      - { name: pathInRepo, value: tasks/package.yaml }
     runAfter:
     - build
     workspaces:
@@ -166,7 +172,7 @@ pipelines:
   - name: deploy
     taskRef:
       kind: Task
-      name: ods-deploy-helm-v0-13-2
+      name: my-task
     workspaces:
     - name: source
       workspace: shared-workspace
@@ -188,13 +194,10 @@ pipelines:
   - name: build
     taskRef:
       resolver: git
-      params:
-      - name: url
-        value: https://github.com/opendevstack/ods-pipeline.git
-      - name: revision
-        value: v0.13.2
-      - name: pathInRepo
-        value: tasks/ods-build-go.yaml
+        params:
+        - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
+        - { name: revision, value: v0.1.2 }
+        - { name: pathInRepo, value: tasks/build.yaml }
       workspaces:
       - name: source
         workspace: shared-workspace
