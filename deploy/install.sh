@@ -17,6 +17,26 @@ bitbucket_auth=""
 bitbucket_webhook_secret=""
 nexus_auth=""
 private_cert=""
+# Templates
+basicAuthSecretTemplate="apiVersion: v1
+kind: Secret
+metadata:
+  name: '{{name}}'
+  labels:
+    app.kubernetes.io/name: ods-pipeline
+stringData:
+  password: '{{password}}'
+  username: '{{username}}'
+type: kubernetes.io/basic-auth"
+opaqueSecretTemplate="apiVersion: v1
+kind: Secret
+metadata:
+  name: '{{name}}'
+  labels:
+    app.kubernetes.io/name: ods-pipeline
+stringData:
+  secret: '{{password}}'
+type: Opaque"
 
 # Check prerequisites.
 kubectl_bin=""
@@ -120,7 +140,7 @@ kubectlApplySecret () {
     # To avoid forward slashes messing up sed, escape forward slashes first.
     # See https://tldp.org/LDP/abs/html/string-manipulation.html.
     # shellcheck disable=SC2002
-    cat "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username//\//\\/}/" | sed "s/{{password}}/${password//\//\\/}/" | "${kubectl_bin}" -n "${namespace}" apply -f -
+    echo "${secretTemplate}" | sed "s/{{name}}/${secretName}/" | sed "s/{{username}}/${username//\//\\/}/" | sed "s/{{password}}/${password//\//\\/}/" | "${kubectl_bin}" -n "${namespace}" apply -f -
 }
 
 installSecret () {
@@ -216,7 +236,7 @@ if [ "${dry_run}" == "true" ]; then
 else
     # Bitbucket username is not required as PAT alone is enough.
     installSecret "ods-bitbucket-auth" \
-        "basic-auth-secret.yaml.tmpl" \
+        "${basicAuthSecretTemplate}" \
         "${bitbucket_auth}" \
         "Please enter the username of Bitbucket user with write permission." \
         "Please enter a personal access token of this Bitbucket user (input will be hidden):"
@@ -224,12 +244,12 @@ else
     # Webhook secret is a special case, as we do not want the user to set it.
     # No prompts -> password will be auto-generated if not given.
     installSecret "ods-bitbucket-webhook" \
-        "opaque-secret.yaml.tmpl" \
+        "${opaqueSecretTemplate}" \
         "${bitbucket_webhook_secret}" \
         "" ""
 
     installSecret "ods-nexus-auth" \
-        "basic-auth-secret.yaml.tmpl" \
+        "${basicAuthSecretTemplate}" \
         "${nexus_auth}" \
         "Please enter the username of a Nexus user with write permission:" \
         "Please enter the password of this Nexus user (input will be hidden):"
