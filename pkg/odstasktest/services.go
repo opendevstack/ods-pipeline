@@ -12,7 +12,6 @@ import (
 var restartNexusFlag = flag.Bool("ods-restart-nexus", false, "Whether to force a restart of Nexus")
 var restartSonarQubeFlag = flag.Bool("ods-restart-sonarqube", false, "Whether to force a restart of SonarQube")
 var restartBitbucketFlag = flag.Bool("ods-restart-bitbucket", false, "Whether to force a restart of Bitbucket")
-var skipSonarQubeFlag = flag.Bool("ods-skip-sonar", false, "Whether to skip SonarQube steps")
 
 // StartNexus starts a Nexus instance in a Docker container (named
 // ods-test-nexus). If a container of the same name already exists, it will be
@@ -27,9 +26,6 @@ func StartNexus() ttr.NamespaceOpt {
 // be reused unless -ods-restart-sonarqube is passed.
 func StartSonarQube() ttr.NamespaceOpt {
 	flag.Parse()
-	if *skipSonarQubeFlag {
-		return func(cc *ttr.ClusterConfig, nc *ttr.NamespaceConfig) error { return nil }
-	}
 	return runService("run-sonarqube.sh", *restartSonarQubeFlag)
 }
 
