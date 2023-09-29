@@ -1,7 +1,6 @@
 package odstasktest
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,8 +9,6 @@ import (
 	"github.com/opendevstack/ods-pipeline/internal/projectpath"
 	ttr "github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 )
-
-var privateCertFlag = flag.Bool("ods-private-cert", false, "Whether to use a private cert")
 
 // InstallOptions configure the installation of ODS Pipeline.
 type InstallOptions struct {
@@ -23,7 +20,6 @@ type InstallOptions struct {
 // InstallODSPipeline installs the ODS Pipeline Helm chart in the namespace
 // given in NamespaceConfig.
 func InstallODSPipeline(opts *InstallOptions) ttr.NamespaceOpt {
-	flag.Parse()
 	if opts != nil {
 		opts = &InstallOptions{PrivateCert: false}
 	}
