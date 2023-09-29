@@ -59,5 +59,4 @@ For OpenShift Pipelines releases and its relationship to Tekton and OpenShift ve
 * [Repository Layout](/docs/repository-layout.adoc)
 * [Development & Running Tests](/docs/development.adoc)
 * [Artifacts](/docs/artifacts.adoc)
-* [Creating an ODS task](/docs/creating-an-ods-task.adoc)
 * [Releasing a new version](/docs/releasing.adoc)
