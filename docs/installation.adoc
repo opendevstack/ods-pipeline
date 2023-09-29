@@ -5,50 +5,42 @@ This guide will show how to install ODS Pipeline in an existing ODS project. It 
 
 An ODS Pipeline installation consists of the following resources:
 
-* `Task` resources
-* `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and SonarQube
 * A pipeline manager, which is creating pipeline runs in response to Bitbucket webhook requests
+* A start and finish task which will get injected into every pipeline run
+* `ConfigMap` and `Secret` resources, e.g. holding credentials of centrally installed tools such as Nexus and Bitbucket
+
 
 == Prerequisites
 
 You'll need:
 
-* A namespace in an OpenShift cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`).
+* A namespace in an OpenShift/Kubernetes cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`).
 * `git`, link:https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html[`oc`] (or link:https://kubernetes.io/docs/reference/kubectl/[`kubectl`]) and link:https://helm.sh[`helm`] installed locally. The plugin link:https://github.com/databus23/helm-diff[`helm-diff`] is optional but recommended.
 
 == Installation Instructions
 
-The installation procedure consists of two steps:
+ODS Pipeline is packaged as a Helm chart. The installation procedure consists of three quick steps:
 
-1. Creating a Git repository defining the configuration of the ODS Pipeline installation
-2. Using Helm to install from this Git repository
+1. Configuring the chart values
+2. Running the install script (which will deploy the Helm chart)
+3. Exposing a route to the pipeline manager
 
-===  Creating a Git repository
+=== Step 1: Configuring the chart values
 
-Create a new repository in Bitbucket, e.g. `foo-cd`. The name can be anything, but since the repository will define the K8s resources of namespace `foo-cd` in code, it makes sense to mirror the namespace name. Clone the repository locally and make an initial commit, e.g. by adding a readme file.
-
-IMPORTANT: The following commands will fail in an empty Git repository, so make sure you have made at least one commit in this repository.
-
-Now use `git subtree` to get the required source files. The following commands may look a bit complicated, but in a nutshell, they are simply adding one folder (`deploy/`) from the `opendevstack/ods-pipeline` repository at the given revision (e.g. `master`) into your new local repository at the path `deploy`. The benefit of this approach is that it'll make updating ODS Pipeline simple.
+Download the template and fill in the values according to the comments in that file.
 
 [source]
 ----
-pipelineGitRef=v0.13.2 # Pick the version you want to install
-
-git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
-git checkout ods-pipeline-$pipelineGitRef && \
-git subtree split --prefix=deploy -b subtree-split-branch-$pipelineGitRef && \
-git checkout - && \
-git subtree add --squash --prefix=deploy subtree-split-branch-$pipelineGitRef
+curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/deploy/values.yaml.tmpl -o values.yaml
 ----
 
-Once this is done, change to the new folder `deploy` to configure the values of the Helm Chart. Run `cp values.yaml.tmpl values.yaml`, then edit `values.yaml` as described in the comments in that file. Commit and push before proceeding to the next step.
+TIP: It is recommended to keep this file around after the installation so that it can be reused when updating ODS Pipeline to future versions.
 
-=== Using Helm to install from the Git repository
+=== Step 2: Running the install script
 
 ==== Option 1: With external API access
 
-If you have access to the OpenShift API from your local machine, you can simply login to the OpenShift cluster, then install ODS Pipeline by running:
+If you have access to the OpenShift API from your local machine, simply login to the OpenShift cluster and install ODS Pipeline by running:
 
 [source]
 ----
@@ -61,8 +53,6 @@ IMPORTANT: If tasks need to trust a private certificate, pass `--private-cert <h
 
 TIP: You may pass `--dry-run` to review what `install.sh` will do before actually running the script.
 
-After you ran the install script, continue with the <<finishing-the-installation,Finishing the installation>> section.
-
 ==== Option 2: Without external API access
 
 If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal] to install ODS Pipeline. Open a web terminal in your `*-cd` namespace, then run:
@@ -72,48 +62,33 @@ If you do not have access to the OpenShift API from your local machine, you can 
 curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scripts/web-terminal-install.sh | bash
 ----
 
-This will install all prerequisites automatically. Then you can clone the repository and run `./install.sh -n <your_cd_namespace>` in the terminal.
+This will install all prerequisites automatically. Then you can clone the repository and run `./install.sh -n <your_cd_namespace>`.
 
 `./install.sh` will interactively ask for credentials (such as Bitbucket access token) and will create corresponding K8s secrets. If you prefer to pass these secrets via flags, see `./install.sh --help` for all options.
 
-After you ran the install script, continue with the <<finishing-the-installation,Finishing the installation>> section.
-
-==== Finishing the installation
+=== Step 3: Exposing a route to the pipeline manager
 
 Create an HTTPS route to expose the `ods-pipeline` service. You'll need the exposed URL (together with the webhook secret that is stored in the `ods-bitbucket-webhook` K8s secret) when you create webhooks in Bitbucket repositories later.
+
+Done, now you are ready to link:add-to-repository.adoc[enable your repositories to use ODS pipeline]!
 
 IMPORTANT: The `pipeline` serviceaccount needs `admin` permissions in the Kubernetes namespaces it deploys to (e.g. `foo-dev` and `foo-test`). You must create rolebindings for this manually.
 
 CAUTION: An important feature of ODS Pipeline is to retain pipeline run artifacts in Nexus and re-use them future pipeline runs (e.g. to promote built container images to another environment). For this purpose, you should create a few `raw` repositories in Nexus. These repositories should not allow re-deployment of artifacts. For example, you might want to have `ods-pipeline-dev`, `ods-pipeline-qa` and `ods-pipeline-prod` repositories, each with a different cleanup policy as fitting your needs. You can then use these repositories from your pipeline to store artifacts and enforce a progression of artifacts from DEV > QA > PROD.
 
-Now you are ready to link:add-to-repository.adoc[enable your repositories to use ODS pipeline]!
 
 == Update Instructions
 
-The update procedure consists of two steps:
+The update procedure consists of two quick steps:
 
-1. Updating the Git repository defining the configuration of the ODS Pipeline installation
-2. Using Helm to install from the Git repository
+1. Updating the chart values if required
+2. Running the install script (which will deploy the Helm chart)
 
-=== Updating the Git repository
+=== Step 1: Updating the chart values
 
-You may fetch updates (e.g. new versions) of `ods-pipeline` like this:
+Check if any new values have been introduced in `values.yaml.tmpl` and update your `values.yaml` (which you hopefully retained from the installation) accordingly.
 
-[source]
-----
-pipelineGitRef=v0.13.2 # Pick the version you want to update to
-
-git branch -D ods-pipeline-$pipelineGitRef subtree-split-branch-$pipelineGitRef || true && \
-git fetch --depth=1 https://github.com/opendevstack/ods-pipeline.git $pipelineGitRef:ods-pipeline-$pipelineGitRef && \
-git checkout ods-pipeline-$pipelineGitRef && \
-git subtree split --prefix=deploy -b subtree-split-branch-$pipelineGitRef && \
-git checkout - && \
-git subtree merge --prefix=deploy subtree-split-branch-$pipelineGitRef --squash
-----
-
-Afterwards, check if any new values have been introduced in `values.yaml.tmpl` and update `values.yaml` accordingly. Commit and push the result.
-
-=== Using Helm to install from the Git repository
+=== Step 2: Running the install script
 
 ==== Option 1: With external API access
 
@@ -125,8 +100,6 @@ If you have access to the OpenShift API from your local machine, you can simply 
 ----
 
 TIP: You may also use `--dry-run` to see the changes first.
-
-After you ran the script, continue with the <<finishing-the-update,Finishing the update>> section.
 
 TIP: By default, the credentials stored in the K8s secrets will not be updated. If you want to make a change, pass any new values as flags to `install.sh` (see `./install.sh --help` for all options) or update the secrets manually.
 
@@ -142,7 +115,3 @@ curl -L https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/scrip
 This will install all prerequisites automatically and update your ODS Pipeline installation to the latest state of your Git repository.
 
 TIP: The credentials stored in the K8s secrets will not be updated. If you need to change those, update them manually.
-
-==== Finishing the update
-
-Once the resources in your namespace are updated, you likely have to update the `ods.yaml` files in your repository to point to the new tasks, e.g. changing `ods-build-go-v0-12-0` to `ods-build-go-v0-13-2`.

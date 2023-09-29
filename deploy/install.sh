@@ -257,12 +257,18 @@ else
     installTLSSecret "ods-private-cert" "${private_cert}"
 fi
 
+echo "Discovering Helm repository ..."
+helm_repo_alias="ods-pipeline"
+chart_name="ods-pipeline"
+"${helm_bin}" repo add "${helm_repo_alias}" https://opendevstack.github.io/ods-pipeline
+"${helm_bin}" repo update "${helm_repo_alias}"
+
 echo "Installing Helm release ${release_name} ..."
 if [ "${diff}" == "true" ]; then
     if "${helm_bin}" -n "${namespace}" \
             diff upgrade --install --detailed-exitcode --three-way-merge --normalize-manifests \
             "${values_args[@]}" \
-            ${release_name} ${chart_dir}; then
+            "${release_name}" "${helm_repo_alias}/${chart_name}"; then
         echo "Helm release already up-to-date."
     else
         if [ "${dry_run}" == "true" ]; then
@@ -281,7 +287,7 @@ else
         "${helm_bin}" -n "${namespace}" \
             upgrade --install \
             "${values_args[@]}" \
-            ${release_name} ${chart_dir}
+            "${release_name}" "${helm_repo_alias}/${chart_name}"
     fi
 fi
 
