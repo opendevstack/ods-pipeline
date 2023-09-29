@@ -3,7 +3,7 @@ name: Release Charts
 on:
   push:
     branches:
-      - featre/easy-install
+      - feature/easy-install
 
 jobs:
   release:
@@ -21,5 +21,7 @@ jobs:
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: deploy
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
