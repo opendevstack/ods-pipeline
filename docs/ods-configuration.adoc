@@ -203,11 +203,9 @@ pipelines:
         workspace: shared-workspace
   taskRunSpecs:
   - pipelineTaskName: build
-    stepOverrides:
-    - name: build-go-binary
-      resources:
-        requests:
-          memory: 2Gi
+    computeResources:
+      requests:
+        memory: 2Gi
 ----
 
 == `repositories`
