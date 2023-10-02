@@ -3,14 +3,16 @@ set -ue
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-verbose="false"
-dry_run="false"
+verbose=false
+dry_run=false
+use_local_chart=false
 diff="true"
 namespace=""
 release_name="ods-pipeline"
 serviceaccount="pipeline"
 values_file="values.yaml"
 chart_dir="./chart"
+chart_version="0.14.0-preview.1"
 # Secrets
 auth_separator=":"
 bitbucket_auth=""
@@ -59,6 +61,7 @@ function usage {
     printf "\t-h|--help\t\t\tPrints this usage information.\n"
     printf "\t-v|--verbose\t\t\tTurn on verbose output.\n"
     printf "\t-n|--namespace\t\t\tK8s namespace to target.\n"
+    printf "\t--local-chart\t\t\tUse local chart instead of remote, versioned chart.\n"
     printf "\t-f|--values\t\t\tValues file to supply to Helm (defaults to '%s'). Multiple files can be specified comma-separated.\n" "$values_file"
     printf "\t-s|--serviceaccount\t\tServiceaccount to use (defaults to '%s').\n" "$serviceaccount"
     printf "\t--no-diff\t\t\tDo not run Helm diff before running Helm upgrade.\n"
@@ -68,6 +71,7 @@ function usage {
     printf "\t--bitbucket-webhook-secret\tSecret to protect webhook endpoint with (if not given, script will generate this).\n"
     printf "\t--nexus-auth\t\t\tUsername and password (separated by '%s') of a Nexus user (if not given, script will prompt for this).\n" "$auth_separator"
     printf "\t--private-cert\t\t\tHost from which to download private certificate (if not given, script will skip this).\n"
+    printf "\t--chart-version\t\t\tOverwrite chart version (defaults to '%s').\n" "$chart_version"
     printf "\nExample:\n\n"
     printf "\t%s \ \
       \n\t\t--namespace foo \ \
@@ -81,7 +85,13 @@ while [ "$#" -gt 0 ]; do
 
     -h|--help) shift; usage; exit 0;;
 
-    -v|--verbose) verbose="true";;
+    -v|--verbose) verbose=true;;
+
+    --no-diff) diff=false;;
+
+    --dry-run) dry_run=true;;
+
+    --local-chart) use_local_chart=true;;
 
     -n|--namespace) namespace="$2"; shift;;
     -n=*|--namespace=*) namespace="${1#*=}";;
@@ -91,10 +101,6 @@ while [ "$#" -gt 0 ]; do
 
     -s|--serviceaccount) serviceaccount="$2"; shift;;
     -s=*|--serviceaccount=*) serviceaccount="${1#*=}";;
-
-    --no-diff) diff="false";;
-
-    --dry-run) dry_run="true";;
 
     --auth-separator) auth_separator="$2"; shift;;
     --auth-separator=*) auth_separator="${1#*=}";;
@@ -111,6 +117,9 @@ while [ "$#" -gt 0 ]; do
     --private-cert) private_cert="$2"; shift;;
     --private-cert=*) private_cert="${1#*=}";;
 
+    --chart-version) chart_version="$2"; shift;;
+    --chart-version=*) chart_version="${1#*=}";;
+
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
@@ -122,7 +131,7 @@ for valueFile in ${values_fileS}; do
     values_args+=(--values="${valueFile}")
 done
 
-if [ "${verbose}" == "true" ]; then
+if [ "${verbose}" = true ]; then
     set -x
 fi
 
@@ -218,7 +227,7 @@ if "${kubectl_bin}" -n "${namespace}" get serviceaccount/"${serviceaccount}" &> 
     echo "Serviceaccount exists already ..."
 else
     echo "Creating serviceaccount ..."
-    if [ "${dry_run}" == "true" ]; then
+    if [ "${dry_run}" = true ]; then
         echo "(skipping in dry-run)"
     else
         "${kubectl_bin}" -n "${namespace}" create serviceaccount "${serviceaccount}"
@@ -231,7 +240,7 @@ else
 fi
 
 echo "Installing secrets ..."
-if [ "${dry_run}" == "true" ]; then
+if [ "${dry_run}" = true ]; then
     echo "(skipping in dry-run)"
 else
     # Bitbucket username is not required as PAT alone is enough.
@@ -257,42 +266,44 @@ else
     installTLSSecret "ods-private-cert" "${private_cert}"
 fi
 
-echo "Discovering Helm repository ..."
-helm_repo_alias="ods-pipeline"
-chart_name="ods-pipeline"
-"${helm_bin}" repo add "${helm_repo_alias}" https://opendevstack.github.io/ods-pipeline
-"${helm_bin}" repo update "${helm_repo_alias}"
+chart_location=""
+if [ "${use_local_chart}" = true ]; then
+    chart_name="ods-pipeline"
+    chart_location="https://github.com/opendevstack/ods-pipeline/releases/download/${chart_name}-${chart_version}/${chart_name}-${chart_version}.tgz"
+else
+    chart_location="${chart_dir}"
+fi
 
-echo "Installing Helm release ${release_name} ..."
-if [ "${diff}" == "true" ]; then
+echo "Installing Helm release ${release_name} from ${chart_location} ..."
+if [ "${diff}" = true ]; then
     if "${helm_bin}" -n "${namespace}" \
             diff upgrade --install --detailed-exitcode --three-way-merge --normalize-manifests \
             "${values_args[@]}" \
-            "${release_name}" "${helm_repo_alias}/${chart_name}"; then
+            "${release_name}" "${chart_location}"; then
         echo "Helm release already up-to-date."
     else
-        if [ "${dry_run}" == "true" ]; then
+        if [ "${dry_run}" = true ]; then
             echo "(skipping in dry-run)"
         else
             "${helm_bin}" -n "${namespace}" \
                 upgrade --install \
                 "${values_args[@]}" \
-                ${release_name} ${chart_dir}
+                ${release_name} ${chart_location}
         fi
     fi
 else
-    if [ "${dry_run}" == "true" ]; then
+    if [ "${dry_run}" = true ]; then
         echo "(skipping in dry-run)"
     else
         "${helm_bin}" -n "${namespace}" \
             upgrade --install \
             "${values_args[@]}" \
-            "${release_name}" "${helm_repo_alias}/${chart_name}"
+            "${release_name}" "${chart_url}"
     fi
 fi
 
 echo "Adding Tekton annotation to ods-bitbucket-auth secret ..."
-if [ "${dry_run}" == "true" ]; then
+if [ "${dry_run}" = true ]; then
     echo "(skipping in dry-run)"
 else
     bitbucketUrl=$("${kubectl_bin}" -n "${namespace}" get cm/ods-bitbucket -ojsonpath='{.data.url}')
@@ -300,7 +311,7 @@ else
 fi
 
 echo "Adding ods-bitbucket-auth secret to ${serviceaccount} serviceaccount ..."
-if [ "${dry_run}" == "true" ]; then
+if [ "${dry_run}" = true ]; then
     echo "(skipping in dry-run)"
 else
     "${kubectl_bin}" -n "${namespace}" \
