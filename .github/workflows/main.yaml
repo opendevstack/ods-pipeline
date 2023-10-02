@@ -7,7 +7,6 @@ on:
   pull_request:
 
 env:
-  # github.repository as <account>/<repo>
   IMAGE_BASE: ${{ github.repository }}
 
 jobs:
@@ -32,23 +31,25 @@ jobs:
         name: Run tests
         run: |
           make test
-      # -
-      #   name: Log into ghcr.io
-      #   if: ${{ github.event_name != 'pull_request' }}
-      #   uses: docker/login-action@v1
-      #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.actor }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
-      # -
-      #   name: Push images to ghcr.io
-      #   if: ${{ github.event_name != 'pull_request' }}
-      #   run: |
-      #     images=(${{ env.IMAGES }})
-      #     for image in ${images[*]}
-      #     do
-      #       echo "::group::Push ods-$image to ghcr.io"
-      #       docker tag localhost:5000/ods/ods-$image:latest ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
-      #       docker push ghcr.io/${{ env.IMAGE_BASE }}/ods-$image:latest
-      #       echo "::endgroup::"
-      #     done
+      -
+        name: Log into ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Push images to ghcr.io
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          IMAGES: finish pipeline-manager start
+        run: |
+          images=(${{ env.IMAGES }})
+          for image in ${images[*]}
+          do
+            echo "::group::Push $image to ghcr.io"
+            docker tag localhost:5000/ods-pipeline/$image:latest ghcr.io/${{ env.IMAGE_BASE }}/$image:latest
+            docker push ghcr.io/${{ env.IMAGE_BASE }}/$image:latest
+            echo "::endgroup::"
+          done
