@@ -288,7 +288,7 @@ if [ "${diff}" = true ]; then
             "${helm_bin}" -n "${namespace}" \
                 upgrade --install \
                 "${values_args[@]}" \
-                ${release_name} ${chart_location}
+                "${release_name}" "${chart_location}"
         fi
     fi
 else
@@ -298,7 +298,7 @@ else
         "${helm_bin}" -n "${namespace}" \
             upgrade --install \
             "${values_args[@]}" \
-            "${release_name}" "${chart_url}"
+            "${release_name}" "${chart_location}"
     fi
 fi
 
