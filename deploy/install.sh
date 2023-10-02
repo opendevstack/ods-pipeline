@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -ue
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 verbose=false
 dry_run=false
 use_local_chart=false
@@ -122,8 +120,6 @@ while [ "$#" -gt 0 ]; do
 
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
-
-cd "${script_dir}"
 
 values_fileS=$(echo "$values_file" | tr "," "\n")
 values_args=()
