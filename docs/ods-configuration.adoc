@@ -225,4 +225,4 @@ repositories:
 
 If the repository does not specify a URL, the repository is assumed to be under the same organisation as the repository hosting the `ods.yaml` file. If a tag is given, it has precedence over `branch`. If neither tag nor branch is given, the `master` branch is used as a default.
 
-Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-pipeline-helm-deploy` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.
+Repositories listed in `ods.yaml` are checked out in `ods-pipeline-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-pipeline-helm-deploy` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.
