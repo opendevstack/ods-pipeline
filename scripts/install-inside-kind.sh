@@ -46,6 +46,7 @@ fi
 
 cd "${kind_deploy_path}"
 bash ./install.sh \
+    --local-chart \
     --bitbucket-auth "${bitbucket_auth}" \
     --nexus-auth "${nexus_auth}" \
     -f "${values_arg}" "$@"
