@@ -8,9 +8,9 @@ Prior to creating your own task, it is important to understand in general how Te
 
 == Why and when to create custom tasks?
 
-ODS provides tasks out-of-the-box that can be used to build and deploy applications. However, these tasks are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization.
+ODS provides companion tasks that can be used to build and deploy applications for a few popular technologies. However, they are opinionated and prescribe a certain way how the application is built for example. The behaviour of the task can only be adapted by setting pre-defined parameters. Typically, those parameters do not allow for a great deal of customization.
 
-TIP: There is a notable exception to this in the build tasks such as `ods-build-go`, `ods-build-gradle`, and so on. These allow for a great deal of customization by providing the `build-script` param to exchange the build script used to build your application. For example, if your application build doesn't pass linting as defined in the build script supplied by default, you can point the `build-script` param to a custom script in the repository of your application instead.
+TIP: There is a notable exception to this in the build tasks such as `ods-pipeline-go-build`, `ods-pipeline-gradle-build`, and so on. These allow for a great deal of customization by providing the `build-script` param to exchange the build script used to build your application. For example, if your application build doesn't pass linting as defined in the build script supplied by default, you can point the `build-script` param to a custom script in the repository of your application instead.
 
 If you need more control than the official tasks offer, creating a custom Tekton task is the way to go. You may also use an already existing Tekton task provided by someone else, e.g. those from the link:https://github.com/tektoncd/catalog[Tekton Catalog].
 
@@ -157,7 +157,7 @@ pipeline:
 
 While ODS offers a task to build Go applications, that task is quite opinionated and does not offer a lot of control for you as a user. For example, it will lint your code with `golangci-lint` and you cannot disable this step. This is by design to allow the platform to make certain assumptions about software created by ODS tasks. However, imagine you have some legacy code that will not pass linting and you are unable to change this (quickly). How would you create a task that does not run the linter?
 
-As a first step, locate the `ods-build-go` task in OpenShift ("Pipelines > Tasks  > ods-build-go-vX.X.X") and copy the YAML. Clean up the YAML to create a new `Task`, e.g. named `build-go`, in your own namespace. A simple task would look like this:
+As a first step, copy the YAML from link:https://github.com/opendevstack/ods-pipeline-go/blob/main/tasks/build.yaml[`ods-pipeline-go-build`] task and adjust as necessary. A simple starting point for your own task building Go could look like this:
 
 [source,yaml]
 ----
@@ -169,7 +169,7 @@ spec:
   description: Custom Go (module) applications build task.
   steps:
     - name: build-go-binary
-      image: 'registry.example.com:5000/my-namespace/ods-go-toolset:latest'
+      image: 'registry.example.com:5000/my-namespace/my-go-toolset:latest'
       env:
         - name: HOME
           value: '/tekton/home'
@@ -182,5 +182,3 @@ spec:
 ----
 
 NOTE: You'll need to adjust the `image` value to point to an image e.g. in an OpenShift image stream or in an external registry.
-
-You might want to base the `script` on the build scripts provided by the official tasks. They are all located in link:https://github.com/opendevstack/ods-pipeline/tree/master/build/package/scripts[build/package/scripts].

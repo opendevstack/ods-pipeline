@@ -91,7 +91,7 @@ pipelines:
       resolver: git
       params:
       - { name: url, value: https://github.com/opendevstack/ods-pipeline-go.git }
-      - { name: revision, value: v0.13.2 }
+      - { name: revision, value: v0.1.2 }
       - { name: pathInRepo, value: tasks/build.yaml }
     workspaces:
     - name: source
@@ -227,4 +227,4 @@ repositories:
 
 If the repository does not specify a URL, the repository is assumed to be under the same organisation as the repository hosting the `ods.yaml` file. If a tag is given, it has precedence over `branch`. If neither tag nor branch is given, the `master` branch is used as a default.
 
-Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-deploy-helm` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.
+Repositories listed in `ods.yaml` are checked out in `ods-start` in `.ods/repos` and any tasks in the pipeline can alter their behaviour based on the presence of subrepos. For example, the `ods-pipeline-helm-deploy` task will package any charts in subrepos and add them to the chart in the umbrella repository, deploying all charts as one release.

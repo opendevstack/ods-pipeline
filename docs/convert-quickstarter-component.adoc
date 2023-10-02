@@ -80,7 +80,7 @@ def stageUnitTest(def context) {
 }
 ----
 
-Compared to Jenkins, you cannot define any scripts directly in the `ods.yaml` file describing your Tekton pipeline. You may only reference existing tasks and adjust their parameters. As a consequence, the build related stages (`stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild`) are provided by a task (named `ods-build-go-vX`) instead.
+Compared to Jenkins, you cannot define any scripts directly in the `ods.yaml` file describing your Tekton pipeline. You may only reference existing tasks and adjust their parameters. As a consequence, the build related stages (`stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild`) are provided by a task (named `ods-pipeline-go-build`) instead.
 
 An roughly equivalent `ods.yaml` for the above `Jenkinsfile` looks like this:
 
@@ -125,13 +125,13 @@ pipelines:
         workspace: shared-workspace
 ----
 
-What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-build-go-v0-13-2` task. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
+What has been done in Jenkins in `stageCheckFormat`, `stageLint`, `stageUnitTest`, `stageBuild` and `odsComponentStageScanWithSonar` is now done by the `ods-pipeline-go-build` task. If you have modified how the application is tested and built, or added further steps, you will need to create your own Tekton tasks reflecting those changes. See the link:authoring-tasks.adoc[authoring tasks] guide.
 
-Building the container image is now done in `ods-package-image-v0-13-2` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:tasks/ods-build-go.adoc[`ods-build-go` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
+Building the container image is now done in `ods-pipeline-image-package` instead of in `odsComponentStageBuildOpenShiftImage`. The task continues to use the existing `docker/Dockerfile` file, which does not need to change much if at all. Consult the task reference in question for more information. In the case of Go, the link:https://github.com/opendevstack/ods-pipeline-go/blob/main/docs/build.adoc[`ods-pipeline-go-build` task reference] states that the resulting Go binary is named `app` and placed into the `docker` directory. Make sure that your `docker/Dockerfile` copies `app`, not e.g. `app_linux_amd64` (as is the default for an ODS 4.x based Go quickstarter).
 
 == Create Helm Chart
 
-Finally, the application is deployed in `ods-deploy-helm-v0-13-2` as opposed to `odsComponentStageRolloutOpenShiftDeployment`.
+Finally, the application is deployed in `ods-pipeline-helm-deploy` as opposed to `odsComponentStageRolloutOpenShiftDeployment`.
 Let's look at this deployment piece in detail. The new Tekton task makes use of Helm to define and deploy the Kubernetes resources to use. Your existing repository might not define Kubernetes resources at all (this is the default), or they might be expressed as OpenShift templates (in a folder named `openshift`) and applied with link:https://github.com/opendevstack/tailor[Tailor]. ODS pipeline only supports Helm at the moment, and requires the Kubernetes resources (the Helm "chart") to be under version control. It is recommended to start with the link:https://github.com/opendevstack/ods-pipeline/tree/sample-helm-chart[sample chart provided in this repository]. If  the existing component controlled resources via Tailor, please see the link:https://github.com/opendevstack/tailor/wiki/Migrating-from-Tailor-to-Helm#ods-quickstarter-migration[ODS Quickstarter Migration Guide] of Tailor as well.
 
 == Configure Webhook
