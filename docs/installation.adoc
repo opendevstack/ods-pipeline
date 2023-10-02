@@ -15,7 +15,7 @@ An ODS Pipeline installation consists of the following resources:
 You'll need:
 
 * A namespace in an OpenShift/Kubernetes cluster (such as `foo-cd` from an existing ODS project) and a project in Bitbucket (such as `FOO`).
-* `git`, link:https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html[`oc`] (or link:https://kubernetes.io/docs/reference/kubectl/[`kubectl`]) and link:https://helm.sh[`helm`] installed locally. The plugin link:https://github.com/databus23/helm-diff[`helm-diff`] is optional but recommended.
+* link:https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html[`oc`] (or link:https://kubernetes.io/docs/reference/kubectl/[`kubectl`]) and link:https://helm.sh[`helm`] installed locally. The plugin link:https://github.com/databus23/helm-diff[`helm-diff`] is optional but recommended.
 
 == Installation Instructions
 
