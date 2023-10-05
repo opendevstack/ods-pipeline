@@ -115,7 +115,7 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
-      resources: {}
+      computeResources: {}
       script: |
         if [ -f /etc/ssl/certs/private-cert.pem ]; then
           cat /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/private-cert.pem > /tekton/home/git-cert.pem

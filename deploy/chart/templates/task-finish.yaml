@@ -59,7 +59,7 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
-      resources: {}
+      computeResources: {}
       script: |
 
         # ods-finish is built from cmd/finish/main.go.
