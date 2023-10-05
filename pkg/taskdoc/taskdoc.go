@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/template"
 
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"sigs.k8s.io/yaml"
 )
 

@@ -47,7 +47,7 @@ The simplest YAML definition of a task looks like this:
 
 [source]
 ----
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: hello-world
@@ -118,7 +118,7 @@ For this example, we will consider a very basic application like this link:https
 
 [source,yaml]
 ----
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: build-ruby
@@ -161,7 +161,7 @@ As a first step, copy the YAML from link:https://github.com/opendevstack/ods-pip
 
 [source,yaml]
 ----
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: build-go

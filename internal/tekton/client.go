@@ -5,7 +5,7 @@ import (
 
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
 	tektonClient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1"
+	tektonv1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -72,10 +72,10 @@ func (c *Client) namespace() string {
 	return c.clientConfig.Namespace
 }
 
-func (c *Client) tektonV1beta1Client() v1beta1.TektonV1beta1Interface {
-	return c.clientConfig.TektonClient.TektonV1beta1()
+func (c *Client) tektonV1Client() tektonv1.TektonV1Interface {
+	return c.clientConfig.TektonClient.TektonV1()
 }
 
-func (c *Client) pipelineRunsClient() v1beta1.PipelineRunInterface {
-	return c.tektonV1beta1Client().PipelineRuns(c.namespace())
+func (c *Client) pipelineRunsClient() tektonv1.PipelineRunInterface {
+	return c.tektonV1Client().PipelineRuns(c.namespace())
 }

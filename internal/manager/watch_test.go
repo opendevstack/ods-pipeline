@@ -7,7 +7,7 @@ import (
 
 	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/clock"
 )
@@ -145,7 +145,9 @@ func timedOutPipelineRun(t *testing.T, name string, creationTime time.Time) *tek
 			CreationTimestamp: metav1.Time{Time: creationTime},
 		},
 		Spec: tekton.PipelineRunSpec{
-			Timeout: &metav1.Duration{Duration: time.Second},
+			Timeouts: &tekton.TimeoutFields{
+				Pipeline: &metav1.Duration{Duration: time.Second},
+			},
 		},
 		Status: tekton.PipelineRunStatus{
 			PipelineRunStatusFields: tekton.PipelineRunStatusFields{

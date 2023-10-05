@@ -92,7 +92,13 @@ test-pkg: ## Run testsuite of public packages.
 	go test -cover ./pkg/...
 .PHONY: test-pkg
 
-test-e2e: ## Run testsuite of tasks and full pipeline run.
-	go test -v -count=1 -timeout 20m -skip ^TestPipelineRun  ./test/e2e/...
-	go test -v -count=1 -timeout 10m -run ^TestPipelineRun ./test/e2e/...
+test-e2e: test-e2e-tasks test-e2e-pipelineruns ## Run testsuite of tasks and full pipeline run.
 .PHONY: test-e2e
+
+test-e2e-tasks: ## Run testsuite of tasks.
+	go test -v -count=1 -timeout 20m -skip ^TestPipelineRun  ./test/e2e/...
+.PHONY: test-e2e-tasks
+
+test-e2e-pipelineruns: ## Run testsuite of full pipeline run.
+	go test -v -count=1 -timeout 10m -run ^TestPipelineRun ./test/e2e/...
+.PHONY: test-e2e-pipelineruns
