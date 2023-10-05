@@ -8,7 +8,7 @@ import (
 
 	k "github.com/opendevstack/ods-pipeline/internal/kubernetes"
 	"github.com/opendevstack/ods-pipeline/pkg/taskmanifest"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -30,7 +30,7 @@ func installTask(path, namespace string, data map[string]string) (*tekton.Task, 
 	}
 	clients := k.NewClients()
 	tc := clients.TektonClientSet
-	it, err := tc.TektonV1beta1().Tasks(namespace).Create(context.TODO(), &t, metav1.CreateOptions{})
+	it, err := tc.TektonV1().Tasks(namespace).Create(context.TODO(), &t, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("create task: %w", err)
 	}

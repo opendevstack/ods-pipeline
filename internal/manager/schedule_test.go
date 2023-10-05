@@ -8,7 +8,7 @@ import (
 	kubernetesClient "github.com/opendevstack/ods-pipeline/internal/kubernetes"
 	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -22,7 +22,7 @@ import (
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/config"
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 func TestIsCiSkipInCommitMessage(t *testing.T) {
@@ -84,7 +84,7 @@ func TestFetchODSConfig(t *testing.T) {
 				"ods.yml":  []byte("pipelines: [{tasks: [{name: yml}]}]"),
 			},
 			wantErr: "",
-			wantODS: &config.ODS{Pipelines: []config.Pipeline{{Tasks: []v1beta1.PipelineTask{{Name: "yaml"}}}}},
+			wantODS: &config.ODS{Pipelines: []config.Pipeline{{Tasks: []tekton.PipelineTask{{Name: "yaml"}}}}},
 		},
 	}
 
@@ -728,11 +728,11 @@ func verifyMatchingPipelineInfo(pInfo *PipelineInfo, odsConfig *config.ODS, want
 		// Annotate wanted pipeline/trigger so that
 		// we can check later if it was selected.
 		// no matching pipeline, as wanted by the test case.
-		odsConfig.Pipelines[wantPipelineIndex].Tasks = []v1beta1.PipelineTask{
+		odsConfig.Pipelines[wantPipelineIndex].Tasks = []tekton.PipelineTask{
 			{Name: "match this"},
 		}
 		if wantTriggerIndex > -1 {
-			odsConfig.Pipelines[wantPipelineIndex].Triggers[wantTriggerIndex].Params = []v1beta1.Param{
+			odsConfig.Pipelines[wantPipelineIndex].Triggers[wantTriggerIndex].Params = []tekton.Param{
 				tektonStringParam("match", "this"),
 			}
 		}

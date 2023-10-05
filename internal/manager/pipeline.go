@@ -11,7 +11,7 @@ import (
 
 	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
 	"github.com/opendevstack/ods-pipeline/pkg/config"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -26,7 +26,7 @@ const (
 	// Label specifying the Git ref (e.g. branch) related to the pipeline.
 	gitRefLabel = labelPrefix + "git-ref"
 	// tektonAPIVersion specifies the Tekton API version in use
-	tektonAPIVersion = "tekton.dev/v1beta1"
+	tektonAPIVersion = "tekton.dev/v1"
 	// sharedWorkspaceName is the name of the workspace shared by all tasks
 	sharedWorkspaceName = "shared-workspace"
 )
@@ -55,12 +55,14 @@ func createPipelineRun(
 			Kind:       "PipelineRun",
 		},
 		Spec: tekton.PipelineRunSpec{
-			PipelineSpec:       assemblePipelineSpec(cfg),
-			Params:             extractPipelineParams(cfg.Params),
-			ServiceAccountName: "pipeline", // TODO
-			PodTemplate:        cfg.PipelineSpec.PodTemplate,
-			TaskRunSpecs:       cfg.PipelineSpec.TaskRunSpecs,
-			Timeouts:           cfg.PipelineSpec.Timeouts,
+			PipelineSpec: assemblePipelineSpec(cfg),
+			Params:       extractPipelineParams(cfg.Params),
+			TaskRunTemplate: tekton.PipelineTaskRunTemplate{
+				ServiceAccountName: "pipeline",
+				PodTemplate:        cfg.PipelineSpec.PodTemplate,
+			},
+			TaskRunSpecs: cfg.PipelineSpec.TaskRunSpecs,
+			Timeouts:     cfg.PipelineSpec.Timeouts,
 			Workspaces: []tekton.WorkspaceBinding{
 				{
 					Name: sharedWorkspaceName,
@@ -188,17 +190,19 @@ func pipelineRunIsProgressing(pr tekton.PipelineRun) bool {
 
 // tektonStringParam returns a Tekton task parameter.
 func tektonStringParam(name, val string) tekton.Param {
-	return tekton.Param{Name: name, Value: tekton.ArrayOrString{Type: "string", StringVal: val}}
+	return tekton.Param{
+		Name:  name,
+		Value: tekton.ParamValue{Type: tekton.ParamTypeString, StringVal: val},
+	}
 }
 
 // tektonStringParam returns a Tekton task parameter spec.
 func tektonStringParamSpec(name, defaultVal string) tekton.ParamSpec {
 	return tekton.ParamSpec{
-		Name: name,
-		Type: "string",
-		Default: &tekton.ArrayOrString{
-			Type: tekton.ParamTypeString, StringVal: defaultVal,
-		}}
+		Name:    name,
+		Type:    tekton.ParamTypeString,
+		Default: &tekton.ParamValue{Type: tekton.ParamTypeString, StringVal: defaultVal},
+	}
 }
 
 // tektonDefaultWorkspaceBindings returns the default workspace bindings for a task.

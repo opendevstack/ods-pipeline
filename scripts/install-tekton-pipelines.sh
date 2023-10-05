@@ -4,9 +4,9 @@ set -eu
 kube_context="--context kind-ods-pipeline"
 kubectl_bin="kubectl $kube_context"
 
-# Tekton version is aligned with Red Hat OpenShift Pipelines General Availability 1.10.
+# Tekton version is aligned with Red Hat OpenShift Pipelines General Availability 1.12.
 # See https://docs.openshift.com/container-platform/latest/cicd/pipelines/op-release-notes.html.
-tkn_version="v0.44.4"
+tkn_version="v0.50.1"
 tkn_dashboard_version="v0.17.0"
 
 install_tkn_dashboard="false"

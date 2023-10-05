@@ -10,7 +10,7 @@ import (
 	"time"
 
 	k "github.com/opendevstack/ods-pipeline/internal/kubernetes"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	pipelineclientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +71,7 @@ func createTaskRunWithParams(tknClient *pipelineclientset.Clientset, tc *TaskRun
 		})
 	}
 
-	tr, err := tknClient.TektonV1beta1().TaskRuns(tc.Namespace).Create(context.TODO(),
+	tr, err := tknClient.TektonV1().TaskRuns(tc.Namespace).Create(context.TODO(),
 		&tekton.TaskRun{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: makeRandomTaskrunName(tc.Name),
@@ -103,7 +103,7 @@ func waitForTaskRunDone(
 	timeout := time.Until(deadline)
 	log.Printf("Waiting up to %v seconds for task %s in namespace %s to be done...\n", timeout.Round(time.Second).Seconds(), name, ns)
 
-	w, err := c.TektonV1beta1().TaskRuns(ns).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
+	w, err := c.TektonV1().TaskRuns(ns).Watch(ctx, metav1.SingleObject(metav1.ObjectMeta{
 		Name:      name,
 		Namespace: ns,
 	}))
@@ -143,7 +143,7 @@ func waitForTaskRunPod(
 
 	var taskRunPod *corev1.Pod
 
-	podsInformer.AddEventHandler(
+	_, err := podsInformer.AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				// when a new task is created, watch its events
@@ -156,6 +156,9 @@ func waitForTaskRunPod(
 
 			},
 		})
+	if err != nil {
+		log.Printf("Unable to install the event handler: %s", err)
+	}
 
 	defer close(stop)
 	kubeInformerFactory.Start(stop)

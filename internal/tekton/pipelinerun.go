@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,7 +49,7 @@ func PipelineRunURL(consoleURL, namespace, name string) (string, error) {
 		return "", fmt.Errorf("parse base URL: %w", err)
 	}
 	cPath := fmt.Sprintf(
-		"/k8s/ns/%s/tekton.dev~v1beta1~PipelineRun/%s/",
+		"/k8s/ns/%s/tekton.dev~v1~PipelineRun/%s/",
 		namespace,
 		name,
 	)

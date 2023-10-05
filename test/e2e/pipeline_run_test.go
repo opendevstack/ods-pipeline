@@ -18,7 +18,7 @@ import (
 	"github.com/opendevstack/ods-pipeline/internal/tasktesting"
 	"github.com/opendevstack/ods-pipeline/pkg/bitbucket"
 	"github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tektonv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -176,14 +176,14 @@ func waitForServiceToBeReady(t *testing.T, clientset *k8s.Clientset, ns, name st
 	return nil
 }
 
-func waitForPipelineRunToBeTriggered(clientset *tekton.Clientset, ns string, timeout time.Duration) (*tektonv1beta1.PipelineRun, error) {
+func waitForPipelineRunToBeTriggered(clientset *tekton.Clientset, ns string, timeout time.Duration) (*tektonv1.PipelineRun, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var pipelineRunList *tektonv1beta1.PipelineRunList
+	var pipelineRunList *tektonv1.PipelineRunList
 	for {
 		time.Sleep(2 * time.Second)
-		prs, err := clientset.TektonV1beta1().PipelineRuns(ns).List(ctx, metav1.ListOptions{})
+		prs, err := clientset.TektonV1().PipelineRuns(ns).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -208,7 +208,7 @@ func waitForPipelineRunToBeDone(clientset *tekton.Clientset, ns, pr string, time
 	var reason string
 	for {
 		time.Sleep(2 * time.Second)
-		pr, err := clientset.TektonV1beta1().PipelineRuns(ns).Get(ctx, pr, metav1.GetOptions{})
+		pr, err := clientset.TektonV1().PipelineRuns(ns).Get(ctx, pr, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}

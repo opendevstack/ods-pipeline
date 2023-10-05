@@ -19,7 +19,7 @@ func TestPipelineRunURL(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := "https://console.example.com/k8s/ns/foo/tekton.dev~v1beta1~PipelineRun/bar-ab12c/"
+			want := "https://console.example.com/k8s/ns/foo/tekton.dev~v1~PipelineRun/bar-ab12c/"
 			if u != want {
 				t.Fatalf("want: %s, got: %s", want, u)
 			}

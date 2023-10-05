@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	tektonClient "github.com/opendevstack/ods-pipeline/internal/tekton"
 	"github.com/opendevstack/ods-pipeline/pkg/config"
-	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 func TestShortenString(t *testing.T) {
@@ -128,7 +128,7 @@ func TestCreatePipelineRun(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		wantParams := []tekton.Param{
+		wantParams := tekton.Params{
 			{Name: "hello", Value: tekton.ParamValue{Type: "string", StringVal: "world"}},
 		}
 		if diff := cmp.Diff(wantParams, pr.Spec.Params); diff != "" {
@@ -370,7 +370,7 @@ func TestAppendTriggerBasedParams(t *testing.T) {
 		},
 	})
 	got := mergeTriggerBasedParams(tasks, params)
-	want := []tekton.Param{
+	want := tekton.Params{
 		tektonStringParam("zero", "0"),
 		tektonStringParam("two", "b"),
 		tektonStringParam("four", "d"),
