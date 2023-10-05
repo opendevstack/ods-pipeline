@@ -264,10 +264,10 @@ fi
 
 chart_location=""
 if [ "${use_local_chart}" = true ]; then
+    chart_location="${chart_dir}"
+else
     chart_name="ods-pipeline"
     chart_location="https://github.com/opendevstack/ods-pipeline/releases/download/${chart_name}-${chart_version}/${chart_name}-${chart_version}.tgz"
-else
-    chart_location="${chart_dir}"
 fi
 
 echo "Installing Helm release ${release_name} from ${chart_location} ..."
