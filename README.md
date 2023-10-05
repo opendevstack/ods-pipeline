@@ -50,6 +50,7 @@ For OpenShift Pipelines releases and its relationship to Tekton and OpenShift ve
 
 | ods-pipeline | OpenShift Pipelines | ODS Core/Quickstarters |
 |---|---|---|
+| 0.14 (to be released) | 1.12 | 4.x |
 | [0.13](https://github.com/opendevstack/ods-pipeline/releases/tag/v0.13.2) | 1.9 | 4.x |
 | [0.12](https://github.com/opendevstack/ods-pipeline/releases/tag/v0.12.0) | 1.9 | 4.x |
 | [0.11](https://github.com/opendevstack/ods-pipeline/releases/tag/v0.11.1) | 1.9 | 4.x |
