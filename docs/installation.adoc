@@ -31,7 +31,7 @@ Download the template and fill in the values according to the comments in that f
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0-preview.1/deploy/values.yaml.tmpl -o values.yaml
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0/deploy/values.yaml.tmpl -o values.yaml
 ----
 
 TIP: It is recommended to keep this file around after the installation so that it can be reused when updating ODS Pipeline to future versions.
@@ -42,7 +42,7 @@ Login to the OpenShift cluster in your terminal, then run:
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0-preview.1/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
 ----
 
 The script will interactively ask for credentials (such as Bitbucket access token) and will create corresponding K8s secrets. If you prefer to pass these secrets via flags, use `--help` to see all options.
@@ -73,7 +73,7 @@ The update procedure consists of two quick steps:
 
 === Step 1: Updating the chart values
 
-Ensure that the `values.yaml` file you used during installation is located in the working directory. Then check if any new values have been introduced in link:https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0-preview.1/deploy/values.yaml.tmpl[`values.yaml.tmpl`] and update `values.yaml` accordingly.
+Ensure that the `values.yaml` file you used during installation is located in the working directory. Then check if any new values have been introduced in link:https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0/deploy/values.yaml.tmpl[`values.yaml.tmpl`] and update `values.yaml` accordingly.
 
 TIP: If you cannot find the `values.yaml` file from the installation, create it again using the values found in the current Helm installation.
 
@@ -83,7 +83,7 @@ Login to the OpenShift cluster in your terminal, then run:
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0-preview.1/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
 ----
 
 TIP: If you want to review the changes first before applying them, supply `--dry-run`.

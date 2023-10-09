@@ -10,7 +10,7 @@ release_name="ods-pipeline"
 serviceaccount="pipeline"
 values_file="values.yaml"
 chart_dir="./chart"
-chart_version="0.14.0-preview.1"
+chart_version="0.14.0"
 # Secrets
 auth_separator=":"
 bitbucket_auth=""
