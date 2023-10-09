@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.14.0] - 2023-10-09
+
 ### Fixed
 
 - ods.yaml branch trigger patterns must be lowercase ([#713](https://github.com/opendevstack/ods-pipeline/issues/713))
