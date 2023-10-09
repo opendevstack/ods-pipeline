@@ -53,3 +53,19 @@ jobs:
             docker push ghcr.io/${{ env.IMAGE_BASE }}/$image:latest
             echo "::endgroup::"
           done
+      -
+        name: Configure Git
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      -
+        name: Run chart-releaser
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: deploy
+          mark_as_latest: false
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
