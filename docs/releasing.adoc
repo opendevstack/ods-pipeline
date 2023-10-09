@@ -13,7 +13,7 @@ ODS pipeline follows https://semver.org[Semantic Versioning 2.0.0]. This means b
 Ensure that all issues with the milestone of the release are resolved (or re-assign the issues to a future release). Further, run `govulncheck ./...` locally to check if there are any vulnerabilities that need to be fixed before the release. For more information on `govulncheck`, see https://go.dev/blog/vuln.
 
 === Preparing the release
-The current version is hardcoded in a few places across the repository. All of these places must be updated for a release (search for `X.Y.Z`, ignoring the `test` and `tasks` directory). After the version numbers have been updated, run `make tasks` to update the rendered tasks, then mark the new version as released in the changelog and update the readme file. Commit the changes and push to the `master` branch.
+The current version is hardcoded in a few places across the repository. All of these places must be updated for a release (search for `X.Y.Z`, ignoring the `test` directory). After the version numbers have been updated, mark the new version as released in the changelog and update the readme file. Commit the changes and push to the `master` branch.
 
 === Publishing the release
 Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). The description should be like this:
