@@ -75,7 +75,7 @@ spec:
       name: url
   steps:
     - name: start
-      # Image is built from build/package/Dockerfile.start.
+      # Image is built from build/images/Dockerfile.start.
       image: '{{.Values.imageRepository}}/start:{{.Values.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME

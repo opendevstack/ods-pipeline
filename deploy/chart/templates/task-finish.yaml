@@ -19,7 +19,7 @@ spec:
       default: ''
   steps:
     - name: finish
-      # Image is built from build/package/Dockerfile.finish.
+      # Image is built from build/images/Dockerfile.finish.
       image: '{{.Values.imageRepository}}/finish:{{.Values.imageTag | default .Chart.AppVersion}}'
       env:
         - name: HOME

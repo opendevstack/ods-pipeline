@@ -28,12 +28,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: ["aqua-scan", "finish", "go-toolset", "gradle-toolset", "helm", "node16-npm-toolset", "node18-npm-toolset", "package-image", "pipeline-manager", "python-toolset", "sonar", "start"]
+        image: ["finish", "pipeline-manager", "start"]
     permissions:
       contents: read
       packages: write
       id-token: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,9 +57,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: build/package/Dockerfile.${{ matrix.image }}
+          file: build/images/Dockerfile.${{ matrix.image }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/ods-${{ matrix.image }}:${{ needs.setup.outputs.imageTag }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/${{ matrix.image }}:${{ needs.setup.outputs.imageTag }}
 
   release-chart:
     runs-on: ubuntu-latest
