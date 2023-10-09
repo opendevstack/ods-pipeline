@@ -1,5 +1,6 @@
 .vscode/
 .idea/
+.cr-release-packages/
 test/testdata/workspaces/workspace-*
 ods.external.yaml
 artifact-download-linux-amd64
