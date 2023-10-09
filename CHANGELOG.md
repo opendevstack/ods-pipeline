@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reading username / password did not work when the install script was piped into bash. See [#733](https://github.com/opendevstack/ods-pipeline/pull/733).
+
 ## [0.14.0] - 2023-10-09
 
 ### Fixed
