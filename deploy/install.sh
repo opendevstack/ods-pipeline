@@ -174,11 +174,11 @@ installSecret () {
         if [ -z "${flagValue}" ]; then
             if [ -n "${usernamePrompt}" ]; then
                 echo "${usernamePrompt}"
-                read -r authUser
+                read -r authUser </dev/tty
             fi
             if [ -n "${passwordPrompt}" ]; then
                 echo "${passwordPrompt}"
-                read -rs authPassword
+                read -rs authPassword </dev/tty
             else
                 authUser=''
                 authPassword=$(LC_ALL=C tr -dc 'A-Za-z0-9#%*+\-<=>_{|}' </dev/urandom | head -c 32 ; echo)
