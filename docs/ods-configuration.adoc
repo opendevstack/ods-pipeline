@@ -184,7 +184,7 @@ Parameters when prefixed with `<task-name>.` are passed to the task named `<task
 
 Aside from `tasks` and `finally`, you may also specify https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#configuring-a-failure-timeout[`timeouts`], link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#specifying-a-pod-template[`podTemplate`] and link:https://tekton.dev/vault/pipelines-v0.41.x-lts/pipelineruns/#specifying-taskrunspecs[`taskRunSpecs`] for more advanced configuration.
 
-The following example overrides compute resources of a remotely resolved task and adds an additional environment variable (provided `enable-api-fields` is set to `alpha`):
+The following example adds an additional environment variable and, if `enable-api-fields` is set to `alpha`, overrides compute resources of a remotely resolved task:
 
 .ods.yaml
 [source,yaml]
