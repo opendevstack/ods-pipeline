@@ -22,8 +22,8 @@ As mentioned above, `make test` will run all tests. You may also run only a subs
 * `make test-cmd` for the packages under `cmd`
 * `make test-pkg` for the packages under `pkg`
 * `make test-internal` for the packages under `internal`
+* `make test-e2e-tasks` for the task tests
+* `make test-e2e-pipelineruns` for the pipeline run tests
 * `make test-e2e` for the task tests and the pipeline run tests
-
-Tests can be run both without a private certificate (which is the default) or using a private certificate to test how the tasks perform when the services use a certificate which is not part of the OS default trusted certs. If you want to use a private certificate in the task tests, pass `-private-cert` to `go test`.
 
 Images used in tasks are rebuilt automatically before executing tests. This provides the best accuracy but it can slow down testing considerably. If you did not make changes since the last test run that would affect the images, you can pass `-ods-reuse-images` to `go test`.

@@ -34,7 +34,7 @@ func runStartTask(opts ...ttr.TaskRunOpt) error {
 func TestStartTaskClonesRepoAtBranch(t *testing.T) {
 	k8sClient := newK8sClient(t)
 	if err := runStartTask(
-		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, namespaceConfig.Name),
+		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, namespaceConfig.Name, false),
 		func(c *ttr.TaskRunConfig) error {
 			c.Params = append(c.Params, ttr.TektonParamsFromStringParams(map[string]string{
 				"url":               bitbucketURLForWorkspace(c.WorkspaceConfigs["source"]),
@@ -48,7 +48,7 @@ func TestStartTaskClonesRepoAtBranch(t *testing.T) {
 			wsDir, odsContext := ott.GetSourceWorkspaceContext(t, config)
 			checkODSContext(t, wsDir, odsContext)
 			checkFilesExist(t, wsDir, filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
-			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusInProgress)
 		}),
 	); err != nil {
@@ -59,7 +59,7 @@ func TestStartTaskClonesRepoAtBranch(t *testing.T) {
 func TestStartTaskClonesRepoAtTag(t *testing.T) {
 	k8sClient := newK8sClient(t)
 	if err := runStartTask(
-		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, namespaceConfig.Name),
+		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, namespaceConfig.Name, false),
 		func(c *ttr.TaskRunConfig) error {
 			wsDir, odsContext := ott.GetSourceWorkspaceContext(t, c)
 			tasktesting.UpdateBitbucketRepoWithTagOrFatal(t, odsContext, wsDir, "v1.0.0")
@@ -91,7 +91,7 @@ func TestStartTaskClonesRepoAndSubrepos(t *testing.T) {
 				// Setup sub-component
 				subrepoContext = setupBitbucketRepoWithSubdirOrFatal(t, c, k8sClient)
 				// Nexus artifacts
-				nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+				nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 				artifactsBaseDir := filepath.Join(projectpath.Root, "test", testdataWorkspacesPath, "hello-world-app-with-artifacts", pipelinectxt.ArtifactsPath)
 				_, err := nexusClient.Upload(
 					nexus.TestTemporaryRepository,
@@ -141,7 +141,7 @@ func TestStartTaskClonesRepoAndSubrepos(t *testing.T) {
 			checkFileContent(t, destinationArtifactsBaseDir, xUnitFileSource, xUnitContent)
 			checkFilesExist(t, destinationArtifactsBaseDir, pipelinectxt.ArtifactsManifestFilename)
 
-			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusInProgress)
 		}),
 	); err != nil {
@@ -194,7 +194,7 @@ func TestStartTaskClonesUsingLFS(t *testing.T) {
 			"../testdata/workspaces/hello-world-app",
 			func(c *ttr.WorkspaceConfig) error {
 				odsContext := tasktesting.SetupBitbucketRepo(
-					t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+					t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, false,
 				)
 				tasktesting.EnableLfsOnBitbucketRepoOrFatal(t, filepath.Base(c.Dir), tasktesting.BitbucketProjectKey)
 				lfsFilename = "lfspicture.jpg"
@@ -221,40 +221,33 @@ func TestStartTaskClonesUsingLFS(t *testing.T) {
 	}
 }
 
-// func TestStartTaskUsesPrivateCert(t *testing.T) {
-// 	k8sClient := newK8sClient(t)
-// 	nc, cleanup, err := ttr.SetupTempNamespace(
-// 		clusterConfig,
-// 		ott.StartBitbucket(),
-// 		ott.StartNexus(),
-// 		ott.InstallODSPipeline(&ott.InstallOptions{PrivateCert: true}),
-// 	)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer cleanup()
-// 	if err := runStartTask(
-// 		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, nc.Name),
-// 		func(c *ttr.TaskRunConfig) error {
-// 			c.Params = append(c.Params, ttr.TektonParamsFromStringParams(map[string]string{
-// 				"url":               bitbucketURLForWorkspace(c.WorkspaceConfigs["source"]),
-// 				"git-full-ref":      "refs/heads/master",
-// 				"project":           tasktesting.BitbucketProjectKey,
-// 				"pipeline-run-name": "foo",
-// 			})...)
-// 			return nil
-// 		},
-// 		ttr.AfterRun(func(config *ttr.TaskRunConfig, run *tekton.TaskRun, logs bytes.Buffer) {
-// 			wsDir, odsContext := ott.GetSourceWorkspaceContext(t, config)
-// 			checkODSContext(t, wsDir, odsContext)
-// 			checkFilesExist(t, wsDir, filepath.Join(pipelinectxt.ArtifactsPath, pipelinectxt.ArtifactsManifestFilename))
-// 			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, nc.Name, *privateCertFlag)
-// 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusInProgress)
-// 		}),
-// 	); err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+func TestStartTaskUsesPrivateCert(t *testing.T) {
+	k8sClient := newK8sClient(t)
+	nc, cleanup, err := ttr.SetupTempNamespace(
+		clusterConfig,
+		ott.InstallODSPipeline(&ott.InstallOptions{PrivateCert: true}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	if err := ttr.RunTask(
+		ttr.InNamespace(nc.Name),
+		ttr.UsingTask("ods-pipeline-start"),
+		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app", k8sClient, nc.Name, true),
+		func(c *ttr.TaskRunConfig) error {
+			c.Params = append(c.Params, ttr.TektonParamsFromStringParams(map[string]string{
+				"url":               bitbucketURLForWorkspace(c.WorkspaceConfigs["source"]),
+				"git-full-ref":      "refs/heads/master",
+				"project":           tasktesting.BitbucketProjectKey,
+				"pipeline-run-name": "foo",
+			})...)
+			return nil
+		},
+	); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func setupBitbucketRepoWithSubdirOrFatal(t *testing.T, c *ttr.WorkspaceConfig, k8sClient kubernetes.Interface) *pipelinectxt.ODSContext {
 	// Setup sub-component
@@ -267,7 +260,7 @@ func setupBitbucketRepoWithSubdirOrFatal(t *testing.T, c *ttr.WorkspaceConfig, k
 		t.Fatal(err)
 	}
 	subCtxt := tasktesting.SetupBitbucketRepo(
-		t, k8sClient, namespaceConfig.Name, tempDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+		t, k8sClient, namespaceConfig.Name, tempDir, tasktesting.BitbucketProjectKey, false,
 	)
 	err = os.RemoveAll(tempDir)
 	if err != nil {
@@ -278,7 +271,7 @@ func setupBitbucketRepoWithSubdirOrFatal(t *testing.T, c *ttr.WorkspaceConfig, k
 		t.Fatal(err)
 	}
 	_ = tasktesting.SetupBitbucketRepo(
-		t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+		t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, false,
 	)
 	return subCtxt
 }
