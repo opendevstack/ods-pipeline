@@ -30,14 +30,14 @@ func runFinishTask(opts ...ttr.TaskRunOpt) error {
 func TestFinishTaskSetsBitbucketStatusToFailed(t *testing.T) {
 	k8sClient := newK8sClient(t)
 	if err := runFinishTask(
-		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app-with-artifacts", k8sClient, namespaceConfig.Name),
+		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app-with-artifacts", k8sClient, namespaceConfig.Name, false),
 		ttr.WithStringParams(map[string]string{
 			"pipeline-run-name":      "foo",
 			"aggregate-tasks-status": "None",
 		}),
 		ttr.AfterRun(func(config *ttr.TaskRunConfig, run *tekton.TaskRun, logs bytes.Buffer) {
 			_, odsContext := ott.GetSourceWorkspaceContext(t, config)
-			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusFailed)
 		}),
 	); err != nil {
@@ -53,12 +53,12 @@ func TestFinishTaskSetsBitbucketStatusToSuccessfulAndUploadsArtifactsToNexus(t *
 			"../testdata/workspaces/hello-world-app-with-artifacts",
 			func(c *ttr.WorkspaceConfig) error {
 				odsContext := tasktesting.SetupBitbucketRepo(
-					t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+					t, k8sClient, namespaceConfig.Name, c.Dir, tasktesting.BitbucketProjectKey, false,
 				)
 				// Pretend there is alredy a coverage report in Nexus.
 				// This assures the safeguard is working to avoid duplicate upload.
 				t.Log("Uploading coverage artifact to Nexus and writing manifest")
-				nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+				nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 				if _, err := nexusClient.Upload(
 					nexus.TestTemporaryRepository,
 					pipelinectxt.ArtifactGroup(odsContext, pipelinectxt.CodeCoveragesDir),
@@ -90,7 +90,7 @@ func TestFinishTaskSetsBitbucketStatusToSuccessfulAndUploadsArtifactsToNexus(t *
 		}),
 		ttr.AfterRun(func(config *ttr.TaskRunConfig, run *tekton.TaskRun, logs bytes.Buffer) {
 			_, odsContext := ott.GetSourceWorkspaceContext(t, config)
-			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+			bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 			checkBuildStatus(t, bitbucketClient, odsContext.GitCommitSHA, bitbucket.BuildStatusSuccessful)
 			checkArtifactsAreInNexus(t, k8sClient, odsContext, nexus.TestTemporaryRepository)
 
@@ -98,6 +98,30 @@ func TestFinishTaskSetsBitbucketStatusToSuccessfulAndUploadsArtifactsToNexus(t *
 			if !strings.Contains(logs.String(), wantLogMsg) {
 				t.Fatalf("Want:\n%s\n\nGot:\n%s", wantLogMsg, logs.String())
 			}
+		}),
+	); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFinishTaskUsesPrivateCert(t *testing.T) {
+	k8sClient := newK8sClient(t)
+	nc, cleanup, err := ttr.SetupTempNamespace(
+		clusterConfig,
+		ott.InstallODSPipeline(&ott.InstallOptions{PrivateCert: true}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	if err := ttr.RunTask(
+		ttr.InNamespace(nc.Name),
+		ttr.UsingTask("ods-pipeline-finish"),
+		withBitbucketSourceWorkspace(t, "../testdata/workspaces/hello-world-app-with-artifacts", k8sClient, nc.Name, true),
+		ttr.WithStringParams(map[string]string{
+			"pipeline-run-name":      "foo",
+			"aggregate-tasks-status": "Succeeded",
+			"artifact-target":        nexus.TestTemporaryRepository,
 		}),
 	); err != nil {
 		t.Fatal(err)
@@ -125,7 +149,7 @@ func TestFinishTaskStopsGracefullyWhenContextCannotBeRead(t *testing.T) {
 
 func checkArtifactsAreInNexus(t *testing.T, k8sClient kubernetes.Interface, odsContext *pipelinectxt.ODSContext, targetRepository string) {
 
-	nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+	nexusClient := tasktesting.NexusClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 
 	// List of expected artifacts to have been uploaded to Nexus
 	artifactsMap := map[string][]string{

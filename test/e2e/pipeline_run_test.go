@@ -57,7 +57,7 @@ func TestPipelineRun(t *testing.T) {
 	}
 	t.Logf("Workspace is in %s", wsDir)
 	odsContext := tasktesting.SetupBitbucketRepo(
-		t, k8sClient, namespaceConfig.Name, wsDir, tasktesting.BitbucketProjectKey, *privateCertFlag,
+		t, k8sClient, namespaceConfig.Name, wsDir, tasktesting.BitbucketProjectKey, false,
 	)
 
 	// The webhook URL needs to be the address of the KinD control plane on the node port.
@@ -75,7 +75,7 @@ func TestPipelineRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not get Bitbucket webhook secret: %s", err)
 	}
-	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, *privateCertFlag)
+	bitbucketClient := tasktesting.BitbucketClientOrFatal(t, k8sClient, namespaceConfig.Name, false)
 	_, err = bitbucketClient.WebhookCreate(
 		odsContext.Project,
 		odsContext.Repository,

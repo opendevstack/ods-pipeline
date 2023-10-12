@@ -92,9 +92,9 @@ func newTektonClient(t *testing.T) *tekton.Clientset {
 // then commits and pushes to Bitbucket.
 // The workspace will also be setup with an ODS context directory in .ods
 // with the given namespace.
-func initBitbucketRepo(t *testing.T, k8sClient kubernetes.Interface, namespace string) ttr.WorkspaceOpt {
+func initBitbucketRepo(t *testing.T, k8sClient kubernetes.Interface, namespace string, privateCert bool) ttr.WorkspaceOpt {
 	return func(c *ttr.WorkspaceConfig) error {
-		_ = tasktesting.SetupBitbucketRepo(t, k8sClient, namespace, c.Dir, tasktesting.BitbucketProjectKey, false)
+		_ = tasktesting.SetupBitbucketRepo(t, k8sClient, namespace, c.Dir, tasktesting.BitbucketProjectKey, privateCert)
 		return nil
 	}
 }
@@ -102,19 +102,19 @@ func initBitbucketRepo(t *testing.T, k8sClient kubernetes.Interface, namespace s
 // withBitbucketSourceWorkspace configures the task run with a workspace named
 // "source", mapped to the directory sourced from sourceDir. The directory is
 // initialised as a Git repository with an ODS context with the given namespace.
-func withBitbucketSourceWorkspace(t *testing.T, sourceDir string, k8sClient kubernetes.Interface, namespace string, opts ...ttr.WorkspaceOpt) ttr.TaskRunOpt {
+func withBitbucketSourceWorkspace(t *testing.T, sourceDir string, k8sClient kubernetes.Interface, namespace string, privateCert bool, opts ...ttr.WorkspaceOpt) ttr.TaskRunOpt {
 	return ott.WithSourceWorkspace(
 		t, sourceDir,
-		append([]ttr.WorkspaceOpt{initBitbucketRepo(t, k8sClient, namespace)}, opts...)...,
+		append([]ttr.WorkspaceOpt{initBitbucketRepo(t, k8sClient, namespace, privateCert)}, opts...)...,
 	)
 }
 
 func checkBuildStatus(t *testing.T, c *bitbucket.Client, gitCommit, wantBuildStatus string) {
 	buildStatusPage, err := c.BuildStatusList(gitCommit)
-	buildStatus := buildStatusPage.Values[0]
 	if err != nil {
 		t.Fatal(err)
 	}
+	buildStatus := buildStatusPage.Values[0]
 	if buildStatus.State != wantBuildStatus {
 		t.Fatalf("Got: %s, want: %s", buildStatus.State, wantBuildStatus)
 	}
