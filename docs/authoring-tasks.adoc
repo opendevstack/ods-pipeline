@@ -94,7 +94,7 @@ If your custom task produces artifacts and stores them in a subfolder under `.od
 
 === Which programming language should I use? Do I need to use Go?
 
-You may use any programming language you wish to implement the logic of your task, since you provide both the container image to use, and the script to execute in that image. Therefore, you can write the task in any way you want: shell scripts, Go, Python, Ruby, Java, ... you name it. That said, using languages with a fast boot time and a low memory footprint is advisable. If you plan to write automated tests for your task (which can also be run locally), then you may use the Go test framework provided by `ods-pipeline`, but even then you may use a language other than Go for your actual task.
+You may use any programming language you wish to implement the logic of your task, since you provide both the container image to use, and the script to execute in that image. Therefore, you can write the task in any way you want: shell scripts, Go, Python, Ruby, Java, ... you name it. That said, using languages with a fast boot time and a low memory footprint is advisable. If you plan to write automated tests for your task (which can also be run locally), then you may use the Go test framework provided by `ods-pipeline` (see the documentation of the link:https://pkg.go.dev/github.com/opendevstack/ods-pipeline/pkg/tektontaskrun[tektontaskrun] and link:https://pkg.go.dev/github.com/opendevstack/ods-pipeline/pkg/odstasktest[odstasktest] packages), but even then you may use a language other than Go for your actual task.
 
 === Which images can I use in my tasks?
 
