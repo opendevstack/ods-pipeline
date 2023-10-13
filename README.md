@@ -43,6 +43,7 @@ Note that this ODS Pipeline repository does not provide tasks for building, pack
 * [Architecture Decision Records](/docs/adr)
 * [Goals and Non-Goals](/docs/design/goals-and-nongoals.adoc)
 * [Relationship to Jenkins Shared Library](/docs/design/relationship-shared-library.adoc)
+* [Comparison to Pipelines-as-Code](/docs/comparison-pipelines-as-code.adoc)
 
 ## Compatibility
 
