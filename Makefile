@@ -96,7 +96,7 @@ test-e2e: test-e2e-tasks test-e2e-pipelineruns ## Run testsuite of tasks and ful
 .PHONY: test-e2e
 
 test-e2e-tasks: ## Run testsuite of tasks.
-	go test -v -count=1 -timeout 20m -skip ^TestPipelineRun  ./test/e2e/...
+	go test -v -count=1 -timeout 20m -skip ^TestPipelineRun ./test/e2e/...
 .PHONY: test-e2e-tasks
 
 test-e2e-pipelineruns: ## Run testsuite of full pipeline run.

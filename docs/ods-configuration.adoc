@@ -162,12 +162,10 @@ pipelines:
 - triggers:
   - branches: ["develop"]
     params:
-    - name: deploy.namespace
-      value: foo-dev
+    - { name: deploy.namespace, value: 'foo-dev' }
   - branches: ["production"]
     params:
-    - name: deploy.namespace
-      value: foo-prod
+    - { name: deploy.namespace, value: 'foo-prod' }
   tasks:
   - name: deploy
     taskRef:

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/opendevstack/ods-pipeline/internal/command"
 	"github.com/opendevstack/ods-pipeline/internal/kubernetes"
 	"github.com/opendevstack/ods-pipeline/internal/notification"
 	"github.com/opendevstack/ods-pipeline/internal/tekton"
@@ -29,6 +30,7 @@ type options struct {
 	nexusUsername        string
 	nexusPassword        string
 	artifactTarget       string
+	retainLog            bool
 	debug                bool
 }
 
@@ -47,6 +49,7 @@ func main() {
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
 	flag.StringVar(&opts.artifactTarget, "artifact-target", "", "Target artifact repository")
+	flag.BoolVar(&opts.retainLog, "retain-log", false, "retain pipeline run log")
 	flag.BoolVar(&opts.debug, "debug", (os.Getenv("DEBUG") == "true"), "debug mode")
 	flag.Parse()
 
@@ -82,15 +85,20 @@ func main() {
 		log.Fatal("pipeline run URL:", err)
 	}
 
-	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
+	if err := bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       getBitbucketBuildStatus(opts.aggregateTasksStatus),
 		Key:         ctxt.GitCommitSHA,
 		Name:        ctxt.GitCommitSHA,
 		URL:         prURL,
 		Description: "ODS Pipeline Build",
-	})
-	if err != nil {
+	}); err != nil {
 		log.Fatal(err)
+	}
+
+	if opts.retainLog {
+		if err := retainPipelineRunLog(ctxt.Namespace, opts.pipelineRunName); err != nil {
+			log.Fatalf("failed to get pipeline runs logs: %s", err)
+		}
 	}
 
 	nexusClient, err := nexus.NewClient(&nexus.ClientConfig{
@@ -139,6 +147,22 @@ func main() {
 			log.Printf("Calling notification webhook failed: %s", err)
 		}
 	}
+}
+
+func retainPipelineRunLog(namespace, name string) error {
+	err := os.MkdirAll(pipelinectxt.LogsPath, 0755)
+	if err != nil {
+		return err
+	}
+	fn := name + ".log"
+	f, err := os.Create(filepath.Join(pipelinectxt.LogsPath, fn))
+	if err != nil {
+		return err
+	}
+	return command.Run(
+		"tkn", []string{"-n", namespace, "pipelinerun", "logs", name},
+		[]string{}, f, os.Stderr,
+	)
 }
 
 // handleArtifacts figures out what to do with the artifacts stored underneath

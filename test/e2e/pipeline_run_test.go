@@ -94,7 +94,11 @@ func TestPipelineRun(t *testing.T) {
 	filename := "ods.yaml"
 	fileContent := `
 pipelines:
-- tasks:
+- triggers:
+  - branches: ["*", "*/*"]
+    params:
+    - { name: finish.retain-log, value: 'true' }
+  tasks:
   - name: hello-world
     taskSpec:
       steps:

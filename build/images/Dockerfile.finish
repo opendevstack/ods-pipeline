@@ -1,4 +1,4 @@
-FROM golang:1.19 as builder
+FROM golang:1.19 as go-builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
@@ -13,9 +13,15 @@ COPY internal internal
 COPY pkg pkg
 RUN cd cmd/finish && CGO_ENABLED=0 go build -o /usr/local/bin/ods-finish
 
+FROM registry.access.redhat.com/ubi8/ubi:8.4 as tkn-builder
+ENV TKN_VERSION=0.32.2
+ADD https://github.com/tektoncd/cli/releases/download/v0.32.2/tkn_0.32.2_Linux_x86_64.tar.gz tkn_0.32.2_Linux_x86_64.tar.gz
+RUN tar xvzf tkn_0.32.2_Linux_x86_64.tar.gz -C /usr/local/bin/ tkn
+
 # Final image
 # ubi-micro cannot be used as it misses the ca-certificates package.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
-COPY --from=builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
+COPY --from=tkn-builder /usr/local/bin/tkn /usr/local/bin/tkn
+COPY --from=go-builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
 VOLUME /workspace/source
 USER 1001

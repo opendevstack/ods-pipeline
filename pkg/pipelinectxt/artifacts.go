@@ -22,6 +22,8 @@ const (
 	ArtifactsPath             = BaseDir + "/" + ArtifactsDir
 	PipelineRunsDir           = "pipeline-runs"
 	PipelineRunsPath          = ArtifactsPath + "/" + PipelineRunsDir
+	LogsDir                   = "logs"
+	LogsPath                  = ArtifactsPath + "/" + LogsDir
 	ImageDigestsDir           = "image-digests"
 	ImageDigestsPath          = ArtifactsPath + "/" + ImageDigestsDir
 	SonarAnalysisDir          = "sonarqube-analysis"

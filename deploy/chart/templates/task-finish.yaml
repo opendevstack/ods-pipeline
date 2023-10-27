@@ -17,6 +17,9 @@ spec:
     - name: artifact-target
       description: Artifact target respository
       default: ''
+    - name: retain-log
+      description: Retain pipeline run log
+      default: 'false'
   steps:
     - name: finish
       # Image is built from build/images/Dockerfile.finish.
@@ -66,7 +69,8 @@ spec:
         ods-finish \
           -pipeline-run-name=$(params.pipeline-run-name) \
           -aggregate-tasks-status=$(params.aggregate-tasks-status) \
-          -artifact-target=$(params.artifact-target)
+          -artifact-target=$(params.artifact-target) \
+          -retain-log=$(params.retain-log)
       volumeMounts:
         - mountPath: /etc/ssl/certs/private-cert.pem
           name: private-cert
