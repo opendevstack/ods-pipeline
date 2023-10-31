@@ -8,7 +8,11 @@ diff="true"
 namespace=""
 release_name="ods-pipeline"
 serviceaccount="pipeline"
-values_file="values.yaml"
+values_file=""
+if [ -f "values.yaml" ]; then
+    values_file="values.yaml"
+fi
+helm_set_values=""
 chart_dir="./chart"
 chart_version="0.14.0"
 # Secrets
@@ -61,6 +65,7 @@ function usage {
     printf "\t-n|--namespace\t\t\tK8s namespace to target.\n"
     printf "\t--local-chart\t\t\tUse local chart instead of remote, versioned chart.\n"
     printf "\t-f|--values\t\t\tValues file to supply to Helm (defaults to '%s'). Multiple files can be specified comma-separated.\n" "$values_file"
+    printf "\t--set\t\t\t\tSet values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)\n"
     printf "\t-s|--serviceaccount\t\tServiceaccount to use (defaults to '%s').\n" "$serviceaccount"
     printf "\t--no-diff\t\t\tDo not run Helm diff before running Helm upgrade.\n"
     printf "\t--dry-run\t\t\tDo not apply any changes, instead just print what the script would do.\n"
@@ -73,6 +78,7 @@ function usage {
     printf "\nExample:\n\n"
     printf "\t%s \ \
       \n\t\t--namespace foo \ \
+      \n\t\t--set bitbucketUrl=https://bitbucket.example.com,nexusUrl=https://nexus.example.com,consoleUrl=https://console.example.com,pipelineManager.storageProvisioner=ebs.csi.aws.com,pipelineManager.storageClassName=gp3-csi \ \
       \n\t\t--bitbucket-auth 'personal-access-token' \ \
       \n\t\t--nexus-auth 'user:password' \n\n" "$0"
 }
@@ -100,6 +106,9 @@ while [ "$#" -gt 0 ]; do
     -s|--serviceaccount) serviceaccount="$2"; shift;;
     -s=*|--serviceaccount=*) serviceaccount="${1#*=}";;
 
+    --set) helm_set_values="$2"; shift;;
+    --set=*) helm_set_values="${1#*=}";;
+
     --auth-separator) auth_separator="$2"; shift;;
     --auth-separator=*) auth_separator="${1#*=}";;
 
@@ -121,11 +130,14 @@ while [ "$#" -gt 0 ]; do
     *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
-values_fileS=$(echo "$values_file" | tr "," "\n")
-values_args=()
-for valueFile in ${values_fileS}; do
-    values_args+=(--values="${valueFile}")
+values_files=$(echo "$values_file" | tr "," "\n")
+values_args=""
+for vf in ${values_files}; do
+    values_args+="--values=${vf} "
 done
+if [ "${helm_set_values}" != "" ]; then
+    helm_set_values="--set ${helm_set_values}"
+fi
 
 if [ "${verbose}" = true ]; then
     set -x
@@ -272,18 +284,22 @@ fi
 
 echo "Installing Helm release ${release_name} from ${chart_location} ..."
 if [ "${diff}" = true ]; then
+    # shellcheck disable=SC2086
     if "${helm_bin}" -n "${namespace}" \
-            diff upgrade --install --detailed-exitcode --three-way-merge --normalize-manifests \
-            "${values_args[@]}" \
+            diff upgrade --install --detailed-exitcode --three-way-merge --normalize-manifests --reuse-values \
+            ${values_args} \
+            ${helm_set_values} \
             "${release_name}" "${chart_location}"; then
         echo "Helm release already up-to-date."
     else
         if [ "${dry_run}" = true ]; then
             echo "(skipping in dry-run)"
         else
+            # shellcheck disable=SC2086
             "${helm_bin}" -n "${namespace}" \
-                upgrade --install \
-                "${values_args[@]}" \
+                upgrade --install --reuse-values \
+                ${values_args} \
+                ${helm_set_values} \
                 "${release_name}" "${chart_location}"
         fi
     fi
@@ -291,9 +307,11 @@ else
     if [ "${dry_run}" = true ]; then
         echo "(skipping in dry-run)"
     else
+        # shellcheck disable=SC2086
         "${helm_bin}" -n "${namespace}" \
-            upgrade --install \
-            "${values_args[@]}" \
+            upgrade --install --reuse-values \
+            ${values_args} \
+            ${helm_set_values} \
             "${release_name}" "${chart_location}"
     fi
 fi
