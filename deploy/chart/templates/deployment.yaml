@@ -46,9 +46,9 @@ spec:
             - name: ODS_STORAGE_PROVISIONER
               value: '{{.Values.pipelineManager.storageProvisioner}}'
             - name: ODS_STORAGE_CLASS_NAME
-              value: '{{.Values.pipelineManager.storageClassName}}'
+              value: '{{required "pipelineManager.storageClassName is required" .Values.pipelineManager.storageClassName}}'
             - name: ODS_STORAGE_SIZE
-              value: '{{.Values.pipelineManager.storageSize}}'
+              value: '{{required "pipelineManager.storageSize is required" .Values.pipelineManager.storageSize}}'
             - name: ODS_PRUNE_MIN_KEEP_HOURS
               value: '{{int .Values.pipelineRunMinKeepHours}}'
             - name: ODS_PRUNE_MAX_KEEP_RUNS

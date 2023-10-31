@@ -5,5 +5,5 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4}}
 data:
-  url: '{{.Values.bitbucketUrl | trimSuffix "/"}}'
-  repoBase: '{{.Values.bitbucketUrl | trimSuffix "/"}}/scm'
+  url: '{{required "bitbucketUrl is required" .Values.bitbucketUrl | trimSuffix "/"}}'
+  repoBase: '{{required "bitbucketUrl is required" .Values.bitbucketUrl | trimSuffix "/"}}/scm'

@@ -21,7 +21,7 @@ consoleUrl: ''
 # Pipeline Manager
 pipelineManager:
   # PVC (used for the pipeline workspace)
-  # Storage provisioner. On AWS backed clusters, use 'kubernetes.io/aws-ebs'.
-  storageProvisioner: 'kubernetes.io/aws-ebs'
-  # Storage class. On AWS backed clusters, use 'gp2'.
-  storageClassName: 'gp2'
+  # Storage provisioner. On AWS backed clusters, use e.g. 'ebs.csi.aws.com'.
+  storageProvisioner: ''
+  # Storage class. On AWS backed clusters, use e.g. 'gp3-csi'.
+  storageClassName: ''
