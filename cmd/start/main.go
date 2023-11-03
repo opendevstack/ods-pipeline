@@ -345,7 +345,7 @@ func checkoutAndAssembleContext(
 	ctxt = baseCtxt.Copy()
 	ctxt.GitFullRef = gitFullRef
 	ctxt.GitCommitSHA = sha
-	err = ctxt.Assemble(absCheckoutDir)
+	err = ctxt.Assemble(absCheckoutDir, opts.pipelineRunName)
 	if err != nil {
 		return nil, fmt.Errorf("assemble ODS context: %w", err)
 	}

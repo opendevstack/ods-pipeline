@@ -28,6 +28,7 @@ type ODSContext struct {
 	GitURL          string
 	PullRequestBase string
 	PullRequestKey  string
+	PipelineRun     string
 }
 
 // WriteCache writes the ODS context to .ods
@@ -50,6 +51,7 @@ func (o *ODSContext) WriteCache(wsDir string) error {
 		BaseDir + "/namespace":      o.Namespace,
 		BaseDir + "/pr-base":        o.PullRequestBase,
 		BaseDir + "/pr-key":         o.PullRequestKey,
+		BaseDir + "/pipeline-run":   o.PipelineRun,
 	}
 	for filename, content := range files {
 		err := writeFile(filepath.Join(wsDir, filename), content)
@@ -80,6 +82,7 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 		BaseDir + "/namespace":      &o.Namespace,
 		BaseDir + "/pr-base":        &o.PullRequestBase,
 		BaseDir + "/pr-key":         &o.PullRequestKey,
+		BaseDir + "/pipeline-run":   &o.PipelineRun,
 	}
 	for filename, content := range files {
 		if len(*content) == 0 {
@@ -96,36 +99,36 @@ func (o *ODSContext) ReadCache(wsDir string) error {
 
 // Assemble builds an ODS context based on given wsDir directory.
 // The information is gathered from the .git directory.
-func (o *ODSContext) Assemble(wsDir string) error {
-	if len(o.Namespace) == 0 {
+func (o *ODSContext) Assemble(wsDir, pipelineRun string) error {
+	if o.Namespace == "" {
 		ns, err := getTrimmedFileContent(namespaceFile)
 		if err != nil {
 			return fmt.Errorf("could not read %s: %w", namespaceFile, err)
 		}
 		o.Namespace = ns
 	}
-	if len(o.GitFullRef) == 0 {
+	if o.GitFullRef == "" {
 		gitHead, err := getTrimmedFileContent(filepath.Join(wsDir, ".git/HEAD"))
 		if err != nil {
 			return fmt.Errorf("could not read .git/HEAD: %w", err)
 		}
 		o.GitFullRef = strings.TrimPrefix(gitHead, "ref: ")
 	}
-	if len(o.GitRef) == 0 {
+	if o.GitRef == "" {
 		gitFullRefParts := strings.SplitN(o.GitFullRef, "/", 3)
 		if len(gitFullRefParts) != 3 {
 			return fmt.Errorf("cannot extract git ref from .git/HEAD: %s", o.GitFullRef)
 		}
 		o.GitRef = gitFullRefParts[2]
 	}
-	if len(o.GitURL) == 0 {
+	if o.GitURL == "" {
 		gitURL, err := readRemoteOriginURL(filepath.Join(wsDir, ".git/config"))
 		if err != nil {
 			return fmt.Errorf("could not get remote origin URL: %w", err)
 		}
 		o.GitURL = gitURL
 	}
-	if len(o.GitCommitSHA) == 0 {
+	if o.GitCommitSHA == "" {
 		gitSHA, err := getTrimmedFileContent(filepath.Join(wsDir, ".git", o.GitFullRef))
 		if err != nil {
 			return fmt.Errorf("could not read .git/%s: %w", o.GitFullRef, err)
@@ -139,14 +142,17 @@ func (o *ODSContext) Assemble(wsDir string) error {
 	pathParts := strings.Split(u.Path, "/")
 	organisation := pathParts[len(pathParts)-2]
 	repository := pathParts[len(pathParts)-1]
-	if len(o.Project) == 0 {
+	if o.Project == "" {
 		o.Project = strings.ToLower(organisation)
 	}
-	if len(o.Repository) == 0 {
+	if o.Repository == "" {
 		o.Repository = filenameWithoutExtension(repository)
 	}
-	if len(o.Component) == 0 {
+	if o.Component == "" {
 		o.Component = strings.TrimPrefix(o.Repository, o.Project+"-")
+	}
+	if o.PipelineRun == "" {
+		o.PipelineRun = pipelineRun
 	}
 	return nil
 }

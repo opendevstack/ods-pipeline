@@ -22,7 +22,7 @@ func TestAssemble(t *testing.T) {
 	}
 	defer cleanup()
 
-	err = c.Assemble(dir)
+	err = c.Assemble(dir, "foo-n8j4k")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,6 +37,7 @@ func TestAssemble(t *testing.T) {
 		GitURL:          "https://example.bitbucket.com/scm/ODS/ods-pipeline.git",
 		PullRequestBase: "",
 		PullRequestKey:  "",
+		PipelineRun:     "foo-n8j4k",
 	}
 	if diff := cmp.Diff(wantContext, c); diff != "" {
 		t.Fatalf("context mismatch (-want +got):\n%s", diff)

@@ -34,6 +34,7 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 		GitFullRef:   "refs/heads/master",
 		GitRef:       "master",
 		GitURL:       "http://bitbucket.acme.org/scm/myproject/myrepo.git",
+		PipelineRun:  "foo-n8j4k",
 	}
 	err := ctxt.WriteCache(wsDir)
 	if err != nil {
@@ -43,7 +44,7 @@ func SetupFakeRepo(t *testing.T, ns, wsDir string) *pipelinectxt.ODSContext {
 }
 
 func assembleAndCacheOdsCtxtOrFatal(t *testing.T, ctxt *pipelinectxt.ODSContext, wsDir string) {
-	err := ctxt.Assemble(wsDir)
+	err := ctxt.Assemble(wsDir, "")
 	if err != nil {
 		t.Fatalf("could not assemble ODS context information: %s", err)
 	}

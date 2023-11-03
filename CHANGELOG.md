@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Add PipelineRun name to ODS context ([#737](https://github.com/opendevstack/ods-pipeline/issues/737))
+
 ### Fixed
 
 - Reading username / password did not work when the install script was piped into bash. See [#733](https://github.com/opendevstack/ods-pipeline/pull/733).

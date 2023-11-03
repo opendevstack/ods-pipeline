@@ -121,6 +121,6 @@ func assembleODSContext(namespace string, workingDir string) (*pipelinectxt.ODSC
 	ctxt := &pipelinectxt.ODSContext{
 		Namespace: namespace,
 	}
-	err := ctxt.Assemble(workingDir)
+	err := ctxt.Assemble(workingDir, "")
 	return ctxt, err
 }
