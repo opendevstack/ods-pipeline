@@ -34,11 +34,9 @@ Download the template and fill in the values according to the comments in that f
 curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/values.yaml.tmpl -o values.yaml
 ----
 
-TIP: It is recommended to keep this file around after the installation so that it can be reused when updating ODS Pipeline to future versions.
-
 === Step 2: Running the install script
 
-Login to the OpenShift cluster in your terminal, then run:
+Login to the OpenShift cluster in your terminal, then run the following from the same directory that the `values.yaml` file is located in:
 
 [source]
 ----
@@ -66,28 +64,15 @@ CAUTION: An important feature of ODS Pipeline is to retain pipeline run artifact
 
 == Update Instructions
 
-The update procedure consists of two quick steps:
-
-1. Updating the chart values if required
-2. Running the install script (which will deploy the Helm chart)
-
-=== Step 1: Updating the chart values
-
-Ensure that the `values.yaml` file you used during installation is located in the working directory. Then check if any new values have been introduced in link:https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/values.yaml.tmpl[`values.yaml.tmpl`] and update `values.yaml` accordingly.
-
-TIP: If you cannot find the `values.yaml` file from the installation, create it again using the values found in the current Helm installation.
-
-=== Step 2: Running the install script
-
-Login to the OpenShift cluster in your terminal, then run:
+To update ODS Pipeline, simply run the install script again (using the new version tag that you want to install). Login to the OpenShift cluster in your terminal, then run:
 
 [source]
 ----
 curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
 ----
 
-TIP: If you want to review the changes first before applying them, supply `--dry-run`.
+IMPORTANT: Previous Helm chart values will be reused. If the release notes mention any new or changed Helm chart values, you have to pass those to the install script using `--set key1=val1,key2=val2`.
 
-TIP: By default, the credentials stored in the K8s secrets will not be updated. If you want to make a change, pass any new values as flags to the install script (supply `--help` to see all options) or update the secrets manually.
+TIP: If you want to review the changes first before applying them, supply `--dry-run`.
 
 TIP:  If you do not have access to the OpenShift API from your local machine, you can use the https://docs.openshift.com/container-platform/latest/web_console/odc-about-web-terminal.html[OpenShift Web Terminal]. Open a web terminal in the target namespace and make sure the `values.yaml` file is present in the working directory there. Then run the installation script as described above. Note that you must either install the `helm-diff` plugin using `helm plugin install https://github.com/databus23/helm-diff --version "v3.3.2"` beforehand or supply `--no-diff` when running the install script.

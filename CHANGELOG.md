@@ -10,6 +10,10 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Reuse values from past releases during update procedure ([#740](https://github.com/opendevstack/ods-pipeline/issues/740))
+
 ### Fixed
 
 - Reading username / password did not work when the install script was piped into bash. See [#733](https://github.com/opendevstack/ods-pipeline/pull/733).
