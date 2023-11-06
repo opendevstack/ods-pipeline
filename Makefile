@@ -36,9 +36,10 @@ lint-shell: ## Run shellcheck.
 	shellcheck scripts/*.sh build/images/scripts/* deploy/*.sh
 .PHONY: lint-shell
 
+set_values = nexusUrl=http://example.com,bitbucketUrl=http://example.com,consoleUrl=http://example.com,pipelineManager.storageClassName=standard
 docs: ## Render documentation for tasks.
 	renderedStartTask=$(shell mktemp); \
-	helm template ods-pipeline deploy/chart --show-only=templates/task-start.yaml > $$renderedStartTask; \
+	helm template ods-pipeline deploy/chart --show-only=templates/task-start.yaml --set $(set_values) > $$renderedStartTask; \
 	go run github.com/opendevstack/ods-pipeline/cmd/taskdoc \
 		-task $$renderedStartTask \
 		-description build/docs/task-start.adoc \
@@ -46,7 +47,7 @@ docs: ## Render documentation for tasks.
 	rm $$renderedStartTask
 
 	renderedFinishTask=$(shell mktemp); \
-	helm template ods-pipeline deploy/chart --show-only=templates/task-finish.yaml > $$renderedFinishTask; \
+	helm template ods-pipeline deploy/chart --show-only=templates/task-finish.yaml --set $(set_values) > $$renderedFinishTask; \
 	go run github.com/opendevstack/ods-pipeline/cmd/taskdoc \
 		-task $$renderedFinishTask \
 		-description build/docs/task-finish.adoc \
