@@ -63,7 +63,7 @@ jobs:
       -
         name: Run chart-releaser
         if: ${{ github.event_name != 'pull_request' }}
-        uses: helm/chart-releaser-action@v1.5.0
+        uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: deploy
           mark_as_latest: false
