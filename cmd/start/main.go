@@ -17,26 +17,31 @@ import (
 )
 
 type options struct {
-	bitbucketAccessToken   string
-	bitbucketURL           string
-	consoleURL             string
-	pipelineRunName        string
-	nexusURL               string
-	nexusUsername          string
-	nexusPassword          string
-	artifactSource         string
-	project                string
-	prKey                  string
-	prBase                 string
-	httpProxy              string
-	httpsProxy             string
-	noProxy                string
-	url                    string
-	gitFullRef             string
-	submodules             string
-	cloneDepth             string
-	cacheBuildTasksForDays int
-	debug                  bool
+	bitbucketAccessToken string
+	bitbucketURL         string
+	consoleURL           string
+	// pipelineRunName is the name of the Tekton PipelineRun resource.
+	pipelineRunName string
+	// preferredPipelineRunName is either the name of the Tekton PipelineRun
+	// resource or the name of the resource for which this pipeline run
+	// is a re-run.
+	preferredPipelineRunName string
+	nexusURL                 string
+	nexusUsername            string
+	nexusPassword            string
+	artifactSource           string
+	project                  string
+	prKey                    string
+	prBase                   string
+	httpProxy                string
+	httpsProxy               string
+	noProxy                  string
+	url                      string
+	gitFullRef               string
+	submodules               string
+	cloneDepth               string
+	cacheBuildTasksForDays   int
+	debug                    bool
 }
 
 func main() {
@@ -56,6 +61,7 @@ func main() {
 	flag.IntVar(&opts.cacheBuildTasksForDays, "cache-build-tasks-for-days", 7, "the number of days build outputs are cached. A negative number can be used to clear the cache.")
 	flag.StringVar(&opts.consoleURL, "console-url", os.Getenv("CONSOLE_URL"), "web console URL")
 	flag.StringVar(&opts.pipelineRunName, "pipeline-run-name", "", "name of pipeline run")
+	flag.StringVar(&opts.preferredPipelineRunName, "preferred-pipeline-run-name", os.Getenv("PREFERRED_PIPELINE_RUN_NAME"), "preferred name of pipeline run")
 	flag.StringVar(&opts.nexusURL, "nexus-url", os.Getenv("NEXUS_URL"), "Nexus URL")
 	flag.StringVar(&opts.nexusUsername, "nexus-username", os.Getenv("NEXUS_USERNAME"), "Nexus username")
 	flag.StringVar(&opts.nexusPassword, "nexus-password", os.Getenv("NEXUS_PASSWORD"), "Nexus password")
@@ -139,8 +145,8 @@ func main() {
 
 	err = bitbucketClient.BuildStatusCreate(ctxt.GitCommitSHA, bitbucket.BuildStatusCreatePayload{
 		State:       bitbucket.BuildStatusInProgress,
-		Key:         ctxt.GitCommitSHA,
-		Name:        ctxt.GitCommitSHA,
+		Key:         bitbucket.BuildStatusKey(opts.preferredPipelineRunName, opts.pipelineRunName),
+		Name:        bitbucket.BuildStatusKey(opts.preferredPipelineRunName, opts.pipelineRunName),
 		URL:         prURL,
 		Description: "ODS Pipeline Build",
 	})
