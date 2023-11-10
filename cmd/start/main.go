@@ -182,6 +182,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			logger.Infof("Assembled context for sub-repo %q: %+v", subrepo.Name, subrepoCtxt)
 			subrepoContexts = append(subrepoContexts, subrepoCtxt)
 		}
 	}
