@@ -10,9 +10,14 @@ listed in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Log sub repo context ([#708](https://github.com/opendevstack/ods-pipeline/issues/708))
+
 ### Changed
 
 - Reuse values from past releases during update procedure ([#740](https://github.com/opendevstack/ods-pipeline/issues/740))
+- Use pipeline run name as Bitbucket build status key ([#736](https://github.com/opendevstack/ods-pipeline/issues/736))
 
 ### Fixed
 
