@@ -82,3 +82,12 @@ func (c *Client) BuildStatusList(gitCommit string) (*BuildStatusPage, error) {
 	}
 
 }
+
+// BuildStatusKey returns the key to use for the Bitbucket build status.
+func BuildStatusKey(preferredName, name string) string {
+	if preferredName != "" {
+		return preferredName
+	} else {
+		return name
+	}
+}

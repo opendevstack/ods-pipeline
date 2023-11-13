@@ -59,6 +59,14 @@ spec:
             configMapKeyRef:
               key: debug
               name: ods-pipeline
+        - name: PREFERRED_PIPELINE_RUN_NAME
+          valueFrom:
+            fieldRef:
+              # preferredName is either the name of the Tekton PipelineRun
+              # resource or the name of the resource for which this pipeline run
+              # is a re-run. ods-finish reads this env var to determine the
+              # Bitbucket build status key.
+              fieldPath: 'metadata.annotations[''pipeline.openshift.io/preferredName'']'
       computeResources: {}
       script: |
 
