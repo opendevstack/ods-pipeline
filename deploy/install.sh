@@ -14,7 +14,7 @@ if [ -f "values.yaml" ]; then
 fi
 helm_set_values=""
 chart_dir="./chart"
-chart_version="0.14.0"
+chart_version="0.15.0"
 # Secrets
 auth_separator=":"
 bitbucket_auth=""

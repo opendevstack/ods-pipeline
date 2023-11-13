@@ -31,7 +31,7 @@ Download the template and fill in the values according to the comments in that f
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/values.yaml.tmpl -o values.yaml
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.15.0/deploy/values.yaml.tmpl -o values.yaml
 ----
 
 === Step 2: Running the install script
@@ -40,7 +40,7 @@ Login to the OpenShift cluster in your terminal, then run the following from the
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.15.0/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
 ----
 
 The script will interactively ask for credentials (such as Bitbucket access token) and will create corresponding K8s secrets. If you prefer to pass these secrets via flags, use `--help` to see all options.
@@ -68,7 +68,7 @@ To update ODS Pipeline, simply run the install script again (using the new versi
 
 [source]
 ----
-curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.14.0.1/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
+curl -fsSL https://raw.githubusercontent.com/opendevstack/ods-pipeline/v0.15.0/deploy/install.sh | bash -s -- -n=<your_cd_namespace>
 ----
 
 IMPORTANT: Previous Helm chart values will be reused. If the release notes mention any new or changed Helm chart values, you have to pass those to the install script using `--set key1=val1,key2=val2`.

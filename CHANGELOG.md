@@ -10,6 +10,8 @@ listed in the changelog.
 
 ## [Unreleased]
 
+## [0.15.0] - 2023-11-13
+
 ### Added
 
 - Log sub repo context ([#708](https://github.com/opendevstack/ods-pipeline/issues/708))
