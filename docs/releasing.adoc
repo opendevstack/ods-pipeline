@@ -13,7 +13,7 @@ ODS pipeline follows https://semver.org[Semantic Versioning 2.0.0]. This means b
 Ensure that all issues with the milestone of the release are resolved (or re-assign the issues to a future release). Further, run `govulncheck ./...` locally to check if there are any vulnerabilities that need to be fixed before the release. For more information on `govulncheck`, see https://go.dev/blog/vuln.
 
 === Preparing the release
-The current version is hardcoded in a few places across the repository. All of these places must be updated for a release (search for `X.Y.Z`, ignoring the `test` directory). After the version numbers have been updated, mark the new version as released in the changelog and update the readme file. Commit the changes and push to the `master` branch.
+The current version is hardcoded in a few places across the repository. All of these places must be updated for a release (search for `X.Y.Z`, ignoring the `test` directory). After the version numbers have been updated, mark the new version as released in the changelog and update the readme file. Commit the changes and push to the `main` branch.
 
 === Publishing the release
 Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). The description should be like this:
@@ -22,9 +22,9 @@ Draft a new GitHub release, creating a new tag in the process (e.g. `v0.2.0`). T
 ----
 < Note highlights of the release and any breaking changes >
 
-For all changes and more details, please see the [changelog](https://github.com/opendevstack/ods-pipeline/blob/master/CHANGELOG.md#< Add anchor of the released version>).
+For all changes and more details, please see the [changelog](https://github.com/opendevstack/ods-pipeline/blob/main/CHANGELOG.md#< Add anchor of the released version>).
 
-To update your ODS pipeline installation, refer to the [update instructions](https://github.com/opendevstack/ods-pipeline/blob/master/docs/installation.adoc#updating).
+To update your ODS pipeline installation, refer to the [update instructions](https://github.com/opendevstack/ods-pipeline/blob/main/docs/installation.adoc#updating).
 ----
 
 NOTE: When a Git tag is created, container images are built automatically and pushed to ghcr.io.

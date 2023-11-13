@@ -28,15 +28,15 @@ N/A
 
 ODS Pipeline is used alongside an existing ODS Core installation. It is a replacement for Jenkins as the CI/CD engine. The following diagram illustrates the relationship of ODS Pipeline to external systems:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/system-context.puml[System Context]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/main/docs/architecture/system-context.puml[System Context]
 
 The following diagram illustrates in more detail how the various components interact:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/container-system.puml[Software System]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/main/docs/architecture/container-system.puml[Software System]
 
 As the diagram above shows, the ODS Pipeline installation is made up of one container installed by project admins (once per project) containing configuration (config maps and secrets), the pipeline manager and task resources (Tekton task definitions and their referenced images). The following diagram shows more detail about the installation:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/component-namespaced-installation.puml[Namespaced Installation]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/main/docs/architecture/component-namespaced-installation.puml[Namespaced Installation]
 
 === Interfaces
 

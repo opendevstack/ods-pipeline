@@ -73,7 +73,7 @@ You can see that it defines three tasks, `build`, `package` and `deploy`, which 
 
 In order to create pipeline runs based on these task definitions whenever there is a push to Bitbucket, a webhook setting must be created for the repository. This webhook must point to a route connected to the ODS pipeline manager in OpenShift. When the webhook fires, a payload with information about the pushed commit is sent. The ODS pipeline manager first checks the authenticity of the request (did the request really originate from a push in the Bitbucket repository?). Then, it retrieves the `ods.yaml` file from the Git repository/ref identified in the payload, and reads the pipeline configuration. Based on the tasks defined there, it assembles a new Tekton pipeline run. Finally, the ODS pipeline manager starts the pipeline run, passing parameter values extracted from the webhook event payload. The following illustrates this flow:
 
-image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/master/docs/architecture/trigger_architecture.puml[Trigger Architecture]
+image::http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/opendevstack/ods-pipeline/main/docs/architecture/trigger_architecture.puml[Trigger Architecture]
 
 With the above in place, you do not need to manage pipeline runs manually. Every repository with an `ods.yaml` file and a webhook configuration automatically manages and triggers pipeline runs based on the defined tasks.
 

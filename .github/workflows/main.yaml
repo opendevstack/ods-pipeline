@@ -3,7 +3,7 @@ name: Tekton Tasks Tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 env:
