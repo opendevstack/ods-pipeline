@@ -23,7 +23,7 @@ Note that this ODS Pipeline repository does not provide tasks for building, pack
 * [Repository configuration (ods.yaml)](/docs/ods-configuration.adoc)
 * [Start task](/docs/task-start.adoc)
 * [Finish task](/docs/task-finish.adoc)
-* Companion tasks: [Go build task](https://github.com/opendevstack/ods-pipeline-go), [Gradle build task](https://github.com/opendevstack/ods-pipeline-gradle), [NPM build task](https://github.com/opendevstack/ods-pipeline-npm), [Python build task](https://github.com/opendevstack/ods-pipeline-python), [SonarQube scan task](https://github.com/opendevstack/ods-pipeline-sonar), [Package image task](https://github.com/opendevstack/ods-pipeline-image), [Helm deploy task](https://github.com/opendevstack/ods-pipeline-helm)
+* Companion tasks: [Go build task](https://github.com/opendevstack/ods-pipeline-go), [Gradle build task](https://github.com/opendevstack/ods-pipeline-gradle), [NPM build task](https://github.com/opendevstack/ods-pipeline-npm), [Python build task](https://github.com/opendevstack/ods-pipeline-python), [SonarQube scan task](https://github.com/opendevstack/ods-pipeline-sonar), [Package image task](https://github.com/opendevstack/ods-pipeline-image), [Helm deploy task](https://github.com/opendevstack/ods-pipeline-helm), [Tekton logs task](https://github.com/opendevstack/ods-pipeline-tkn), [Asciidoc-to-PDF task](https://github.com/opendevstack/ods-pipeline-adoc)
 
 ### How-To Guides
 * [Accessing artifacts](/docs/accessing-artifacts.adoc)
