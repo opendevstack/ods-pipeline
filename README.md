@@ -26,6 +26,7 @@ Note that this ODS Pipeline repository does not provide tasks for building, pack
 * Companion tasks: [Go build task](https://github.com/opendevstack/ods-pipeline-go), [Gradle build task](https://github.com/opendevstack/ods-pipeline-gradle), [NPM build task](https://github.com/opendevstack/ods-pipeline-npm), [Python build task](https://github.com/opendevstack/ods-pipeline-python), [SonarQube scan task](https://github.com/opendevstack/ods-pipeline-sonar), [Package image task](https://github.com/opendevstack/ods-pipeline-image), [Helm deploy task](https://github.com/opendevstack/ods-pipeline-helm), [Tekton logs task](https://github.com/opendevstack/ods-pipeline-tkn), [Asciidoc-to-PDF task](https://github.com/opendevstack/ods-pipeline-adoc)
 
 ### How-To Guides
+* [Promoting applications between environments](/docs/promotion.adoc)
 * [Accessing artifacts](/docs/accessing-artifacts.adoc)
 * [Debugging](/docs/debugging.adoc)
 * [Authoring your own tasks](/docs/authoring-tasks.adoc)

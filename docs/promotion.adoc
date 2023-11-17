@@ -1,0 +1,169 @@
+# Promotion
+
+Commonly, CI pipelines build and package software, as well as deploy them in some preview or development environment. Then, the same software should be promoted to other environments, either in a continuous deployment model where all versions get deployed; or in a more controlled model where only certain versions are deployed into a QA / staging environment and, once approved, into production. ODS Pipeline supports all of these approaches. The following guide describes in detail how software can be moved between environments without building and packaging the software again.
+
+
+There are two concepts in ODS Pipeline which are crucial to understand in order to set up promotion:
+
+1. Pipeline artifacts
+2. Umbrella repositories
+
+## Pipeline Artifacts
+
+ODS Pipeline is able to publish artifacts at the end of a pipeline run. In a nutshell, all files stored underneath `.ods/artifacts` during a pipeline run will get uploaded to Nexus if the `artifact-target` parameter of the `finish` task is set. For example:
+
+```
+name: finish.artifact-target
+value: my-nexus-repo
+```
+
+Assuming you are building commit `6eb7b3d77a4c5b513a7f2cde2c9645fc4e4ff636` of repository `my-project/my-git-repo` and the pipeline created a file named `.ods/artifacts/image-digests/my-image.json`, after the pipeline run there will be a file named `my-nexus-repo/my-project/my-git-repo/6eb7b3d77a4c5b513a7f2cde2c9645fc4e4ff636/image-digests/my-image.json` in Nexus. This artifact can be used in subsequent runs, as we'll see soon.
+
+Next to uploading artifacts at the end of a pipeline run, ODS Pipeline can also download artifacts at the beginning of the pipeline run, in the `start` task. If you specify the `artifact-source` parameter of the `start` task, any files associated with the Git commit being built will be downloaded and placed into `.ods/artifacts`. For example:
+
+```
+name: start.artifact-source
+value: my-nexus-repo
+```
+
+Assuming you create a new branch at commit `6eb7b3d77a4c5b513a7f2cde2c9645fc4e4ff636` and trigger a pipeline run, then this run will have the file named `.ods/artifacts/image-digests/my-image.json` available in the workspace. Tasks may make use of files like this to do work based on work done in previous pipelines. For example, the `ods-pipeline-helm-deploy` task reads all `image-digests` files and copies each described image into the release namespace so that the resources created by the Helm chart can make use of the images.
+
+In summary, you can have pipelines building and packaging software, and other pipelines just deploying previously packaged software. How you exactly configure the pipelines depends on when you want to deploy into which environment. The following gives some examples for inspiration.
+
+### Scenario 1: Deploy continously
+
+You may build and package software in pull requests, and deploy it immediately when merging into `main`. The `ods.yaml` file would look like this:
+
+```
+pipelines:
+- triggers:
+  - branches: ["main"]
+    params:
+    - { name: start.artifact-source, value: "my-nexus-repo" }
+    - { name: deploy.namespace, value: "prod-env" }
+  tasks:
+  - name: deploy
+- triggers:
+  - branches: ["*", "*/*"]
+    params:
+    - { name: finish.artifact-target, value: "my-nexus-repo" }
+    - { name: deploy.namespace, value: "prod-env" }
+    - { name: deploy.diff-only, value: "true" }
+  tasks:
+  - name: build
+  - name: package
+  - name: deploy
+```
+
+Note that for this to work, you'll need to merge using a fast-forward strategy, otherwise the pipeline runs for the `main` branch will not find any artifacts built for the pull requests.
+
+### Scenario 2: Deploy on special branch
+
+You may map certain branches to environments to have more control over what gets deployed to users. One Git branching strategy that would make a good fit for this is Gitflow. The `ods.yaml` file would look like this:
+
+```
+pipelines:
+- triggers:
+  - branches: ["develop"]
+    params:
+    - { name: finish.artifact-target, value: "dev-nexus-repo" }
+    - { name: deploy.namespace, value: "dev-env" }
+  tasks:
+  - name: build
+  - name: package
+  - name: deploy
+- triggers:
+  - branches: ["release/*"]
+    params:
+    - { name: start.artifact-source, value: "dev-nexus-repo" }
+    - { name: finish.artifact-target, value: "qa-nexus-repo" }
+    - { name: deploy.namespace, value: "qa-env" }
+  tasks:
+  - name: deploy
+- triggers:
+  - branches: ["production"]
+    params:
+    - { name: start.artifact-source, value: "qa-nexus-repo" }
+    - { name: finish.artifact-target, value: "prod-nexus-repo" }
+    - { name: deploy.namespace, value: "prod-env" }
+  tasks:
+  - name: deploy
+- triggers:
+  - branches: ["*", "*/*"]
+    params:
+    - { name: deploy.namespace, value: "dev-env" }
+    - { name: deploy.diff-only, value: "true" }
+  tasks:
+  - name: build
+  - name: package
+  - name: deploy
+```
+
+In the configuration above, multiple Nexus repositories are used to ensure the software gets promoted from DEV > QA > PROD without skipping a stage. Note that, again, you'll need to merge using the fast-forward strategy between `release/*` branches and `production` (which is anyway crucial to avoid accidentally breaking the `production` branch). However, with the configuration above you do not need to merge your pull requests using the fast-forword strategy as the pipelines running for the `develop` branch build and package the software.
+
+Of course, other configuration is possible and ODS Pipeline should be flexible enough to fit any model that fits to your team and situation.
+
+## Umbrella repositories
+
+Sometimes, your application consists of multiple components that you want to deploy together. In this case, you can create an umbrella repository referencing the repository of each component. Pipeline runs for the umbrella repository will then collect the artifacts for each referenced repository, and deploy everything as one unit. You may also want to use this approach with a single component, if you want to split the deployment aspect from the build aspect.
+
+If you use this approach, the Git branching model of each component would typically be rather simple, e.g. one trigger for topic branches, and one trigger for the main branch. The main branch nees to publish artifacts into a Nexus repository so that the pipeline runs for the umbrella repository can pick them up. Here's an example configuration for a component repository:
+
+```
+pipelines:
+- triggers:
+  - branches: ["main"]
+    params:
+    - { name: finish.artifact-target, value: "dev-nexus-repo" }
+    - { name: deploy.namespace, value: "dev-env" }
+  tasks:
+  - name: build
+  - name: package
+  - name: deploy
+- triggers:
+  - branches: ["*", "*/*"]
+    params:
+    - { name: deploy.namespace, value: "dev-env" }
+    - { name: deploy.diff-only, value: "true" }
+  tasks:
+  - name: build
+  - name: package
+  - name: deploy
+```
+
+Here we deploy the component, whenever there is a new push in the `main` branch, into a development environment. This allows fast iteration. However, promotion into other environments is handled in the umbrella repository. The `ods.yaml` for this would look like this:
+
+```
+repositories:
+- name: my-component
+  branch: main
+
+pipelines:
+- triggers:
+  - branches: ["production"]
+    params:
+    - { name: start.artifact-source, value: "qa-nexus-repo" }
+    - { name: finish.artifact-target, value: "prod-nexus-repo" }
+    - { name: deploy.namespace, value: "prod-env" }
+  tasks:
+  - name: deploy
+- triggers:
+  - branches: ["main"]
+    params:
+    - { name: start.artifact-source, value: "dev-nexus-repo" }
+    - { name: finish.artifact-target, value: "qa-nexus-repo" }
+    - { name: deploy.namespace, value: "qa-env" }
+  tasks:
+  - name: deploy
+- triggers:
+  - branches: ["*", "*/*"]
+    params:
+    - { name: start.artifact-source, value: "dev-nexus-repo" }
+    - { name: finish.artifact-target, value: "qa-nexus-repo" }
+    - { name: deploy.namespace, value: "qa-env" }
+    - { name: deploy.diff-only, value: "true" }
+  tasks:
+  - name: deploy
+```
+
+In the above configuration, changes in `main` trigger a deployment into QA and changes in `production` trigger a deployment to production. Merges should be done using the fast-forward strategy as described in earlier scenarios. Most likely you would like to pinpoint the revision to use of the component(s), so instead of specifying `branch: main`, use e.g. `tag: v1.0.0`. Pipeline runs for umbrella repositories require that there is a successful pipeline run artifact for the checked out commit of each sub repositories. In the above case it means for a pipeline run triggered from `main` in the umbrella repository, the `HEAD` commit of the `main` branch must have had a successful pipeline run that published its artifact at the end into `dev-nexus-repo`, as that is configured as the artifact source of the `start` task. This mechansim ensures that everything the component pipelines created (such as container images) are also promoted by the umbrella pipeline.
