@@ -450,6 +450,18 @@ func TestIdentifyPipelineConfig(t *testing.T) {
 			wantPipelineIndex: 0,
 			wantTriggerIndex:  0,
 		},
+		"branch push - pipeline with one trigger with * constraint": {
+			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "feature/foo"},
+			odsConfig: config.ODS{
+				Pipelines: []config.Pipeline{
+					{Triggers: []config.Trigger{
+						{Branches: []string{"*"}},
+					}},
+				},
+			},
+			wantPipelineIndex: 0,
+			wantTriggerIndex:  0,
+		},
 		"branch push - pipeline with one trigger with matching branch constraint upper case": {
 			pInfo: PipelineInfo{ChangeRefType: "BRANCH", GitRef: "feature/FOO-123-hello-world"},
 			odsConfig: config.ODS{
