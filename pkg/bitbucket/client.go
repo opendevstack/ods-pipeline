@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/opendevstack/ods-pipeline/pkg/logging"
@@ -26,12 +28,16 @@ type ClientConfig struct {
 	BaseURL    string
 	// Logger is the logger to send logging messages to.
 	Logger logging.LeveledLoggerInterface
+	Debug  bool
 }
 
 func NewClient(clientConfig *ClientConfig) (*Client, error) {
 	httpClient := clientConfig.HTTPClient
 	if httpClient == nil {
 		httpClient = &http.Client{}
+		if clientConfig.Debug {
+			httpClient.Transport = &loggingTransport{os.Stderr}
+		}
 	}
 	// Never follow redirects. Some endpoints (e.g. the one accessed by RawGet)
 	// redirect to the login page when authentication is not successful. This
@@ -46,7 +52,11 @@ func NewClient(clientConfig *ClientConfig) (*Client, error) {
 		httpClient.Timeout = 20 * time.Second
 	}
 	if clientConfig.Logger == nil {
-		clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+		if clientConfig.Debug {
+			clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelDebug}
+		} else {
+			clientConfig.Logger = &logging.LeveledLogger{Level: logging.LevelInfo}
+		}
 	}
 	baseURL, err := url.Parse(clientConfig.BaseURL)
 	if err != nil {
@@ -118,4 +128,24 @@ func wrapUnmarshalError(err error, statusCode int, response []byte) error {
 // fmtStatusCodeError returns an error containing statusCode/response.
 func fmtStatusCodeError(statusCode int, response []byte) error {
 	return fmt.Errorf("status code: %d, body: %s", statusCode, string(response))
+}
+
+// loggingTransport is an implementation of https://pkg.go.dev/net/http#RoundTripper
+// which dumps outgoing requests and corresponding responses to w.
+type loggingTransport struct {
+	w io.Writer
+}
+
+func (s *loggingTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	bytes, _ := httputil.DumpRequestOut(r, true)
+
+	resp, err := http.DefaultTransport.RoundTrip(r)
+	// err is returned after dumping the response
+
+	respBytes, _ := httputil.DumpResponse(resp, true)
+	bytes = append(bytes, respBytes...)
+
+	fmt.Fprintf(s.w, "%s\n", bytes)
+
+	return resp, err
 }

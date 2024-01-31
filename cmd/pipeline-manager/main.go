@@ -119,6 +119,7 @@ func serve() error {
 	bitbucketClient, err := bitbucket.NewClient(&bitbucket.ClientConfig{
 		APIToken: token,
 		BaseURL:  strings.TrimSuffix(repoBase, "/scm"),
+		Debug:    os.Getenv("DEBUG") == "true",
 	})
 	if err != nil {
 		return fmt.Errorf("bitbucket client: %w", err)
