@@ -30,9 +30,9 @@ recreate_kind_cluster="false"
 registry_port="5000"
 kind_mount_path="/tmp/ods-pipeline/kind-mount"
 
-# K8S version is aligned with OpenShift GA 4.11.
-# See https://docs.openshift.com/container-platform/4.11/release_notes/ocp-4-11-release-notes.html
-k8s_version="v1.24.7"
+# K8S version is aligned with OpenShift GA 4.13.
+# See https://docs.openshift.com/container-platform/4.13/release_notes/ocp-4-13-release-notes.html
+k8s_version="v1.26.14"
 
 while [ "$#" -gt 0 ]; do
     case $1 in
