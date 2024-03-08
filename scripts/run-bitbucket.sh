@@ -29,7 +29,7 @@ while [ "$#" -gt 0 ]; do
 esac; shift; done
 
 if [ "${reuse}" = "true" ]; then
-    if ! docker inspect ${BITBUCKET_SERVER_CONTAINER_NAME} &> /dev/null; then
+    if ! docker container inspect ${BITBUCKET_SERVER_CONTAINER_NAME} &> /dev/null; then
         echo "No existing Bitbucket container ${BITBUCKET_SERVER_CONTAINER_NAME} found ..."
     else
         echo "Reusing existing Bitbucket container ${BITBUCKET_SERVER_CONTAINER_NAME} ..."

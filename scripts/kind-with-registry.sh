@@ -55,12 +55,12 @@ reg_ip_selector='{{.NetworkSettings.Networks.kind.IPAddress}}'
 reg_network='kind'
 
 # create registry container unless it already exists
-running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+running="$(docker container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
 
 # If the registry already exists, but is in the wrong network, we have to
 # re-create it.
 if [ "${running}" = 'true' ]; then
-  reg_ip="$(docker inspect -f ${reg_ip_selector} "${registry_name}")"
+  reg_ip="$(docker container inspect -f ${reg_ip_selector} "${registry_name}")"
   if [ "${reg_ip}" = '' ]; then
     docker kill "${registry_name}"
     docker rm "${registry_name}"
@@ -73,7 +73,7 @@ if [ "${running}" != 'true' ]; then
   if [ "${net_driver}" != "bridge" ]; then
     docker network create "${reg_network}"
   fi
-  if docker inspect "${registry_name}" >/dev/null 2>&1; then
+  if docker container inspect "${registry_name}" >/dev/null 2>&1; then
     docker rm "${registry_name}"
   fi
   docker run \
@@ -81,7 +81,7 @@ if [ "${running}" != 'true' ]; then
     registry:2
 fi
 
-reg_ip="$(docker inspect -f ${reg_ip_selector} "${registry_name}")"
+reg_ip="$(docker container inspect -f ${reg_ip_selector} "${registry_name}")"
 if [ "${reg_ip}" = "" ]; then
     echo "Error creating registry: no IPAddress found at: ${reg_ip_selector}"
     exit 1
