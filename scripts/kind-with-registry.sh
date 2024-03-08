@@ -30,9 +30,9 @@ recreate_kind_cluster="false"
 registry_port="5000"
 kind_mount_path="/tmp/ods-pipeline/kind-mount"
 
-# K8S version is aligned with OpenShift GA 4.11.
-# See https://docs.openshift.com/container-platform/4.11/release_notes/ocp-4-11-release-notes.html
-k8s_version="v1.24.7"
+# K8S version is aligned with OpenShift GA 4.13.
+# See https://docs.openshift.com/container-platform/4.13/release_notes/ocp-4-13-release-notes.html
+k8s_version="v1.26.14"
 
 while [ "$#" -gt 0 ]; do
     case $1 in
@@ -55,12 +55,12 @@ reg_ip_selector='{{.NetworkSettings.Networks.kind.IPAddress}}'
 reg_network='kind'
 
 # create registry container unless it already exists
-running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+running="$(docker container inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
 
 # If the registry already exists, but is in the wrong network, we have to
 # re-create it.
 if [ "${running}" = 'true' ]; then
-  reg_ip="$(docker inspect -f ${reg_ip_selector} "${registry_name}")"
+  reg_ip="$(docker container inspect -f ${reg_ip_selector} "${registry_name}")"
   if [ "${reg_ip}" = '' ]; then
     docker kill "${registry_name}"
     docker rm "${registry_name}"
@@ -73,7 +73,7 @@ if [ "${running}" != 'true' ]; then
   if [ "${net_driver}" != "bridge" ]; then
     docker network create "${reg_network}"
   fi
-  if docker inspect "${registry_name}" >/dev/null 2>&1; then
+  if docker container inspect "${registry_name}" >/dev/null 2>&1; then
     docker rm "${registry_name}"
   fi
   docker run \
@@ -81,7 +81,7 @@ if [ "${running}" != 'true' ]; then
     registry:2
 fi
 
-reg_ip="$(docker inspect -f ${reg_ip_selector} "${registry_name}")"
+reg_ip="$(docker container inspect -f ${reg_ip_selector} "${registry_name}")"
 if [ "${reg_ip}" = "" ]; then
     echo "Error creating registry: no IPAddress found at: ${reg_ip_selector}"
     exit 1
