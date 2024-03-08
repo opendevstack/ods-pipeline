@@ -10,6 +10,7 @@ import (
 // AssertFilesExist checks that all files named by wantFiles exist in wsDir.
 // Any files that do not exist will report a test error.
 func AssertFilesExist(t *testing.T, wsDir string, wantFiles ...string) {
+	t.Helper()
 	for _, wf := range wantFiles {
 		filename := filepath.Join(wsDir, wf)
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -21,6 +22,7 @@ func AssertFilesExist(t *testing.T, wsDir string, wantFiles ...string) {
 // AssertFileContent checks that the file named by filename in the directory
 // wsDir has the exact context specified by want.
 func AssertFileContent(t *testing.T, wsDir, filename, want string) {
+	t.Helper()
 	got, err := getTrimmedFileContent(filepath.Join(wsDir, filename))
 	if err != nil {
 		t.Errorf("get content of %s: %s", filename, err)
@@ -34,6 +36,7 @@ func AssertFileContent(t *testing.T, wsDir, filename, want string) {
 // AssertFileContentContains checks that the file named by filename in the directory
 // wsDir contains all of wantContains.
 func AssertFileContentContains(t *testing.T, wsDir, filename string, wantContains ...string) {
+	t.Helper()
 	content, err := os.ReadFile(filepath.Join(wsDir, filename))
 	got := string(content)
 	if err != nil {
