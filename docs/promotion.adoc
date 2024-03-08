@@ -44,8 +44,7 @@ pipelines:
   tasks:
   - name: deploy
 - triggers:
-  - branches: ["*", "*/*"]
-    params:
+  - params:
     - { name: finish.artifact-target, value: "my-nexus-repo" }
     - { name: deploy.namespace, value: "prod-env" }
     - { name: deploy.diff-only, value: "true" }
