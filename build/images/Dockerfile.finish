@@ -15,7 +15,7 @@ RUN cd cmd/finish && CGO_ENABLED=0 go build -o /usr/local/bin/ods-finish
 
 # Final image
 # ubi-micro cannot be used as it misses the ca-certificates package.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.9
 COPY --from=builder /usr/local/bin/ods-finish /usr/local/bin/ods-finish
 VOLUME /workspace/source
 USER 1001
