@@ -44,7 +44,7 @@ func SetupTempNamespace(cc *ClusterConfig, opts ...NamespaceOpt) (nc *NamespaceC
 // NamespaceConfig.
 func InstallTaskFromPath(path string, data map[string]string) NamespaceOpt {
 	return func(cc *ClusterConfig, nc *NamespaceConfig) error {
-		d := cc.DefaultTaskTemplateData()
+		d := cc.DefaultManifestTemplateData()
 		for k, v := range data {
 			d[k] = v
 		}

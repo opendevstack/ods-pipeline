@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	k "github.com/opendevstack/ods-pipeline/internal/kubernetes"
-	"github.com/opendevstack/ods-pipeline/pkg/taskmanifest"
+	"github.com/opendevstack/ods-pipeline/pkg/rendermanifest"
 	tekton "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -20,7 +20,7 @@ func installTask(path, namespace string, data map[string]string) (*tekton.Task, 
 		return nil, fmt.Errorf("parse file: %w", err)
 	}
 	w := new(bytes.Buffer)
-	err = taskmanifest.RenderTask(w, tmpl, data)
+	err = rendermanifest.RenderManifest(w, tmpl, data)
 	if err != nil {
 		return nil, fmt.Errorf("render task: %w", err)
 	}

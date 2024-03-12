@@ -1,13 +1,13 @@
-package taskmanifest
+package rendermanifest
 
 import (
 	"io"
 	"text/template"
 )
 
-// RenderTask renders the given template with the passed data,
+// RenderManifest renders the given template with the passed data,
 // writing the result to w.
-func RenderTask(w io.Writer, tmpl *template.Template, data map[string]string) error {
+func RenderManifest(w io.Writer, tmpl *template.Template, data map[string]string) error {
 	if _, err := w.Write(
 		[]byte("# File is generated; DO NOT EDIT.\n\n"),
 	); err != nil {

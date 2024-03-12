@@ -1,5 +1,5 @@
-// Package taskmanifest implements manifest rendering for tasks.
-// It is intended to be run via `go run`, passing a task YAML template
+// Package render-manifest implements manifest rendering for K8s manifests.
+// It is intended to be run via `go run`, passing a YAML template
 // and data to be rendered. The combined result will be
 // written to the specified destination. The -data flag can be passed
 // multiple times and may specify any key-value combination, which can then
@@ -8,7 +8,7 @@
 //
 // Example invocation:
 //
-//	go run github.com/opendevstack/ods-pipeline/cmd/taskmanifest \
+//	go run github.com/opendevstack/ods-pipeline/cmd/render-manifest \
 //		-data ImageRepository=ghcr.io/my-org/my-repo \
 //		-data Version=latest \
 //		-template build/tasks/my-task.yaml \
@@ -23,7 +23,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/opendevstack/ods-pipeline/pkg/taskmanifest"
+	"github.com/opendevstack/ods-pipeline/pkg/rendermanifest"
 	"github.com/opendevstack/ods-pipeline/pkg/tektontaskrun"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	templateFile := flag.String("template", "", "Template file")
 	destinationFile := flag.String("destination", "", "Destination file")
 	cc := tektontaskrun.NewClusterConfig()
-	mf := &MapFlag{v: cc.DefaultTaskTemplateData()}
+	mf := &MapFlag{v: cc.DefaultManifestTemplateData()}
 	flag.Var(mf, "data", "Key-value pairs")
 	flag.Parse()
 	if err := render(*templateFile, *destinationFile, mf.v); err != nil {
@@ -49,7 +49,7 @@ func render(templateFile, destinationFile string, data map[string]string) error 
 	if err != nil {
 		return err
 	}
-	return taskmanifest.RenderTask(w, tmpl, data)
+	return rendermanifest.RenderManifest(w, tmpl, data)
 }
 
 type MapFlag struct {

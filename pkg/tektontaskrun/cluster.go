@@ -78,9 +78,9 @@ func (c *ClusterConfig) DefaultImageRepository() string {
 	return c.Registry + "/" + c.DefaultRepository
 }
 
-// DefaultTaskTemplateData returns a map with default values which can be used
+// DefaultManifestTemplateData returns a map with default values which can be used
 // in task templates.
-func (c *ClusterConfig) DefaultTaskTemplateData() map[string]string {
+func (c *ClusterConfig) DefaultManifestTemplateData() map[string]string {
 	return map[string]string{
 		"ImageRepository": c.DefaultImageRepository(),
 		"Version":         "latest",

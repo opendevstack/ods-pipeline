@@ -40,18 +40,20 @@ set_values = nexusUrl=http://example.com,bitbucketUrl=http://example.com,console
 docs: ## Render documentation for tasks.
 	renderedStartTask=$(shell mktemp); \
 	helm template ods-pipeline deploy/chart --show-only=templates/task-start.yaml --set $(set_values) > $$renderedStartTask; \
-	go run github.com/opendevstack/ods-pipeline/cmd/taskdoc \
-		-task $$renderedStartTask \
-		-description build/docs/task-start.adoc \
-		-destination docs/task-start.adoc; \
+	go run github.com/opendevstack/ods-pipeline/cmd/render-doc \
+		-manifest=$$renderedStartTask \
+		-template=task \
+		-description=build/docs/task-start.adoc \
+		-destination=docs/task-start.adoc; \
 	rm $$renderedStartTask
 
 	renderedFinishTask=$(shell mktemp); \
 	helm template ods-pipeline deploy/chart --show-only=templates/task-finish.yaml --set $(set_values) > $$renderedFinishTask; \
-	go run github.com/opendevstack/ods-pipeline/cmd/taskdoc \
-		-task $$renderedFinishTask \
-		-description build/docs/task-finish.adoc \
-		-destination docs/task-finish.adoc; \
+	go run github.com/opendevstack/ods-pipeline/cmd/render-doc \
+		-manifest=$$renderedFinishTask \
+		-template=task \
+		-description=build/docs/task-finish.adoc \
+		-destination=docs/task-finish.adoc; \
 	rm $$renderedFinishTask
 .PHONY: docs
 

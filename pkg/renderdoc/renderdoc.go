@@ -1,4 +1,4 @@
-package taskdoc
+package renderdoc
 
 import (
 	"errors"
