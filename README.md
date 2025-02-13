@@ -2,6 +2,10 @@
 
 [![Tekton Tasks Tests](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml/badge.svg)](https://github.com/opendevstack/ods-pipeline/actions/workflows/main.yaml)
 
+## Status: Archived
+
+> **WARNING:** ods-pipeline is no longer pursued. The repository is now archived and no longer actively maintained. For more details, please see [#748](https://github.com/opendevstack/ods-pipeline/issue/748).
+
 **IMPORTANT: This approach is currently being evaluated. This may or may not become part of ODS one day.**
 
 ## Introduction
