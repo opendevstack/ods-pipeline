@@ -4,9 +4,7 @@
 
 ## Status: Archived
 
-> **WARNING: ods-pipeline is no longer pursued. The repository is now archived and no longer actively maintained. For more details, please see [#748](https://github.com/opendevstack/ods-pipeline/issue/748).**
-
-**IMPORTANT: This approach is currently being evaluated. This may or may not become part of ODS one day.**
+**WARNING: At the moment we have no plans to further evaluate and/or maintain ods-pipeline. For more details, read [#748](https://github.com/opendevstack/ods-pipeline/issues/748).**
 
 ## Introduction
 
