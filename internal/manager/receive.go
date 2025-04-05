@@ -223,6 +223,12 @@ func anyPatternMatches(s string, patterns []string) bool {
 		return true
 	}
 
+	// Treat a single star as a special case, matching everything.
+	// See https://github.com/opendevstack/ods-pipeline/issues/691
+	if patterns[0] == "*" {
+		return true
+	}
+
 	for _, pattern := range patterns {
 		if matched, err := path.Match(pattern, s); matched && err == nil {
 			return true
