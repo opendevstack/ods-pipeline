@@ -235,7 +235,7 @@ a| The script installs the Helm chart located in `deploy/chart`. Further, it:
 
 | SDS-EXT-2
 | Red Hat Universal Base Image 8 Minimal
-| 8.4
+| 8.9
 | Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. It is maintained by Red Hat and updated regularly.
 | https://catalog.redhat.com/software/containers/ubi8/ubi-minimal/5c359a62bed8bd75a2c3fba8
 

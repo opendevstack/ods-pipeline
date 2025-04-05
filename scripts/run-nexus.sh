@@ -33,7 +33,7 @@ while [ "$#" -gt 0 ]; do
 esac; shift; done
 
 if [ "${reuse}" = "true" ]; then
-    if ! docker inspect ${CONTAINER_NAME} &> /dev/null; then
+    if ! docker container inspect ${CONTAINER_NAME} &> /dev/null; then
         echo "No existing Nexus container ${CONTAINER_NAME} found ..."
     else
         echo "Reusing existing Nexus container ${CONTAINER_NAME} ..."

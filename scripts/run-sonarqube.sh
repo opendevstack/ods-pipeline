@@ -30,7 +30,7 @@ while [ "$#" -gt 0 ]; do
 esac; shift; done
 
 if [ "${reuse}" = "true" ]; then
-    if [ "$(docker inspect ${CONTAINER_NAME} -f '{{.State.Running}}')" = "true" ]; then
+    if [ "$(docker container inspect ${CONTAINER_NAME} -f '{{.State.Running}}')" = "true" ]; then
         echo "Reusing running SonarQube container ${CONTAINER_NAME} ..."
         exit 0
     else
